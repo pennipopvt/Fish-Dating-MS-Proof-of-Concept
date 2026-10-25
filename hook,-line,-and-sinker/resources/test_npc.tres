@@ -3,9 +3,82 @@
 [ext_resource type="Script" uid="uid://cus4an4jfkhwc" path="res://resources/npc_data.gd" id="1_bmq75"]
 [ext_resource type="Script" uid="uid://vn5y8742mwkg" path="res://resources/npc_flag_data.gd" id="1_hvwbg"]
 [ext_resource type="Script" uid="uid://ejskb8h4mfwk" path="res://resources/npc_dialogue_rule_data.gd" id="2_w20er"]
+[ext_resource type="Script" uid="uid://ca0vf6tc3yrjp" path="res://resources/dialogue_line_data.gd" id="3_hnybw"]
+[ext_resource type="Script" uid="uid://cewyfrdahenel" path="res://resources/dialogue_data.gd" id="4_co1nw"]
+[ext_resource type="Script" uid="uid://bm5t47u2levqj" path="res://resources/dialogue_choice_data.gd" id="5_wxfce"]
+
+[sub_resource type="Resource" id="Resource_he8fo"]
+script = ExtResource("1_hvwbg")
+flag_id = &"MetPlayer"
+metadata/_custom_type_script = "uid://vn5y8742mwkg"
+
+[sub_resource type="Resource" id="Resource_o6xl0"]
+script = ExtResource("1_hvwbg")
+flag_id = &"MetPlayer"
+metadata/_custom_type_script = "uid://vn5y8742mwkg"
+
+[sub_resource type="Resource" id="Resource_85g3d"]
+script = ExtResource("3_hnybw")
+text = "That's great!"
+metadata/_custom_type_script = "uid://ca0vf6tc3yrjp"
+
+[sub_resource type="Resource" id="Resource_tipki"]
+script = ExtResource("4_co1nw")
+dialogue_id = &"ConfirmWorks"
+lines = Array[ExtResource("3_hnybw")]([SubResource("Resource_85g3d")])
+metadata/_custom_type_script = "uid://cewyfrdahenel"
+
+[sub_resource type="Resource" id="Resource_jyhfs"]
+script = ExtResource("5_wxfce")
+text = "Yes!"
+next_dialogue = SubResource("Resource_tipki")
+flags_to_set = Array[ExtResource("1_hvwbg")]([SubResource("Resource_o6xl0")])
+metadata/_custom_type_script = "uid://bm5t47u2levqj"
+
+[sub_resource type="Resource" id="Resource_ya4ey"]
+script = ExtResource("3_hnybw")
+text = "That's terrible! Please fix it!"
+metadata/_custom_type_script = "uid://ca0vf6tc3yrjp"
+
+[sub_resource type="Resource" id="Resource_choun"]
+script = ExtResource("4_co1nw")
+dialogue_id = &"DoesntWork"
+lines = Array[ExtResource("3_hnybw")]([SubResource("Resource_ya4ey")])
+metadata/_custom_type_script = "uid://cewyfrdahenel"
+
+[sub_resource type="Resource" id="Resource_tbgi4"]
+script = ExtResource("5_wxfce")
+text = "No!"
+next_dialogue = SubResource("Resource_choun")
+metadata/_custom_type_script = "uid://bm5t47u2levqj"
+
+[sub_resource type="Resource" id="Resource_sugp2"]
+script = ExtResource("3_hnybw")
+text = "This is a test. Does it work?"
+metadata/_custom_type_script = "uid://ca0vf6tc3yrjp"
+
+[sub_resource type="Resource" id="Resource_0wfyh"]
+script = ExtResource("4_co1nw")
+dialogue_id = &"Intro"
+lines = Array[ExtResource("3_hnybw")]([SubResource("Resource_sugp2")])
+choices = Array[Resource]([SubResource("Resource_jyhfs"), SubResource("Resource_tbgi4")])
+metadata/_custom_type_script = "uid://cewyfrdahenel"
+
+[sub_resource type="Resource" id="Resource_tefeu"]
+script = ExtResource("1_hvwbg")
+flag_id = &"MetPlayer"
+metadata/_custom_type_script = "uid://vn5y8742mwkg"
+
+[sub_resource type="Resource" id="Resource_o5qli"]
+script = ExtResource("2_w20er")
+dialogue = SubResource("Resource_0wfyh")
+forbidden_flags = Array[ExtResource("1_hvwbg")]([SubResource("Resource_tefeu")])
+metadata/_custom_type_script = "uid://ejskb8h4mfwk"
 
 [resource]
 script = ExtResource("1_bmq75")
 npc_id = &"test_npc"
 display_name = "Test"
+defined_flags = Array[ExtResource("1_hvwbg")]([SubResource("Resource_he8fo")])
+dialogue_rules = Array[ExtResource("2_w20er")]([SubResource("Resource_o5qli")])
 metadata/_custom_type_script = "uid://cus4an4jfkhwc"
