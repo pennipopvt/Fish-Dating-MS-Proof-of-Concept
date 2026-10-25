@@ -1,0 +1,10 @@
+[gd_scene format=3 uid="uid://da6f5mcynky0y"]
+
+[ext_resource type="Script" uid="uid://dcj1kd66th1y8" path="res://scripts/fishing_manager.gd" id="1_ophlp"]
+[ext_resource type="Script" uid="uid://yvmtx3kcsond" path="res://resources/item_data.gd" id="2_04ic5"]
+[ext_resource type="Resource" uid="uid://dn6ncev70srw0" path="res://resources/test_fish.tres" id="3_v3w6v"]
+
+[node name="FishingManager" type="Node2D" unique_id=586344140]
+script = ExtResource("1_ophlp")
+possible_catches = Array[ExtResource("2_04ic5")]([ExtResource("3_v3w6v")])
+current_storage = Array[ExtResource("2_04ic5")]([ExtResource("3_v3w6v")])
