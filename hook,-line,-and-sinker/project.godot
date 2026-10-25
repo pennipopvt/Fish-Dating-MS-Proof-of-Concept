@@ -14,6 +14,13 @@ config/name="Hook, Line, and Sinker"
 run/main_scene="uid://c3426ih2exaq8"
 config/features=PackedStringArray("4.7", "Forward Plus")
 
+[autoload]
+
+GameManager="*uid://bn64uoevsj6o0"
+FishingManager="*uid://dcj1kd66th1y8"
+NPCManager="*uid://dcaonps1u75l4"
+DialogueManager="*uid://c0kgfo2cpvho8"
+
 [display]
 
 window/size/viewport_width=1920

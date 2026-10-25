@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="NPCData" format=3 uid="uid://cpv5vnhg17vg8"]
+
+[ext_resource type="Script" uid="uid://cus4an4jfkhwc" path="res://resources/npc_data.gd" id="1_bmq75"]
+[ext_resource type="Script" uid="uid://vn5y8742mwkg" path="res://resources/npc_flag_data.gd" id="1_hvwbg"]
+[ext_resource type="Script" uid="uid://ejskb8h4mfwk" path="res://resources/npc_dialogue_rule_data.gd" id="2_w20er"]
+
+[resource]
+script = ExtResource("1_bmq75")
+npc_id = &"test_npc"
+display_name = "Test"
+metadata/_custom_type_script = "uid://cus4an4jfkhwc"
