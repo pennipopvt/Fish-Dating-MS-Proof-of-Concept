@@ -61,7 +61,7 @@ metadata/_custom_type_script = "uid://ca0vf6tc3yrjp"
 script = ExtResource("4_co1nw")
 dialogue_id = &"Intro"
 lines = Array[ExtResource("3_hnybw")]([SubResource("Resource_sugp2")])
-choices = Array[Resource]([SubResource("Resource_jyhfs"), SubResource("Resource_tbgi4")])
+choices = Array[ExtResource("5_wxfce")]([SubResource("Resource_jyhfs"), SubResource("Resource_tbgi4")])
 metadata/_custom_type_script = "uid://cewyfrdahenel"
 
 [sub_resource type="Resource" id="Resource_tefeu"]

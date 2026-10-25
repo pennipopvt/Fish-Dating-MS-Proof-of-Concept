@@ -5,8 +5,8 @@ signal fish_hooked(item: ItemData)
 signal fish_caught(item: ItemData)
 signal fish_lost(item: ItemData)
 
-var possible_catches: Array[ItemData] = []
-var current_storage: Array[ItemData] = []
+@export var possible_catches: Array[ItemData] = []
+@export var current_storage: Array[ItemData] = []
 
 # Get a random fish from the current pool of fish
 func get_random_catch() -> ItemData:
