@@ -4,7 +4,7 @@
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_yd4fr"]
 
-[node name="Player" type="CharacterBody2D" unique_id=462811088]
+[node name="Player" type="CharacterBody2D" unique_id=462811088 groups=["player"]]
 scale = Vector2(4, 4)
 script = ExtResource("1_72ieh")
 
