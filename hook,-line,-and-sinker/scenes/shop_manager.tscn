@@ -1,0 +1,18 @@
+[gd_scene format=3 uid="uid://o4toft746f7g"]
+
+[ext_resource type="Script" uid="uid://bttgyqilvibcr" path="res://scripts/shop_manager.gd" id="1_gx78v"]
+[ext_resource type="Script" uid="uid://co23u2dkxgpsq" path="res://resources/trade_data.gd" id="2_mv7ed"]
+[ext_resource type="Script" uid="uid://yvmtx3kcsond" path="res://resources/item_data.gd" id="3_rhy2b"]
+[ext_resource type="Resource" uid="uid://dn6ncev70srw0" path="res://resources/test_fish.tres" id="4_rjgfn"]
+
+[sub_resource type="Resource" id="Resource_584vo"]
+script = ExtResource("2_mv7ed")
+trade_id = &"increase_casts"
+display_name = "Increase Casts"
+required_items = Array[ExtResource("3_rhy2b")]([ExtResource("4_rjgfn")])
+reward_method = &"shop_reward_add_casts"
+metadata/_custom_type_script = "uid://co23u2dkxgpsq"
+
+[node name="ShopManager" type="Node2D" unique_id=1244899988]
+script = ExtResource("1_gx78v")
+trades = Array[ExtResource("2_mv7ed")]([SubResource("Resource_584vo")])

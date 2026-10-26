@@ -8,6 +8,15 @@ signal fish_lost(item: ItemData)
 @export var possible_catches: Array[ItemData] = []
 @export var current_storage: Array[ItemData] = []
 
+@export_category("Fishing Stats")
+@export var max_casts_per_session: int = 3
+
+func shop_reward_add_casts(amount: int) -> void:
+	if amount <= 0:
+		return
+
+	max_casts_per_session += amount
+
 # Get a random fish from the current pool of fish
 func get_random_catch() -> ItemData:
 	if possible_catches.is_empty():
