@@ -20,6 +20,7 @@ GameManager="*uid://bn64uoevsj6o0"
 NPCManager="*uid://dcaonps1u75l4"
 DialogueManager="*uid://c0kgfo2cpvho8"
 FishingManager="*uid://da6f5mcynky0y"
+ShopManager="*uid://o4toft746f7g"
 
 [display]
 
