@@ -15,13 +15,6 @@ func can_trade(trade: TradeData) -> bool:
 	if trade.required_items.is_empty():
 		return false
 
-	if trade.reward_money < 0:
-		return false
-
-	for item in trade.reward_items:
-		if item == null:
-			return false
-
 	# Validate the function before removing any items.
 	if trade.reward_method != &"":
 		if not String(trade.reward_method).begins_with("shop_reward_"):
