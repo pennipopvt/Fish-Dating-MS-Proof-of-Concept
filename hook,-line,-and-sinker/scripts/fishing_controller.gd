@@ -71,17 +71,21 @@ func begin_reeling() -> void:
 	progress = starting_progress
 	#once we actually get it, we will let the fishing manager know what fish we have
 	FishingManager.hook_fish(hooked_fish)
+	print("Found ", hooked_fish.item_id)
 
 func lose_fish() -> void:
 	if(hooked_fish == null):
 		return
 	#inform the fishing manager
+	print("Lost ", hooked_fish.item_id)
 	FishingManager.lose_fish(hooked_fish)
 	finish_cast()
 	
 func catch_fish() -> void:
 	if(hooked_fish == null):
 		return
+	
+	print("Caught ", hooked_fish.item_id)
 	
 	FishingManager.catch_fish(hooked_fish)
 	FishingManager.current_storage.append(hooked_fish)
