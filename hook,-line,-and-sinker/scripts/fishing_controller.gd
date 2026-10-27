@@ -88,7 +88,6 @@ func catch_fish() -> void:
 	print("Caught ", hooked_fish.item_id)
 	
 	FishingManager.catch_fish(hooked_fish)
-	FishingManager.current_storage.append(hooked_fish)
 	finish_cast()
 	
 func finish_cast() -> void:
