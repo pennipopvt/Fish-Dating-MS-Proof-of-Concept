@@ -29,6 +29,10 @@ window/size/viewport_height=1080
 window/stretch/mode="canvas_items"
 window/stretch/aspect="expand"
 
+[dotnet]
+
+project/assembly_name="Hook- Line- and Sinker"
+
 [global_group]
 
 player=""
