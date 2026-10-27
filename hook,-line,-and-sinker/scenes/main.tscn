@@ -1,6 +1,7 @@
 [gd_scene format=3 uid="uid://c3426ih2exaq8"]
 
 [ext_resource type="PackedScene" uid="uid://hstq18vwr026" path="res://prefabs/player.tscn" id="1_o5qli"]
+[ext_resource type="PackedScene" uid="uid://0116rk2yw3ku" path="res://scenes/jerry.tscn" id="2_jyhfs"]
 
 [node name="Main" type="Node2D" unique_id=1419943895]
 
@@ -13,4 +14,4 @@ position = Vector2(1175, 854)
 
 [node name="Ethan" type="Node2D" parent="." unique_id=897027618]
 
-[node name="Jerry" type="Node2D" parent="." unique_id=1730562184]
+[node name="Jerry" parent="." unique_id=158398860 instance=ExtResource("2_jyhfs")]
