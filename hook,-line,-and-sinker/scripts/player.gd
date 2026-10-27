@@ -5,9 +5,18 @@ const SPEED = 300.0
 
 var held_item: ItemData = null
 var current_interactable: Interactable = null
+var busy: bool = false;
+
+@onready var fishing_controller: Node = $FishingController
 
 
 func _physics_process(delta: float) -> void:
+	
+	if busy:
+		velocity.x = 0;
+		move_and_slide()
+		return
+	
 	var direction := Input.get_axis("Move Left", "Move Right")
 
 	if direction:
