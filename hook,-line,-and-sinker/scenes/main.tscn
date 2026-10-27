@@ -1,8 +1,13 @@
 [gd_scene format=3 uid="uid://c3426ih2exaq8"]
 
+[ext_resource type="PackedScene" uid="uid://hp4fqdvatxjd" path="res://scenes/dock.tscn" id="1_0wfyh"]
 [ext_resource type="PackedScene" uid="uid://hstq18vwr026" path="res://prefabs/player.tscn" id="1_o5qli"]
 
 [node name="Main" type="Node2D" unique_id=1419943895]
+
+[node name="Dock" parent="." unique_id=1369927321 instance=ExtResource("1_0wfyh")]
+position = Vector2(652, 689)
+scale = Vector2(4, 4)
 
 [node name="Polygon2D" type="Polygon2D" parent="." unique_id=232630931]
 position = Vector2(303, 115)
@@ -10,5 +15,3 @@ polygon = PackedVector2Array(1918, 778, 308, 778, 305, 1113, 1918, 1076)
 
 [node name="Player" parent="." unique_id=462811088 instance=ExtResource("1_o5qli")]
 position = Vector2(1175, 854)
-
-[node name="Ethan" type="Node2D" parent="." unique_id=897027618]
