@@ -45,9 +45,13 @@ func _animate(target: Vector2, ease_type: Tween.EaseType) -> Tween:
 	return _tween
 
 
-# Read the bound key from the InputMap so the prompt follows rebinds.
 func _get_key_text() -> String:
-	for event in InputMap.action_get_events(action):
+	return get_action_key_text(action)
+
+
+# Read the bound key from the InputMap so UI text follows rebinds.
+static func get_action_key_text(action_name: StringName) -> String:
+	for event in InputMap.action_get_events(action_name):
 		var key := event as InputEventKey
 
 		if key == null:

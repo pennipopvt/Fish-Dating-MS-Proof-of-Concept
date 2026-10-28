@@ -1,0 +1,167 @@
+[gd_scene format=3 uid="uid://dgsl8ux5hh1tt"]
+
+[ext_resource type="Script" uid="uid://pemwagofm7ri" path="res://scripts/dialogue_ui.gd" id="1_dlg"]
+[ext_resource type="Texture2D" uid="uid://b4koaria87fbv" path="res://sprites/placeholders/portrait.svg" id="2_portrait"]
+[ext_resource type="Texture2D" uid="uid://ca1xd1qpk4ajr" path="res://sprites/placeholders/portrait_player.svg" id="3_player"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_choice_focus"]
+draw_center = false
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(1, 0.85, 0.5, 0.9)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_choice_hover"]
+content_margin_left = 20.0
+content_margin_top = 8.0
+content_margin_right = 20.0
+content_margin_bottom = 8.0
+bg_color = Color(0.2, 0.18, 0.16, 0.97)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(1, 0.85, 0.5, 0.9)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_choice"]
+content_margin_left = 20.0
+content_margin_top = 8.0
+content_margin_right = 20.0
+content_margin_bottom = 8.0
+bg_color = Color(0.1, 0.1, 0.13, 0.95)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(1, 0.9, 0.75, 0.35)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+
+[sub_resource type="Theme" id="Theme_dlg"]
+default_font_size = 32
+Button/styles/focus = SubResource("StyleBoxFlat_choice_focus")
+Button/styles/hover = SubResource("StyleBoxFlat_choice_hover")
+Button/styles/normal = SubResource("StyleBoxFlat_choice")
+Button/styles/pressed = SubResource("StyleBoxFlat_choice_hover")
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_box"]
+bg_color = Color(0.1, 0.1, 0.13, 0.88)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(1, 0.9, 0.75, 0.35)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+
+[node name="DialogueUI" type="CanvasLayer" unique_id=811940811]
+process_mode = 3
+layer = 10
+script = ExtResource("1_dlg")
+placeholder_portrait = ExtResource("2_portrait")
+player_portrait = ExtResource("3_player")
+
+[node name="Box" type="PanelContainer" parent="." unique_id=1680545143]
+unique_name_in_owner = true
+anchors_preset = -1
+anchor_left = 0.18
+anchor_top = 1.0
+anchor_right = 0.82
+anchor_bottom = 1.0
+offset_top = -300.0
+offset_bottom = -40.0
+grow_horizontal = 2
+grow_vertical = 0
+theme = SubResource("Theme_dlg")
+theme_override_styles/panel = SubResource("StyleBoxFlat_box")
+
+[node name="Margin" type="MarginContainer" parent="Box" unique_id=848527417]
+layout_mode = 2
+theme_override_constants/margin_left = 200
+theme_override_constants/margin_top = 24
+theme_override_constants/margin_right = 200
+theme_override_constants/margin_bottom = 20
+
+[node name="Content" type="VBoxContainer" parent="Box/Margin" unique_id=1332541444]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="NameLabel" type="Label" parent="Box/Margin/Content" unique_id=48828372]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 40
+
+[node name="TextLabel" type="Label" parent="Box/Margin/Content" unique_id=1867715179]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+autowrap_mode = 3
+
+[node name="ContinueHint" type="Label" parent="Box/Margin/Content" unique_id=1620925180]
+unique_name_in_owner = true
+modulate = Color(1, 1, 1, 0.7)
+layout_mode = 2
+theme_override_font_sizes/font_size = 26
+horizontal_alignment = 2
+
+[node name="PlayerPortrait" type="TextureRect" parent="." unique_id=1677767363]
+unique_name_in_owner = true
+anchors_preset = -1
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 40.0
+offset_top = -780.0
+offset_right = 540.0
+offset_bottom = 220.0
+grow_vertical = 0
+mouse_filter = 2
+texture = ExtResource("3_player")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="NPCPortrait" type="TextureRect" parent="." unique_id=1497894681]
+unique_name_in_owner = true
+anchors_preset = -1
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -540.0
+offset_top = -780.0
+offset_right = -40.0
+offset_bottom = 220.0
+grow_horizontal = 0
+grow_vertical = 0
+mouse_filter = 2
+texture = ExtResource("2_portrait")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="ChoiceList" type="VBoxContainer" parent="." unique_id=1996385156]
+unique_name_in_owner = true
+visible = false
+anchors_preset = -1
+anchor_left = 0.33
+anchor_top = 1.0
+anchor_right = 0.67
+anchor_bottom = 1.0
+offset_top = -560.0
+offset_bottom = -330.0
+grow_horizontal = 2
+grow_vertical = 0
+theme = SubResource("Theme_dlg")
+theme_override_constants/separation = 12
+alignment = 2
