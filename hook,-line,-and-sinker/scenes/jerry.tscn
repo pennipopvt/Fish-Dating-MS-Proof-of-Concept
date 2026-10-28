@@ -1,11 +1,11 @@
 [gd_scene format=3 uid="uid://0116rk2yw3ku"]
 
 [ext_resource type="Script" uid="uid://cb3hbbp6yhxow" path="res://scripts/shop_interactable.gd" id="1_shopi"]
-[ext_resource type="PackedScene" path="res://prefabs/shop_menu.tscn" id="2_shopm"]
+[ext_resource type="PackedScene" uid="uid://nwnk42a2g0hu" path="res://prefabs/shop_menu.tscn" id="2_shopm"]
 [ext_resource type="PackedScene" path="res://prefabs/interact_prompt.tscn" id="3_prompt"]
-[ext_resource type="Script" path="res://scripts/npc_interactable.gd" id="4_npci"]
+[ext_resource type="Script" uid="uid://cnc4vwj4wlink" path="res://scripts/npc_interactable.gd" id="4_npci"]
 [ext_resource type="Resource" uid="uid://cpv5vnhg17vg8" path="res://resources/test_npc.tres" id="5_npc"]
-[ext_resource type="PackedScene" path="res://prefabs/dialogue_ui.tscn" id="6_dlg"]
+[ext_resource type="PackedScene" uid="uid://dgsl8ux5hh1tt" path="res://prefabs/dialogue_ui.tscn" id="6_dlg"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_shop"]
 size = Vector2(200, 200)
