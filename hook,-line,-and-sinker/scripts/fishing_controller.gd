@@ -40,7 +40,7 @@ func cast_rod() -> void:
 	#once a line is cast, set the time itll take for a fish to present itself!!
 	bite_time = randf_range(bite_time_min,bite_time_max)
 	#fish is decided on rod cast
-	hooked_fish = FishingManager.possible_catches.pick_random()
+	hooked_fish = FishingManager.get_random_catch()
 	print("Cast #", casts, "will be a ", hooked_fish.item_id)
 
 func _process(delta: float) -> void:
