@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="TradeData" format=3]
+
+[ext_resource type="Script" uid="uid://co23u2dkxgpsq" path="res://resources/trade_data.gd" id="1_trade"]
+[ext_resource type="Script" path="res://resources/trade_requirement.gd" id="2_req"]
+[ext_resource type="Resource" uid="uid://dn6ncev70srw0" path="res://resources/test_fish.tres" id="3_fish"]
+[ext_resource type="Texture2D" path="res://sprites/placeholders/cast_upgrade.svg" id="4_icon"]
+
+[sub_resource type="Resource" id="Resource_fish3"]
+script = ExtResource("2_req")
+item = ExtResource("3_fish")
+amount = 3
+
+[resource]
+script = ExtResource("1_trade")
+trade_id = &"cast_bundle"
+display_name = "Cast Bundle"
+icon = ExtResource("4_icon")
+requirements = Array[ExtResource("2_req")]([SubResource("Resource_fish3")])
+reward_method = &"shop_reward_add_casts"
+reward_amount = 2
+metadata/_custom_type_script = "uid://co23u2dkxgpsq"

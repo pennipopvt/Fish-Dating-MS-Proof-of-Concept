@@ -12,7 +12,7 @@ func can_trade(trade: TradeData) -> bool:
 	if trade == null or not trades.has(trade):
 		return false
 
-	if trade.required_items.is_empty():
+	if trade.requirements.is_empty():
 		return false
 
 	# Validate the function before removing any items.
@@ -26,20 +26,18 @@ func can_trade(trade: TradeData) -> bool:
 		if trade.reward_amount <= 0:
 			return false
 
-	var available: Array[ItemData] = (
-		FishingManager.current_storage.duplicate()
-	)
-
-	for required in trade.required_items:
-		if required == null:
+	for requirement in trade.requirements:
+		if requirement == null or requirement.item == null:
 			return false
 
-		var index := _find_item(available, required.item_id)
-
-		if index == -1:
+		if requirement.amount <= 0:
 			return false
 
-		available.remove_at(index)
+	var needed := get_required_counts(trade)
+
+	for item_id in needed:
+		if count_item(item_id) < needed[item_id]:
+			return false
 
 	return true
 
@@ -49,13 +47,16 @@ func make_trade(trade: TradeData) -> bool:
 		return false
 
 	# Consume the required fish.
-	for required in trade.required_items:
-		var index := _find_item(
-			FishingManager.current_storage,
-			required.item_id
-		)
+	var needed := get_required_counts(trade)
 
-		FishingManager.current_storage.remove_at(index)
+	for item_id in needed:
+		for i in range(needed[item_id]):
+			var index := _find_item(
+				FishingManager.current_storage,
+				item_id
+			)
+
+			FishingManager.current_storage.remove_at(index)
 
 	# Execute an optional FishingManager upgrade.
 	if trade.reward_method != &"":
@@ -66,6 +67,29 @@ func make_trade(trade: TradeData) -> bool:
 
 	trade_completed.emit(trade)
 	return true
+
+
+# Total amount needed per item_id, combining repeated requirements.
+func get_required_counts(trade: TradeData) -> Dictionary:
+	var needed: Dictionary = {}
+
+	for requirement in trade.requirements:
+		if requirement != null and requirement.item != null:
+			var item_id: StringName = requirement.item.item_id
+			needed[item_id] = needed.get(item_id, 0) + requirement.amount
+
+	return needed
+
+
+# How many of an item the player has in storage.
+func count_item(item_id: StringName) -> int:
+	var count := 0
+
+	for item in FishingManager.current_storage:
+		if item != null and item.item_id == item_id:
+			count += 1
+
+	return count
 
 
 func _find_item(
