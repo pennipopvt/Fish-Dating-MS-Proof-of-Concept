@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" uid="uid://co23u2dkxgpsq" path="res://resources/trade_data.gd" id="1_trade"]
 [ext_resource type="Script" uid="uid://dou1ei8c0alhj" path="res://resources/trade_requirement.gd" id="2_req"]
-[ext_resource type="Resource" uid="uid://dn6ncev70srw0" path="res://resources/test_fish.tres" id="3_fish"]
+[ext_resource type="Resource" uid="uid://dn6ncev70srw0" path="res://resources/test_fish_item.tres" id="3_fish"]
 [ext_resource type="Texture2D" uid="uid://bgu6xgbtt40kh" path="res://sprites/placeholders/cast_upgrade.svg" id="4_icon"]
 
 [sub_resource type="Resource" id="Resource_fish1"]

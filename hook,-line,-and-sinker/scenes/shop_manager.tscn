@@ -2,8 +2,8 @@
 
 [ext_resource type="Script" uid="uid://bttgyqilvibcr" path="res://scripts/shop_manager.gd" id="1_gx78v"]
 [ext_resource type="Script" uid="uid://co23u2dkxgpsq" path="res://resources/trade_data.gd" id="2_mv7ed"]
-[ext_resource type="Resource" path="res://resources/trades/increase_casts.tres" id="3_trade"]
-[ext_resource type="Resource" path="res://resources/trades/cast_bundle.tres" id="4_trade"]
+[ext_resource type="Resource" uid="uid://buqljrpn82v13" path="res://resources/trades/increase_casts.tres" id="3_trade"]
+[ext_resource type="Resource" uid="uid://ctivbidkyhwng" path="res://resources/trades/cast_bundle.tres" id="4_trade"]
 
 [node name="ShopManager" type="Node2D" unique_id=1244899988]
 script = ExtResource("1_gx78v")
