@@ -23,6 +23,9 @@ var delay_time = 0
 @export var bite_time_min: float = 1
 @export var bite_time_max: float = 20
 
+@onready var fishing_progress: TextureProgressBar = $FishingProgress
+@onready var fishing_line: Line2D = $FishingLine
+
 func begin_fishing() -> void:
 	if(current_state == Fish_State.NOT && delay_time == 0):
 		casts = 0
@@ -41,6 +44,7 @@ func cast_rod() -> void:
 	bite_time = randf_range(bite_time_min,bite_time_max)
 	#fish is decided on rod cast
 	hooked_fish = FishingManager.get_random_catch()
+	fishing_line.send()
 	print("Cast #", casts, "will be a ", hooked_fish.item_id)
 
 func _process(delta: float) -> void:
@@ -59,6 +63,8 @@ func _process(delta: float) -> void:
 		#fish escape rate fights da player
 		progress -= hooked_fish.escape_rate * delta
 		progress = clamp(progress,0,1)
+		fishing_progress.value = progress
+		fishing_line.update_line_dist(progress)
 		if(progress <= 0):
 			lose_fish()
 	elif(current_state == Fish_State.NOT && delay_time != 0):
@@ -69,6 +75,7 @@ func begin_reeling() -> void:
 	current_state = Fish_State.FISHING
 	#reset progress when finding a fish
 	progress = starting_progress
+	fishing_progress.value = progress
 	#once we actually get it, we will let the fishing manager know what fish we have
 	FishingManager.hook_fish(hooked_fish)
 	print("Found ", hooked_fish.item_id)
@@ -112,6 +119,8 @@ func exit_fishing() -> void:
 func reset_values() -> void:
 	progress = 0
 	bite_time = 0
+	fishing_progress.value = 0
+	fishing_line.hide()
 	hooked_fish = null
 
 func _unhandled_input(event: InputEvent) -> void:
