@@ -25,8 +25,8 @@ func send() -> void:
 	fish.hide()
 
 #idk how to listen for signals in godot tbh but this would trigger by signal ill adjust later
-func hook(item: ItemData) -> void:
-	fish.texture = item.sprite
+func hook(item: FishData) -> void:
+	fish.texture = item.item_data.sprite
 	fish.show()
 
 func close() -> void:
@@ -44,4 +44,6 @@ func update_line_dist(dist_perc: float) -> void:
 	#slight offset to keep the fish in what would be the water
 	endpos.y += (line_dist + y_line_offset)
 	fish.position = endpos
+	var fishrot: float = atan2((pos.y - endpos.y),(pos.x - endpos.x))
+	fish.rotation = fishrot
 	set_point_position(1,endpos)
