@@ -1,4 +1,3 @@
-
 class_name NPCData
 extends Resource
 
@@ -13,3 +12,5 @@ extends Resource
 
 @export_group("Dialogue")
 @export var dialogue_rules: Array[NPCDialogueRuleData] = []
+# Optional. When set, loads a JSON dialogue graph instead of legacy dialogue_rules.
+@export_file("*.json") var dialogue_json_path: String = ""
