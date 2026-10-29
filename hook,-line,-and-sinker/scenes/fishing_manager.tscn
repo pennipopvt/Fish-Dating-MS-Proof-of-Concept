@@ -5,8 +5,9 @@
 [ext_resource type="Script" uid="uid://d2iidpvp5wrw7" path="res://resources/fish_data.gd" id="2_v3w6v"]
 [ext_resource type="Resource" uid="uid://bad7evmwitdpl" path="res://resources/easy_test_fish.tres" id="3_av3tx"]
 [ext_resource type="Resource" uid="uid://dn6ncev70srw0" path="res://resources/test_fish_item.tres" id="3_v3w6v"]
+[ext_resource type="Resource" uid="uid://c2argebsm6uyk" path="res://resources/hard_test_fish.tres" id="4_av3tx"]
 
 [node name="FishingManager" type="Node2D" unique_id=586344140]
 script = ExtResource("1_ophlp")
-possible_catches = Array[ExtResource("2_v3w6v")]([ExtResource("3_av3tx")])
+possible_catches = Array[ExtResource("2_v3w6v")]([ExtResource("3_av3tx"), ExtResource("4_av3tx")])
 current_storage = Array[ExtResource("2_04ic5")]([ExtResource("3_v3w6v")])

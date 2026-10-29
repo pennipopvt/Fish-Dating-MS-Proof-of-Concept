@@ -6,6 +6,15 @@
 [ext_resource type="Script" uid="uid://knvdk5g6r4s1" path="res://scripts/fishing_line.gd" id="4_w8wix"]
 [ext_resource type="Texture2D" uid="uid://bq0k0382ebpcd" path="res://sprites/placeholders/fish.png" id="5_nshyg"]
 
+[sub_resource type="Gradient" id="Gradient_nshyg"]
+offsets = PackedFloat32Array(0, 0.53246754, 0.9935065)
+colors = PackedColorArray(0, 1, 0, 1, 0.53594774, 0.46405226, 0, 1, 1, 0, 0, 1)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_tfxof"]
+gradient = SubResource("Gradient_nshyg")
+fill_from = Vector2(0.51834863, 1)
+fill_to = Vector2(0.51376146, 0)
+
 [sub_resource type="Curve" id="Curve_wknfn"]
 _data = [Vector2(0, 0.06741583), 0.0, 0.0, 0, 0, Vector2(1, 0.022471905), 0.0, 0.0, 0, 0]
 point_count = 2
@@ -13,12 +22,28 @@ point_count = 2
 [node name="FishingController" type="Node2D" unique_id=104125951]
 script = ExtResource("1_nhr4m")
 reel_gain = 0.01
+starting_progress = 0.3
+bite_time_max = 5.0
+tension_gain = 0.015
+tension_recovery = 2.5
+recovery_delay = 0.2
+
+[node name="TensionBar" type="TextureProgressBar" parent="." unique_id=1346772520]
+offset_left = 1.0
+offset_top = -19.0
+offset_right = 65.0
+offset_bottom = 45.0
+scale = Vector2(0.039843656, 0.09741943)
+max_value = 1.0
+step = 0.0
+fill_mode = 3
+texture_progress = SubResource("GradientTexture2D_tfxof")
 
 [node name="FishingProgress" type="TextureProgressBar" parent="." unique_id=2056205437]
-offset_left = -5.999998
-offset_top = -23.5
-offset_right = 1018.0
-offset_bottom = 1000.5
+offset_left = -12.000001
+offset_top = -23.0
+offset_right = 1012.0
+offset_bottom = 1001.0
 scale = Vector2(0.011802256, 0.011802256)
 max_value = 1.0
 step = 0.0
