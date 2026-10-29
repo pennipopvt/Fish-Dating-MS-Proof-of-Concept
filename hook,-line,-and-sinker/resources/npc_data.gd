@@ -7,10 +7,11 @@ extends Resource
 @export_group("Appearance")
 @export var portrait: Texture2D
 
-@export_group("Flags")
-@export var defined_flags: Array[NPCFlagData] = []
+@export_group("JSON Encounter Rules (first matching rule wins)")
+@export var encounter_rules: Array[EncounterRuleData] = []
 
-@export_group("Dialogue")
+@export_group("Legacy Dialogue (optional)")
+@export var defined_flags: Array[NPCFlagData] = []
 @export var dialogue_rules: Array[NPCDialogueRuleData] = []
-# Optional. When set, loads a JSON dialogue graph instead of legacy dialogue_rules.
+# Kept for backward compatibility with NPCs configured before encounter_rules.
 @export_file("*.json") var dialogue_json_path: String = ""

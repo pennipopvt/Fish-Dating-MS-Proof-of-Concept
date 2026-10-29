@@ -15,8 +15,15 @@ var _choice_defs: Array = []
 func start_conversation(npc: NPCData) -> void:
 	if is_active or npc == null:
 		return
-	if not npc.dialogue_json_path.is_empty():
-		var graph := DialogueJsonLoader.read_graph(npc.dialogue_json_path)
+	var path := ""
+	if not npc.encounter_rules.is_empty():
+		path = NPCManager.get_encounter_json_path(npc)
+		if path.is_empty():
+			return
+	else:
+		path = npc.dialogue_json_path
+	if not path.is_empty():
+		var graph := DialogueJsonLoader.read_graph(path)
 		if graph.is_empty():
 			return
 		current_npc = npc

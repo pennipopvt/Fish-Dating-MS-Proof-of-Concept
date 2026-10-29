@@ -1,23 +1,26 @@
-# JSON dialogue prototype (penni branch)
+# JSON dialogue encounters (penni branch)
 
-Author dialogue in res://dialogue/garden_eel.json. This is a runtime loader, NOT a .tres converter: DialogueLineData and DialogueChoiceData are instantiated in memory when entering a node. Cyclic next IDs are safe.
+Each JSON file defines ONE encounter's dialogue graph. Nodes link to other nodes via string IDs, including loops. No .tres dialogue graphs are generated on disk. DialogueLineData and DialogueChoiceData are instantiated in memory on each node entry; Jerry's DialogueUI API is unchanged.
 
-## Setup
-- Open NPCData in the Inspector and set dialogue_json_path to res://dialogue/garden_eel.json.
-- Keep existing NPC id, name, portrait, NPCInteractable, and DialogueUI.
-- Existing test_npc.tres is intentionally retained. NPCs without a JSON path use their existing resource dialogue.
-- Do not remove the current DialogueData/DialogueChoiceData classes: the UI expects them, and old NPC dialogue still uses them.
+## NPC setup (Inspector)
+1. Set NPCData.npc_id, display_name, and optionally portrait as usual.
+2. Under **JSON Encounter Rules**, add EncounterRuleData entries in order from most specific to least specific.
+3. For each entry set json_path, required_flags, forbidden_flags, and optionally use_min_attraction + min_attraction.
+4. For the garden eel, set rules in this order:
+   - path: res://dialogue/garden_eel_casual.json ; required_flags: [Recruited]
+   - path: res://dialogue/garden_eel.json ; forbidden_flags: [Recruited]
+5. When talking to the NPC, NPCManager examines NPC state and chooses the FIRST matching encounter. No match means no conversation.
+6. JSON choice effects such as {"set_flags":["Recruited"]} change NPCManager's state, so the next interaction selects a different encounter.
 
-## Format
-Root has entry and nodes. Each node can have lines (NPC strings or objects with speaker/text/expression), choices (text, next and optional effects), or next (automatic transition after its lines). A choice effect supports attraction, set_flags, clear_flags. Those apply to NPCManager's runtime state.
+## Compatibility
+The old defined_flags and dialogue_rules fields remain to avoid breaking existing .tres NPCs. The original dialogue_json_path remains as a fallback for NPCData without encounter_rules; it is no longer the recommended field. NPCs with encounter_rules use ONLY those rules, even when no rule matches.
 
-Choice response loops go via a response node and back to a menu-only node. Intro_0 / intro_1 model the first/second evasive answer without counters.
+## JSON format
+A graph has entry and nodes. Nodes have lines (strings as NPC speech, or objects with speaker/text/expression), choices (text, next, optional effects), or next (automatic transition after lines). Choice effects support attraction (integer), set_flags (array of names), and clear_flags (array of names). A response node can return to a menu-only node to loop safely without cyclical resource references. intro_0 and intro_1 implement the two evasive choices in the sample without a counter.
 
-## Limitations / tests
-- Run in Godot to validate GDScript and scene integration. No headless Godot test was available here.
-- JSON path must be set on the NPC used by an interactable. The supplied sample isn't automatically assigned to the old test NPC.
-- JSON is loaded at conversation start; runtime line/choice objects are generated on node entry. No files are generated on disk.
-- 'Recruited' flag is recorded but the JSON entry is not yet gated on that flag, so speaking again restarts the catch sequence. Add post-recruitment dialogue entry logic later.
-- Existing NPCManager state/affection lasts only for the current runtime session, not across game restarts.
-- Stage directions need a narration presentation mode if you want them rendered differently in Jerry's UI. The JSON sample currently includes only spoken text.
-- Jerry's dialogue_ui.gd and dialogue_ui.tscn have not been modified.
+## Important limits
+- JSON is loaded at conversation start. It doesn't write new resources to disk.
+- NPC state is only kept in memory during the current game run; there is no save/load persistence yet.
+- Changing flags doesn't swap the encounter mid-conversation; selection happens at the next interaction.
+- Legacy dialogue support, project autoloads, and dialogue_ui.gd/tscn remain unchanged.
+- Please test in Godot; this commit has not been compiled or played in the editor.

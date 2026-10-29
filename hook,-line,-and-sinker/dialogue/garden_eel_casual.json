@@ -1,0 +1,11 @@
+{
+  "entry": "greeting",
+  "nodes": {
+    "greeting": {
+      "lines": [
+        "Oh, hello again.",
+        "It's still a little strange being up here, but I'm getting used to it."
+      ]
+    }
+  }
+}
