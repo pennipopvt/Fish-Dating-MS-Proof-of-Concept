@@ -1,0 +1,267 @@
+{
+  "entry": "catch",
+  "nodes": {
+	"catch": {
+	  "lines": [
+		"AH! Ow!",
+		"Huh. That's odd.",
+        "Did you do this to me?"
+	  ],
+	  "choices": [
+		{
+		  "text": "OMG you're hot.",
+		  "next": "didnt_hear"
+		},
+		{
+		  "text": "WHAT IS HAPPENING???",
+		  "next": "didnt_hear"
+		},
+		{
+		  "text": "No! Who are you?",
+		  "next": "didnt_hear"
+		}
+	  ]
+	},
+	"didnt_hear": {
+	  "lines": [
+		"He doesn't seem to hear you.",
+		"Argh! I don't know what to do!",
+		"I feel so weird.",
+        "What am I?"
+	  ],
+	  "choices": [
+		{
+		  "text": "I think you're a fish... person?",
+		  "next": "fish_question"
+		},
+		{
+		  "text": "It's okay! You're like a human! I'm a human, I can help you!",
+		  "next": "human_question"
+		}
+	  ]
+	},
+	"fish_question": {
+	  "lines": [
+		"A fish person? What does that mean?",
+		"Ow.",
+		"I've never been this far from my burrow.",
+        "It's very open up here."
+	  ],
+	  "next": "safety"
+	},
+	"human_question": {
+	  "lines": [
+		"A human? What does that mean?",
+		"Ow.",
+		"I've never been this far from my burrow.",
+        "It's very open up here."
+	  ],
+	  "next": "safety"
+	},
+	"safety": {
+	  "lines": [],
+	  "choices": [
+		{
+		  "text": "You could hide in your big hoodie.",
+		  "next": "hoodie"
+		},
+		{
+		  "text": "Sure but isn't it also exciting?",
+		  "next": "exciting"
+		},
+		{
+		  "text": "Do you want me to give you space?",
+		  "next": "space"
+		}
+	  ]
+	},
+	"hoodie": {
+	  "lines": [
+		"Oh, I didn't realize.",
+		"Aha, it's kind of like my burrow.",
+		"But it's always with me.",
+        "I... feel a little better now."
+	  ],
+	  "next": "curiosity"
+	},
+	"exciting": {
+	  "lines": [
+        "Maybe? Ahh, it's confusing. It's all so much so fast."
+	  ],
+	  "next": "safety"
+	},
+	"space": {
+	  "lines": [
+		"I- I don't know.",
+        "I usually like being alone, but being alone out here? I don't know."
+	  ],
+	  "next": "safety"
+	},
+	"curiosity": {
+	  "lines": [],
+	  "choices": [
+		{
+		  "text": "So, who are you?",
+		  "next": "who"
+		},
+		{
+		  "text": "What made you bite my lure in the first place?",
+		  "next": "lure"
+		},
+		{
+		  "text": "Do you want to try standing?",
+		  "next": "stand"
+		}
+	  ]
+	},
+	"lure": {
+	  "lines": [
+		"Oh, that shiny little thing?",
+		"I kept seeing it floating around near my burrow.",
+		"I usually leave strange things alone, but I wanted to know what it was.",
+        "Hah. I suppose I found out."
+	  ],
+	  "next": "curiosity"
+	},
+	"stand": {
+	  "lines": [
+		"Oh, I suppose I could.",
+		"Woah.",
+		"This... is harder than it looks.",
+        "It's kind of fun, though."
+	  ],
+	  "next": "curiosity"
+	},
+	"who": {
+	  "lines": [
+		"Me?",
+		"I'm a garden eel. I've lived in the same little burrow for as long as I can remember.",
+		"It's quite nice, actually. I spend most of my time watching things swim by.",
+		"I guess I don't get out much.",
+        "What about you?"
+	  ],
+	  "next": "intro_0"
+	},
+	"intro_0": {
+	  "lines": [],
+	  "choices": [
+		{
+		  "text": "I'm the one who caught you!",
+		  "next": "caught_0"
+		},
+		{
+		  "text": "I'm just someone who likes fishing.",
+		  "next": "fishing_0"
+		},
+		{
+		  "text": "You can call me Penni!",
+		  "next": "gave_name"
+		}
+	  ]
+	},
+	"caught_0": {
+	  "lines": [
+        "Well. Yeah I got that."
+	  ],
+	  "next": "intro_1"
+	},
+	"fishing_0": {
+	  "lines": [
+		"I think I've gathered that.",
+        "I was hoping for a name."
+	  ],
+	  "next": "intro_1"
+	},
+	"intro_1": {
+	  "lines": [],
+	  "choices": [
+		{
+		  "text": "I'm the one who caught you!",
+		  "next": "gave_up",
+		  "effects": {
+			"attraction": -1
+		  }
+		},
+		{
+		  "text": "I'm just someone who likes fishing.",
+		  "next": "gave_up",
+		  "effects": {
+			"attraction": -1
+		  }
+		},
+		{
+		  "text": "You can call me Penni!",
+		  "next": "gave_name"
+		}
+	  ]
+	},
+	"gave_name": {
+	  "lines": [
+		"Penni. That's a nice name.",
+        "I'm [Name]. It's nice to meet you."
+	  ],
+	  "next": "hesitation_intro"
+	},
+	"gave_up": {
+	  "lines": [
+        "Okay then."
+	  ],
+	  "next": "hesitation_intro"
+	},
+	"hesitation_intro": {
+	  "lines": [
+		"Wait, what am I supposed to do now?",
+		"I can't just stay out here forever.",
+		"My home's still down there.",
+        "I don't know if I should go back."
+	  ],
+	  "next": "hesitation"
+	},
+	"hesitation": {
+	  "lines": [],
+	  "choices": [
+		{
+		  "text": "You could always go back.",
+		  "next": "go_back"
+		},
+		{
+		  "text": "Well, you have me now!",
+		  "next": "have_me"
+		},
+		{
+		  "text": "I'd like it if you stayed.",
+		  "next": "stay",
+		  "effects": {
+			"set_flags": [
+              "Recruited"
+			]
+		  }
+		}
+	  ]
+	},
+	"go_back": {
+	  "lines": [
+		"But I only just got here.",
+        "It's not the most exciting back home."
+	  ],
+	  "next": "hesitation"
+	},
+	"have_me": {
+	  "lines": [
+		"That's nice of you.",
+		"But we only just met.",
+        "I don't even know what I'd do here."
+	  ],
+	  "next": "hesitation"
+	},
+	"stay": {
+	  "lines": [
+		"You would?",
+		"Huh. That's a nice thought.",
+		"Maybe it'd be good to get out of my comfort zone.",
+		"Alright. I think I'll stay.",
+        "Just for a little while, anyway."
+	  ]
+	}
+  }
+}
