@@ -8,7 +8,7 @@ enum Fish_State
 }
 
 var current_state: Fish_State = Fish_State.NOT
-var hooked_fish: ItemData = null
+var hooked_fish: FishData = null
 
 var casts: int = 0
 var progress: float = 0
@@ -45,7 +45,7 @@ func cast_rod() -> void:
 	#fish is decided on rod cast
 	hooked_fish = FishingManager.get_random_catch()
 	fishing_line.send()
-	print("Cast #", casts, "will be a ", hooked_fish.item_id)
+	print("Cast #", casts, "will be a ", hooked_fish.item_data.item_id)
 
 func _process(delta: float) -> void:
 	if(current_state == Fish_State.WAITING):
@@ -78,13 +78,13 @@ func begin_reeling() -> void:
 	fishing_progress.value = progress
 	#once we actually get it, we will let the fishing manager know what fish we have
 	FishingManager.hook_fish(hooked_fish)
-	print("Found ", hooked_fish.item_id)
+	print("Found ", hooked_fish.item_data.item_id)
 
 func lose_fish() -> void:
 	if(hooked_fish == null):
 		return
 	#inform the fishing manager
-	print("Lost ", hooked_fish.item_id)
+	print("Lost ", hooked_fish.item_data.item_id)
 	FishingManager.lose_fish(hooked_fish)
 	finish_cast()
 	
@@ -92,7 +92,7 @@ func catch_fish() -> void:
 	if(hooked_fish == null):
 		return
 	
-	print("Caught ", hooked_fish.item_id)
+	print("Caught ", hooked_fish.item_data.item_id)
 	
 	FishingManager.catch_fish(hooked_fish)
 	finish_cast()

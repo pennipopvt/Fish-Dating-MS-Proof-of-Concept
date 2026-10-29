@@ -25,8 +25,8 @@ func send() -> void:
 	fish.hide()
 
 #idk how to listen for signals in godot tbh but this would trigger by signal ill adjust later
-func hook(item: ItemData) -> void:
-	fish.texture = item.sprite
+func hook(item: FishData) -> void:
+	fish.texture = item.item_data.sprite
 	fish.show()
 
 func close() -> void:
