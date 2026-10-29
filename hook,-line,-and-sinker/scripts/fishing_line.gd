@@ -44,4 +44,6 @@ func update_line_dist(dist_perc: float) -> void:
 	#slight offset to keep the fish in what would be the water
 	endpos.y += (line_dist + y_line_offset)
 	fish.position = endpos
+	var fishrot: float = atan2((pos.y - endpos.y),(pos.x - endpos.x))
+	fish.rotation = fishrot
 	set_point_position(1,endpos)
