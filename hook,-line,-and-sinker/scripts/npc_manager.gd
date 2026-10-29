@@ -68,3 +68,30 @@ func apply_choice(
 	for flag in choice.flags_to_clear:
 		if flag != null:
 			flags[flag.flag_id] = false
+
+# Returns a JSON encounter file path, or "" when none of the configured rules match.
+# When rules exist, a failure to match deliberately does not use the legacy dialogue.
+func get_encounter_json_path(npc: NPCData) -> String:
+	if npc == null:
+		return ""
+	var state: Dictionary = get_npc_state(npc.npc_id)
+	var flags: Dictionary = state.get("flags", {})
+	for rule in npc.encounter_rules:
+		if rule == null or rule.json_path.is_empty():
+			continue
+		if rule.use_min_attraction and int(state.get("attraction", 0)) < rule.min_attraction:
+			continue
+		var matches := true
+		for flag in rule.required_flags:
+			if not flags.get(flag, false):
+				matches = false
+				break
+		if not matches:
+			continue
+		for flag in rule.forbidden_flags:
+			if flags.get(flag, false):
+				matches = false
+				break
+		if matches:
+			return rule.json_path
+	return ""
