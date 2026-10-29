@@ -120,7 +120,7 @@ func reset_values() -> void:
 	progress = 0
 	bite_time = 0
 	fishing_progress.value = 0
-	fishing_line.hide()
+	fishing_line.close()
 	hooked_fish = null
 
 func _unhandled_input(event: InputEvent) -> void:
