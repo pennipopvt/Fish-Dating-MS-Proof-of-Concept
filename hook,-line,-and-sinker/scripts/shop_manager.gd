@@ -2,6 +2,24 @@
 extends Node
 
 signal trade_completed(trade: TradeData)
+signal shop_requested
+signal shop_opened
+signal shop_closed
+
+var is_shop_open: bool = false
+
+func request_shop() -> void:
+	if not is_shop_open:
+		shop_requested.emit()
+
+func set_shop_open(opened: bool) -> void:
+	if is_shop_open == opened:
+		return
+	is_shop_open = opened
+	if opened:
+		shop_opened.emit()
+	else:
+		shop_closed.emit()
 
 @export var trades: Array[TradeData] = []
 
