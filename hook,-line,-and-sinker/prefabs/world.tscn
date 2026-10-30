@@ -81,14 +81,14 @@ grow_vertical = 2
 
 [node name="SunGlow" type="ColorRect" parent="Sky" unique_id=1434741238]
 material = SubResource("ShaderMaterial_yd4fr")
-offset_left = 160.0
-offset_top = -15.0
-offset_right = 320.0
-offset_bottom = 145.0
+offset_left = 15.0
+offset_top = -62.0
+offset_right = 175.0
+offset_bottom = 98.0
 mouse_filter = 2
 
 [node name="Sun" type="Sprite2D" parent="Sky" unique_id=1314223609]
-position = Vector2(240, 65)
+position = Vector2(95, 18)
 texture = ExtResource("3_vbln7")
 
 [node name="Clouds" type="Node2D" parent="Sky" unique_id=1290658735]
@@ -109,16 +109,16 @@ texture = ExtResource("6_q76tg")
 position = Vector2(89, 8)
 texture = ExtResource("7_sxw1y")
 
-[node name="Camera2D" type="Camera2D" parent="." unique_id=1135215055]
-position = Vector2(160, 90)
-editor_draw_limits = true
-editor_draw_drag_margin = true
-
 [node name="Dock" parent="." unique_id=501821169 instance=ExtResource("1_4284n")]
 position = Vector2(62, 101)
 
 [node name="Player" parent="." unique_id=462811088 instance=ExtResource("2_m1sej")]
 position = Vector2(97, 112)
+
+[node name="Camera2D" type="Camera2D" parent="Player" unique_id=1135215055]
+position = Vector2(0, -20)
+editor_draw_limits = true
+editor_draw_drag_margin = true
 
 [node name="Shop" parent="." unique_id=1156017474 instance=ExtResource("3_07nuu")]
 position = Vector2(166, 96)

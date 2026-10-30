@@ -6,7 +6,7 @@ extends CanvasLayer
 
 signal conversation_ended(npc: NPCData)
 
-const PLAYER_NAME := "You"
+const PLAYER_NAME := "Penni"
 const NPC_NAME_COLOR := Color(1.0, 0.85, 0.5)
 const PLAYER_NAME_COLOR := Color(0.6, 0.85, 1.0)
 const SPEAKING_MODULATE := Color.WHITE
@@ -97,14 +97,14 @@ func _refresh() -> void:
 
 	# While choices are shown there is no current line,
 	# so the last line stays on screen above them.
-	var line := DialogueManager.get_current_line()
+	var line = DialogueManager.get_current_line()
 
 	if line != null:
 		_show_line(line)
 
 	_clear_choices()
 
-	var awaiting_choice := DialogueManager.is_awaiting_choice()
+	var awaiting_choice = DialogueManager.is_awaiting_choice()
 	_choice_list.visible = awaiting_choice
 	_continue_hint.visible = not awaiting_choice
 
@@ -139,7 +139,7 @@ func _show_line(line: DialogueLineData) -> void:
 
 
 func _show_choices() -> void:
-	var choices := DialogueManager.get_choices()
+	var choices = DialogueManager.get_choices()
 
 	for i in range(choices.size()):
 		if choices[i] == null:

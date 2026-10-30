@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" uid="uid://cl37a74gojns" path="res://scripts/player.gd" id="1_72ieh"]
 [ext_resource type="PackedScene" uid="uid://bmrdf41mwrdk6" path="res://scenes/fishing_controller.tscn" id="2_4dohe"]
-[ext_resource type="Texture2D" uid="uid://4rbmtl0k2hya" path="res://sprites/placeholders/penni-concept.png" id="3_r66lb"]
+[ext_resource type="Texture2D" uid="uid://r0ng1t2x1upy" path="res://sprites/penni_sprite.png" id="3_r66lb"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_yd4fr"]
 size = Vector2(12, 26)
