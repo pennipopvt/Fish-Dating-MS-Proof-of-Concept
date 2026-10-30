@@ -15,11 +15,10 @@ size = Vector2(180, 200)
 
 [node name="Jerry" type="Node2D" unique_id=158398860]
 
-[node name="Shop" type="Area2D" parent="." unique_id=1093384721 node_paths=PackedStringArray("shop_menu", "prompt")]
+[node name="Shop" type="Area2D" parent="." unique_id=1093384721 node_paths=PackedStringArray("prompt")]
 z_index = -1
 position = Vector2(1600, 834)
 script = ExtResource("1_shopi")
-shop_menu = NodePath("../ShopMenu")
 prompt = NodePath("InteractPrompt")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Shop" unique_id=2017465390]
