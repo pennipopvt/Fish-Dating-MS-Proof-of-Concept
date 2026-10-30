@@ -1,8 +1,8 @@
 class_name Player
 extends CharacterBody2D
 
-const SPEED = 300.0
-
+const SPEED = 100.0
+const ACC=2000
 var held_item: ItemData = null
 var current_interactable: Interactable = null
 var busy: bool = false;
@@ -18,13 +18,12 @@ func _physics_process(delta: float) -> void:
 		return
 	
 	var direction := Input.get_axis("Move Left", "Move Right")
-
 	if direction:
-		velocity.x = direction * SPEED
+		velocity.x = move_toward(velocity.x,direction * SPEED,ACC*delta)
 	else:
-		velocity.x = move_toward(velocity.x, 0, SPEED)
+		velocity.x = move_toward(velocity.x, 0, ACC*delta)
 
-	move_and_slide()
+	move_and_slide()	
 
 
 func _unhandled_input(event: InputEvent) -> void:
