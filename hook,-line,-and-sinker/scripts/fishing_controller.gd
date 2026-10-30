@@ -15,9 +15,8 @@ var progress: float = 0
 var bite_time: float = 0
 
 var tension: float = 0
-var desp_phase: bool = false
-var desp_timer: float = 0
-var desp_end_timer: float = 0
+var state_timer: float = 0
+var fish_esc_rate: float = 0
 var recovery_timer: float = 0
 
 #band-aid fix to avoid accidentally requeueing interact when exiting since exit and interact are the same input
@@ -77,12 +76,11 @@ func _process(delta: float) -> void:
 			#failsafe
 			return
 		#fish escape rate fights da player
-		var escape_value = hooked_fish.escape_rate if desp_phase else hooked_fish.desperation_escape_rate
-		progress -= escape_value * delta
+		progress -= fish_esc_rate * delta
 		progress = clamp(progress,0,1)
 		
 		recover_tension(delta)
-		desperation_countdown(delta)
+		state_change_countdown(delta)
 		
 		tension = clamp(tension,0,1)
 		fishing_progress.value = progress
@@ -100,10 +98,14 @@ func begin_reeling() -> void:
 	progress = starting_progress
 	fishing_progress.value = progress
 	tension_bar.value = tension
-	desp_timer = hooked_fish.desp_time
+	
+	fish_esc_rate = hooked_fish.states[0].escape_rate
+	state_timer = hooked_fish.states[0].state_length
+	
 	#once we actually get it, we will let the fishing manager know what fish we have
 	FishingManager.hook_fish(hooked_fish)
 	print("Found ", hooked_fish.fish_id)
+	print("In ", hooked_fish.states[0].state_name," State.")
 
 func lose_fish() -> void:
 	if(hooked_fish == null):
@@ -146,8 +148,8 @@ func reset_values() -> void:
 	bite_time = 0
 	fishing_progress.value = 0
 	fishing_line.close()
-	desp_phase = false
-	desp_timer = 0
+	state_timer = 0
+	fish_esc_rate = 0
 	tension = 0
 	tension_bar.value = tension
 	hooked_fish = null
@@ -157,7 +159,8 @@ func _unhandled_input(event: InputEvent) -> void:
 	if(event.is_action_pressed("Reel") && current_state == Fish_State.FISHING):
 		progress += reel_gain
 		progress = clamp(progress,0,1)
-		tension = tension + tension_gain if !desp_phase else tension + (tension_gain * tens_bonus_mult)
+		# so if the fish isnt swimming dont apply tension
+		tension = tension + tension_gain if fish_esc_rate <= 0 else tension + (tension_gain * tens_bonus_mult)
 		tension = clamp(tension, 0, 1)
 		
 		recovery_timer = recovery_delay
@@ -177,19 +180,24 @@ func recover_tension(delta: float) -> void:
 	else:
 		recovery_timer -= delta
 
-func desperation_countdown(delta:float) -> void:
-	if(desp_phase): 
-		desp_end_timer -= delta
-		
-		if(desp_end_timer <= 0 ): 
-			desp_phase = false
-			desp_timer = hooked_fish.desp_time
-			print("Fish is no longer desperate!")
-		
-	else:
-		desp_timer -= delta
+func state_change_countdown(delta:float) -> void:
+	state_timer -= delta
 	
-		if(desp_timer <= 0 ): 
-			desp_phase = true
-			desp_end_timer = hooked_fish.desp_length
-			print("Fish is desperate!")
+	if(state_timer <= 0 && current_state == Fish_State.FISHING):
+		change_fish_state()
+
+func change_fish_state() -> void:
+	if hooked_fish.states.is_empty():
+		return
+	for state in hooked_fish.states:
+		var probability: float = randf()
+		if(probability < state.state_probability):
+			fish_esc_rate = state.escape_rate
+			state_timer = state.state_length
+			print("In ", state.state_name," State.")
+			return
+	#goes to a non-probability based random pick if none were chosen
+	var true_random: int = randi_range(0,hooked_fish.states.size())
+	fish_esc_rate = hooked_fish.states[true_random].escape_rate
+	state_timer = hooked_fish.states[true_random].state_length
+	print("In ", hooked_fish.states[true_random].state_name," State.")
