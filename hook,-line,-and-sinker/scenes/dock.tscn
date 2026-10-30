@@ -3,7 +3,7 @@
 [ext_resource type="Script" uid="uid://v1x5fsb5g1gy" path="res://scripts/dock.gd" id="1_pi7v4"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_iu4st"]
-size = Vector2(28, 63)
+size = Vector2(24, 31)
 
 [node name="Dock" type="Area2D" unique_id=1369927321]
 script = ExtResource("1_pi7v4")

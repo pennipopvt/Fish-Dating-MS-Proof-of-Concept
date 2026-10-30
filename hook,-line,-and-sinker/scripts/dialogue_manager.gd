@@ -1,5 +1,13 @@
 extends Node
 
+signal dialogue_requested(npc: NPCData)
+signal conversation_started(npc: NPCData)
+signal conversation_finished(npc: NPCData)
+
+func request_conversation(npc: NPCData) -> void:
+	if npc != null and not is_active:
+		dialogue_requested.emit(npc)
+
 # API kept compatible with DialogueUI. JSON graphs are instantiated at runtime.
 var current_npc: NPCData = null
 var current_dialogue: DialogueData = null
@@ -29,6 +37,7 @@ func start_conversation(npc: NPCData) -> void:
 		current_npc = npc
 		_graph = graph
 		is_active = true
+		conversation_started.emit(npc)
 		_enter_node(str(graph["entry"]))
 		return
 	var dialogue: DialogueData = NPCManager.get_dialogue(npc)
@@ -38,6 +47,7 @@ func start_conversation(npc: NPCData) -> void:
 	current_dialogue = dialogue
 	line_index = 0
 	is_active = true
+	conversation_started.emit(npc)
 	_check_for_end()
 
 func get_current_line() -> DialogueLineData:
@@ -152,6 +162,7 @@ func _check_for_end() -> void:
 		end_conversation()
 
 func end_conversation() -> void:
+	var finished_npc := current_npc
 	current_npc = null
 	current_dialogue = null
 	line_index = 0
@@ -161,3 +172,4 @@ func end_conversation() -> void:
 	_lines.clear()
 	_choices.clear()
 	_choice_defs.clear()
+	conversation_finished.emit(finished_npc)

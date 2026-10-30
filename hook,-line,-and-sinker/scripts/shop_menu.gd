@@ -41,6 +41,7 @@ func _ready() -> void:
 	hide()
 	_trade_icon_frame.add_theme_stylebox_override("panel", _tile_styles["normal"])
 	ShopManager.trade_completed.connect(_on_trade_completed)
+	ShopManager.shop_requested.connect(open)
 	_confirm_button.pressed.connect(_on_confirm_pressed)
 	_close_button.pressed.connect(close)
 
@@ -57,6 +58,7 @@ func open() -> void:
 		return
 
 	show()
+	ShopManager.set_shop_open(true)
 	get_tree().paused = true
 	_selected_trade = null
 	_status_label.text = ""
@@ -70,6 +72,7 @@ func close() -> void:
 		return
 
 	hide()
+	ShopManager.set_shop_open(false)
 	get_tree().paused = false
 
 

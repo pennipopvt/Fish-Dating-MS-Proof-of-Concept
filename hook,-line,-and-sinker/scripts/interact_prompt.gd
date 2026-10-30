@@ -7,7 +7,7 @@ const POP_TIME := 0.15
 
 @export var action: StringName = &"Interact"
 
-@onready var _key_label: Label = %KeyLabel
+#@onready var _key_label: Label = %KeyLabel
 
 var _shown := false
 var _tween: Tween
@@ -23,7 +23,7 @@ func pop_in() -> void:
 		return
 
 	_shown = true
-	_key_label.text = _get_key_text()
+	#_key_label.text = _get_key_text()
 	show()
 	_animate(Vector2.ONE, Tween.EASE_OUT)
 
@@ -33,6 +33,7 @@ func pop_out() -> void:
 		return
 
 	_shown = false
+	hide()
 	_animate(Vector2.ZERO, Tween.EASE_IN).tween_callback(hide)
 
 

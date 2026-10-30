@@ -2,17 +2,21 @@
 
 [ext_resource type="Script" uid="uid://cl37a74gojns" path="res://scripts/player.gd" id="1_72ieh"]
 [ext_resource type="PackedScene" uid="uid://bmrdf41mwrdk6" path="res://scenes/fishing_controller.tscn" id="2_4dohe"]
+[ext_resource type="Texture2D" uid="uid://4rbmtl0k2hya" path="res://sprites/placeholders/penni-concept.png" id="3_r66lb"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_yd4fr"]
+size = Vector2(12, 26)
 
 [node name="Player" type="CharacterBody2D" unique_id=462811088 groups=["player"]]
-scale = Vector2(4, 4)
 script = ExtResource("1_72ieh")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1384129468]
+position = Vector2(-0.25, -13)
 shape = SubResource("RectangleShape2D_yd4fr")
 
-[node name="Polygon2D" type="Polygon2D" parent="." unique_id=713628151]
-polygon = PackedVector2Array(-10, -10, -10, 10, 10, 10, 10, -10)
-
 [node name="FishingController" parent="." unique_id=104125951 instance=ExtResource("2_4dohe")]
+position = Vector2(-0.25, -16)
+
+[node name="PenniConcept" type="Sprite2D" parent="." unique_id=1260087817]
+position = Vector2(-0.25, -16)
+texture = ExtResource("3_r66lb")
