@@ -1,7 +1,7 @@
 [gd_resource type="Resource" script_class="FishData" format=3 uid="uid://c2argebsm6uyk"]
 
 [ext_resource type="Script" uid="uid://d2iidpvp5wrw7" path="res://resources/fish_data.gd" id="1_3ugjn"]
-[ext_resource type="Resource" uid="uid://dn6ncev70srw0" path="res://resources/test_fish_item.tres" id="1_j5xue"]
+[ext_resource type="Resource" uid="uid://dn6ncev70srw0" path="res://resources/items/test_fish_item.tres" id="1_j5xue"]
 [ext_resource type="Script" uid="uid://cur8k0lqp6jxh" path="res://resources/fish_escape_state.gd" id="3_r7p2w"]
 
 [sub_resource type="Resource" id="Resource_nshyg"]

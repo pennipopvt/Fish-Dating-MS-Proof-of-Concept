@@ -1,0 +1,22 @@
+[gd_scene format=3 uid="uid://dkva15le6ficd"]
+
+[ext_resource type="Script" uid="uid://cb3hbbp6yhxow" path="res://scripts/shop_interactable.gd" id="1_wamvd"]
+[ext_resource type="PackedScene" uid="uid://d4fhg8uyom630" path="res://prefabs/interact_prompt.tscn" id="2_r07nn"]
+[ext_resource type="Texture2D" uid="uid://bteo286wilpyh" path="res://sprites/terminal.png" id="3_hxg2x"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_shop"]
+size = Vector2(22.833328, 33.999992)
+
+[node name="Shop" type="Area2D" unique_id=1156017474 node_paths=PackedStringArray("prompt")]
+z_index = -1
+script = ExtResource("1_wamvd")
+prompt = NodePath("InteractPrompt")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=625297297]
+shape = SubResource("RectangleShape2D_shop")
+
+[node name="InteractPrompt" parent="." unique_id=2070465306 instance=ExtResource("2_r07nn")]
+position = Vector2(0, -23)
+
+[node name="Terminal" type="Sprite2D" parent="." unique_id=1057228621]
+texture = ExtResource("3_hxg2x")

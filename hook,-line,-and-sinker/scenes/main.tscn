@@ -1,22 +1,41 @@
 [gd_scene format=3 uid="uid://c3426ih2exaq8"]
 
-[ext_resource type="PackedScene" uid="uid://hp4fqdvatxjd" path="res://scenes/dock.tscn" id="1_0wfyh"]
-[ext_resource type="PackedScene" uid="uid://hstq18vwr026" path="res://prefabs/player.tscn" id="1_o5qli"]
-[ext_resource type="PackedScene" uid="uid://0116rk2yw3ku" path="res://scenes/jerry.tscn" id="2_jyhfs"]
+[ext_resource type="PackedScene" uid="uid://bjt7lp2qss3qh" path="res://prefabs/world.tscn" id="1_sugp2"]
+[ext_resource type="PackedScene" uid="uid://nwnk42a2g0hu" path="res://prefabs/shop_menu.tscn" id="5_choun"]
+[ext_resource type="PackedScene" uid="uid://dgsl8ux5hh1tt" path="res://prefabs/dialogue_ui.tscn" id="8_trceg"]
 
-[node name="Main" type="Node2D" unique_id=1419943895]
+[node name="Main" type="Control" unique_id=51723177]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 
-[node name="Dock" parent="." unique_id=1369927321 instance=ExtResource("1_0wfyh")]
-position = Vector2(652, 689)
-scale = Vector2(4, 4)
+[node name="SubViewportContainer" type="SubViewportContainer" parent="." unique_id=1239905353]
+texture_filter = 1
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+stretch = true
+stretch_shrink = 6
 
-[node name="Polygon2D" type="Polygon2D" parent="." unique_id=232630931]
-position = Vector2(303, 115)
-polygon = PackedVector2Array(1918, 778, 308, 778, 305, 1113, 1918, 1076)
+[node name="SubViewport" type="SubViewport" parent="SubViewportContainer" unique_id=648688884]
+disable_3d = true
+handle_input_locally = false
+canvas_item_default_texture_filter = 0
+size = Vector2i(320, 180)
+render_target_update_mode = 4
 
-[node name="Player" parent="." unique_id=462811088 instance=ExtResource("1_o5qli")]
-position = Vector2(1175, 854)
+[node name="World" parent="SubViewportContainer/SubViewport" unique_id=1151991614 instance=ExtResource("1_sugp2")]
 
-[node name="Ethan" type="Node2D" parent="." unique_id=897027618]
+[node name="CanvasLayer" type="CanvasLayer" parent="." unique_id=1326123139]
 
-[node name="Jerry" parent="." unique_id=158398860 instance=ExtResource("2_jyhfs")]
+[node name="ShopMenu" parent="CanvasLayer" unique_id=764201938 instance=ExtResource("5_choun")]
+visible = false
+
+[node name="DialogueUI" parent="CanvasLayer" unique_id=1999381502 instance=ExtResource("8_trceg")]
+visible = false

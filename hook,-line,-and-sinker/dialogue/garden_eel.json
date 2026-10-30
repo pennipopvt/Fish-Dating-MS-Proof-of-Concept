@@ -24,7 +24,7 @@
 	},
 	"didnt_hear": {
 	  "lines": [
-		"He doesn't seem to hear you.",
+		"[He doesn't seem to hear you.]",
 		"Argh! I don't know what to do!",
 		"I feel so weird.",
         "What am I?"
@@ -43,6 +43,7 @@
 	"fish_question": {
 	  "lines": [
 		"A fish person? What does that mean?",
+		"[He bangs his head into the dock.]",
 		"Ow.",
 		"I've never been this far from my burrow.",
         "It's very open up here."
@@ -52,6 +53,7 @@
 	"human_question": {
 	  "lines": [
 		"A human? What does that mean?",
+		"[He bangs his head into the dock.]",
 		"Ow.",
 		"I've never been this far from my burrow.",
         "It's very open up here."
@@ -241,8 +243,7 @@
 	},
 	"go_back": {
 	  "lines": [
-		"But I only just got here.",
-        "It's not the most exciting back home."
+		"I guess I could...",
 	  ],
 	  "next": "hesitation"
 	},
