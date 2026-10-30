@@ -43,8 +43,9 @@ var delay_time = 0
 func begin_fishing() -> void:
 	if(current_state == Fish_State.NOT && delay_time == 0):
 		casts = 0
-		cast_rod()
+		#set busy first so exit_fishing can clear it if the cast fails right away
 		get_parent().busy = true
+		cast_rod()
 	
 func cast_rod() -> void:
 	if(casts >= FishingManager.max_casts_per_session):
@@ -59,6 +60,11 @@ func cast_rod() -> void:
 	bite_time = randf_range(bite_time_min,bite_time_max)
 	#fish is decided on rod cast
 	hooked_fish = FishingManager.get_random_catch()
+	if(hooked_fish == null):
+		#empty or malformed catch pool, nothing to hook
+		push_warning("No catchable fish in FishingManager.possible_catches")
+		exit_fishing()
+		return
 	fishing_line.send()
 	print("Cast #", casts, " will be a ", hooked_fish.fish_id)
 

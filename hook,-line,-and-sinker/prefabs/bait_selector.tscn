@@ -1,0 +1,22 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/bait_selector.gd" id="1_baits"]
+
+[sub_resource type="Theme" id="Theme_baits"]
+default_font_size = 32
+
+[node name="BaitSelector" type="PanelContainer"]
+offset_left = 24.0
+offset_top = 24.0
+theme = SubResource("Theme_baits")
+script = ExtResource("1_baits")
+
+[node name="VBox" type="VBoxContainer" parent="."]
+layout_mode = 2
+
+[node name="CurrentLabel" type="Label" parent="VBox"]
+layout_mode = 2
+text = "Bait: None"
+
+[node name="Buttons" type="HBoxContainer" parent="VBox"]
+layout_mode = 2

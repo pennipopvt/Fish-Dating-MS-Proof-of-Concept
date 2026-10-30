@@ -23,6 +23,7 @@ people who might settle in your empty town.
 | Move left / right | A / D |
 | Reel | Mouse wheel |
 | Interact (talk / shop) | Space |
+| Choose bait | Click a bait button (top-left) before casting |
 
 ## What's implemented
 
@@ -32,10 +33,17 @@ people who might settle in your empty town.
   `ShopManager` (trades fish from storage for `FishingManager` upgrades).
 - **Data as Resources:** items, fish, NPCs, flags, dialogue rules/lines/choices,
   trades. Instances are in `resources/`.
-- **UI:** visual-novel style dialogue UI, shop menu, interact prompt.
+- **Bait (prototype):** `BaitData` resources (`resources/bait/`) give each fish a
+  relative catch weight by `fish_id`. `FishingManager.get_random_catch()` uses the
+  equipped bait's weights; this is the only place a cast's species is chosen.
+  Changing bait affects the next cast, never a fish already decided. Bait A / B
+  favor Placeholder Fish A / B at 75 / 25, and both fish stay catchable. An empty
+  or malformed catch pool ends the cast instead of crashing.
+- **UI:** visual-novel style dialogue UI, shop menu, interact prompt, placeholder
+  bait selector.
 - **Player** movement on the dock, plus interactables for NPCs and the shop.
 
-Not yet built (planned or exploratory): bait targeting, fishing journal, challenge-
+Not yet built (planned or exploratory): bait stock/shop, time/weather odds, fishing journal, challenge-
 unlocked gear, corporate storage/delivery, fish-person recruitment, houses.
 
 ## Project structure
@@ -43,11 +51,26 @@ unlocked gear, corporate storage/delivery, fish-person recruitment, houses.
 ```
 hook,-line,-and-sinker/
   scenes/      main.tscn, dock, manager scenes
-  prefabs/     player, dialogue_ui, shop_menu, interact_prompt
+  prefabs/     player, world, dock, shop, test_npc, dialogue_ui, shop_menu,
+               interact_prompt, bait_selector
   scripts/     managers, player, interactables, UI scripts
-  resources/   Resource classes (*.gd) and data (*.tres, trades/)
-  sprites/     placeholders/ — temporary art
+  resources/   Resource classes (*.gd) and data (*.tres in fish/, items/, npcs/,
+               trades/, bait/)
+  sprites/     placeholders/ — temporary art (fish_a.png / fish_b.png are
+               tinted fish placeholders)
+  tests/       headless debug tests (see below)
 ```
+
+### Tests
+
+Bait odds check (simulates 20,000 draws per bait and checks empty/malformed pools):
+
+```
+cd hook,-line,-and-sinker
+godot --headless --path . -s res://tests/bait_odds_test.gd
+```
+
+Exits with code 1 if a check fails.
 
 ## Workflow
 
