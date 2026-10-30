@@ -1,0 +1,25 @@
+[gd_scene format=3 uid="uid://bu27c1m43q585"]
+
+[ext_resource type="Script" uid="uid://cnc4vwj4wlink" path="res://scripts/npc_interactable.gd" id="1_abqes"]
+[ext_resource type="Resource" uid="uid://cpv5vnhg17vg8" path="res://resources/test_npc.tres" id="2_aqm5u"]
+[ext_resource type="PackedScene" uid="uid://d4fhg8uyom630" path="res://prefabs/interact_prompt.tscn" id="4_dibf3"]
+[ext_resource type="Texture2D" uid="uid://4rbmtl0k2hya" path="res://sprites/placeholders/penni-concept.png" id="5_47nej"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_npc"]
+size = Vector2(26.83334, 31.000008)
+
+[node name="TestNPC" type="Area2D" unique_id=2033605866 node_paths=PackedStringArray("prompt")]
+z_index = -1
+script = ExtResource("1_abqes")
+npc = ExtResource("2_aqm5u")
+prompt = NodePath("InteractPrompt")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1392690885]
+position = Vector2(1.5258789e-05, 3.0517578e-05)
+shape = SubResource("RectangleShape2D_npc")
+
+[node name="InteractPrompt" parent="." unique_id=1481540467 instance=ExtResource("4_dibf3")]
+position = Vector2(0, -16)
+
+[node name="PenniConcept" type="Sprite2D" parent="." unique_id=1690852734]
+texture = ExtResource("5_47nej")
