@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://bu27c1m43q585"]
 
 [ext_resource type="Script" uid="uid://cnc4vwj4wlink" path="res://scripts/npc_interactable.gd" id="1_abqes"]
-[ext_resource type="Resource" uid="uid://cpv5vnhg17vg8" path="res://resources/test_npc.tres" id="2_aqm5u"]
+[ext_resource type="Resource" uid="uid://cpv5vnhg17vg8" path="res://resources/npcs/test_npc.tres" id="2_aqm5u"]
 [ext_resource type="PackedScene" uid="uid://d4fhg8uyom630" path="res://prefabs/interact_prompt.tscn" id="4_dibf3"]
 [ext_resource type="Texture2D" uid="uid://4rbmtl0k2hya" path="res://sprites/placeholders/penni-concept.png" id="5_47nej"]
 
