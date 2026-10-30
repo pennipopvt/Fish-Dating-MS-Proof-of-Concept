@@ -1,38 +1,49 @@
-[gd_scene format=3]
+[gd_scene format=3 uid="uid://d4fhg8uyom630"]
 
-[ext_resource type="Script" path="res://scripts/interact_prompt.gd" id="1_prompt"]
+[ext_resource type="Script" uid="uid://dol4txm4r5kj8" path="res://scripts/interact_prompt.gd" id="1_prompt"]
+[ext_resource type="Texture2D" uid="uid://b4j4n5y6sqmst" path="res://sprites/interact_indicator.png" id="2_w5ulo"]
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_key"]
-bg_color = Color(0.95, 0.95, 0.95, 1)
-border_width_left = 3
-border_width_top = 3
-border_width_right = 3
-border_width_bottom = 6
-border_color = Color(0.15, 0.15, 0.15, 1)
-corner_radius_top_left = 10
-corner_radius_top_right = 10
-corner_radius_bottom_right = 10
-corner_radius_bottom_left = 10
+[sub_resource type="AtlasTexture" id="AtlasTexture_w5ulo"]
+atlas = ExtResource("2_w5ulo")
+region = Rect2(0, 0, 8, 7)
 
-[node name="InteractPrompt" type="Node2D"]
+[sub_resource type="AtlasTexture" id="AtlasTexture_sk20a"]
+atlas = ExtResource("2_w5ulo")
+region = Rect2(8, 0, 8, 7)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_gv2k5"]
+atlas = ExtResource("2_w5ulo")
+region = Rect2(16, 0, 8, 7)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_fxrf7"]
+atlas = ExtResource("2_w5ulo")
+region = Rect2(24, 0, 8, 7)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_yd4fr"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_w5ulo")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_sk20a")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_gv2k5")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_fxrf7")
+}],
+"loop": 1,
+"name": &"default",
+"speed": 12.0
+}]
+
+[node name="InteractPrompt" type="Node2D" unique_id=628442704]
 process_mode = 3
 z_index = 10
 script = ExtResource("1_prompt")
 
-[node name="Key" type="PanelContainer" parent="."]
-offset_left = -30.0
-offset_top = -30.0
-offset_right = 30.0
-offset_bottom = 30.0
-grow_horizontal = 2
-grow_vertical = 2
-theme_override_styles/panel = SubResource("StyleBoxFlat_key")
-
-[node name="KeyLabel" type="Label" parent="Key"]
-unique_name_in_owner = true
-layout_mode = 2
-theme_override_colors/font_color = Color(0.15, 0.15, 0.15, 1)
-theme_override_font_sizes/font_size = 36
-text = "E"
-horizontal_alignment = 1
-vertical_alignment = 1
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=1074529166]
+sprite_frames = SubResource("SpriteFrames_yd4fr")
+autoplay = "default"

@@ -6,3 +6,5 @@ extends Resource
 @export var item_data: ItemData = null
 #Use NPC data if the fish is an NPC
 @export var npc_data: NPCData = null
+
+@export var states: Array[FishEscapeState] = []
