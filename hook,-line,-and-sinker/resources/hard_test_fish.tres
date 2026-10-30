@@ -2,13 +2,27 @@
 
 [ext_resource type="Script" uid="uid://d2iidpvp5wrw7" path="res://resources/fish_data.gd" id="1_3ugjn"]
 [ext_resource type="Resource" uid="uid://dn6ncev70srw0" path="res://resources/test_fish_item.tres" id="1_j5xue"]
+[ext_resource type="Script" uid="uid://cur8k0lqp6jxh" path="res://resources/fish_escape_state.gd" id="3_r7p2w"]
+
+[sub_resource type="Resource" id="Resource_nshyg"]
+script = ExtResource("3_r7p2w")
+state_name = "Initial"
+escape_rate = 0.05
+state_length = 2.0
+state_probability = 0.1
+metadata/_custom_type_script = "uid://cur8k0lqp6jxh"
+
+[sub_resource type="Resource" id="Resource_r7p2w"]
+script = ExtResource("3_r7p2w")
+state_name = "Angry"
+escape_rate = 0.15
+state_length = 10.0
+state_probability = 0.5
+metadata/_custom_type_script = "uid://cur8k0lqp6jxh"
 
 [resource]
 script = ExtResource("1_3ugjn")
 fish_id = &"hard_test_fish"
 item_data = ExtResource("1_j5xue")
-escape_rate = 0.15
-desperation_escape_rate = 0.25
-desp_time = 3.5
-desp_length = 0.5
+states = Array[ExtResource("3_r7p2w")]([SubResource("Resource_nshyg"), SubResource("Resource_r7p2w")])
 metadata/_custom_type_script = "uid://d2iidpvp5wrw7"
