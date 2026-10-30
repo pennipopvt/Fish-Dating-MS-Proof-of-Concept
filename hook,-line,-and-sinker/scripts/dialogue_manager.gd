@@ -19,6 +19,7 @@ var _node_id: String = ""
 var _lines: Array[DialogueLineData] = []
 var _choices: Array[DialogueChoiceData] = []
 var _choice_defs: Array = []
+var _pending_choice: Dictionary = {}
 
 func start_conversation(npc: NPCData) -> void:
 	if is_active or npc == null:
@@ -79,7 +80,10 @@ func advance() -> void:
 	if not is_active or is_awaiting_choice():
 		return
 	line_index += 1
-	_check_for_end()
+	if not _graph.is_empty() and not _pending_choice.is_empty() and line_index >= _lines.size():
+		_complete_pending_choice()
+	else:
+		_check_for_end()
 
 func select_choice(index: int) -> void:
 	if not is_awaiting_choice():
@@ -88,8 +92,7 @@ func select_choice(index: int) -> void:
 		if index < 0 or index >= _choice_defs.size():
 			return
 		var choice: Dictionary = _choice_defs[index]
-		_apply_json_effects(choice.get("effects", {}))
-		_enter_node(str(choice["next"]))
+		_show_player_choice(choice)
 		return
 	if index < 0 or index >= current_dialogue.choices.size():
 		return
@@ -103,6 +106,26 @@ func select_choice(index: int) -> void:
 		current_dialogue = choice.next_dialogue
 		line_index = 0
 		_check_for_end()
+
+# Display the selected response as Penni's own line before entering its target node.
+# Effects are applied only after that line is advanced, so the player can read it.
+func _show_player_choice(choice: Dictionary) -> void:
+	_pending_choice = choice.duplicate(true)
+	_lines.clear()
+	_choices.clear()
+	_choice_defs.clear()
+	line_index = 0
+	var line := DialogueLineData.new()
+	line.speaker = DialogueLineData.Speaker.PLAYER
+	line.text = str(choice.get("spoken_text", choice.get("text", "")))
+	line.expression = StringName(str(choice.get("expression", "neutral")))
+	_lines.append(line)
+
+func _complete_pending_choice() -> void:
+	var choice := _pending_choice
+	_pending_choice = {}
+	_apply_json_effects(choice.get("effects", {}))
+	_enter_node(str(choice["next"]))
 
 func _apply_json_effects(effects: Variant) -> void:
 	if not effects is Dictionary or current_npc == null:
@@ -172,4 +195,5 @@ func end_conversation() -> void:
 	_lines.clear()
 	_choices.clear()
 	_choice_defs.clear()
+	_pending_choice.clear()
 	conversation_finished.emit(finished_npc)
