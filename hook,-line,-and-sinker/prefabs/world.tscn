@@ -1,0 +1,107 @@
+[gd_scene format=4 uid="uid://bjt7lp2qss3qh"]
+
+[ext_resource type="Script" uid="uid://v1x5fsb5g1gy" path="res://scripts/dock.gd" id="1_0xhmi"]
+[ext_resource type="PackedScene" uid="uid://hstq18vwr026" path="res://prefabs/player.tscn" id="2_m1sej"]
+[ext_resource type="Script" uid="uid://cb3hbbp6yhxow" path="res://scripts/shop_interactable.gd" id="3_k40i2"]
+[ext_resource type="PackedScene" path="res://prefabs/interact_prompt.tscn" id="4_le6xu"]
+[ext_resource type="Texture2D" uid="uid://bteo286wilpyh" path="res://sprites/terminal.png" id="5_q76tg"]
+[ext_resource type="Script" uid="uid://cnc4vwj4wlink" path="res://scripts/npc_interactable.gd" id="6_sxw1y"]
+[ext_resource type="Resource" uid="uid://cpv5vnhg17vg8" path="res://resources/test_npc.tres" id="7_nwl14"]
+[ext_resource type="FontFile" uid="uid://ckttcdiajcuyc" path="res://fonts/pixel_operator(1)/PixelOperator8.ttf" id="8_2a2la"]
+[ext_resource type="Texture2D" uid="uid://4rbmtl0k2hya" path="res://sprites/placeholders/penni-concept.png" id="9_deaom"]
+[ext_resource type="Texture2D" uid="uid://dvyql68s5tvo3" path="res://sprites/tileset.png" id="10_6mti1"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_iu4st"]
+size = Vector2(24, 31)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_shop"]
+size = Vector2(22.833328, 33.999992)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_npc"]
+size = Vector2(26.83334, 31.000008)
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_gi6id"]
+texture = ExtResource("10_6mti1")
+0:0/0 = 0
+1:0/0 = 0
+2:0/0 = 0
+3:0/0 = 0
+4:0/0 = 0
+5:0/0 = 0
+0:1/0 = 0
+1:1/0 = 0
+2:1/0 = 0
+3:1/0 = 0
+4:1/0 = 0
+5:1/0 = 0
+
+[sub_resource type="TileSet" id="TileSet_yd4fr"]
+sources/0 = SubResource("TileSetAtlasSource_gi6id")
+
+[node name="World" type="Node2D" unique_id=1151991614]
+
+[node name="Camera2D" type="Camera2D" parent="." unique_id=1135215055]
+position = Vector2(160, 90)
+editor_draw_limits = true
+editor_draw_drag_margin = true
+
+[node name="Dock" type="Area2D" parent="." unique_id=1369927321]
+position = Vector2(63, 117)
+script = ExtResource("1_0xhmi")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Dock" unique_id=208412496]
+position = Vector2(-2, -5.5)
+shape = SubResource("RectangleShape2D_iu4st")
+
+[node name="Polygon2D" type="Polygon2D" parent="." unique_id=1131621316]
+position = Vector2(303, 115)
+polygon = PackedVector2Array(1918, 778, 308, 778, 305, 1113, 1918, 1076)
+
+[node name="Player" parent="." unique_id=462811088 instance=ExtResource("2_m1sej")]
+position = Vector2(98, 128)
+
+[node name="Shop" type="Area2D" parent="." unique_id=1042710712 node_paths=PackedStringArray("prompt")]
+z_index = -1
+position = Vector2(167, 112)
+script = ExtResource("3_k40i2")
+prompt = NodePath("InteractPrompt")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Shop" unique_id=756839460]
+shape = SubResource("RectangleShape2D_shop")
+
+[node name="InteractPrompt" parent="Shop" unique_id=1507420572 instance=ExtResource("4_le6xu")]
+position = Vector2(1.1666665, -50.166668)
+
+[node name="Terminal" type="Sprite2D" parent="Shop" unique_id=670970822]
+texture = ExtResource("5_q76tg")
+
+[node name="TestNPC" type="Area2D" parent="." unique_id=832422584 node_paths=PackedStringArray("prompt")]
+z_index = -1
+position = Vector2(294, 112)
+script = ExtResource("6_sxw1y")
+npc = ExtResource("7_nwl14")
+prompt = NodePath("InteractPrompt")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="TestNPC" unique_id=1308991394]
+position = Vector2(1.5258789e-05, 3.0517578e-05)
+shape = SubResource("RectangleShape2D_npc")
+
+[node name="Label" type="Label" parent="TestNPC" unique_id=153781788]
+offset_left = -26.33331
+offset_top = -22.0
+offset_right = 26.66669
+offset_bottom = -14.0
+theme_override_fonts/font = ExtResource("8_2a2la")
+theme_override_font_sizes/font_size = 8
+text = "TEST NPC"
+horizontal_alignment = 1
+
+[node name="InteractPrompt" parent="TestNPC" unique_id=454498742 instance=ExtResource("4_le6xu")]
+position = Vector2(0, -195)
+
+[node name="PenniConcept" type="Sprite2D" parent="TestNPC" unique_id=37714845]
+texture = ExtResource("9_deaom")
+
+[node name="Ground" type="TileMapLayer" parent="." unique_id=97856843]
+tile_map_data = PackedByteArray("AAADAAgAAAAAAAAAAAADAAkAAAAAAAEAAAAEAAgAAAABAAAAAAAEAAkAAAABAAEAAAAFAAgAAAACAAAAAAAFAAkAAAACAAEAAAAGAAgAAAADAAAAAAAGAAkAAAADAAEAAAAHAAgAAAAEAAAAAAAHAAkAAAAEAAEAAAAIAAgAAAAFAAAAAAAIAAkAAAAFAAEAAAAJAAgAAAAEAAAAAAAJAAkAAAAEAAEAAAAKAAgAAAAFAAAAAAAKAAkAAAAFAAEAAAALAAgAAAAEAAAAAAALAAkAAAAEAAEAAAAMAAgAAAAFAAAAAAAMAAkAAAAFAAEAAAANAAgAAAAEAAAAAAANAAkAAAAEAAEAAAAOAAgAAAAFAAAAAAAOAAkAAAAFAAEAAAAPAAgAAAAEAAAAAAAPAAkAAAAEAAEAAAAQAAgAAAAFAAAAAAAQAAkAAAAFAAEAAAARAAgAAAAEAAAAAAARAAkAAAAEAAEAAAASAAgAAAAFAAAAAAASAAkAAAAFAAEAAAATAAgAAAAEAAAAAAATAAkAAAAEAAEAAAAUAAgAAAAFAAAAAAAUAAkAAAAFAAEAAAAVAAgAAAAEAAAAAAAVAAkAAAAEAAEAAAAWAAgAAAAFAAAAAAAWAAkAAAAFAAEAAAA=")
+tile_set = SubResource("TileSet_yd4fr")
