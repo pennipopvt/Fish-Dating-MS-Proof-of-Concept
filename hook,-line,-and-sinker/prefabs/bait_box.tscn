@@ -1,0 +1,22 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/bait_interactable.gd" id="1_baiti"]
+[ext_resource type="PackedScene" uid="uid://d4fhg8uyom630" path="res://prefabs/interact_prompt.tscn" id="2_prompt"]
+[ext_resource type="Texture2D" path="res://sprites/placeholders/bait_box.png" id="3_box"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_bait"]
+size = Vector2(20, 16)
+
+[node name="BaitBox" type="Area2D" node_paths=PackedStringArray("prompt")]
+z_index = -1
+script = ExtResource("1_baiti")
+prompt = NodePath("InteractPrompt")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("RectangleShape2D_bait")
+
+[node name="InteractPrompt" parent="." instance=ExtResource("2_prompt")]
+position = Vector2(0, -15)
+
+[node name="Sprite" type="Sprite2D" parent="."]
+texture = ExtResource("3_box")

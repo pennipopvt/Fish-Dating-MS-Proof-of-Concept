@@ -22,7 +22,8 @@ people who might settle in your empty town.
 |---|---|
 | Move left / right | A / D |
 | Reel | Mouse wheel |
-| Interact (talk / shop) | Space |
+| Interact (talk / shop / bait box) | Space |
+| Close menu | Esc |
 
 ## What's implemented
 
@@ -36,11 +37,12 @@ people who might settle in your empty town.
   relative catch weight by `fish_id`. `FishingManager.get_random_catch()` uses the
   equipped bait's weights; this is the only place a cast's species is chosen.
   Changing bait affects the next cast, never a fish already decided. Bait A / B
-  favor Placeholder Fish A / B at 75 / 25, and both fish stay catchable. There's no
-  bait UI yet: set `equipped_bait` on `scenes/fishing_manager.tscn` (or call
-  `FishingManager.equip_bait()`). An empty
+  favor Placeholder Fish A / B at 75 / 25, and both fish stay catchable. Pick bait at
+  the bait box on the ground: a 3x3 grid of baits on the left, and the selected
+  bait's description and chance per fish on the right. Bait A / B, their icons
+  and the bait box sprite are placeholders. An empty
   or malformed catch pool ends the cast instead of crashing.
-- **UI:** visual-novel style dialogue UI, shop menu, interact prompt.
+- **UI:** visual-novel style dialogue UI, shop menu, bait menu, interact prompt.
 - **Player** movement on the dock, plus interactables for NPCs and the shop.
 
 Not yet built (planned or exploratory): bait stock/shop, time/weather odds, fishing journal, challenge-
@@ -52,12 +54,12 @@ unlocked gear, corporate storage/delivery, fish-person recruitment, houses.
 hook,-line,-and-sinker/
   scenes/      main.tscn, dock, manager scenes
   prefabs/     player, world, dock, shop, test_npc, dialogue_ui, shop_menu,
-               interact_prompt
+               interact_prompt, bait_box, bait_menu
   scripts/     managers, player, interactables, UI scripts
   resources/   Resource classes (*.gd) and data (*.tres in fish/, items/, npcs/,
                trades/, bait/)
-  sprites/     placeholders/ — temporary art (fish_a.png / fish_b.png are
-               tinted fish placeholders)
+  sprites/     placeholders/ — temporary art (fish_a/b.png tinted fish,
+               bait_a/b.png bait icons, bait_box.png)
   tests/       headless debug tests (see below)
 ```
 

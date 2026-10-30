@@ -1,11 +1,14 @@
 [gd_resource type="Resource" script_class="BaitData" format=3]
 
 [ext_resource type="Script" path="res://resources/bait_data.gd" id="1_bait"]
+[ext_resource type="Texture2D" path="res://sprites/placeholders/bait_a.png" id="2_icon"]
 
 [resource]
 script = ExtResource("1_bait")
 bait_id = &"bait_a"
 display_name = "Bait A"
+icon = ExtResource("2_icon")
+description = "TODO: placeholder description. Attracts Placeholder Fish A more often."
 catch_weights = Dictionary[StringName, float]({
 &"placeholder_fish_a": 3.0,
 &"placeholder_fish_b": 1.0

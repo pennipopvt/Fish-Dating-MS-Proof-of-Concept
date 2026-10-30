@@ -28,6 +28,10 @@ func _initialize() -> void:
 	print("No bait: ", _format(no_bait))
 	_expect(absf(_share(no_bait, FISH_A.fish_id) - 0.5) < TOLERANCE, "no bait is roughly 50/50")
 
+	# Odds shown in the bait menu match the weights exactly
+	var odds: Dictionary = FishingManagerScript.get_catch_odds(pool, BAIT_A)
+	_expect(is_equal_approx(odds.get(FISH_A, 0.0), EXPECTED_FAVORED) and is_equal_approx(odds.get(FISH_B, 0.0), 1.0 - EXPECTED_FAVORED), "get_catch_odds matches bait weights")
+
 	# Empty and malformed pools must return null, not crash
 	var empty: Array[FishData] = []
 	_expect(FishingManagerScript.pick_catch(empty, BAIT_A, rng) == null, "empty pool returns null")

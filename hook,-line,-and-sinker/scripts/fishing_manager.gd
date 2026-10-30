@@ -35,12 +35,41 @@ func equip_bait(bait: BaitData) -> void:
 func get_random_catch() -> FishData:
 	return pick_catch(possible_catches, equipped_bait)
 
+# Chance of each fish in the current pool with this bait (null = no bait).
+func get_bait_odds(bait: BaitData) -> Dictionary[FishData, float]:
+	return get_catch_odds(possible_catches, bait)
+
 # Single rule for which species a cast hooks. Static so tests can run it without the autoload.
 # No bait = every valid fish equally likely.
 static func pick_catch(pool: Array[FishData], bait: BaitData, rng: RandomNumberGenerator = null) -> FishData:
-	var candidates: Array[FishData] = []
-	var weights: Array[float] = []
+	var weights: Dictionary[FishData, float] = _catch_weights(pool, bait)
+	if weights.is_empty():
+		return null
+
 	var total: float = 0.0
+	for weight in weights.values():
+		total += weight
+
+	var roll: float = (rng.randf() if rng != null else randf()) * total
+	for fish in weights:
+		roll -= weights[fish]
+		if roll < 0.0:
+			return fish
+	return weights.keys().back()
+
+# Chance (0-1) of each catchable fish in the pool with this bait, in pool order.
+static func get_catch_odds(pool: Array[FishData], bait: BaitData) -> Dictionary[FishData, float]:
+	var odds: Dictionary[FishData, float] = _catch_weights(pool, bait)
+	var total: float = 0.0
+	for weight in odds.values():
+		total += weight
+	for fish in odds:
+		odds[fish] /= total
+	return odds
+
+# Positive weight per valid fish. A fish listed twice in the pool counts twice.
+static func _catch_weights(pool: Array[FishData], bait: BaitData) -> Dictionary[FishData, float]:
+	var weights: Dictionary[FishData, float] = {}
 	for fish in pool:
 		# Skip malformed entries; the controller needs at least one escape state
 		if fish == null or fish.states.is_empty():
@@ -48,19 +77,8 @@ static func pick_catch(pool: Array[FishData], bait: BaitData, rng: RandomNumberG
 		var weight: float = bait.get_weight(fish) if bait != null else 1.0
 		if is_nan(weight) or weight <= 0.0:
 			continue
-		candidates.append(fish)
-		weights.append(weight)
-		total += weight
-
-	if candidates.is_empty():
-		return null
-
-	var roll: float = (rng.randf() if rng != null else randf()) * total
-	for i in candidates.size():
-		roll -= weights[i]
-		if roll < 0.0:
-			return candidates[i]
-	return candidates.back()
+		weights[fish] = weights.get(fish, 0.0) + weight
+	return weights
 
 # Debug: draw many times and count results per fish_id ("none" for empty draws).
 static func simulate_catch_odds(pool: Array[FishData], bait: BaitData, draws: int, rng: RandomNumberGenerator = null) -> Dictionary:
