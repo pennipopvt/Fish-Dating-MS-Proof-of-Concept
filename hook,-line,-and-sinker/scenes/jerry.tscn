@@ -43,12 +43,11 @@ position = Vector2(0, -175)
 
 [node name="ShopMenu" parent="." unique_id=764201938 instance=ExtResource("2_shopm")]
 
-[node name="TestNPC" type="Area2D" parent="." unique_id=1520734918 node_paths=PackedStringArray("dialogue_ui", "prompt")]
+[node name="TestNPC" type="Area2D" parent="." unique_id=1520734918 node_paths=PackedStringArray("prompt")]
 z_index = -1
 position = Vector2(850, 834)
 script = ExtResource("4_npci")
 npc = ExtResource("5_npc")
-dialogue_ui = NodePath("../DialogueUI")
 prompt = NodePath("InteractPrompt")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="TestNPC" unique_id=907362215]
