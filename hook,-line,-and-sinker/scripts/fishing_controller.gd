@@ -197,7 +197,7 @@ func change_fish_state() -> void:
 			print("In ", state.state_name," State.")
 			return
 	#goes to a non-probability based random pick if none were chosen
-	var true_random: int = randi_range(0,hooked_fish.states.size())
+	var true_random: int = randi_range(0,hooked_fish.states.size() - 1)
 	fish_esc_rate = hooked_fish.states[true_random].escape_rate
 	state_timer = hooked_fish.states[true_random].state_length
 	print("In ", hooked_fish.states[true_random].state_name," State.")
