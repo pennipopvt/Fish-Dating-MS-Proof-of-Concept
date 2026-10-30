@@ -23,7 +23,6 @@ people who might settle in your empty town.
 | Move left / right | A / D |
 | Reel | Mouse wheel |
 | Interact (talk / shop) | Space |
-| Choose bait | Click a bait button (top-left) before casting |
 
 ## What's implemented
 
@@ -37,10 +36,11 @@ people who might settle in your empty town.
   relative catch weight by `fish_id`. `FishingManager.get_random_catch()` uses the
   equipped bait's weights; this is the only place a cast's species is chosen.
   Changing bait affects the next cast, never a fish already decided. Bait A / B
-  favor Placeholder Fish A / B at 75 / 25, and both fish stay catchable. An empty
+  favor Placeholder Fish A / B at 75 / 25, and both fish stay catchable. There's no
+  bait UI yet: set `equipped_bait` on `scenes/fishing_manager.tscn` (or call
+  `FishingManager.equip_bait()`). An empty
   or malformed catch pool ends the cast instead of crashing.
-- **UI:** visual-novel style dialogue UI, shop menu, interact prompt, placeholder
-  bait selector.
+- **UI:** visual-novel style dialogue UI, shop menu, interact prompt.
 - **Player** movement on the dock, plus interactables for NPCs and the shop.
 
 Not yet built (planned or exploratory): bait stock/shop, time/weather odds, fishing journal, challenge-
@@ -52,7 +52,7 @@ unlocked gear, corporate storage/delivery, fish-person recruitment, houses.
 hook,-line,-and-sinker/
   scenes/      main.tscn, dock, manager scenes
   prefabs/     player, world, dock, shop, test_npc, dialogue_ui, shop_menu,
-               interact_prompt, bait_selector
+               interact_prompt
   scripts/     managers, player, interactables, UI scripts
   resources/   Resource classes (*.gd) and data (*.tres in fish/, items/, npcs/,
                trades/, bait/)

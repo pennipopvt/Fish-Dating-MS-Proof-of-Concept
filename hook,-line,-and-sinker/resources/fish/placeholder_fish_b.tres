@@ -1,8 +1,8 @@
-[gd_resource type="Resource" script_class="FishData" format=3]
+[gd_resource type="Resource" script_class="FishData" format=3 uid="uid://com1d0pwisbuj"]
 
-[ext_resource type="Script" path="res://resources/fish_data.gd" id="1_fish"]
+[ext_resource type="Script" uid="uid://d2iidpvp5wrw7" path="res://resources/fish_data.gd" id="1_fish"]
 [ext_resource type="Resource" path="res://resources/items/placeholder_fish_b_item.tres" id="2_item"]
-[ext_resource type="Script" path="res://resources/fish_escape_state.gd" id="3_state"]
+[ext_resource type="Script" uid="uid://cur8k0lqp6jxh" path="res://resources/fish_escape_state.gd" id="3_state"]
 
 [sub_resource type="Resource" id="Resource_initial"]
 script = ExtResource("3_state")
