@@ -6,6 +6,46 @@
 [ext_resource type="Script" uid="uid://knvdk5g6r4s1" path="res://scripts/fishing_line.gd" id="4_w8wix"]
 [ext_resource type="Texture2D" uid="uid://bq0k0382ebpcd" path="res://sprites/placeholders/fish.png" id="5_nshyg"]
 
+[ext_resource type="Texture2D" path="res://sprites/environment/small_ripple_1.png" id="6_r1"]
+[ext_resource type="Texture2D" path="res://sprites/environment/small_ripple_2.png" id="7_r2"]
+[ext_resource type="Texture2D" path="res://sprites/environment/small_ripple_3.png" id="8_r3"]
+[ext_resource type="Texture2D" path="res://sprites/environment/medium_ripple_a.png" id="9_m1"]
+[ext_resource type="Texture2D" path="res://sprites/environment/medium_ripple_b.png" id="10_m2"]
+[ext_resource type="Texture2D" path="res://sprites/environment/medium_ripple_c.png" id="11_m3"]
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_ripple"]
+animations = [{
+"frames": [{"duration": 1.0, "texture": ExtResource("6_r1")}, {"duration": 1.0, "texture": ExtResource("7_r2")}, {"duration": 1.0, "texture": ExtResource("8_r3")}],
+"loop": true,
+"name": &"idle",
+"speed": 5.0
+}, {
+"frames": [{"duration": 1.0, "texture": ExtResource("9_m1")}, {"duration": 1.0, "texture": ExtResource("10_m2")}, {"duration": 1.0, "texture": ExtResource("11_m3")}],
+"loop": false,
+"name": &"windup",
+"speed": 7.0
+}, {
+"frames": [{"duration": 1.0, "texture": ExtResource("11_m3")}, {"duration": 1.0, "texture": ExtResource("10_m2")}, {"duration": 1.0, "texture": ExtResource("9_m1")}],
+"loop": true,
+"name": &"attack",
+"speed": 9.0
+}, {
+"frames": [{"duration": 1.0, "texture": ExtResource("8_r3")}, {"duration": 1.0, "texture": ExtResource("7_r2")}, {"duration": 1.0, "texture": ExtResource("6_r1")}],
+"loop": true,
+"name": &"stun",
+"speed": 5.0
+}, {
+"frames": [{"duration": 1.0, "texture": ExtResource("11_m3")}, {"duration": 1.0, "texture": ExtResource("9_m1")}],
+"loop": true,
+"name": &"counter_success",
+"speed": 10.0
+}, {
+"frames": [{"duration": 1.0, "texture": ExtResource("9_m1")}, {"duration": 1.0, "texture": ExtResource("11_m3")}],
+"loop": true,
+"name": &"counter_fail",
+"speed": 10.0
+}]
+
 [sub_resource type="Gradient" id="Gradient_nshyg"]
 offsets = PackedFloat32Array(0, 0.53246754, 0.9935065)
 colors = PackedColorArray(0, 1, 0, 1, 0.53594774, 0.46405226, 0, 1, 1, 0, 0, 1)
@@ -64,3 +104,10 @@ y_line_offset = 35.0
 position = Vector2(-115.5, 5)
 scale = Vector2(0.005826272, 0.005826272)
 texture = ExtResource("5_nshyg")
+
+[node name="RippleTell" type="AnimatedSprite2D" parent="FishingLine"]
+visible = false
+z_index = 10
+texture_filter = 1
+sprite_frames = SubResource("SpriteFrames_ripple")
+animation = &"idle"
