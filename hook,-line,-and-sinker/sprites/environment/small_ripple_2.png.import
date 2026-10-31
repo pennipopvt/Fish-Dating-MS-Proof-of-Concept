@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://papjvjxenamb"
-path="res://.godot/imported/long_cloud.png-fd385d5f3663b13b935bb9b2c1b44bf6.ctex"
+uid="uid://pn5ltvo8an8"
+path="res://.godot/imported/small_ripple_2.png-4e0194fe7ee643b4c6bbb643961461f7.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://sprites/long_cloud.png"
-dest_files=["res://.godot/imported/long_cloud.png-fd385d5f3663b13b935bb9b2c1b44bf6.ctex"]
+source_file="res://sprites/environment/small_ripple_2.png"
+dest_files=["res://.godot/imported/small_ripple_2.png-4e0194fe7ee643b4c6bbb643961461f7.ctex"]
 
 [params]
 

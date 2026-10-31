@@ -3,12 +3,34 @@
 [ext_resource type="Script" uid="uid://cnc4vwj4wlink" path="res://scripts/npc_interactable.gd" id="1_abqes"]
 [ext_resource type="Resource" uid="uid://cpv5vnhg17vg8" path="res://resources/npcs/test_npc.tres" id="2_aqm5u"]
 [ext_resource type="PackedScene" uid="uid://d4fhg8uyom630" path="res://prefabs/interact_prompt.tscn" id="4_dibf3"]
-[ext_resource type="Texture2D" uid="uid://4rbmtl0k2hya" path="res://sprites/placeholders/penni-concept.png" id="5_47nej"]
+[ext_resource type="Texture2D" uid="uid://b606v6feem3is" path="res://sprites/characters/eel_idle.png" id="4_w7cf3"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_npc"]
 size = Vector2(26.83334, 31.000008)
 
-[node name="TestNPC" type="Area2D" unique_id=2033605866 node_paths=PackedStringArray("prompt")]
+[sub_resource type="AtlasTexture" id="AtlasTexture_abqes"]
+atlas = ExtResource("4_w7cf3")
+region = Rect2(0, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_aqm5u"]
+atlas = ExtResource("4_w7cf3")
+region = Rect2(32, 0, 32, 32)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_yd4fr"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_abqes")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_aqm5u")
+}],
+"loop": 1,
+"name": &"default",
+"speed": 3.0
+}]
+
+[node name="Eel" type="Area2D" unique_id=2033605866 node_paths=PackedStringArray("prompt")]
 z_index = -1
 script = ExtResource("1_abqes")
 npc = ExtResource("2_aqm5u")
@@ -21,5 +43,7 @@ shape = SubResource("RectangleShape2D_npc")
 [node name="InteractPrompt" parent="." unique_id=1481540467 instance=ExtResource("4_dibf3")]
 position = Vector2(0, -16)
 
-[node name="PenniConcept" type="Sprite2D" parent="." unique_id=1690852734]
-texture = ExtResource("5_47nej")
+[node name="EelSprite" type="AnimatedSprite2D" parent="." unique_id=204925965]
+sprite_frames = SubResource("SpriteFrames_yd4fr")
+autoplay = "default"
+flip_h = true

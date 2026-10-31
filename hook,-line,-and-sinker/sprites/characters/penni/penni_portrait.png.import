@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://raysrsoqufps"
-path="res://.godot/imported/garden_eel_portrait.png-5ce9c4e57d74fd4d17f684dca8afd5ba.ctex"
+uid="uid://vu47883rgrp5"
+path="res://.godot/imported/penni_portrait.png-ee1757fb0961458bc4b90138e80b9702.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://sprites/garden_eel_portrait.png"
-dest_files=["res://.godot/imported/garden_eel_portrait.png-5ce9c4e57d74fd4d17f684dca8afd5ba.ctex"]
+source_file="res://sprites/characters/penni/penni_portrait.png"
+dest_files=["res://.godot/imported/penni_portrait.png-ee1757fb0961458bc4b90138e80b9702.ctex"]
 
 [params]
 

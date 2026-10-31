@@ -3,15 +3,15 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://5vh3iowi78ql"
-path="res://.godot/imported/small_ripple_1.png-4b2126a34aa95596ef23a1444c1abde8.ctex"
+path="res://.godot/imported/small_ripple_1.png-543a50f5cca037a872f4fd0e21181404.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://sprites/small_ripple_1.png"
-dest_files=["res://.godot/imported/small_ripple_1.png-4b2126a34aa95596ef23a1444c1abde8.ctex"]
+source_file="res://sprites/environment/small_ripple_1.png"
+dest_files=["res://.godot/imported/small_ripple_1.png-543a50f5cca037a872f4fd0e21181404.ctex"]
 
 [params]
 

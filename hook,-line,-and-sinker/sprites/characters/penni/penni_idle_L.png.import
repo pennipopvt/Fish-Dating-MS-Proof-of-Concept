@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://culbi4w4j2vi2"
-path="res://.godot/imported/medium_cloud.png-729467e708ea1ab2f0333bd18ce80268.ctex"
+uid="uid://bnpgwdmaicfqd"
+path="res://.godot/imported/penni_idle_L.png-379dac606e3084328ab8fbdb373d1109.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://sprites/medium_cloud.png"
-dest_files=["res://.godot/imported/medium_cloud.png-729467e708ea1ab2f0333bd18ce80268.ctex"]
+source_file="res://sprites/characters/penni/penni_idle_L.png"
+dest_files=["res://.godot/imported/penni_idle_L.png-379dac606e3084328ab8fbdb373d1109.ctex"]
 
 [params]
 

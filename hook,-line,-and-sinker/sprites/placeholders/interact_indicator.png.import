@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://bnpgwdmaicfqd"
-path="res://.godot/imported/penni_idle_L.png-3f0c5cefdb5e8805b611dfb38dc89c69.ctex"
+uid="uid://b4j4n5y6sqmst"
+path="res://.godot/imported/interact_indicator.png-f29913d5d103690408571e4dcad676ce.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://sprites/penni_idle_L.png"
-dest_files=["res://.godot/imported/penni_idle_L.png-3f0c5cefdb5e8805b611dfb38dc89c69.ctex"]
+source_file="res://sprites/placeholders/interact_indicator.png"
+dest_files=["res://.godot/imported/interact_indicator.png-f29913d5d103690408571e4dcad676ce.ctex"]
 
 [params]
 

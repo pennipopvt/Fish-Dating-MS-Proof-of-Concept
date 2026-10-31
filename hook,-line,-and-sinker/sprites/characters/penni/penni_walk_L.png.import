@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://dcjlwla0wfld2"
-path="res://.godot/imported/medium_ripple_a.png-25f3ee091c1902b0e7918553d544464b.ctex"
+uid="uid://b8uvqbd6m7bk3"
+path="res://.godot/imported/penni_walk_L.png-9140b04f81b657a59d886969d6200599.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://sprites/medium_ripple_a.png"
-dest_files=["res://.godot/imported/medium_ripple_a.png-25f3ee091c1902b0e7918553d544464b.ctex"]
+source_file="res://sprites/characters/penni/penni_walk_L.png"
+dest_files=["res://.godot/imported/penni_walk_L.png-9140b04f81b657a59d886969d6200599.ctex"]
 
 [params]
 
