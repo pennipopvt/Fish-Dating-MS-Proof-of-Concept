@@ -11,23 +11,6 @@ var line_dist : float = 0
 var pos: Vector2
 
 @export var water_surface_y: float = 44.0
-# Each combat phase picks a 2D velocity and keeps it until the phase ends.
-@export_range(0.0, 70.0, 1.0) var min_swim_speed: float = 8.0
-@export_range(0.0, 70.0, 1.0) var max_swim_speed: float = 24.0
-@export_range(0.0, 80.0, 1.0) var max_horizontal_drift: float = 35.0
-@export_range(0.0, 60.0, 1.0) var max_vertical_drift: float = 18.0
-var hooked: bool = false
-var swim_velocity: Vector2 = Vector2.ZERO
-var swim_offset: Vector2 = Vector2.ZERO
-
-func choose_phase_direction() -> void:
-	var angle: float = randf_range(0.0, TAU)
-	var speed: float = randf_range(minf(min_swim_speed, max_swim_speed), maxf(min_swim_speed, max_swim_speed))
-	swim_velocity = Vector2.RIGHT.rotated(angle) * speed
-
-func stop_phase_movement() -> void:
-	swim_velocity = Vector2.ZERO
-
 var tell_phase: int = 0
 var tell_progress: float = 0.0
 @onready var ripple_tell: AnimatedSprite2D = $RippleTell
@@ -103,9 +86,6 @@ func _ready() -> void:
 func send(initial_progress: float = 0.0) -> void:
 	#later i wanna add an animation of it being sent into da water
 	pos = get_point_position(0)
-	hooked = false
-	stop_phase_movement()
-	swim_offset = Vector2.ZERO
 	# Position both the line tip and hidden fish at the same starting point.
 	update_line_dist(initial_progress)
 	show()
@@ -117,7 +97,6 @@ func send(initial_progress: float = 0.0) -> void:
 #idk how to listen for signals in godot tbh but this would trigger by signal ill adjust later
 func hook(item: FishData) -> void:
 	fish.texture = item.item_data.sprite
-	hooked = true
 	fish.show() # Let the scene's water layer determine visibility.
 
 func close() -> void:
@@ -141,8 +120,6 @@ func update_line_dist(dist_perc: float) -> void:
 	line_dist = clamp(line_dist,0,max_dist)
 	var endpos = pos
 	endpos.x -= line_dist
-	if hooked:
-		endpos += swim_offset.round()
 	#slight offset to keep the fish in what would be the water
 	endpos.y += (line_dist + y_line_offset)
 	fish.position = endpos
@@ -166,8 +143,7 @@ func update_ripple_position() -> void:
 # Fish sprite is centered: its position marks its midpoint.
 # Catch as soon as that midpoint reaches the ripple's water surface.
 func fish_midpoint_above_water() -> bool:
-	# Cosmetic drift must not cause an early catch.
-	return pos.y + line_dist + y_line_offset <= water_surface_y
+	return fish.position.y <= water_surface_y
 
 func play_ripple(animation: StringName) -> void:
 	if ripple_tell.sprite_frames == null or not ripple_tell.sprite_frames.has_animation(animation):
