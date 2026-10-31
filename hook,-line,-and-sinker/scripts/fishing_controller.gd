@@ -107,6 +107,9 @@ func _process(delta: float) -> void:
 		fishing_progress.value = progress
 		tension_bar.value = tension
 		fishing_line.update_line_dist(progress)
+		if fishing_line.fish_midpoint_above_water():
+			catch_fish()
+			return
 		if(progress <= 0):
 			lose_fish()
 	elif(current_state == Fish_State.NOT && delay_time != 0):
@@ -199,9 +202,12 @@ func _unhandled_input(event: InputEvent) -> void:
 		
 		recovery_timer = recovery_delay
 		
-		if(progress >= 1):
+		# Position, not an arbitrary progress threshold, determines landing.
+		fishing_line.update_line_dist(progress)
+		if fishing_line.fish_midpoint_above_water():
 			catch_fish()
-		if(tension >= 1):
+			return
+		if tension >= 1:
 			lose_fish()
 	
 	if(event.is_action_pressed("Interact") && current_state != Fish_State.NOT):
