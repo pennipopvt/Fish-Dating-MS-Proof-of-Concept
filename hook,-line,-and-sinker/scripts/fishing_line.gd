@@ -17,6 +17,7 @@ var tell_progress: float = 0.0
 var current_ripple_animation: StringName = &""
 var counter_flash_time: float = 0.0
 var current_telegraph_phase: int = 0
+var attack_start_pending: bool = false
 var windup_playback_scale: float = 1.0
 
 # Match the authored windup frames to the selected fish attack duration.
@@ -105,6 +106,7 @@ func close() -> void:
 	ripple_tell.hide()
 	current_ripple_animation = &""
 	current_telegraph_phase = 0
+	attack_start_pending = false
 	counter_flash_time = 0.0
 	hide()
 	fish.hide()
@@ -147,9 +149,13 @@ func play_ripple(animation: StringName) -> void:
 		ripple_tell.play(animation)
 	ripple_tell.show()
 
-func set_telegraph(phase: int, _amount: float) -> void:
+func set_telegraph(phase: int, amount: float) -> void:
 	var entering_attack: bool = phase == 3 and current_telegraph_phase != 3
 	current_telegraph_phase = phase
+	if entering_attack:
+		attack_start_pending = true
+	elif phase != 3:
+		attack_start_pending = false
 	update_ripple_position()
 	if counter_flash_time > 0.0:
 		return
@@ -160,9 +166,18 @@ func set_telegraph(phase: int, _amount: float) -> void:
 		1:
 			play_ripple(&"idle")
 		2:
-			play_ripple(&"windup")
+			# The gameplay timer is authoritative. Pick the frame from the
+			# windup's normalized progress, so it cannot finish early and stall.
+			if ripple_tell.sprite_frames != null and ripple_tell.sprite_frames.has_animation(&"windup"):
+				var count: int = ripple_tell.sprite_frames.get_frame_count(&"windup")
+				if count > 0:
+					if current_ripple_animation != &"windup":
+						play_ripple(&"windup")
+					ripple_tell.pause()
+					ripple_tell.set_frame_and_progress(mini(int(clampf(amount, 0.0, 0.99999) * count), count - 1), 0.0)
 		3:
-			if entering_attack:
+			if attack_start_pending:
+				attack_start_pending = false
 				play_ripple(&"start_attack")
 			elif current_ripple_animation != &"start_attack":
 				play_ripple(&"attacking")
