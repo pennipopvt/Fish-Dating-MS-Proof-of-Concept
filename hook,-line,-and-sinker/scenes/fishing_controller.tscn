@@ -53,12 +53,17 @@ texture_progress = ExtResource("2_nshyg")
 script = ExtResource("3_tfxof")
 
 [node name="FishingLine" type="Line2D" parent="." unique_id=1157920896]
-position = Vector2(10.5, 0)
+position = Vector2(11, 0)
 points = PackedVector2Array(-20.75, -4.25, -108, 5.5)
 width_curve = SubResource("Curve_wknfn")
 script = ExtResource("4_w8wix")
 max_dist = 115.0
 y_line_offset = 35.0
+stunned_line_color = Color(1, 1, 0, 1)
+stun_glow_color = Color(1, 1, 0, 0.45490196)
+calm_line_color = Color(1, 1, 1, 1)
+strained_line_color = Color(1, 0.87058824, 0.5411765, 1)
+danger_line_color = Color(1, 0, 0, 1)
 
 [node name="Fish" type="Sprite2D" parent="FishingLine" unique_id=428028450]
 position = Vector2(-115.5, 5)
