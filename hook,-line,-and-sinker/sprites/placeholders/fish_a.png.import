@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://iyvfqqmpkdkg"
-path="res://.godot/imported/small_cloud.png-a4275c8b56c64d6574edf55498813e47.ctex"
+uid="uid://enm6t2a0e7as"
+path="res://.godot/imported/fish_a.png-f9c2fc0626339945114bd8713e52aef7.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://sprites/small_cloud.png"
-dest_files=["res://.godot/imported/small_cloud.png-a4275c8b56c64d6574edf55498813e47.ctex"]
+source_file="res://sprites/placeholders/fish_a.png"
+dest_files=["res://.godot/imported/fish_a.png-f9c2fc0626339945114bd8713e52aef7.ctex"]
 
 [params]
 

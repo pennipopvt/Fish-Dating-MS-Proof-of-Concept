@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://bteo286wilpyh"
-path="res://.godot/imported/terminal.png-e43c8f575234c9aa289e8e809e72c968.ctex"
+uid="uid://swrttjaf0x7t"
+path="res://.godot/imported/penni_walk.png-9b9c8edab5b22510769525a8213934e5.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://sprites/terminal.png"
-dest_files=["res://.godot/imported/terminal.png-e43c8f575234c9aa289e8e809e72c968.ctex"]
+source_file="res://sprites/characters/penni/penni_walk.png"
+dest_files=["res://.godot/imported/penni_walk.png-9b9c8edab5b22510769525a8213934e5.ctex"]
 
 [params]
 

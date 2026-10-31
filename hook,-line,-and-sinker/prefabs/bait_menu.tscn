@@ -1,0 +1,135 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/bait_menu.gd" id="1_baitm"]
+
+[sub_resource type="Theme" id="Theme_baitm"]
+default_font_size = 32
+
+[node name="BaitMenu" type="CanvasLayer"]
+process_mode = 3
+layer = 10
+script = ExtResource("1_baitm")
+
+[node name="Dim" type="ColorRect" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.5)
+
+[node name="Panel" type="PanelContainer" parent="."]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -560.0
+offset_top = -340.0
+offset_right = 560.0
+offset_bottom = 340.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = SubResource("Theme_baitm")
+
+[node name="Margin" type="MarginContainer" parent="Panel"]
+layout_mode = 2
+theme_override_constants/margin_left = 32
+theme_override_constants/margin_top = 24
+theme_override_constants/margin_right = 32
+theme_override_constants/margin_bottom = 24
+
+[node name="Layout" type="VBoxContainer" parent="Panel/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="Title" type="Label" parent="Panel/Margin/Layout"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 48
+text = "Bait"
+horizontal_alignment = 1
+
+[node name="Body" type="HBoxContainer" parent="Panel/Margin/Layout"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 24
+
+[node name="BaitGrid" type="GridContainer" parent="Panel/Margin/Layout/Body"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 0
+theme_override_constants/h_separation = 12
+theme_override_constants/v_separation = 12
+columns = 3
+
+[node name="Divider" type="VSeparator" parent="Panel/Margin/Layout/Body"]
+layout_mode = 2
+
+[node name="Details" type="VBoxContainer" parent="Panel/Margin/Layout/Body"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 16
+
+[node name="Header" type="HBoxContainer" parent="Panel/Margin/Layout/Body/Details"]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="BaitIconFrame" type="PanelContainer" parent="Panel/Margin/Layout/Body/Details/Header"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="BaitIcon" type="TextureRect" parent="Panel/Margin/Layout/Body/Details/Header/BaitIconFrame"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(72, 72)
+layout_mode = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Names" type="VBoxContainer" parent="Panel/Margin/Layout/Body/Details/Header"]
+layout_mode = 2
+size_flags_horizontal = 3
+alignment = 1
+
+[node name="BaitName" type="Label" parent="Panel/Margin/Layout/Body/Details/Header/Names"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 40
+autowrap_mode = 3
+
+[node name="EquippedLabel" type="Label" parent="Panel/Margin/Layout/Body/Details/Header/Names"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9490196, 0.75686276, 0.30588236, 1)
+theme_override_font_sizes/font_size = 24
+text = "Equipped"
+
+[node name="DescriptionLabel" type="Label" parent="Panel/Margin/Layout/Body/Details"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 26
+autowrap_mode = 3
+
+[node name="OddsTitle" type="Label" parent="Panel/Margin/Layout/Body/Details"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 28
+text = "Chance per cast"
+
+[node name="OddsList" type="VBoxContainer" parent="Panel/Margin/Layout/Body/Details"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Spacer" type="Control" parent="Panel/Margin/Layout/Body/Details"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="EquipButton" type="Button" parent="Panel/Margin/Layout/Body/Details"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Equip"
+
+[node name="CloseButton" type="Button" parent="Panel/Margin/Layout"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 8
+text = "Close"

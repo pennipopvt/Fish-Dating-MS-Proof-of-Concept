@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://culbi4w4j2vi2"
-path="res://.godot/imported/medium_cloud.png-729467e708ea1ab2f0333bd18ce80268.ctex"
+uid="uid://ba1sdf6b7am2f"
+path="res://.godot/imported/ripple_small_splash.png-e394fac89ff25c08842144b0ff9c6d3e.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://sprites/medium_cloud.png"
-dest_files=["res://.godot/imported/medium_cloud.png-729467e708ea1ab2f0333bd18ce80268.ctex"]
+source_file="res://sprites/fish/ripple_small_splash.png"
+dest_files=["res://.godot/imported/ripple_small_splash.png-e394fac89ff25c08842144b0ff9c6d3e.ctex"]
 
 [params]
 
