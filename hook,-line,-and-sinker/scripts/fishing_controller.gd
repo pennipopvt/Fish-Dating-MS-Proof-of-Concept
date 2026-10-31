@@ -108,7 +108,6 @@ func _process(delta: float) -> void:
 		fishing_line.set_tension(tension)
 		fishing_progress.value = progress
 		tension_bar.value = tension
-		fishing_line.set_pulling_hard(attack_phase == AttackPhase.ATTACK)
 		fishing_line.update_line_dist(progress)
 		if fishing_line.fish_midpoint_above_water():
 			catch_fish()
@@ -192,6 +191,7 @@ func reset_values() -> void:
 	fishing_line.set_telegraph(0, 0.0)
 	active_attack = null
 	fishing_line.set_stunned(false)
+	fishing_line.clear_attack_direction()
 	attack_phase = AttackPhase.RECOVERY
 	counter_locked = false
 	scroll_streak = 0
@@ -272,6 +272,7 @@ func start_windup() -> void:
 
 func begin_attack() -> void:
 	attack_phase = AttackPhase.ATTACK
+	fishing_line.choose_attack_direction()
 	phase_time = maxf(active_attack.state_length, 0.05)
 	attack_elapsed = 0.0
 	fish_esc_rate = active_attack.escape_rate
@@ -338,6 +339,7 @@ func attempt_counter() -> bool:
 	fishing_line.set_tension(tension)
 	fishing_line.flash_counter(true)
 	attack_phase = AttackPhase.STUN
+	fishing_line.clear_attack_direction()
 	fishing_line.set_stunned(true)
 	phase_time = active_attack.stun_duration
 	fish_esc_rate = 0.0
