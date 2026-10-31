@@ -4,6 +4,7 @@
 [ext_resource type="Script" uid="uid://vn5y8742mwkg" path="res://resources/npc_flag_data.gd" id="1_hvwbg"]
 [ext_resource type="Script" uid="uid://ejskb8h4mfwk" path="res://resources/npc_dialogue_rule_data.gd" id="2_w20er"]
 [ext_resource type="Script" uid="uid://bh6g5wfjnt8fm" path="res://resources/encounter_rule_data.gd" id="3_w20er"]
+[ext_resource type="Texture2D" uid="uid://raysrsoqufps" path="res://sprites/garden_eel_portrait.png" id="4_a4wu8"]
 
 [sub_resource type="Resource" id="Resource_hvwbg"]
 script = ExtResource("3_w20er")
@@ -19,6 +20,7 @@ required_flags = Array[StringName]([&"Recruited"])
 script = ExtResource("1_bmq75")
 npc_id = &"test_npc"
 display_name = "Silas"
+portrait = ExtResource("4_a4wu8")
 encounter_rules = Array[ExtResource("3_w20er")]([SubResource("Resource_hvwbg"), SubResource("Resource_w20er")])
 dialogue_json_path = "res://dialogue/garden_eel.json"
 metadata/_custom_type_script = "uid://cus4an4jfkhwc"

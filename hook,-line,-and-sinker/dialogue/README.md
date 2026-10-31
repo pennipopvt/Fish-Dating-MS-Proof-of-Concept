@@ -16,7 +16,7 @@ Each JSON file defines ONE encounter's dialogue graph. Nodes link to other nodes
 The old defined_flags and dialogue_rules fields remain to avoid breaking existing .tres NPCs. The original dialogue_json_path remains as a fallback for NPCData without encounter_rules; it is no longer the recommended field. NPCs with encounter_rules use ONLY those rules, even when no rule matches.
 
 ## JSON format
-A graph has entry and nodes. Nodes have lines (strings as NPC speech, or objects with speaker/text/expression), choices (text, next, optional effects), or next (automatic transition after lines). Choice effects support attraction (integer), set_flags (array of names), and clear_flags (array of names). A response node can return to a menu-only node to loop safely without cyclical resource references. intro_0 and intro_1 implement the two evasive choices in the sample without a counter.
+A graph has entry and nodes. Nodes have lines (strings as NPC speech, or objects with speaker/text/expression), choices (text, next, optional spoken_text, expression, effects), or next (automatic transition after lines). Choice effects support attraction (integer), set_flags (array of names), and clear_flags (array of names). A response node can return to a menu-only node to loop safely without cyclical resource references. intro_0 and intro_1 implement the two evasive choices in the sample without a counter.
 
 ## Important limits
 - JSON is loaded at conversation start. It doesn't write new resources to disk.
@@ -24,3 +24,9 @@ A graph has entry and nodes. Nodes have lines (strings as NPC speech, or objects
 - Changing flags doesn't swap the encounter mid-conversation; selection happens at the next interaction.
 - Legacy dialogue support, project autoloads, and dialogue_ui.gd/tscn remain unchanged.
 - Please test in Godot; this commit has not been compiled or played in the editor.
+
+## Player speech and choice playback
+- Lines can be objects such as `{"speaker":"player","text":"Hello!"}`; strings remain NPC dialogue for backward compatibility. The existing DialogueUI displays player lines using Penni’s name and portrait styling.
+- After a JSON choice is selected, DialogueManager displays the selected text as a player line. Press Continue to proceed to the choice target. Its effects apply at that point, not on the initial click.
+- Set optional `spoken_text` on a choice if Penni should say something different from the button label, and optional `expression` for the player line. Without `spoken_text`, she speaks the button text exactly.
+- Legacy resource-based dialogue remains unchanged.
