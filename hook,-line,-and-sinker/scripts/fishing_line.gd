@@ -16,6 +16,7 @@ var tell_progress: float = 0.0
 @onready var ripple_tell: AnimatedSprite2D = $RippleTell
 var current_ripple_animation: StringName = &""
 var counter_flash_time: float = 0.0
+var current_telegraph_phase: int = 0
 
 @export var stunned_line_color: Color = Color("#ffe55c")
 @export var stun_glow_color: Color = Color(1.0, 0.83, 0.18, 0.32)
@@ -63,6 +64,7 @@ func _ready() -> void:
 	stun_glow.visible = false
 	add_child(stun_glow)
 	stun_glow.points = points
+	ripple_tell.animation_finished.connect(_on_ripple_animation_finished)
 	ripple_tell.hide()
 	hide()
 
@@ -88,6 +90,8 @@ func close() -> void:
 	set_stunned(false)
 	ripple_tell.hide()
 	current_ripple_animation = &""
+	current_telegraph_phase = 0
+	counter_flash_time = 0.0
 	hide()
 	fish.hide()
 
@@ -123,12 +127,14 @@ func play_ripple(animation: StringName) -> void:
 	if ripple_tell.sprite_frames == null or not ripple_tell.sprite_frames.has_animation(animation):
 		ripple_tell.hide()
 		return
-	if animation != current_ripple_animation or not ripple_tell.is_playing():
+	if animation != current_ripple_animation:
 		current_ripple_animation = animation
 		ripple_tell.play(animation)
 	ripple_tell.show()
 
 func set_telegraph(phase: int, _amount: float) -> void:
+	var entering_attack: bool = phase == 3 and current_telegraph_phase != 3
+	current_telegraph_phase = phase
 	update_ripple_position()
 	if counter_flash_time > 0.0:
 		return
@@ -141,11 +147,19 @@ func set_telegraph(phase: int, _amount: float) -> void:
 		2:
 			play_ripple(&"windup")
 		3:
-			play_ripple(&"attack")
+			if entering_attack:
+				play_ripple(&"start_attack")
+			elif current_ripple_animation != &"start_attack":
+				play_ripple(&"attacking")
 		4:
 			play_ripple(&"stun")
 		_:
 			ripple_tell.hide()
+
+func _on_ripple_animation_finished() -> void:
+	# A one-shot splash marks attack onset; the sustained pull then loops.
+	if current_ripple_animation == &"start_attack" and current_telegraph_phase == 3 and counter_flash_time <= 0.0:
+		play_ripple(&"attacking")
 
 func flash_counter(success: bool) -> void:
 	counter_flash_time = 0.35
