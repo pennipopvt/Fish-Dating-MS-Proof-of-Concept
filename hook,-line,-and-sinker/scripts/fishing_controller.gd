@@ -172,7 +172,7 @@ func start_catch_sequence() -> void:
 	catch_fish_visual.texture = fishing_line.get_fish_texture()
 	catch_fish_visual.scale = fishing_line.get_fish_global_scale()
 	catch_fish_visual.position = catch_start
-	catch_start_rotation = fishing_line.get_fish_global_rotation() - catch_fish_visual.get_parent().global_rotation
+	catch_start_rotation = 0.0 # Horizontal at launch and at the apex of the full flip.
 	catch_fish_visual.rotation = catch_start_rotation
 	catch_fish_visual.z_index = 12
 	catch_fish_visual.show()
@@ -190,11 +190,19 @@ func start_catch_sequence() -> void:
 	catch_tween.tween_callback(_finish_catch_animation)
 
 func _update_catch_ascent(t: float) -> void:
-	catch_fish_visual.position = catch_start.lerp(catch_peak, t)
+	# Quadratic Bezier: upward burst curves into a horizontal tangent at the peak.
+	var control := Vector2(lerpf(catch_start.x, catch_peak.x, 0.2), catch_peak.y)
+	var a := catch_start.lerp(control, t)
+	var b := control.lerp(catch_peak, t)
+	catch_fish_visual.position = a.lerp(b, t)
 	catch_fish_visual.rotation = catch_start_rotation + PI * t
 
 func _update_catch_descent(t: float) -> void:
-	catch_fish_visual.position = catch_peak.lerp(catch_end, t)
+	# The next Bezier starts tangent to the same peak, then curves down.
+	var control := Vector2(lerpf(catch_peak.x, catch_end.x, 0.8), catch_peak.y)
+	var a := catch_peak.lerp(control, t)
+	var b := control.lerp(catch_end, t)
+	catch_fish_visual.position = a.lerp(b, t)
 	catch_fish_visual.rotation = catch_start_rotation + PI + PI * t
 
 func _on_catch_landed() -> void:
