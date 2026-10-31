@@ -37,7 +37,7 @@ var press_delay: float = 0.10
 var delay_time = 0
 
 @export var reel_gain: float = 0.1
-@export var starting_progress: float = 0.2
+@export var starting_progress: float = 0.25
 ## Constant gentle resistance outside stun, measured as progress lost per second.
 @export_range(0.0, 0.2, 0.001) var passive_escape_rate: float = 0.015
 @export var bite_time_min: float = 1
@@ -81,7 +81,7 @@ func cast_rod() -> void:
 		push_warning("No catchable fish in FishingManager.possible_catches")
 		exit_fishing()
 		return
-	fishing_line.send()
+	fishing_line.send(starting_progress)
 	print("Cast #", casts, " will be a ", hooked_fish.fish_id)
 
 func _process(delta: float) -> void:
@@ -125,11 +125,18 @@ func begin_reeling() -> void:
 	fishing_progress.value = progress
 	tension_bar.value = tension
 	
-	active_attack = null
-	start_recovery(0.3)
+	active_attack = select_attack()
 	
 	#once we actually get it, we will let the fishing manager know what fish we have
 	FishingManager.hook_fish(hooked_fish)
+	# Reposition fish, line and ripples together before showing the first splash.
+	fishing_line.update_line_dist(progress)
+	# Start with an actual attack (and its splash), not a recovery or windup.
+	if active_attack != null:
+		begin_attack()
+		fishing_line.set_telegraph(3, 0.0)
+	else:
+		start_recovery(0.3)
 	print("Found ", hooked_fish.fish_id)
 	print("Fish behavior available: ", hooked_fish.states.size(), " states.")
 
