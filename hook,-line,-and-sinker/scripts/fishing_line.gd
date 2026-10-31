@@ -16,6 +16,20 @@ var tell_progress: float = 0.0
 var flash_timer: float = 0.0
 var flash_good: bool = false
 
+@export var stunned_line_color: Color = Color("#ffe55c")
+@export var stun_glow_color: Color = Color(1.0, 0.83, 0.18, 0.32)
+var stunned_line: bool = false
+var stun_glow: Line2D
+
+func set_stunned(value: bool) -> void:
+	stunned_line = value
+	if stun_glow != null:
+		stun_glow.visible = value and visible
+	set_tension(0.0 if value else current_tension)
+
+var current_tension: float = 0.0
+
+
 # Calm -> strained -> near-breaking. Editable in the Inspector.
 @export var calm_line_color: Color = Color("#d8e6e4")
 @export var strained_line_color: Color = Color("#efb65a")
@@ -23,6 +37,10 @@ var flash_good: bool = false
 @export_range(0.0, 1.0) var strained_threshold: float = 0.55
 
 func set_tension(amount: float) -> void:
+	current_tension = amount
+	if stunned_line:
+		default_color = stunned_line_color
+		return
 	var normalized: float = clampf(amount, 0.0, 1.0)
 	if normalized <= strained_threshold:
 		default_color = calm_line_color.lerp(strained_line_color, normalized / maxf(strained_threshold, 0.001))
@@ -34,6 +52,16 @@ func set_tension(amount: float) -> void:
 func _ready() -> void:
 	FishingManager.fish_hooked.connect(hook)
 	set_tension(0.0)
+	# Separate broad translucent line creates a visible glow without a shader.
+	stun_glow = Line2D.new()
+	stun_glow.name = "StunGlow"
+	stun_glow.width = 7.0
+	stun_glow.default_color = stun_glow_color
+	stun_glow.antialiased = false
+	stun_glow.z_index = -1
+	stun_glow.visible = false
+	add_child(stun_glow)
+	stun_glow.points = points
 	hide()
 
 func send() -> void:
@@ -44,6 +72,8 @@ func send() -> void:
 	endpos.y += max_dist
 	set_point_position(1,endpos)
 	show()
+	if stun_glow != null:
+		stun_glow.visible = stunned_line
 	fish.hide()
 
 #idk how to listen for signals in godot tbh but this would trigger by signal ill adjust later
@@ -52,6 +82,7 @@ func hook(item: FishData) -> void:
 	fish.show() # Let the scene's water layer determine visibility.
 
 func close() -> void:
+	set_stunned(false)
 	hide()
 	fish.hide()
 
@@ -69,6 +100,8 @@ func update_line_dist(dist_perc: float) -> void:
 	var fishrot: float = atan2((pos.y - endpos.y),(pos.x - endpos.x))
 	fish.rotation = fishrot
 	set_point_position(1,endpos)
+	if stun_glow != null:
+		stun_glow.points = points
 
 func set_telegraph(phase: int, amount: float) -> void:
 	tell_phase = phase
