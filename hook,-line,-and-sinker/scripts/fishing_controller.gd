@@ -19,6 +19,19 @@ var state_timer: float = 0
 var fish_esc_rate: float = 0
 var recovery_timer: float = 0
 
+# Temporary pattern/counter test, independently toggleable in Inspector.
+@export var counter_test: bool = true
+@export var windup_duration: float = 0.8
+@export var counter_window: float = 0.18
+@export var stun_duration: float = 1.8
+@export var attacks_before_exhaustion: int = 4
+var test_phase: int = 0 # 0 rest, 1 windup, 2 pull, 3 stagger, 4 exhausted
+var phase_clock: float = 1.5
+var attacks_done: int = 0
+var recent_scrolls: int = 0
+var last_scroll_ms: int = 0
+
+
 #band-aid fix to avoid accidentally requeueing interact when exiting since exit and interact are the same input
 var press_delay: float = 0.10
 var delay_time = 0
@@ -86,7 +99,10 @@ func _process(delta: float) -> void:
 		progress = clamp(progress,0,1)
 		
 		recover_tension(delta)
-		state_change_countdown(delta)
+		if counter_test:
+			update_counter_test(delta)
+		else:
+			state_change_countdown(delta)
 		
 		tension = clamp(tension,0,1)
 		fishing_progress.value = progress
@@ -107,6 +123,9 @@ func begin_reeling() -> void:
 	
 	fish_esc_rate = hooked_fish.states[0].escape_rate
 	state_timer = hooked_fish.states[0].state_length
+	if counter_test:
+		attacks_done = 0
+		set_test_phase(0)
 	
 	#once we actually get it, we will let the fishing manager know what fish we have
 	FishingManager.hook_fish(hooked_fish)
@@ -160,11 +179,14 @@ func reset_values() -> void:
 	tension_bar.value = tension
 	hooked_fish = null
 	recovery_timer = 0
+	fishing_line.set_telegraph(0, 0.0)
 
 func _unhandled_input(event: InputEvent) -> void:
 	if GameManager.is_modal_ui_open():
 		return
 	if(event.is_action_pressed("Reel") && current_state == Fish_State.FISHING):
+		if counter_test and try_counter():
+			return
 		progress += reel_gain
 		progress = clamp(progress,0,1)
 		# so if the fish isnt swimming dont apply tension
@@ -209,3 +231,60 @@ func change_fish_state() -> void:
 	fish_esc_rate = hooked_fish.states[true_random].escape_rate
 	state_timer = hooked_fish.states[true_random].state_length
 	print("In ", hooked_fish.states[true_random].state_name," State.")
+
+func set_test_phase(phase: int) -> void:
+	test_phase = phase
+	match phase:
+		0:
+			phase_clock = 1.5
+			fish_esc_rate = 0.0
+		1:
+			phase_clock = windup_duration
+			fish_esc_rate = 0.0
+		2:
+			phase_clock = 1.0
+			fish_esc_rate = 0.2
+		3:
+			phase_clock = stun_duration
+			fish_esc_rate = 0.0
+		4:
+			phase_clock = 4.0
+			fish_esc_rate = 0.0
+	fishing_line.set_telegraph(phase + 1, 0.0)
+
+func update_counter_test(delta: float) -> void:
+	phase_clock -= delta
+	var total: float = windup_duration if test_phase == 1 else 1.0
+	fishing_line.set_telegraph(test_phase + 1, 1.0 - clampf(phase_clock / total, 0.0, 1.0))
+	if phase_clock > 0.0:
+		return
+	match test_phase:
+		0: set_test_phase(1)
+		1: set_test_phase(2)
+		2:
+			attacks_done += 1
+			set_test_phase(4 if attacks_done >= attacks_before_exhaustion else 0)
+			if test_phase == 4:
+				attacks_done = 0
+		3, 4: set_test_phase(0)
+
+func try_counter() -> bool:
+	var now: int = Time.get_ticks_msec()
+	if now - last_scroll_ms > 180:
+		recent_scrolls = 0
+	last_scroll_ms = now
+	recent_scrolls += 1
+	if recent_scrolls < 3:
+		return false
+	recent_scrolls = 0
+	if test_phase == 2 and phase_clock >= 1.0 - counter_window:
+		tension = maxf(0.0, tension - 0.25)
+		fishing_line.flash_counter(true)
+		set_test_phase(3)
+		print("COUNTER! Stunned and tension reduced.")
+		return true
+	if test_phase == 1 or test_phase == 2:
+		tension = minf(1.0, tension + 0.18)
+		fishing_line.flash_counter(false)
+		print("Missed counter.")
+	return false
