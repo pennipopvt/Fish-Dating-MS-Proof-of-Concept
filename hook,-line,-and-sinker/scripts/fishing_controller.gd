@@ -133,18 +133,13 @@ func begin_reeling() -> void:
 	fishing_progress.value = progress
 	tension_bar.value = tension
 	
-	active_attack = select_attack()
-	
 	#once we actually get it, we will let the fishing manager know what fish we have
 	FishingManager.hook_fish(hooked_fish)
-	# Reposition fish, line and ripples together before showing the first splash.
 	fishing_line.update_line_dist(progress)
-	# Start with an actual attack (and its splash), not a recovery or windup.
-	if active_attack != null:
-		begin_attack()
-		fishing_line.set_telegraph(3, 0.0)
-	else:
-		start_recovery(0.3)
+	# Give the first attack its normal windup and counter telegraph.
+	start_windup()
+	if attack_phase == AttackPhase.WINDUP:
+		fishing_line.set_telegraph(2, 0.0)
 	print("Found ", hooked_fish.fish_id)
 	print("Fish behavior available: ", hooked_fish.states.size(), " states.")
 
