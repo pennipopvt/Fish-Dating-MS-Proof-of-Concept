@@ -190,12 +190,12 @@ func start_catch_sequence() -> void:
 	catch_tween.tween_callback(_finish_catch_animation)
 
 func _update_catch_ascent(t: float) -> void:
-	# Quadratic Bezier: upward burst curves into a horizontal tangent at the peak.
+	# Curved ascent; the spin makes a full turn, slowing to a stop at the peak.
 	var control := Vector2(lerpf(catch_start.x, catch_peak.x, 0.2), catch_peak.y)
 	var a := catch_start.lerp(control, t)
 	var b := control.lerp(catch_peak, t)
 	catch_fish_visual.position = a.lerp(b, t)
-	catch_fish_visual.rotation = catch_start_rotation + PI * t
+	catch_fish_visual.rotation = catch_start_rotation + TAU * (1.0 - powf(1.0 - t, 3.0))
 
 func _update_catch_descent(t: float) -> void:
 	# The next Bezier starts tangent to the same peak, then curves down.
@@ -203,7 +203,7 @@ func _update_catch_descent(t: float) -> void:
 	var a := catch_peak.lerp(control, t)
 	var b := control.lerp(catch_end, t)
 	catch_fish_visual.position = a.lerp(b, t)
-	catch_fish_visual.rotation = catch_start_rotation + PI + PI * t
+	catch_fish_visual.rotation = catch_start_rotation + TAU
 
 func _on_catch_landed() -> void:
 	catch_fish_visual.position = catch_end
