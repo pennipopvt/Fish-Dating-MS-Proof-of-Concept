@@ -192,8 +192,12 @@ func _on_ripple_animation_finished() -> void:
 		play_ripple(&"attacking")
 
 func flash_counter(success: bool) -> void:
+	# Only successful counters have a feedback animation.
+	# A miss lets windup / start_attack / attacking play uninterrupted.
+	if not success:
+		return
 	counter_flash_time = 0.35
-	play_ripple(&"counter_success" if success else &"counter_fail")
+	play_ripple(&"counter_success")
 
 func _process(delta: float) -> void:
 	if counter_flash_time > 0.0:
