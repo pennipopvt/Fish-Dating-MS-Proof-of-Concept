@@ -13,8 +13,9 @@ var pos: Vector2
 @export var water_surface_y: float = 44.0
 var tell_phase: int = 0
 var tell_progress: float = 0.0
-var flash_timer: float = 0.0
-var flash_good: bool = false
+@onready var ripple_tell: AnimatedSprite2D = $RippleTell
+var current_ripple_animation: StringName = &""
+var counter_flash_time: float = 0.0
 
 @export var stunned_line_color: Color = Color("#ffe55c")
 @export var stun_glow_color: Color = Color(1.0, 0.83, 0.18, 0.32)
@@ -62,6 +63,7 @@ func _ready() -> void:
 	stun_glow.visible = false
 	add_child(stun_glow)
 	stun_glow.points = points
+	ripple_tell.hide()
 	hide()
 
 func send() -> void:
@@ -72,6 +74,7 @@ func send() -> void:
 	endpos.y += max_dist
 	set_point_position(1,endpos)
 	show()
+	update_ripple_position()
 	if stun_glow != null:
 		stun_glow.visible = stunned_line
 	fish.hide()
@@ -83,6 +86,8 @@ func hook(item: FishData) -> void:
 
 func close() -> void:
 	set_stunned(false)
+	ripple_tell.hide()
+	current_ripple_animation = &""
 	hide()
 	fish.hide()
 
@@ -102,40 +107,50 @@ func update_line_dist(dist_perc: float) -> void:
 	set_point_position(1,endpos)
 	if stun_glow != null:
 		stun_glow.points = points
+	update_ripple_position()
 
-func set_telegraph(phase: int, amount: float) -> void:
-	tell_phase = phase
-	tell_progress = amount
-	queue_redraw()
-
-func flash_counter(success: bool) -> void:
-	flash_good = success
-	flash_timer = 0.3
-	queue_redraw()
-
-func _process(delta: float) -> void:
-	if flash_timer > 0.0:
-		flash_timer = maxf(0.0, flash_timer - delta)
-		queue_redraw()
-
-func _draw() -> void:
-	if not visible or tell_phase == 0:
-		return
+# The ripple is anchored to the visible waterline, never the submerged fish.
+func update_ripple_position() -> void:
 	var start: Vector2 = get_point_position(0)
 	var tip: Vector2 = get_point_position(1)
-	var fraction: float = clampf((water_surface_y - start.y) / (tip.y - start.y), 0.0, 1.0) if absf(tip.y - start.y) > 0.01 else 1.0
-	var center: Vector2 = start.lerp(tip, fraction)
-	if tell_phase == 2: # windup ripple, grows toward attack
-		var radius: float = 3.0 + tell_progress * 12.0
-		draw_arc(center, radius, 0.0, TAU, 24, Color(0.9, 1.0, 1.0), 2.0)
-		draw_arc(center, maxf(2.0, radius - 6.0), 0.0, TAU, 24, Color(0.4, 1.0, 0.96), 1.5)
-	elif tell_phase == 3: # sharp splash at attack
-		var tint: Color = Color(1.0, 1.0, 0.55) if tell_progress < 0.2 else Color(0.8, 0.95, 1.0)
-		draw_line(center + Vector2(-9, 0), center + Vector2(-4, -9), tint, 2.0)
-		draw_line(center, center + Vector2(0, -12), tint, 2.0)
-		draw_line(center + Vector2(9, 0), center + Vector2(4, -9), tint, 2.0)
-	elif tell_phase == 4 or tell_phase == 5:
-		draw_arc(center, 7.0, 0.0, TAU, 20, Color(0.5, 1.0, 0.7), 2.0)
-	if flash_timer > 0.0:
-		var color: Color = Color(0.3, 1.0, 0.5) if flash_good else Color(1.0, 0.25, 0.2)
-		draw_arc(center, 15.0 * flash_timer / 0.3 + 3.0, 0.0, TAU, 24, color, 2.5)
+	var difference: float = tip.y - start.y
+	var fraction: float = 1.0
+	if absf(difference) > 0.001:
+		fraction = clampf((water_surface_y - start.y) / difference, 0.0, 1.0)
+	ripple_tell.position = start.lerp(tip, fraction).round()
+
+func play_ripple(animation: StringName) -> void:
+	if ripple_tell.sprite_frames == null or not ripple_tell.sprite_frames.has_animation(animation):
+		ripple_tell.hide()
+		return
+	if animation != current_ripple_animation or not ripple_tell.is_playing():
+		current_ripple_animation = animation
+		ripple_tell.play(animation)
+	ripple_tell.show()
+
+func set_telegraph(phase: int, _amount: float) -> void:
+	update_ripple_position()
+	if counter_flash_time > 0.0:
+		return
+	match phase:
+		0:
+			ripple_tell.hide()
+			current_ripple_animation = &""
+		1:
+			play_ripple(&"idle")
+		2:
+			play_ripple(&"windup")
+		3:
+			play_ripple(&"attack")
+		4:
+			play_ripple(&"stun")
+		_:
+			ripple_tell.hide()
+
+func flash_counter(success: bool) -> void:
+	counter_flash_time = 0.35
+	play_ripple(&"counter_success" if success else &"counter_fail")
+
+func _process(delta: float) -> void:
+	if counter_flash_time > 0.0:
+		counter_flash_time = maxf(0.0, counter_flash_time - delta)
