@@ -229,6 +229,8 @@ bite_time_max = 5.0
 tension_gain = 0.015
 tension_recovery = 2.5
 recovery_delay = 0.2
+catch_peak_hang = 0.04
+catch_arc_height = 40.0
 
 [node name="TensionBar" type="TextureProgressBar" parent="." unique_id=1346772520]
 visible = false
@@ -281,9 +283,9 @@ sprite_frames = SubResource("SpriteFrames_ripple")
 animation = &"windup"
 autoplay = "idle"
 
-[node name="CatchLandingPoint" type="Marker2D" parent="."]
+[node name="CatchLandingPoint" type="Marker2D" parent="." unique_id=879041487]
 position = Vector2(35, 0)
 
-[node name="CatchFishVisual" type="Sprite2D" parent="."]
+[node name="CatchFishVisual" type="Sprite2D" parent="." unique_id=737049409]
 visible = false
 z_index = 12
