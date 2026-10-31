@@ -108,6 +108,7 @@ func _process(delta: float) -> void:
 		fishing_line.set_tension(tension)
 		fishing_progress.value = progress
 		tension_bar.value = tension
+		fishing_line.set_pulling_hard(attack_phase == AttackPhase.ATTACK)
 		fishing_line.update_line_dist(progress)
 		if fishing_line.fish_midpoint_above_water():
 			catch_fish()
