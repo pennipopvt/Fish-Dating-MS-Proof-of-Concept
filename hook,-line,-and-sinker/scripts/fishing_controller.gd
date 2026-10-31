@@ -30,6 +30,7 @@ var phase_clock: float = 1.5
 var attacks_done: int = 0
 var recent_scrolls: int = 0
 var last_scroll_ms: int = 0
+var counter_disqualified: bool = false
 
 
 #band-aid fix to avoid accidentally requeueing interact when exiting since exit and interact are the same input
@@ -238,6 +239,11 @@ func change_fish_state() -> void:
 
 func set_test_phase(phase: int) -> void:
 	test_phase = phase
+	# Each new windup is one fresh attempt. Early input cannot carry over.
+	if phase == 1:
+		counter_disqualified = false
+		recent_scrolls = 0
+		last_scroll_ms = 0
 	match phase:
 		0:
 			phase_clock = 1.5
@@ -273,22 +279,45 @@ func update_counter_test(delta: float) -> void:
 		3, 4: set_test_phase(0)
 
 func try_counter() -> bool:
+	# Once an attack starts winding up, the player gets exactly one clean
+	# counter attempt. Reeling too early or too late forfeits the counter,
+	# but does NOT interrupt or delay the fish's attack.
+	if test_phase != 1 and test_phase != 2:
+		return false
+	if counter_disqualified:
+		return false
+
+	if test_phase == 1:
+		invalidate_counter()
+		return false
+
+	# The first scroll must arrive within the brief window at attack onset.
+	var attack_elapsed: float = 1.0 - phase_clock
+	if attack_elapsed > counter_window:
+		invalidate_counter()
+		return false
+
 	var now: int = Time.get_ticks_msec()
-	if now - last_scroll_ms > 180:
-		recent_scrolls = 0
+	if recent_scrolls > 0 and now - last_scroll_ms > 180:
+		invalidate_counter()
+		return false
+
 	last_scroll_ms = now
 	recent_scrolls += 1
 	if recent_scrolls < 3:
 		return false
+
+	# A rapid strong reel landed entirely within the timing window.
+	counter_disqualified = true
+	tension = maxf(0.0, tension - 0.25)
+	fishing_line.set_tension(tension)
+	fishing_line.flash_counter(true)
+	set_test_phase(3)
+	print("COUNTER! Stunned and tension reduced.")
+	return true
+
+func invalidate_counter() -> void:
+	counter_disqualified = true
 	recent_scrolls = 0
-	if test_phase == 2 and phase_clock >= 1.0 - counter_window:
-		tension = maxf(0.0, tension - 0.25)
-		fishing_line.flash_counter(true)
-		set_test_phase(3)
-		print("COUNTER! Stunned and tension reduced.")
-		return true
-	if test_phase == 1 or test_phase == 2:
-		tension = minf(1.0, tension + 0.18)
-		fishing_line.flash_counter(false)
-		print("Missed counter.")
-	return false
+	fishing_line.flash_counter(false)
+	print("Counter missed — fish attack continues.")
