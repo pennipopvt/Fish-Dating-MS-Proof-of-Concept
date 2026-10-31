@@ -178,6 +178,7 @@ func reset_values() -> void:
 	recovery_timer = 0
 	fishing_line.set_telegraph(0, 0.0)
 	active_attack = null
+	fishing_line.set_stunned(false)
 	attack_phase = AttackPhase.RECOVERY
 	counter_locked = false
 	scroll_streak = 0
@@ -190,8 +191,9 @@ func _unhandled_input(event: InputEvent) -> void:
 			return
 		progress += reel_gain
 		progress = clamp(progress,0,1)
-		# so if the fish isnt swimming dont apply tension
-		tension = tension + tension_gain if fish_esc_rate <= 0 else tension + (tension_gain * tens_bonus_mult)
+		# A counter grants unrestricted reeling until the stun ends.
+		if attack_phase != AttackPhase.STUN:
+			tension = tension + tension_gain if fish_esc_rate <= 0 else tension + (tension_gain * tens_bonus_mult)
 		tension = clamp(tension, 0, 1)
 		fishing_line.set_tension(tension)
 		
@@ -233,6 +235,7 @@ func select_attack() -> FishEscapeState:
 	return hooked_fish.states.back()
 
 func start_recovery(duration: float) -> void:
+	fishing_line.set_stunned(false)
 	attack_phase = AttackPhase.RECOVERY
 	phase_time = duration
 	fish_esc_rate = 0.0
@@ -317,6 +320,7 @@ func attempt_counter() -> bool:
 	fishing_line.set_tension(tension)
 	fishing_line.flash_counter(true)
 	attack_phase = AttackPhase.STUN
+	fishing_line.set_stunned(true)
 	phase_time = active_attack.stun_duration
 	fish_esc_rate = 0.0
 	print("COUNTER: ", active_attack.state_name)
