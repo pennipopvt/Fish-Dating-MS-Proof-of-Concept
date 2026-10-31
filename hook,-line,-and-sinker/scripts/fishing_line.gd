@@ -100,9 +100,6 @@ func hook(item: FishData) -> void:
 	fish.show() # Let the scene's water layer determine visibility.
 
 func close() -> void:
-	hooked = false
-	stop_phase_movement()
-	swim_offset = Vector2.ZERO
 	set_stunned(false)
 	ripple_tell.hide()
 	current_ripple_animation = &""
