@@ -58,13 +58,14 @@ var delay_time = 0
 @onready var catch_landing_point: Marker2D = $CatchLandingPoint
 @onready var catch_fish_visual: Sprite2D = $CatchFishVisual
 @export_range(0.1, 2.0, 0.05) var catch_flight_duration: float = 0.65
+@export_range(0.0, 0.5, 0.01) var catch_peak_hang: float = 0.08
 @export_range(0.0, 150.0, 1.0) var catch_arc_height: float = 75.0
 @export_range(0.0, 2.0, 0.05) var catch_landing_pause: float = 0.45
 var catch_tween: Tween
 var catch_start: Vector2
-var catch_control: Vector2
 var catch_end: Vector2
 var catch_start_rotation: float = 0.0
+var catch_peak: Vector2
 
 func begin_fishing() -> void:
 	if(current_state == Fish_State.NOT && delay_time == 0):
@@ -166,8 +167,8 @@ func start_catch_sequence() -> void:
 	catch_start = catch_fish_visual.get_parent().to_local(fishing_line.get_fish_global_position())
 	catch_end = catch_fish_visual.get_parent().to_local(catch_landing_point.global_position)
 	# Peak above both the water exit and the landing spot.
-	catch_control = (catch_start + catch_end) * 0.5
-	catch_control.y = minf(catch_start.y, catch_end.y) - catch_arc_height
+	catch_peak = catch_start.lerp(catch_end, 0.48)
+	catch_peak.y = minf(catch_start.y, catch_end.y) - catch_arc_height
 	catch_fish_visual.texture = fishing_line.get_fish_texture()
 	catch_fish_visual.scale = fishing_line.get_fish_global_scale()
 	catch_fish_visual.position = catch_start
@@ -179,16 +180,22 @@ func start_catch_sequence() -> void:
 	if catch_tween != null and catch_tween.is_running():
 		catch_tween.kill()
 	catch_tween = create_tween()
-	catch_tween.tween_method(_update_catch_arc, 0.0, 1.0, catch_flight_duration).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	# An explosive upward launch that loses speed near the apex.
+	catch_tween.tween_method(_update_catch_ascent, 0.0, 1.0, catch_flight_duration * 0.47).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	catch_tween.tween_interval(catch_peak_hang)
+	# Start almost motionless at the apex, then accelerate toward the ground.
+	catch_tween.tween_method(_update_catch_descent, 0.0, 1.0, catch_flight_duration * 0.53).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
 	catch_tween.tween_callback(_on_catch_landed)
 	catch_tween.tween_interval(catch_landing_pause)
 	catch_tween.tween_callback(_finish_catch_animation)
 
-func _update_catch_arc(t: float) -> void:
-	var a: Vector2 = catch_start.lerp(catch_control, t)
-	var b: Vector2 = catch_control.lerp(catch_end, t)
-	catch_fish_visual.position = a.lerp(b, t)
-	catch_fish_visual.rotation = catch_start_rotation + TAU * t
+func _update_catch_ascent(t: float) -> void:
+	catch_fish_visual.position = catch_start.lerp(catch_peak, t)
+	catch_fish_visual.rotation = catch_start_rotation + PI * t
+
+func _update_catch_descent(t: float) -> void:
+	catch_fish_visual.position = catch_peak.lerp(catch_end, t)
+	catch_fish_visual.rotation = catch_start_rotation + PI + PI * t
 
 func _on_catch_landed() -> void:
 	catch_fish_visual.position = catch_end
