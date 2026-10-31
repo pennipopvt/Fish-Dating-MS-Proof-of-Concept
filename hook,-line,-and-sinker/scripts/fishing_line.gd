@@ -4,8 +4,12 @@ extends Line2D
 #also idk if ur gonna make like, a manually animated fishing rod or not
 #so im not putting too much stock into this
 
-@export var max_dist: float
-@export var y_line_offset: float
+## Horizontal distance at zero reel progress (pixels left from rod).
+@export_range(1.0, 600.0, 1.0) var max_horizontal_distance: float = 340.0
+## Distance from rod when the fish breaches the surface.
+@export_range(0.0, 300.0, 1.0) var catch_horizontal_distance: float = 75.0
+## Depth below water at zero reel progress, independent of horizontal reach.
+@export_range(1.0, 250.0, 1.0) var max_depth: float = 65.0
 @onready var fish: Sprite2D = $Fish
 var line_dist : float = 0
 var pos: Vector2
@@ -113,12 +117,12 @@ func update_line_dist(dist_perc: float) -> void:
 	#okey so this simple i think
 	#basically it just gonna take the progress of the fish encounter
 	#then subtract it from one, because u wanna be further from the max distance the more u reel
-	line_dist = max_dist * (1 - dist_perc)
-	line_dist = clamp(line_dist,0,max_dist)
-	var endpos = pos
-	endpos.x -= line_dist
-	#slight offset to keep the fish in what would be the water
-	endpos.y += (line_dist + y_line_offset)
+	var progress: float = clampf(dist_perc, 0.0, 1.0)
+	line_dist = lerpf(max_horizontal_distance, catch_horizontal_distance, progress)
+	var endpos := Vector2(
+		pos.x - line_dist,
+		lerpf(water_surface_y + max_depth, water_surface_y, progress)
+	)
 	fish.position = endpos
 	var fishrot: float = atan2((pos.y - endpos.y),(pos.x - endpos.x))
 	fish.rotation = fishrot
