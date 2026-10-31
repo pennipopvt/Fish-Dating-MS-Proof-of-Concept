@@ -38,6 +38,8 @@ var delay_time = 0
 
 @export var reel_gain: float = 0.1
 @export var starting_progress: float = 0.2
+## Constant gentle resistance outside stun, measured as progress lost per second.
+@export_range(0.0, 0.2, 0.001) var passive_escape_rate: float = 0.015
 @export var bite_time_min: float = 1
 @export var bite_time_max: float = 20
 
@@ -96,7 +98,7 @@ func _process(delta: float) -> void:
 			#failsafe
 			return
 		#fish escape rate fights da player
-		progress -= fish_esc_rate * delta
+		progress -= (0.0 if attack_phase == AttackPhase.STUN else passive_escape_rate + fish_esc_rate) * delta
 		progress = clamp(progress,0,1)
 		
 		recover_tension(delta)
