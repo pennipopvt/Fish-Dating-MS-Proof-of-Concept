@@ -225,13 +225,13 @@ animations = [{
 [node name="FishingController" type="Node2D" unique_id=104125951]
 script = ExtResource("1_nhr4m")
 reel_gain = 0.01
-starting_progress = 0.25
 bite_time_max = 5.0
 tension_gain = 0.015
 tension_recovery = 2.5
 recovery_delay = 0.2
 
 [node name="TensionBar" type="TextureProgressBar" parent="." unique_id=1346772520]
+visible = false
 offset_left = 1.0
 offset_top = -19.0
 offset_right = 65.0
@@ -243,6 +243,7 @@ fill_mode = 3
 texture_progress = SubResource("GradientTexture2D_tfxof")
 
 [node name="FishingProgress" type="TextureProgressBar" parent="." unique_id=2056205437]
+visible = false
 offset_left = -12.000001
 offset_top = -23.0
 offset_right = 1012.0
@@ -277,5 +278,5 @@ texture = ExtResource("5_nshyg")
 z_index = 10
 texture_filter = 1
 sprite_frames = SubResource("SpriteFrames_ripple")
-animation = &"attacking"
+animation = &"windup"
 autoplay = "idle"
