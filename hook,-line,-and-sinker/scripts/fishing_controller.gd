@@ -264,6 +264,14 @@ func update_attack_cycle(delta: float) -> void:
 	if active_attack == null and attack_phase != AttackPhase.RECOVERY:
 		start_recovery(0.3)
 	phase_time -= delta
+	# Transition before updating the visuals so completed one-shots do not
+	# linger for a frame at the end of their gameplay phase.
+	if phase_time <= 0.0:
+		match attack_phase:
+			AttackPhase.RECOVERY: start_windup()
+			AttackPhase.WINDUP: begin_attack()
+			AttackPhase.ATTACK: start_recovery(active_attack.recovery_duration)
+			AttackPhase.STUN: start_recovery(0.25)
 	if attack_phase == AttackPhase.WINDUP:
 		var elapsed: float = active_attack.windup_duration - phase_time
 		# Reeling in early windup is forgiven, but not at the grace boundary.
@@ -278,13 +286,6 @@ func update_attack_cycle(delta: float) -> void:
 		fishing_line.set_telegraph(4, 0.0)
 	else:
 		fishing_line.set_telegraph(1, 0.0)
-	if phase_time > 0.0:
-		return
-	match attack_phase:
-		AttackPhase.RECOVERY: start_windup()
-		AttackPhase.WINDUP: begin_attack()
-		AttackPhase.ATTACK: start_recovery(active_attack.recovery_duration)
-		AttackPhase.STUN: start_recovery(0.25)
 
 func invalidate_counter() -> void:
 	if counter_locked:
