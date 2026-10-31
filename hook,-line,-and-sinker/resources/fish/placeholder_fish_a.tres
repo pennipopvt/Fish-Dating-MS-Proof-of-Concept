@@ -1,0 +1,24 @@
+[gd_resource type="Resource" script_class="FishData" format=3 uid="uid://bm44r4kxujw5r"]
+
+[ext_resource type="Script" uid="uid://d2iidpvp5wrw7" path="res://resources/fish_data.gd" id="1_fish"]
+[ext_resource type="Resource" path="res://resources/items/placeholder_fish_a_item.tres" id="2_item"]
+[ext_resource type="Script" uid="uid://cur8k0lqp6jxh" path="res://resources/fish_escape_state.gd" id="3_state"]
+
+[sub_resource type="Resource" id="Resource_initial"]
+script = ExtResource("3_state")
+state_name = "Initial"
+state_length = 1.0
+state_probability = 0.1
+
+[sub_resource type="Resource" id="Resource_afraid"]
+script = ExtResource("3_state")
+state_name = "Afraid"
+escape_rate = 0.1
+state_length = 5.0
+state_probability = 0.7
+
+[resource]
+script = ExtResource("1_fish")
+fish_id = &"placeholder_fish_a"
+item_data = ExtResource("2_item")
+states = Array[ExtResource("3_state")]([SubResource("Resource_initial"), SubResource("Resource_afraid")])
