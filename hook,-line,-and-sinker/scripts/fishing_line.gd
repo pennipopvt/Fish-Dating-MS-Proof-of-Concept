@@ -17,6 +17,20 @@ var tell_progress: float = 0.0
 var current_ripple_animation: StringName = &""
 var counter_flash_time: float = 0.0
 var current_telegraph_phase: int = 0
+var windup_playback_scale: float = 1.0
+
+# Match the authored windup frames to the selected fish attack duration.
+func set_windup_duration(seconds: float) -> void:
+	var frames: SpriteFrames = ripple_tell.sprite_frames
+	if frames == null or not frames.has_animation(&"windup"):
+		windup_playback_scale = 1.0
+		return
+	var native_duration: float = 0.0
+	for index in range(frames.get_frame_count(&"windup")):
+		native_duration += frames.get_frame_duration(&"windup", index)
+	native_duration /= maxf(frames.get_animation_speed(&"windup"), 0.01)
+	windup_playback_scale = native_duration / maxf(seconds, 0.01)
+
 
 @export var stunned_line_color: Color = Color("#ffe55c")
 @export var stun_glow_color: Color = Color(1.0, 0.83, 0.18, 0.32)
@@ -129,6 +143,7 @@ func play_ripple(animation: StringName) -> void:
 		return
 	if animation != current_ripple_animation:
 		current_ripple_animation = animation
+		ripple_tell.speed_scale = windup_playback_scale if animation == &"windup" else 1.0
 		ripple_tell.play(animation)
 	ripple_tell.show()
 
