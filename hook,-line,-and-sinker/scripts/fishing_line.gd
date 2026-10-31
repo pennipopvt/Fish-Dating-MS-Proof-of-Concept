@@ -16,9 +16,24 @@ var tell_progress: float = 0.0
 var flash_timer: float = 0.0
 var flash_good: bool = false
 
+# Calm -> strained -> near-breaking. Editable in the Inspector.
+@export var calm_line_color: Color = Color("#d8e6e4")
+@export var strained_line_color: Color = Color("#efb65a")
+@export var danger_line_color: Color = Color("#ee514d")
+@export_range(0.0, 1.0) var strained_threshold: float = 0.55
+
+func set_tension(amount: float) -> void:
+	var normalized: float = clampf(amount, 0.0, 1.0)
+	if normalized <= strained_threshold:
+		default_color = calm_line_color.lerp(strained_line_color, normalized / maxf(strained_threshold, 0.001))
+	else:
+		default_color = strained_line_color.lerp(danger_line_color, (normalized - strained_threshold) / maxf(1.0 - strained_threshold, 0.001))
+
+
 
 func _ready() -> void:
 	FishingManager.fish_hooked.connect(hook)
+	set_tension(0.0)
 	hide()
 
 func send() -> void:
