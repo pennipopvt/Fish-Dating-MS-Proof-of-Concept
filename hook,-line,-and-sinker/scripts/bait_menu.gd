@@ -35,6 +35,7 @@ var _button_group := ButtonGroup.new()
 func _ready() -> void:
 	hide()
 	add_to_group(&"bait_menu")
+	add_to_group(&"modal_ui")
 	_bait_icon_frame.add_theme_stylebox_override("panel", _make_tile_style(TILE_NORMAL_COLOR))
 	FishingManager.bait_changed.connect(_on_bait_changed)
 	_equip_button.pressed.connect(_on_equip_pressed)
@@ -47,25 +48,25 @@ func _unhandled_input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 
 
-# Open the menu and pause the game behind it. Starts on the equipped bait.
+# Open the menu while keeping world animation running. Starts on equipped bait.
 func open() -> void:
 	if visible:
 		return
 
 	show()
-	get_tree().paused = true
+	
 	_selected_bait = FishingManager.equipped_bait
 	_refresh()
 	_focus_selected_bait()
 
 
-# Close the menu and resume the game.
+# Close the menu and allow gameplay input again.
 func close() -> void:
 	if not visible:
 		return
 
 	hide()
-	get_tree().paused = false
+	
 
 
 # Rebuild the 3x3 grid. Slots past the available baits stay as empty tiles.

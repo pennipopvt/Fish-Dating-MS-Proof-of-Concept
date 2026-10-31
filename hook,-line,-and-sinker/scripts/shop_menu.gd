@@ -39,6 +39,7 @@ var _tile_styles := {
 
 func _ready() -> void:
 	hide()
+	add_to_group(&"modal_ui")
 	_trade_icon_frame.add_theme_stylebox_override("panel", _tile_styles["normal"])
 	ShopManager.trade_completed.connect(_on_trade_completed)
 	ShopManager.shop_requested.connect(open)

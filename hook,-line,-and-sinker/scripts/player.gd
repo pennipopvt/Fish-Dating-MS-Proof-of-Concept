@@ -15,7 +15,7 @@ var last_direction : float;
 
 func _physics_process(delta: float) -> void:
 
-	if busy:
+	if busy or GameManager.is_modal_ui_open():
 		velocity.x = 0;
 		move_and_slide()
 		return
@@ -40,7 +40,7 @@ func _physics_process(delta: float) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if not DialogueManager.is_active and not ShopManager.is_shop_open and not busy and event.is_action_pressed("Interact"):
+	if not GameManager.is_modal_ui_open() and not busy and event.is_action_pressed("Interact"):
 		interact()
 
 

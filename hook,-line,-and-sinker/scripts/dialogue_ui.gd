@@ -31,6 +31,7 @@ var _opened_frame := -1
 
 func _ready() -> void:
 	hide()
+	add_to_group(&"modal_ui")
 	DialogueManager.dialogue_requested.connect(start)
 	_box.gui_input.connect(_on_box_gui_input)
 
