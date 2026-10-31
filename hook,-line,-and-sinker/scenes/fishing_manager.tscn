@@ -2,14 +2,14 @@
 
 [ext_resource type="Script" uid="uid://dcj1kd66th1y8" path="res://scripts/fishing_manager.gd" id="1_ophlp"]
 [ext_resource type="Script" uid="uid://d2iidpvp5wrw7" path="res://resources/fish_data.gd" id="2_v3w6v"]
-[ext_resource type="Resource" uid="uid://bm44r4kxujw5r" path="res://resources/fish/placeholder_fish_a.tres" id="4_fisha"]
-[ext_resource type="Resource" uid="uid://com1d0pwisbuj" path="res://resources/fish/placeholder_fish_b.tres" id="5_fishb"]
+[ext_resource type="Resource" uid="uid://bad7evmwitdpl" path="res://resources/fish/easy_test_fish.tres" id="3_av3tx"]
+[ext_resource type="Resource" uid="uid://c2argebsm6uyk" path="res://resources/fish/hard_test_fish.tres" id="4_av3tx"]
 [ext_resource type="Script" uid="uid://ca82iknxm3fe8" path="res://resources/bait_data.gd" id="6_baitd"]
 [ext_resource type="Resource" uid="uid://cghuy18lde1ur" path="res://resources/bait/bait_a.tres" id="7_baita"]
 [ext_resource type="Resource" uid="uid://qdymy3v00i5x" path="res://resources/bait/bait_b.tres" id="8_baitb"]
 
 [node name="FishingManager" type="Node2D" unique_id=586344140]
 script = ExtResource("1_ophlp")
-possible_catches = Array[ExtResource("2_v3w6v")]([ExtResource("4_fisha"), ExtResource("5_fishb")])
+possible_catches = Array[ExtResource("2_v3w6v")]([ExtResource("3_av3tx"), ExtResource("4_av3tx")])
 available_baits = Array[ExtResource("6_baitd")]([ExtResource("7_baita"), ExtResource("8_baitb")])
 equipped_bait = ExtResource("7_baita")

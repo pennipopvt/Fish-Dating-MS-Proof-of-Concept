@@ -103,6 +103,24 @@ func hook(item: FishData) -> void:
 	fish.texture = item.item_data.sprite
 	fish.show() # Let the scene's water layer determine visibility.
 
+func get_fish_global_position() -> Vector2:
+	return fish.global_position
+
+func get_fish_global_scale() -> Vector2:
+	return fish.global_scale
+
+func get_fish_global_rotation() -> float:
+	return fish.global_rotation
+
+func get_fish_texture() -> Texture2D:
+	return fish.texture
+
+func hide_fish_for_catch() -> void:
+	fish.hide()
+	ripple_tell.hide()
+	# Hide the line itself during the airborne catch sequence.
+	hide()
+
 func close() -> void:
 	set_stunned(false)
 	ripple_tell.hide()

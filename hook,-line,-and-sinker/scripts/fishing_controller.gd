@@ -4,7 +4,8 @@ enum Fish_State
 {
 	NOT,
 	WAITING,
-	FISHING
+	FISHING,
+	CATCHING
 }
 
 var current_state: Fish_State = Fish_State.NOT
@@ -38,22 +39,29 @@ var delay_time = 0
 
 @export var reel_gain: float = 0.1
 @export var starting_progress: float = 0.25
-## Constant gentle resistance outside stun, measured as progress lost per second.
-@export_range(0.0, 0.2, 0.001) var passive_escape_rate: float = 0.015
 @export var bite_time_min: float = 1
 @export var bite_time_max: float = 20
 
 #maybe later these variables can be moved to the manager for shop items to influence dem
 @export var tension_gain: float = 0.7
 @export var tension_recovery: float = 0.2
-##tension multiplier while reeling a fish thats in desperation
-@export var tens_bonus_mult: float = 1.2
 ##delay before recovery starts after reeling ends
 @export var recovery_delay: float = 0.1
 
 @onready var fishing_progress: TextureProgressBar = $FishingProgress
 @onready var tension_bar: TextureProgressBar = $TensionBar
 @onready var fishing_line: Line2D = $FishingLine
+@onready var catch_landing_point: Marker2D = $CatchLandingPoint
+@onready var catch_fish_visual: Sprite2D = $CatchFishVisual
+@export_range(0.1, 2.0, 0.05) var catch_flight_duration: float = 0.65
+@export_range(0.0, 0.5, 0.01) var catch_peak_hang: float = 0.08
+@export_range(0.0, 150.0, 1.0) var catch_arc_height: float = 75.0
+@export_range(0.0, 2.0, 0.05) var catch_landing_pause: float = 0.45
+var catch_tween: Tween
+var catch_start: Vector2
+var catch_end: Vector2
+var catch_start_rotation: float = 0.0
+var catch_peak: Vector2
 
 func begin_fishing() -> void:
 	if(current_state == Fish_State.NOT && delay_time == 0):
@@ -98,7 +106,7 @@ func _process(delta: float) -> void:
 			#failsafe
 			return
 		#fish escape rate fights da player
-		progress -= (0.0 if attack_phase == AttackPhase.STUN else passive_escape_rate + fish_esc_rate) * delta
+		progress -= (0.0 if attack_phase == AttackPhase.STUN else hooked_fish.passive_escape_rate + fish_esc_rate) * delta
 		progress = clamp(progress,0,1)
 		
 		recover_tension(delta)
@@ -110,7 +118,7 @@ func _process(delta: float) -> void:
 		tension_bar.value = tension
 		fishing_line.update_line_dist(progress)
 		if fishing_line.fish_midpoint_above_water():
-			catch_fish()
+			start_catch_sequence()
 			return
 		if(progress <= 0):
 			lose_fish()
@@ -125,18 +133,13 @@ func begin_reeling() -> void:
 	fishing_progress.value = progress
 	tension_bar.value = tension
 	
-	active_attack = select_attack()
-	
 	#once we actually get it, we will let the fishing manager know what fish we have
 	FishingManager.hook_fish(hooked_fish)
-	# Reposition fish, line and ripples together before showing the first splash.
 	fishing_line.update_line_dist(progress)
-	# Start with an actual attack (and its splash), not a recovery or windup.
-	if active_attack != null:
-		begin_attack()
-		fishing_line.set_telegraph(3, 0.0)
-	else:
-		start_recovery(0.3)
+	# Give the first attack its normal windup and counter telegraph.
+	start_windup()
+	if attack_phase == AttackPhase.WINDUP:
+		fishing_line.set_telegraph(2, 0.0)
 	print("Found ", hooked_fish.fish_id)
 	print("Fish behavior available: ", hooked_fish.states.size(), " states.")
 
@@ -148,6 +151,62 @@ func lose_fish() -> void:
 	FishingManager.lose_fish(hooked_fish)
 	finish_cast()
 	
+func start_catch_sequence() -> void:
+	if current_state != Fish_State.FISHING or hooked_fish == null:
+		return
+	current_state = Fish_State.CATCHING
+	catch_start = catch_fish_visual.get_parent().to_local(fishing_line.get_fish_global_position())
+	catch_end = catch_fish_visual.get_parent().to_local(catch_landing_point.global_position)
+	# Peak above both the water exit and the landing spot.
+	catch_peak = catch_start.lerp(catch_end, 0.48)
+	catch_peak.y = minf(catch_start.y, catch_end.y) - catch_arc_height
+	catch_fish_visual.texture = fishing_line.get_fish_texture()
+	catch_fish_visual.scale = fishing_line.get_fish_global_scale()
+	catch_fish_visual.position = catch_start
+	catch_start_rotation = 0.0 # Horizontal at launch and at the apex of the full flip.
+	catch_fish_visual.rotation = catch_start_rotation
+	catch_fish_visual.z_index = 12
+	catch_fish_visual.show()
+	fishing_line.hide_fish_for_catch()
+	if catch_tween != null and catch_tween.is_running():
+		catch_tween.kill()
+	catch_tween = create_tween()
+	# An explosive upward launch that loses speed near the apex.
+	catch_tween.tween_method(_update_catch_ascent, 0.0, 1.0, catch_flight_duration * 0.47).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	catch_tween.tween_interval(catch_peak_hang)
+	# Start almost motionless at the apex, then accelerate toward the ground.
+	catch_tween.tween_method(_update_catch_descent, 0.0, 1.0, catch_flight_duration * 0.53).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	catch_tween.tween_callback(_on_catch_landed)
+	catch_tween.tween_interval(catch_landing_pause)
+	catch_tween.tween_callback(_finish_catch_animation)
+
+func _update_catch_ascent(t: float) -> void:
+	# Curved ascent; the spin makes a full turn, slowing to a stop at the peak.
+	var control := Vector2(lerpf(catch_start.x, catch_peak.x, 0.2), catch_peak.y)
+	var a := catch_start.lerp(control, t)
+	var b := control.lerp(catch_peak, t)
+	catch_fish_visual.position = a.lerp(b, t)
+	catch_fish_visual.rotation = catch_start_rotation + TAU * (1.0 - pow(1.0 - t, 3.0))
+
+func _update_catch_descent(t: float) -> void:
+	# The next Bezier starts tangent to the same peak, then curves down.
+	var control := Vector2(lerpf(catch_peak.x, catch_end.x, 0.8), catch_peak.y)
+	var a := catch_peak.lerp(control, t)
+	var b := control.lerp(catch_end, t)
+	catch_fish_visual.position = a.lerp(b, t)
+	catch_fish_visual.rotation = catch_start_rotation + TAU + TAU * t
+
+func _on_catch_landed() -> void:
+	catch_fish_visual.position = catch_end
+	catch_fish_visual.rotation = 0.0
+	catch_fish_visual.z_index = -1
+
+func _finish_catch_animation() -> void:
+	catch_fish_visual.hide()
+	catch_fish_visual.z_index = 12
+	catch_fish_visual.rotation = 0.0
+	catch_fish()
+
 func catch_fish() -> void:
 	if(hooked_fish == null):
 		return
@@ -177,6 +236,9 @@ func exit_fishing() -> void:
 	get_parent().busy = false
 	
 func reset_values() -> void:
+	if catch_tween != null and catch_tween.is_running():
+		catch_tween.kill()
+	catch_fish_visual.hide()
 	progress = 0
 	bite_time = 0
 	fishing_progress.value = 0
@@ -205,7 +267,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		progress = clamp(progress,0,1)
 		# A counter grants unrestricted reeling until the stun ends.
 		if attack_phase != AttackPhase.STUN:
-			tension = tension + tension_gain if fish_esc_rate <= 0 else tension + (tension_gain * tens_bonus_mult)
+			tension = tension + tension_gain if fish_esc_rate <= 0 else tension + (tension_gain * hooked_fish.attack_tension_multiplier)
 		tension = clamp(tension, 0, 1)
 		fishing_line.set_tension(tension)
 		
@@ -214,12 +276,12 @@ func _unhandled_input(event: InputEvent) -> void:
 		# Position, not an arbitrary progress threshold, determines landing.
 		fishing_line.update_line_dist(progress)
 		if fishing_line.fish_midpoint_above_water():
-			catch_fish()
+			start_catch_sequence()
 			return
 		if tension >= 1:
 			lose_fish()
 	
-	if(event.is_action_pressed("Interact") && current_state != Fish_State.NOT):
+	if(event.is_action_pressed("Interact") && current_state != Fish_State.NOT && current_state != Fish_State.CATCHING):
 		exit_fishing()
 
 func recover_tension(delta: float) -> void:
