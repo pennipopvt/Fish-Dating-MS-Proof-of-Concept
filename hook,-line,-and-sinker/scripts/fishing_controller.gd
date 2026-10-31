@@ -19,19 +19,18 @@ var state_timer: float = 0
 var fish_esc_rate: float = 0
 var recovery_timer: float = 0
 
-# Temporary pattern/counter test, independently toggleable in Inspector.
-@export var counter_test: bool = true
-@export var windup_duration: float = 0.8
-@export var counter_window: float = 0.18
-@export var stun_duration: float = 1.8
-@export var attacks_before_exhaustion: int = 4
-var test_phase: int = 0 # 0 rest, 1 windup, 2 pull, 3 stagger, 4 exhausted
-var phase_clock: float = 1.5
-var attacks_done: int = 0
-var recent_scrolls: int = 0
-var last_scroll_ms: int = 0
-var counter_disqualified: bool = false
-
+# The chosen FishEscapeState owns the attack properties.
+enum AttackPhase { RECOVERY, WINDUP, ATTACK, STUN }
+var attack_phase: AttackPhase = AttackPhase.RECOVERY
+var active_attack: FishEscapeState = null
+var phase_time: float = 0.0
+var attack_elapsed: float = 0.0
+var counter_locked: bool = false
+var scroll_streak: int = 0
+var last_scroll_ms: int = -100000
+@export_range(0.02, 0.3, 0.01) var scrolling_threshold: float = 0.12
+@export_range(2, 6, 1) var strong_reel_scrolls: int = 3
+@export_range(0.05, 0.3, 0.01) var strong_reel_interval: float = 0.15
 
 #band-aid fix to avoid accidentally requeueing interact when exiting since exit and interact are the same input
 var press_delay: float = 0.10
@@ -101,10 +100,7 @@ func _process(delta: float) -> void:
 		progress = clamp(progress,0,1)
 		
 		recover_tension(delta)
-		if counter_test:
-			update_counter_test(delta)
-		else:
-			state_change_countdown(delta)
+		update_attack_cycle(delta)
 		
 		tension = clamp(tension,0,1)
 		fishing_line.set_tension(tension)
@@ -124,16 +120,13 @@ func begin_reeling() -> void:
 	fishing_progress.value = progress
 	tension_bar.value = tension
 	
-	fish_esc_rate = hooked_fish.states[0].escape_rate
-	state_timer = hooked_fish.states[0].state_length
-	if counter_test:
-		attacks_done = 0
-		set_test_phase(0)
+	active_attack = null
+	start_recovery(0.3)
 	
 	#once we actually get it, we will let the fishing manager know what fish we have
 	FishingManager.hook_fish(hooked_fish)
 	print("Found ", hooked_fish.fish_id)
-	print("In ", hooked_fish.states[0].state_name," State.")
+	print("Fish behavior available: ", hooked_fish.states.size(), " states.")
 
 func lose_fish() -> void:
 	if(hooked_fish == null):
@@ -184,12 +177,16 @@ func reset_values() -> void:
 	hooked_fish = null
 	recovery_timer = 0
 	fishing_line.set_telegraph(0, 0.0)
+	active_attack = null
+	attack_phase = AttackPhase.RECOVERY
+	counter_locked = false
+	scroll_streak = 0
 
 func _unhandled_input(event: InputEvent) -> void:
 	if GameManager.is_modal_ui_open():
 		return
 	if(event.is_action_pressed("Reel") && current_state == Fish_State.FISHING):
-		if counter_test and try_counter():
+		if attempt_counter():
 			return
 		progress += reel_gain
 		progress = clamp(progress,0,1)
@@ -215,109 +212,112 @@ func recover_tension(delta: float) -> void:
 	else:
 		recovery_timer -= delta
 
-func state_change_countdown(delta:float) -> void:
-	state_timer -= delta
-	
-	if(state_timer <= 0 && current_state == Fish_State.FISHING):
-		change_fish_state()
 
-func change_fish_state() -> void:
-	if hooked_fish.states.is_empty():
-		return
+# Preserve the fish's authored state selection, using nonnegative weights.
+func select_attack() -> FishEscapeState:
+	if hooked_fish == null or hooked_fish.states.is_empty():
+		return null
+	var total: float = 0.0
 	for state in hooked_fish.states:
-		var probability: float = randf()
-		if(probability < state.state_probability):
-			fish_esc_rate = state.escape_rate
-			state_timer = state.state_length
-			print("In ", state.state_name," State.")
-			return
-	#goes to a non-probability based random pick if none were chosen
-	var true_random: int = randi_range(0,hooked_fish.states.size() - 1)
-	fish_esc_rate = hooked_fish.states[true_random].escape_rate
-	state_timer = hooked_fish.states[true_random].state_length
-	print("In ", hooked_fish.states[true_random].state_name," State.")
+		if state != null:
+			total += maxf(0.0, state.state_probability)
+	if total <= 0.0:
+		return hooked_fish.states.pick_random()
+	var roll: float = randf() * total
+	for state in hooked_fish.states:
+		if state == null:
+			continue
+		roll -= maxf(0.0, state.state_probability)
+		if roll <= 0.0:
+			return state
+	return hooked_fish.states.back()
 
-func set_test_phase(phase: int) -> void:
-	test_phase = phase
-	# Each new windup is one fresh attempt. Early input cannot carry over.
-	if phase == 1:
-		counter_disqualified = false
-		recent_scrolls = 0
-		last_scroll_ms = 0
-	match phase:
-		0:
-			phase_clock = 1.5
-			fish_esc_rate = 0.0
-		1:
-			phase_clock = windup_duration
-			fish_esc_rate = 0.0
-		2:
-			phase_clock = 1.0
-			fish_esc_rate = 0.2
-		3:
-			phase_clock = stun_duration
-			fish_esc_rate = 0.0
-		4:
-			phase_clock = 4.0
-			fish_esc_rate = 0.0
-	fishing_line.set_telegraph(phase + 1, 0.0)
+func start_recovery(duration: float) -> void:
+	attack_phase = AttackPhase.RECOVERY
+	phase_time = duration
+	fish_esc_rate = 0.0
+	fishing_line.set_telegraph(1, 0.0)
 
-func update_counter_test(delta: float) -> void:
-	phase_clock -= delta
-	var total: float = windup_duration if test_phase == 1 else 1.0
-	fishing_line.set_telegraph(test_phase + 1, 1.0 - clampf(phase_clock / total, 0.0, 1.0))
-	if phase_clock > 0.0:
+func start_windup() -> void:
+	active_attack = select_attack()
+	if active_attack == null:
+		start_recovery(0.5)
 		return
-	match test_phase:
-		0: set_test_phase(1)
-		1: set_test_phase(2)
-		2:
-			attacks_done += 1
-			set_test_phase(4 if attacks_done >= attacks_before_exhaustion else 0)
-			if test_phase == 4:
-				attacks_done = 0
-		3, 4: set_test_phase(0)
+	attack_phase = AttackPhase.WINDUP
+	phase_time = active_attack.windup_duration
+	counter_locked = false
+	scroll_streak = 0
+	fish_esc_rate = 0.0
+	print("Windup: ", active_attack.state_name)
 
-func try_counter() -> bool:
-	# Once an attack starts winding up, the player gets exactly one clean
-	# counter attempt. Reeling too early or too late forfeits the counter,
-	# but does NOT interrupt or delay the fish's attack.
-	if test_phase != 1 and test_phase != 2:
-		return false
-	if counter_disqualified:
-		return false
+func begin_attack() -> void:
+	attack_phase = AttackPhase.ATTACK
+	phase_time = maxf(active_attack.state_length, 0.05)
+	attack_elapsed = 0.0
+	fish_esc_rate = active_attack.escape_rate
 
-	if test_phase == 1:
-		invalidate_counter()
-		return false
-
-	# The first scroll must arrive within the brief window at attack onset.
-	var attack_elapsed: float = 1.0 - phase_clock
-	if attack_elapsed > counter_window:
-		invalidate_counter()
-		return false
-
-	var now: int = Time.get_ticks_msec()
-	if recent_scrolls > 0 and now - last_scroll_ms > 180:
-		invalidate_counter()
-		return false
-
-	last_scroll_ms = now
-	recent_scrolls += 1
-	if recent_scrolls < 3:
-		return false
-
-	# A rapid strong reel landed entirely within the timing window.
-	counter_disqualified = true
-	tension = maxf(0.0, tension - 0.25)
-	fishing_line.set_tension(tension)
-	fishing_line.flash_counter(true)
-	set_test_phase(3)
-	print("COUNTER! Stunned and tension reduced.")
-	return true
+func update_attack_cycle(delta: float) -> void:
+	if active_attack == null and attack_phase != AttackPhase.RECOVERY:
+		start_recovery(0.3)
+	phase_time -= delta
+	if attack_phase == AttackPhase.WINDUP:
+		var elapsed: float = active_attack.windup_duration - phase_time
+		# Reeling in early windup is forgiven, but not at the grace boundary.
+		if elapsed >= active_attack.grace_start and not counter_locked:
+			if Time.get_ticks_msec() - last_scroll_ms < int(scrolling_threshold * 1000.0):
+				invalidate_counter()
+		fishing_line.set_telegraph(2, clampf(elapsed / maxf(active_attack.windup_duration, 0.01), 0.0, 1.0))
+	elif attack_phase == AttackPhase.ATTACK:
+		attack_elapsed += delta
+		fishing_line.set_telegraph(3, clampf(attack_elapsed / maxf(active_attack.state_length, 0.01), 0.0, 1.0))
+	elif attack_phase == AttackPhase.STUN:
+		fishing_line.set_telegraph(4, 0.0)
+	else:
+		fishing_line.set_telegraph(1, 0.0)
+	if phase_time > 0.0:
+		return
+	match attack_phase:
+		AttackPhase.RECOVERY: start_windup()
+		AttackPhase.WINDUP: begin_attack()
+		AttackPhase.ATTACK: start_recovery(active_attack.recovery_duration)
+		AttackPhase.STUN: start_recovery(0.25)
 
 func invalidate_counter() -> void:
-	counter_disqualified = true
-	recent_scrolls = 0
+	if counter_locked:
+		return
+	counter_locked = true
+	scroll_streak = 0
 	fishing_line.flash_counter(false)
-	print("Counter missed — fish attack continues.")
+
+func attempt_counter() -> bool:
+	var now: int = Time.get_ticks_msec()
+	var previous: int = last_scroll_ms
+	last_scroll_ms = now
+	if active_attack == null or counter_locked:
+		return false
+	if attack_phase == AttackPhase.WINDUP:
+		var elapsed: float = active_attack.windup_duration - phase_time
+		if elapsed >= active_attack.grace_start:
+			invalidate_counter()
+		return false
+	if attack_phase != AttackPhase.ATTACK:
+		return false
+	if attack_elapsed > active_attack.counter_window:
+		invalidate_counter()
+		return false
+	# No stored scrolls from before the actual attack.
+	if scroll_streak > 0 and now - previous > int(strong_reel_interval * 1000.0):
+		invalidate_counter()
+		return false
+	scroll_streak += 1
+	if scroll_streak < strong_reel_scrolls:
+		return false
+	counter_locked = true
+	tension = maxf(0.0, tension - active_attack.counter_tension_relief)
+	fishing_line.set_tension(tension)
+	fishing_line.flash_counter(true)
+	attack_phase = AttackPhase.STUN
+	phase_time = active_attack.stun_duration
+	fish_esc_rate = 0.0
+	print("COUNTER: ", active_attack.state_name)
+	return true
