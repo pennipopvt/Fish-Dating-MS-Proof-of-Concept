@@ -83,13 +83,11 @@ func _ready() -> void:
 	ripple_tell.hide()
 	hide()
 
-func send() -> void:
+func send(initial_progress: float = 0.0) -> void:
 	#later i wanna add an animation of it being sent into da water
 	pos = get_point_position(0)
-	var endpos = pos
-	endpos.x -= max_dist
-	endpos.y += max_dist
-	set_point_position(1,endpos)
+	# Position both the line tip and hidden fish at the same starting point.
+	update_line_dist(initial_progress)
 	show()
 	update_ripple_position()
 	if stun_glow != null:
