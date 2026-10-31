@@ -34,7 +34,7 @@ func send() -> void:
 #idk how to listen for signals in godot tbh but this would trigger by signal ill adjust later
 func hook(item: FishData) -> void:
 	fish.texture = item.item_data.sprite
-	fish.hide() # Preserve unknown fish identity during the fight.
+	fish.show() # Let the scene's water layer determine visibility.
 
 func close() -> void:
 	hide()
