@@ -2,6 +2,7 @@
 
 [ext_resource type="PackedScene" uid="uid://bjt7lp2qss3qh" path="res://prefabs/world.tscn" id="1_sugp2"]
 [ext_resource type="AudioStream" uid="uid://b4567j3srpp18" path="res://sounds/FROM THE SEA 2026-10-30 03_02_51.mp3" id="4_jyhfs"]
+[ext_resource type="Texture2D" uid="uid://vu47883rgrp5" path="res://sprites/penni_portrait.png" id="4_tbgi4"]
 [ext_resource type="PackedScene" uid="uid://nwnk42a2g0hu" path="res://prefabs/shop_menu.tscn" id="5_choun"]
 [ext_resource type="PackedScene" uid="uid://dgsl8ux5hh1tt" path="res://prefabs/dialogue_ui.tscn" id="8_trceg"]
 
@@ -40,6 +41,7 @@ visible = false
 
 [node name="DialogueUI" parent="CanvasLayer" unique_id=1999381502 instance=ExtResource("8_trceg")]
 visible = false
+player_portrait = ExtResource("4_tbgi4")
 
 [node name="AudioStreamPlayer2D" type="AudioStreamPlayer2D" parent="." unique_id=1332507421]
 stream = ExtResource("4_jyhfs")
