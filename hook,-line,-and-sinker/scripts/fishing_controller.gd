@@ -69,6 +69,7 @@ func cast_rod() -> void:
 	
 	progress = starting_progress
 	tension = 0
+	fishing_line.set_tension(tension)
 	#once a line is cast, set the time itll take for a fish to present itself!!
 	bite_time = randf_range(bite_time_min,bite_time_max)
 	#fish is decided on rod cast
@@ -105,6 +106,7 @@ func _process(delta: float) -> void:
 			state_change_countdown(delta)
 		
 		tension = clamp(tension,0,1)
+		fishing_line.set_tension(tension)
 		fishing_progress.value = progress
 		tension_bar.value = tension
 		fishing_line.update_line_dist(progress)
@@ -177,6 +179,7 @@ func reset_values() -> void:
 	fish_esc_rate = 0
 	tension = 0
 	tension_bar.value = tension
+	fishing_line.set_tension(tension)
 	hooked_fish = null
 	recovery_timer = 0
 	fishing_line.set_telegraph(0, 0.0)
@@ -192,6 +195,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		# so if the fish isnt swimming dont apply tension
 		tension = tension + tension_gain if fish_esc_rate <= 0 else tension + (tension_gain * tens_bonus_mult)
 		tension = clamp(tension, 0, 1)
+		fishing_line.set_tension(tension)
 		
 		recovery_timer = recovery_delay
 		
