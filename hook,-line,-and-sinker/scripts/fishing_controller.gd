@@ -156,6 +156,8 @@ func reset_values() -> void:
 	recovery_timer = 0
 
 func _unhandled_input(event: InputEvent) -> void:
+	if DialogueManager.is_active or ShopManager.is_shop_open:
+		return
 	if(event.is_action_pressed("Reel") && current_state == Fish_State.FISHING):
 		progress += reel_gain
 		progress = clamp(progress,0,1)

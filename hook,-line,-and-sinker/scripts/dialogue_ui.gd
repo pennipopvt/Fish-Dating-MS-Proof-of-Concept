@@ -67,7 +67,7 @@ func start(npc: NPCData) -> bool:
 	_npc = npc
 	_opened_frame = Engine.get_process_frames()
 	show()
-	get_tree().paused = true
+	# Keep the world running while dialogue captures gameplay input.
 	_refresh()
 	return true
 
@@ -183,7 +183,7 @@ func _close() -> void:
 
 	hide()
 	_clear_choices()
-	get_tree().paused = false
+	# Gameplay input resumes automatically once the dialogue closes.
 
 	var npc := _npc
 	_npc = null
