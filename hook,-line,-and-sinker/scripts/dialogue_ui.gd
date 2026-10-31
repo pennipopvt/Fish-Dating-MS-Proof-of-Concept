@@ -31,6 +31,7 @@ var _opened_frame := -1
 
 func _ready() -> void:
 	hide()
+	add_to_group(&"modal_ui")
 	DialogueManager.dialogue_requested.connect(start)
 	_box.gui_input.connect(_on_box_gui_input)
 
@@ -67,7 +68,7 @@ func start(npc: NPCData) -> bool:
 	_npc = npc
 	_opened_frame = Engine.get_process_frames()
 	show()
-	get_tree().paused = true
+	# Keep the world running while dialogue captures gameplay input.
 	_refresh()
 	return true
 
@@ -183,7 +184,7 @@ func _close() -> void:
 
 	hide()
 	_clear_choices()
-	get_tree().paused = false
+	# Gameplay input resumes automatically once the dialogue closes.
 
 	var npc := _npc
 	_npc = null

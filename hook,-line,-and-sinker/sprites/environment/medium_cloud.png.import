@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://r0ng1t2x1upy"
-path="res://.godot/imported/penni_sprite.png-96389ca43312fc480742dd66b619c6e6.ctex"
+uid="uid://culbi4w4j2vi2"
+path="res://.godot/imported/medium_cloud.png-9c4bfa3b30b4e5a27d06719d45bf0841.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://sprites/penni_sprite.png"
-dest_files=["res://.godot/imported/penni_sprite.png-96389ca43312fc480742dd66b619c6e6.ctex"]
+source_file="res://sprites/environment/medium_cloud.png"
+dest_files=["res://.godot/imported/medium_cloud.png-9c4bfa3b30b4e5a27d06719d45bf0841.ctex"]
 
 [params]
 

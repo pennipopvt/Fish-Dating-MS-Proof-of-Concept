@@ -2,11 +2,11 @@
 
 [ext_resource type="Resource" uid="uid://cpv5vnhg17vg8" path="res://resources/npcs/test_npc.tres" id="1_anc1i"]
 [ext_resource type="Script" uid="uid://yvmtx3kcsond" path="res://resources/item_data.gd" id="2_bpdpg"]
-[ext_resource type="Texture2D" uid="uid://bq0k0382ebpcd" path="res://sprites/placeholders/fish.png" id="3_3hlon"]
+[ext_resource type="Texture2D" uid="uid://enm6t2a0e7as" path="res://sprites/placeholders/fish_a.png" id="3_2n7qh"]
 
 [resource]
 script = ExtResource("2_bpdpg")
 item_id = &"test_fish_item"
-sprite = ExtResource("3_3hlon")
+sprite = ExtResource("3_2n7qh")
 npc_data = ExtResource("1_anc1i")
 metadata/_custom_type_script = "uid://yvmtx3kcsond"

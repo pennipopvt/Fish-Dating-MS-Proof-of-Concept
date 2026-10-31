@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://dvyql68s5tvo3"
-path="res://.godot/imported/tileset.png-ea01ff149dac1b9c6b0d2d1c84c9f0ea.ctex"
+uid="uid://eqi55phviwat"
+path="res://.godot/imported/tackle_box.png-9c2ba6bf25d336a0971bd2d708c35818.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://sprites/tileset.png"
-dest_files=["res://.godot/imported/tileset.png-ea01ff149dac1b9c6b0d2d1c84c9f0ea.ctex"]
+source_file="res://sprites/environment/tackle_box.png"
+dest_files=["res://.godot/imported/tackle_box.png-9c2ba6bf25d336a0971bd2d708c35818.ctex"]
 
 [params]
 

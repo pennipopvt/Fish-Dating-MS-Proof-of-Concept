@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://b4j4n5y6sqmst"
-path="res://.godot/imported/interact_indicator.png-b4ed4a1f91236b74810644fbf97225cd.ctex"
+uid="uid://dvyql68s5tvo3"
+path="res://.godot/imported/tileset.png-bcfa8903df371b6fd2e4553f5099e0be.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://sprites/interact_indicator.png"
-dest_files=["res://.godot/imported/interact_indicator.png-b4ed4a1f91236b74810644fbf97225cd.ctex"]
+source_file="res://sprites/environment/tileset.png"
+dest_files=["res://.godot/imported/tileset.png-bcfa8903df371b6fd2e4553f5099e0be.ctex"]
 
 [params]
 

@@ -39,6 +39,7 @@ var _tile_styles := {
 
 func _ready() -> void:
 	hide()
+	add_to_group(&"modal_ui")
 	_trade_icon_frame.add_theme_stylebox_override("panel", _tile_styles["normal"])
 	ShopManager.trade_completed.connect(_on_trade_completed)
 	ShopManager.shop_requested.connect(open)
@@ -52,28 +53,26 @@ func _unhandled_input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 
 
-# Open the shop and pause the game behind it.
+# Open the shop without pausing environmental animation.
 func open() -> void:
 	if visible:
 		return
 
 	show()
 	ShopManager.set_shop_open(true)
-	get_tree().paused = true
 	_selected_trade = null
 	_status_label.text = ""
 	_refresh()
 	_focus_selected_trade()
 
 
-# Close the shop and resume the game.
+# Close the shop and return gameplay input.
 func close() -> void:
 	if not visible:
 		return
 
 	hide()
 	ShopManager.set_shop_open(false)
-	get_tree().paused = false
 
 
 # Rebuild the trade tiles from ShopManager.trades.

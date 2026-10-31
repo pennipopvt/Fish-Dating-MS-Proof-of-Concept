@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://iyvfqqmpkdkg"
-path="res://.godot/imported/small_cloud.png-a4275c8b56c64d6574edf55498813e47.ctex"
+uid="uid://b1yjy4cpk8663"
+path="res://.godot/imported/small_ripple_3.png-8c2dd9e14e70953f6f4be90bbc462436.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://sprites/small_cloud.png"
-dest_files=["res://.godot/imported/small_cloud.png-a4275c8b56c64d6574edf55498813e47.ctex"]
+source_file="res://sprites/environment/small_ripple_3.png"
+dest_files=["res://.godot/imported/small_ripple_3.png-8c2dd9e14e70953f6f4be90bbc462436.ctex"]
 
 [params]
 

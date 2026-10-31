@@ -3,8 +3,8 @@
 [ext_resource type="Script" uid="uid://pemwagofm7ri" path="res://scripts/dialogue_ui.gd" id="1_dlg"]
 [ext_resource type="Texture2D" uid="uid://b4koaria87fbv" path="res://sprites/placeholders/portrait.svg" id="2_portrait"]
 [ext_resource type="Texture2D" uid="uid://ca1xd1qpk4ajr" path="res://sprites/placeholders/portrait_player.svg" id="3_player"]
-[ext_resource type="Texture2D" uid="uid://vu47883rgrp5" path="res://sprites/penni_portrait.png" id="4_ln1m7"]
-[ext_resource type="Texture2D" uid="uid://raysrsoqufps" path="res://sprites/garden_eel_portrait.png" id="5_mmh5p"]
+[ext_resource type="Texture2D" uid="uid://vu47883rgrp5" path="res://sprites/characters/penni/penni_portrait.png" id="4_ln1m7"]
+[ext_resource type="Texture2D" uid="uid://raysrsoqufps" path="res://sprites/characters/garden_eel_portrait.png" id="5_mmh5p"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_choice_focus"]
 draw_center = false

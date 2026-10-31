@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://c00uarqfug6h2"
-path="res://.godot/imported/sun.png-9915cd1da25911494b2bd6f3fd6a93e0.ctex"
+uid="uid://xb7algatkug2"
+path="res://.godot/imported/medium_ripple_b.png-a85e974205a6d9c485da03197745582e.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://sprites/sun.png"
-dest_files=["res://.godot/imported/sun.png-9915cd1da25911494b2bd6f3fd6a93e0.ctex"]
+source_file="res://sprites/environment/medium_ripple_b.png"
+dest_files=["res://.godot/imported/medium_ripple_b.png-a85e974205a6d9c485da03197745582e.ctex"]
 
 [params]
 

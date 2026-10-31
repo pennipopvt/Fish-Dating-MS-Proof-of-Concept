@@ -1,7 +1,7 @@
-[gd_resource type="Resource" script_class="BaitData" format=3]
+[gd_resource type="Resource" script_class="BaitData" format=3 uid="uid://qdymy3v00i5x"]
 
-[ext_resource type="Script" path="res://resources/bait_data.gd" id="1_bait"]
-[ext_resource type="Texture2D" path="res://sprites/placeholders/bait_b.png" id="2_icon"]
+[ext_resource type="Script" uid="uid://ca82iknxm3fe8" path="res://resources/bait_data.gd" id="1_bait"]
+[ext_resource type="Texture2D" uid="uid://xa2q0j3us8qs" path="res://sprites/placeholders/bait_b.png" id="2_icon"]
 
 [resource]
 script = ExtResource("1_bait")
@@ -10,6 +10,6 @@ display_name = "Bait B"
 icon = ExtResource("2_icon")
 description = "TODO: placeholder description. Attracts Placeholder Fish B more often."
 catch_weights = Dictionary[StringName, float]({
-&"placeholder_fish_b": 3.0,
-&"placeholder_fish_a": 1.0
+&"placeholder_fish_a": 1.0,
+&"placeholder_fish_b": 3.0
 })

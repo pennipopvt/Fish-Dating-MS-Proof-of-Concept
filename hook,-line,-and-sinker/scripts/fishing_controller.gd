@@ -162,6 +162,8 @@ func reset_values() -> void:
 	recovery_timer = 0
 
 func _unhandled_input(event: InputEvent) -> void:
+	if GameManager.is_modal_ui_open():
+		return
 	if(event.is_action_pressed("Reel") && current_state == Fish_State.FISHING):
 		progress += reel_gain
 		progress = clamp(progress,0,1)
