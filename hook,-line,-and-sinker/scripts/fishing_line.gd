@@ -139,6 +139,11 @@ func update_ripple_position() -> void:
 		fraction = clampf((water_surface_y - start.y) / difference, 0.0, 1.0)
 	ripple_tell.position = start.lerp(tip, fraction).round()
 
+# Fish sprite is centered: its position marks its midpoint.
+# Catch as soon as that midpoint reaches the ripple's water surface.
+func fish_midpoint_above_water() -> bool:
+	return fish.position.y <= water_surface_y
+
 func play_ripple(animation: StringName) -> void:
 	if ripple_tell.sprite_frames == null or not ripple_tell.sprite_frames.has_animation(animation):
 		ripple_tell.hide()
