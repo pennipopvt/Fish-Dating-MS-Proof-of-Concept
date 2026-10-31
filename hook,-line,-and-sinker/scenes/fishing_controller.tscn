@@ -26,9 +26,14 @@ animations = [{
 "speed": 7.0
 }, {
 "frames": [{"duration": 1.0, "texture": ExtResource("11_m3")}, {"duration": 1.0, "texture": ExtResource("10_m2")}, {"duration": 1.0, "texture": ExtResource("9_m1")}],
+"loop": false,
+"name": &"start_attack",
+"speed": 12.0
+}, {
+"frames": [{"duration": 1.0, "texture": ExtResource("10_m2")}, {"duration": 1.0, "texture": ExtResource("11_m3")}],
 "loop": true,
-"name": &"attack",
-"speed": 9.0
+"name": &"attacking",
+"speed": 7.0
 }, {
 "frames": [{"duration": 1.0, "texture": ExtResource("8_r3")}, {"duration": 1.0, "texture": ExtResource("7_r2")}, {"duration": 1.0, "texture": ExtResource("6_r1")}],
 "loop": true,
