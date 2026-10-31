@@ -39,16 +39,12 @@ var delay_time = 0
 
 @export var reel_gain: float = 0.1
 @export var starting_progress: float = 0.25
-## Constant gentle resistance outside stun, measured as progress lost per second.
-@export_range(0.0, 0.2, 0.001) var passive_escape_rate: float = 0.015
 @export var bite_time_min: float = 1
 @export var bite_time_max: float = 20
 
 #maybe later these variables can be moved to the manager for shop items to influence dem
 @export var tension_gain: float = 0.7
 @export var tension_recovery: float = 0.2
-##tension multiplier while reeling a fish thats in desperation
-@export var tens_bonus_mult: float = 1.2
 ##delay before recovery starts after reeling ends
 @export var recovery_delay: float = 0.1
 
@@ -110,7 +106,7 @@ func _process(delta: float) -> void:
 			#failsafe
 			return
 		#fish escape rate fights da player
-		progress -= (0.0 if attack_phase == AttackPhase.STUN else passive_escape_rate + fish_esc_rate) * delta
+		progress -= (0.0 if attack_phase == AttackPhase.STUN else hooked_fish.passive_escape_rate + fish_esc_rate) * delta
 		progress = clamp(progress,0,1)
 		
 		recover_tension(delta)
@@ -276,7 +272,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		progress = clamp(progress,0,1)
 		# A counter grants unrestricted reeling until the stun ends.
 		if attack_phase != AttackPhase.STUN:
-			tension = tension + tension_gain if fish_esc_rate <= 0 else tension + (tension_gain * tens_bonus_mult)
+			tension = tension + tension_gain if fish_esc_rate <= 0 else tension + (tension_gain * hooked_fish.attack_tension_multiplier)
 		tension = clamp(tension, 0, 1)
 		fishing_line.set_tension(tension)
 		
