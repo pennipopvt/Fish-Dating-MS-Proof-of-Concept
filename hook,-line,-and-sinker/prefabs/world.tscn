@@ -20,6 +20,7 @@
 [ext_resource type="Texture2D" uid="uid://b1yjy4cpk8663" path="res://sprites/small_ripple_3.png" id="18_gi6id"]
 [ext_resource type="Texture2D" uid="uid://xb7algatkug2" path="res://sprites/medium_ripple_b.png" id="19_b1m2q"]
 [ext_resource type="Texture2D" uid="uid://dxh258uk7ryb2" path="res://sprites/medium_ripple_c.png" id="20_8bx52"]
+[ext_resource type="PackedScene" path="res://prefabs/bait_box.tscn" id="21_baitb"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_4284n"]
 shader = ExtResource("6_07nuu")
@@ -126,6 +127,9 @@ position = Vector2(166, 96)
 
 [node name="TestNPC" parent="." unique_id=2033605866 instance=ExtResource("4_5f5nf")]
 position = Vector2(293, 96)
+
+[node name="BaitBox" parent="." instance=ExtResource("21_baitb")]
+position = Vector2(128, 106)
 
 [node name="Ground" type="TileMapLayer" parent="." unique_id=97856843]
 tile_map_data = PackedByteArray("AAADAAgAAAAAAAEAAAAEAAgAAAABAAEAAAAFAAgAAAACAAEAAAAGAAgAAAADAAEAAAAHAAgAAAAEAAEAAAAIAAgAAAAFAAEAAAAJAAgAAAAEAAEAAAAKAAgAAAAFAAEAAAALAAgAAAAEAAEAAAAMAAgAAAAFAAEAAAANAAgAAAAEAAEAAAAOAAgAAAAFAAEAAAAPAAgAAAAEAAEAAAAQAAgAAAAFAAEAAAARAAgAAAAEAAEAAAASAAgAAAAFAAEAAAATAAgAAAAEAAEAAAAUAAgAAAAFAAEAAAAVAAgAAAAEAAEAAAAWAAgAAAAFAAEAAAADAAcAAAAAAAAAAAAEAAcAAAABAAAAAAAFAAcAAAACAAAAAAAGAAcAAAADAAAAAAAHAAcAAAAEAAAAAAAIAAcAAAAFAAAAAAAJAAcAAAAEAAAAAAAKAAcAAAAFAAAAAAALAAcAAAAEAAAAAAAMAAcAAAAFAAAAAAANAAcAAAAEAAAAAAAOAAcAAAAFAAAAAAAPAAcAAAAEAAAAAAAQAAcAAAAFAAAAAAARAAcAAAAEAAAAAAASAAcAAAAFAAAAAAATAAcAAAAEAAAAAAAUAAcAAAAFAAAAAAAVAAcAAAAEAAAAAAAWAAcAAAAFAAAAAAA=")

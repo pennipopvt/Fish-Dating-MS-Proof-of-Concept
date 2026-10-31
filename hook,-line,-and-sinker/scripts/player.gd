@@ -2,6 +2,7 @@ class_name Player
 extends CharacterBody2D
 
 const SPEED = 150.0
+const ACC = 2000.0
 
 var held_item: ItemData = null
 var current_interactable: Interactable = null
@@ -13,23 +14,23 @@ var last_direction : float;
 
 
 func _physics_process(delta: float) -> void:
-	
-	if busy or DialogueManager.is_active or ShopManager.is_shop_open:
+
+	if busy:
 		velocity.x = 0;
 		move_and_slide()
 		return
-	
+
 	var direction := Input.get_axis("Move Left", "Move Right")
 
 	if direction:
-		velocity.x = direction * SPEED
-		if sign(velocity.x) < 0:
+		velocity.x = move_toward(velocity.x, direction * SPEED, ACC * delta)
+		if sign(direction) < 0:
 			animator.play("walk_l")
 		else:
 			animator.play("walk_r")
 		last_direction = direction
 	else:
-		velocity.x = move_toward(velocity.x, 0, SPEED)
+		velocity.x = move_toward(velocity.x, 0, ACC * delta)
 		if sign(last_direction) < 0:
 			animator.play("idle_l")
 		else:
