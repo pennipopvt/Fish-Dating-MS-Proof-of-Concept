@@ -280,3 +280,10 @@ texture_filter = 1
 sprite_frames = SubResource("SpriteFrames_ripple")
 animation = &"windup"
 autoplay = "idle"
+
+[node name="CatchLandingPoint" type="Marker2D" parent="."]
+position = Vector2(35, 0)
+
+[node name="CatchFishVisual" type="Sprite2D" parent="."]
+visible = false
+z_index = 12
