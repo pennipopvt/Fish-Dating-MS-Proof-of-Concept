@@ -248,6 +248,7 @@ func start_windup() -> void:
 		return
 	attack_phase = AttackPhase.WINDUP
 	phase_time = active_attack.windup_duration
+	fishing_line.set_windup_duration(active_attack.windup_duration)
 	counter_locked = false
 	scroll_streak = 0
 	fish_esc_rate = 0.0
