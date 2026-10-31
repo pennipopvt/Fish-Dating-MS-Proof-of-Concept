@@ -191,7 +191,6 @@ func reset_values() -> void:
 	fishing_line.set_telegraph(0, 0.0)
 	active_attack = null
 	fishing_line.set_stunned(false)
-	fishing_line.stop_phase_movement()
 	attack_phase = AttackPhase.RECOVERY
 	counter_locked = false
 	scroll_streak = 0
@@ -253,7 +252,6 @@ func select_attack() -> FishEscapeState:
 func start_recovery(duration: float) -> void:
 	fishing_line.set_stunned(false)
 	attack_phase = AttackPhase.RECOVERY
-	fishing_line.choose_phase_direction()
 	phase_time = duration
 	fish_esc_rate = 0.0
 	fishing_line.set_telegraph(1, 0.0)
@@ -264,7 +262,6 @@ func start_windup() -> void:
 		start_recovery(0.5)
 		return
 	attack_phase = AttackPhase.WINDUP
-	fishing_line.choose_phase_direction()
 	phase_time = active_attack.windup_duration
 	fishing_line.set_windup_duration(active_attack.windup_duration)
 	counter_locked = false
@@ -274,7 +271,6 @@ func start_windup() -> void:
 
 func begin_attack() -> void:
 	attack_phase = AttackPhase.ATTACK
-	fishing_line.choose_phase_direction()
 	phase_time = maxf(active_attack.state_length, 0.05)
 	attack_elapsed = 0.0
 	fish_esc_rate = active_attack.escape_rate
@@ -341,7 +337,6 @@ func attempt_counter() -> bool:
 	fishing_line.set_tension(tension)
 	fishing_line.flash_counter(true)
 	attack_phase = AttackPhase.STUN
-	fishing_line.stop_phase_movement()
 	fishing_line.set_stunned(true)
 	phase_time = active_attack.stun_duration
 	fish_esc_rate = 0.0
