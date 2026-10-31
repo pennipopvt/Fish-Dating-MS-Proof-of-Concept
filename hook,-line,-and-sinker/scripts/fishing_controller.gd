@@ -163,15 +163,15 @@ func start_catch_sequence() -> void:
 	if current_state != Fish_State.FISHING or hooked_fish == null:
 		return
 	current_state = Fish_State.CATCHING
-	catch_start = to_local(fishing_line.get_fish_global_position())
-	catch_end = to_local(catch_landing_point.global_position)
+	catch_start = catch_fish_visual.get_parent().to_local(fishing_line.get_fish_global_position())
+	catch_end = catch_fish_visual.get_parent().to_local(catch_landing_point.global_position)
 	# Peak above both the water exit and the landing spot.
 	catch_control = (catch_start + catch_end) * 0.5
 	catch_control.y = minf(catch_start.y, catch_end.y) - catch_arc_height
 	catch_fish_visual.texture = fishing_line.get_fish_texture()
 	catch_fish_visual.scale = fishing_line.get_fish_global_scale()
 	catch_fish_visual.position = catch_start
-	catch_start_rotation = fishing_line.get_fish_global_rotation() - global_rotation
+	catch_start_rotation = fishing_line.get_fish_global_rotation() - catch_fish_visual.get_parent().global_rotation
 	catch_fish_visual.rotation = catch_start_rotation
 	catch_fish_visual.z_index = 12
 	catch_fish_visual.show()
