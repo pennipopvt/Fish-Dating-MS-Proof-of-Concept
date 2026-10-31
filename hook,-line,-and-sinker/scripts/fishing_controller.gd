@@ -292,7 +292,7 @@ func invalidate_counter() -> void:
 		return
 	counter_locked = true
 	scroll_streak = 0
-	fishing_line.flash_counter(false)
+	# A missed counter does not interrupt the current ripple animation.
 
 func attempt_counter() -> bool:
 	var now: int = Time.get_ticks_msec()
