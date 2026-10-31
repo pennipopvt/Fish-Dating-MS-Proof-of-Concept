@@ -203,7 +203,7 @@ func _update_catch_descent(t: float) -> void:
 	var a := catch_peak.lerp(control, t)
 	var b := control.lerp(catch_end, t)
 	catch_fish_visual.position = a.lerp(b, t)
-	catch_fish_visual.rotation = catch_start_rotation + TAU
+	catch_fish_visual.rotation = catch_start_rotation + TAU + TAU * t
 
 func _on_catch_landed() -> void:
 	catch_fish_visual.position = catch_end
