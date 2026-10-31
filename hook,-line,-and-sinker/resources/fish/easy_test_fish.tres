@@ -1,6 +1,6 @@
 [gd_resource type="Resource" script_class="FishData" format=3 uid="uid://bad7evmwitdpl"]
 
-[ext_resource type="Resource" uid="uid://dn6ncev70srw0" path="res://resources/items/test_fish_item.tres" id="1_fusjd"]
+[ext_resource type="Resource" uid="uid://dh5u57inonklf" path="res://resources/items/placeholder_fish_a_item.tres" id="1_o4qmq"]
 [ext_resource type="Script" uid="uid://d2iidpvp5wrw7" path="res://resources/fish_data.gd" id="2_y4tt7"]
 [ext_resource type="Script" uid="uid://cur8k0lqp6jxh" path="res://resources/fish_escape_state.gd" id="3_y4tt7"]
 
@@ -22,6 +22,6 @@ metadata/_custom_type_script = "uid://cur8k0lqp6jxh"
 [resource]
 script = ExtResource("2_y4tt7")
 fish_id = &"easy_test_fish"
-item_data = ExtResource("1_fusjd")
+item_data = ExtResource("1_o4qmq")
 states = Array[ExtResource("3_y4tt7")]([SubResource("Resource_ag765"), SubResource("Resource_r7p2w")])
 metadata/_custom_type_script = "uid://d2iidpvp5wrw7"

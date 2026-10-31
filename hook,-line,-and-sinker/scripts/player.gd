@@ -1,8 +1,9 @@
 class_name Player
 extends CharacterBody2D
 
-const SPEED = 150.0
+const SPEED = 100.0
 const ACC = 2000.0
+
 
 var held_item: ItemData = null
 var current_interactable: Interactable = null
