@@ -206,9 +206,5 @@ func flash_counter(success: bool) -> void:
 	play_ripple(&"counter_success")
 
 func _process(delta: float) -> void:
-	if hooked and not stunned_line:
-		swim_offset += swim_velocity * delta
-		swim_offset.x = clampf(swim_offset.x, -max_horizontal_drift, max_horizontal_drift)
-		swim_offset.y = clampf(swim_offset.y, -max_vertical_drift, max_vertical_drift)
 	if counter_flash_time > 0.0:
 		counter_flash_time = maxf(0.0, counter_flash_time - delta)
