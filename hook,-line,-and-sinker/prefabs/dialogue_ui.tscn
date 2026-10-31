@@ -76,6 +76,39 @@ script = ExtResource("1_dlg")
 placeholder_portrait = ExtResource("2_portrait")
 player_portrait = ExtResource("3_player")
 
+[node name="PlayerPortrait" type="TextureRect" parent="." unique_id=1677767363]
+unique_name_in_owner = true
+anchors_preset = -1
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = -194.0
+offset_top = -972.0
+offset_right = 1175.0
+offset_bottom = 567.0
+grow_vertical = 0
+mouse_filter = 2
+texture = ExtResource("4_ln1m7")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="NPCPortrait" type="TextureRect" parent="." unique_id=1497894681]
+unique_name_in_owner = true
+anchors_preset = -1
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -840.0
+offset_top = -990.0
+offset_right = 9.0
+offset_bottom = 500.0
+grow_horizontal = 0
+grow_vertical = 0
+mouse_filter = 2
+texture = ExtResource("5_mmh5p")
+expand_mode = 1
+stretch_mode = 5
+
 [node name="Box" type="PanelContainer" parent="." unique_id=1680545143]
 unique_name_in_owner = true
 anchors_preset = -1
@@ -118,39 +151,6 @@ modulate = Color(1, 1, 1, 0.7)
 layout_mode = 2
 theme_override_font_sizes/font_size = 26
 horizontal_alignment = 2
-
-[node name="PlayerPortrait" type="TextureRect" parent="." unique_id=1677767363]
-unique_name_in_owner = true
-anchors_preset = -1
-anchor_top = 1.0
-anchor_bottom = 1.0
-offset_left = -356.0
-offset_top = -865.0
-offset_right = 1013.0
-offset_bottom = 674.0
-grow_vertical = 0
-mouse_filter = 2
-texture = ExtResource("4_ln1m7")
-expand_mode = 1
-stretch_mode = 5
-
-[node name="NPCPortrait" type="TextureRect" parent="." unique_id=1497894681]
-unique_name_in_owner = true
-anchors_preset = -1
-anchor_left = 1.0
-anchor_top = 1.0
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_left = -664.0
-offset_top = -880.0
-offset_right = 185.0
-offset_bottom = 610.0
-grow_horizontal = 0
-grow_vertical = 0
-mouse_filter = 2
-texture = ExtResource("5_mmh5p")
-expand_mode = 1
-stretch_mode = 5
 
 [node name="ChoiceList" type="VBoxContainer" parent="." unique_id=1996385156]
 unique_name_in_owner = true
