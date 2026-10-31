@@ -195,7 +195,7 @@ func _update_catch_ascent(t: float) -> void:
 	var a := catch_start.lerp(control, t)
 	var b := control.lerp(catch_peak, t)
 	catch_fish_visual.position = a.lerp(b, t)
-	catch_fish_visual.rotation = catch_start_rotation + TAU * (1.0 - powf(1.0 - t, 3.0))
+	catch_fish_visual.rotation = catch_start_rotation + TAU * (1.0 - pow(1.0 - t, 3.0))
 
 func _update_catch_descent(t: float) -> void:
 	# The next Bezier starts tangent to the same peak, then curves down.
