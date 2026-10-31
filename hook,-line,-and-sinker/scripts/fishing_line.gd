@@ -11,19 +11,18 @@ var line_dist : float = 0
 var pos: Vector2
 
 @export var water_surface_y: float = 44.0
-# The fish sways horizontally while fighting, but never changes its actual
-# reeling progress or vertical catch threshold.
-@export_range(0.0, 20.0, 0.5) var idle_swim_width: float = 4.0
-@export_range(0.0, 20.0, 0.5) var attack_swim_width: float = 8.0
-@export_range(0.1, 8.0, 0.1) var swim_speed: float = 2.3
-var swim_clock: float = 0.0
-var swim_seed: float = 0.0
+# Each attack commits to one sideways pull direction. No constant oscillation.
+@export_range(0.0, 50.0, 1.0) var attack_direction_distance: float = 20.0
+@export_range(0.1, 20.0, 0.1) var direction_follow_speed: float = 7.0
 var hooked: bool = false
-var pulling_hard: bool = false
+var attack_direction: float = 0.0
+var direction_offset: float = 0.0
 
-func set_pulling_hard(value: bool) -> void:
-	pulling_hard = value
+func choose_attack_direction() -> void:
+	attack_direction = (-1.0 if randf() < 0.5 else 1.0) * attack_direction_distance
 
+func clear_attack_direction() -> void:
+	attack_direction = 0.0
 
 var tell_phase: int = 0
 var tell_progress: float = 0.0
@@ -101,8 +100,8 @@ func send(initial_progress: float = 0.0) -> void:
 	#later i wanna add an animation of it being sent into da water
 	pos = get_point_position(0)
 	hooked = false
-	swim_clock = 0.0
-	swim_seed = randf_range(0.0, TAU)
+	attack_direction = 0.0
+	direction_offset = 0.0
 	# Position both the line tip and hidden fish at the same starting point.
 	update_line_dist(initial_progress)
 	show()
@@ -119,7 +118,8 @@ func hook(item: FishData) -> void:
 
 func close() -> void:
 	hooked = false
-	pulling_hard = false
+	clear_attack_direction()
+	direction_offset = 0.0
 	set_stunned(false)
 	ripple_tell.hide()
 	current_ripple_animation = &""
@@ -137,9 +137,8 @@ func update_line_dist(dist_perc: float) -> void:
 	line_dist = clamp(line_dist,0,max_dist)
 	var endpos = pos
 	endpos.x -= line_dist
-	if hooked and not stunned_line:
-		var swing: float = attack_swim_width if pulling_hard else idle_swim_width
-		endpos.x += roundf(sin(swim_clock * swim_speed + swim_seed) * swing)
+	if hooked:
+		endpos.x += roundf(direction_offset)
 	#slight offset to keep the fish in what would be the water
 	endpos.y += (line_dist + y_line_offset)
 	fish.position = endpos
@@ -226,7 +225,7 @@ func flash_counter(success: bool) -> void:
 	play_ripple(&"counter_success")
 
 func _process(delta: float) -> void:
-	if hooked and not stunned_line:
-		swim_clock += delta
+	if hooked:
+		direction_offset = move_toward(direction_offset, attack_direction, attack_direction_distance * direction_follow_speed * delta)
 	if counter_flash_time > 0.0:
 		counter_flash_time = maxf(0.0, counter_flash_time - delta)
