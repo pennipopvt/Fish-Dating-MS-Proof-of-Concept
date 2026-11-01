@@ -289,3 +289,19 @@ position = Vector2(35, 0)
 [node name="CatchFishVisual" type="Sprite2D" parent="." unique_id=737049409]
 visible = false
 z_index = 12
+
+[node name="HookSfx" type="AudioStreamPlayer" parent="."]
+
+[node name="WindupSfx" type="AudioStreamPlayer" parent="."]
+
+[node name="AttackSfx" type="AudioStreamPlayer" parent="."]
+
+[node name="CounterSfx" type="AudioStreamPlayer" parent="."]
+
+[node name="ReelSfx" type="AudioStreamPlayer" parent="."]
+
+[node name="CatchSfx" type="AudioStreamPlayer" parent="."]
+
+[node name="LandSfx" type="AudioStreamPlayer" parent="."]
+
+[node name="LoseSfx" type="AudioStreamPlayer" parent="."]
