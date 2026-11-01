@@ -217,6 +217,7 @@ func _on_ripple_animation_finished() -> void:
 	if current_ripple_animation == &"counter_success":
 		counter_flash_time = 0.0
 		current_ripple_animation = &""
+		attack_start_pending = false
 		set_telegraph(current_telegraph_phase, 0.0)
 		return
 	# A one-shot splash marks attack onset; the sustained pull then loops.
@@ -228,6 +229,10 @@ func flash_counter(success: bool) -> void:
 	# A miss lets windup / start_attack / attacking play uninterrupted.
 	if not success:
 		return
+	# Cancel start_attack immediately; do not queue or resume its remaining frames.
+	attack_start_pending = false
 	counter_flash_time = 1.0
+	ripple_tell.stop()
+	current_ripple_animation = &""
 	play_ripple(&"counter_success")
 
