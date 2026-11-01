@@ -57,9 +57,14 @@ var delay_time = 0
 @onready var attack_sfx: AudioStreamPlayer = $AttackSfx
 @onready var counter_sfx: AudioStreamPlayer = $CounterSfx
 @onready var reel_sfx: AudioStreamPlayer = $ReelSfx
+@export_range(1, 16, 1) var reel_sound_polyphony: int = 6
 @onready var catch_sfx: AudioStreamPlayer = $CatchSfx
 @onready var land_sfx: AudioStreamPlayer = $LandSfx
 @onready var lose_sfx: AudioStreamPlayer = $LoseSfx
+
+func _ready() -> void:
+	# Allow multiple short reel clicks to overlap rather than restarting one voice.
+	reel_sfx.max_polyphony = reel_sound_polyphony
 
 func play_fishing_sound(player: AudioStreamPlayer) -> void:
 	if player.stream != null:
