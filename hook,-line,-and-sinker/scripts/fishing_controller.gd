@@ -51,6 +51,20 @@ var delay_time = 0
 @onready var fishing_progress: TextureProgressBar = $FishingProgress
 @onready var tension_bar: TextureProgressBar = $TensionBar
 @onready var fishing_line: Line2D = $FishingLine
+# Assign AudioStream resources on these child players in the Inspector.
+@onready var hook_sfx: AudioStreamPlayer = $HookSfx
+@onready var windup_sfx: AudioStreamPlayer = $WindupSfx
+@onready var attack_sfx: AudioStreamPlayer = $AttackSfx
+@onready var counter_sfx: AudioStreamPlayer = $CounterSfx
+@onready var reel_sfx: AudioStreamPlayer = $ReelSfx
+@onready var catch_sfx: AudioStreamPlayer = $CatchSfx
+@onready var land_sfx: AudioStreamPlayer = $LandSfx
+@onready var lose_sfx: AudioStreamPlayer = $LoseSfx
+
+func play_fishing_sound(player: AudioStreamPlayer) -> void:
+	if player.stream != null:
+		player.play()
+
 @onready var catch_landing_point: Marker2D = $CatchLandingPoint
 @onready var catch_fish_visual: Sprite2D = $CatchFishVisual
 @export_range(0.1, 2.0, 0.05) var catch_flight_duration: float = 0.65
@@ -127,6 +141,7 @@ func _process(delta: float) -> void:
 		delay_time = clamp(delay_time,0,1)
 
 func begin_reeling() -> void:
+	play_fishing_sound(hook_sfx)
 	current_state = Fish_State.FISHING
 	#reset progress when finding a fish
 	progress = starting_progress
@@ -146,6 +161,7 @@ func begin_reeling() -> void:
 func lose_fish() -> void:
 	if(hooked_fish == null):
 		return
+	play_fishing_sound(lose_sfx)
 	#inform the fishing manager
 	print("Lost ", hooked_fish.fish_id)
 	FishingManager.lose_fish(hooked_fish)
@@ -154,6 +170,7 @@ func lose_fish() -> void:
 func start_catch_sequence() -> void:
 	if current_state != Fish_State.FISHING or hooked_fish == null:
 		return
+	play_fishing_sound(catch_sfx)
 	current_state = Fish_State.CATCHING
 	catch_start = catch_fish_visual.get_parent().to_local(fishing_line.get_fish_global_position())
 	catch_end = catch_fish_visual.get_parent().to_local(catch_landing_point.global_position)
@@ -197,6 +214,7 @@ func _update_catch_descent(t: float) -> void:
 	catch_fish_visual.rotation = catch_start_rotation + TAU + TAU * t
 
 func _on_catch_landed() -> void:
+	play_fishing_sound(land_sfx)
 	catch_fish_visual.position = catch_end
 	catch_fish_visual.rotation = 0.0
 	catch_fish_visual.z_index = -1
@@ -261,6 +279,7 @@ func _unhandled_input(event: InputEvent) -> void:
 	if GameManager.is_modal_ui_open():
 		return
 	if(event.is_action_pressed("Reel") && current_state == Fish_State.FISHING):
+		play_fishing_sound(reel_sfx)
 		if attempt_counter():
 			return
 		progress += reel_gain
@@ -323,6 +342,7 @@ func start_windup() -> void:
 	if active_attack == null:
 		start_recovery(0.5)
 		return
+	play_fishing_sound(windup_sfx)
 	attack_phase = AttackPhase.WINDUP
 	phase_time = active_attack.windup_duration
 	fishing_line.set_windup_duration(active_attack.windup_duration)
@@ -332,6 +352,7 @@ func start_windup() -> void:
 	print("Windup: ", active_attack.state_name)
 
 func begin_attack() -> void:
+	play_fishing_sound(attack_sfx)
 	attack_phase = AttackPhase.ATTACK
 	phase_time = maxf(active_attack.state_length, 0.05)
 	attack_elapsed = 0.0
@@ -398,6 +419,7 @@ func attempt_counter() -> bool:
 	tension = maxf(0.0, tension - active_attack.counter_tension_relief)
 	fishing_line.set_tension(tension)
 	fishing_line.flash_counter(true)
+	play_fishing_sound(counter_sfx)
 	attack_phase = AttackPhase.STUN
 	fishing_line.set_stunned(true)
 	phase_time = active_attack.stun_duration
