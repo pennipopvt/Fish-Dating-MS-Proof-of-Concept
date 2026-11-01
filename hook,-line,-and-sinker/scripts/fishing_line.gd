@@ -182,7 +182,7 @@ func set_telegraph(phase: int, amount: float) -> void:
 	elif phase != 3:
 		attack_start_pending = false
 	update_ripple_position()
-	if counter_flash_time > 0.0:
+	if current_ripple_animation == &"counter_success":
 		return
 	match phase:
 		0:
@@ -228,8 +228,6 @@ func flash_counter(success: bool) -> void:
 	# A miss lets windup / start_attack / attacking play uninterrupted.
 	if not success:
 		return
-	counter_flash_time = 0.0
+	counter_flash_time = 1.0
 	play_ripple(&"counter_success")
 
-func _process(_delta: float) -> void:
-	pass
