@@ -212,6 +212,13 @@ func set_telegraph(phase: int, amount: float) -> void:
 			ripple_tell.hide()
 
 func _on_ripple_animation_finished() -> void:
+	# A counter flash should immediately hand control back to the active
+	# telegraph instead of holding its last frame.
+	if current_ripple_animation == &"counter_success":
+		counter_flash_time = 0.0
+		current_ripple_animation = &""
+		set_telegraph(current_telegraph_phase, 0.0)
+		return
 	# A one-shot splash marks attack onset; the sustained pull then loops.
 	if current_ripple_animation == &"start_attack" and current_telegraph_phase == 3 and counter_flash_time <= 0.0:
 		play_ripple(&"attacking")
@@ -221,9 +228,8 @@ func flash_counter(success: bool) -> void:
 	# A miss lets windup / start_attack / attacking play uninterrupted.
 	if not success:
 		return
-	counter_flash_time = 0.35
+	counter_flash_time = 0.0
 	play_ripple(&"counter_success")
 
-func _process(delta: float) -> void:
-	if counter_flash_time > 0.0:
-		counter_flash_time = maxf(0.0, counter_flash_time - delta)
+func _process(_delta: float) -> void:
+	pass
