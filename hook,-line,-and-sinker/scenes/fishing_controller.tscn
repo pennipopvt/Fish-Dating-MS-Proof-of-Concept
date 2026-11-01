@@ -13,7 +13,7 @@
 [ext_resource type="AudioStream" uid="uid://b2wt23vvl1501" path="res://sounds/sfx/windup.wav" id="11_r2dq0"]
 [ext_resource type="AudioStream" uid="uid://de1cker8e7433" path="res://sounds/sfx/attack.wav" id="12_2505k"]
 [ext_resource type="AudioStream" uid="uid://01xoemgxdb80" path="res://sounds/sfx/counter.wav" id="13_28enk"]
-[ext_resource type="AudioStream" uid="uid://u60y5kx1mjcx" path="res://sounds/sfx/reel.wav" id="14_u81uc"]
+[ext_resource type="AudioStream" uid="uid://dlyoghyx12qyl" path="res://sounds/sfx/reel.wav" id="14_u81uc"]
 [ext_resource type="AudioStream" uid="uid://b2tmfm2vymnd" path="res://sounds/sfx/lose.wav" id="14_xlio7"]
 [ext_resource type="AudioStream" uid="uid://by5vwj80vigdx" path="res://sounds/sfx/catch.wav" id="14_yi17m"]
 [ext_resource type="AudioStream" uid="uid://clnvbbxytf36" path="res://sounds/sfx/land.wav" id="15_2xahb"]
@@ -312,6 +312,8 @@ stream = ExtResource("13_28enk")
 
 [node name="ReelSfx" type="AudioStreamPlayer" parent="." unique_id=1866191718]
 stream = ExtResource("14_u81uc")
+volume_db = -6.0
+max_polyphony = 6
 
 [node name="CatchSfx" type="AudioStreamPlayer" parent="." unique_id=1785679806]
 stream = ExtResource("14_yi17m")
