@@ -235,4 +235,3 @@ func flash_counter(success: bool) -> void:
 	ripple_tell.stop()
 	current_ripple_animation = &""
 	play_ripple(&"counter_success")
-
