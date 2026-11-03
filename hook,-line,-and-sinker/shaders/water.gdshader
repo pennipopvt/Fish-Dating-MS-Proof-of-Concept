@@ -33,28 +33,16 @@ void fragment() {
 
 	float depth = max(screen_pixel.y - waterline_y, 0.0);
 
-	// Vertically squished, wobbly reflection.
-	float vertical_wave = sin(
-		depth * 0.65 + TIME * 1.4
-	) * 1.5;
+	// Preserve the order of reflected rows: never add independent vertical
+	// waves that can make foreground/sky stripes cross over each other.
+	// Positive squish keeps the mirrored image monotonically ordered.
+	float reflected_y = waterline_y - depth * max(reflection_squish, 0.01);
 
-	vertical_wave += sin(
-		depth * 1.3 - TIME * 0.9
-	) * 0.7;
-
-	float reflected_y = waterline_y
-		- depth * reflection_squish
-		+ round(vertical_wave);
-
-	// Horizontal reflection distortion.
-	float wave = sin(
-		depth * 0.42 + TIME * ripple_speed * 3.0
-	);
-
-	wave += 0.5 * sin(
-		depth * 0.9 - TIME * ripple_speed * 2.0
-	);
-
+	// Ripples travel perpendicular to the shore (along depth), both inward
+	// and outward. They shift the reflection sideways without folding its Y.
+	float inward = sin(depth * 0.42 - TIME * ripple_speed * 3.0);
+	float outward = sin(depth * 0.9 + TIME * ripple_speed * 2.0);
+	float wave = inward + 0.5 * outward;
 	float offset = round(wave * ripple_strength);
 
 	vec2 sample_pixel = vec2(

@@ -200,7 +200,7 @@
 	"gave_name": {
 	  "lines": [
 		"Penni. That's a nice name.",
-        "I'm [Name]. It's nice to meet you."
+        "I'm Silas. It's nice to meet you."
 	  ],
 	  "next": "hesitation_intro"
 	},

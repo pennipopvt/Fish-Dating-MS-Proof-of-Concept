@@ -8,3 +8,10 @@ enum Times {
 	AFTERNOON,
 	NIGHT
 }
+
+# Menus in this group block player actions, not the running world.
+func is_modal_ui_open() -> bool:
+	for ui in get_tree().get_nodes_in_group(&"modal_ui"):
+		if (ui is CanvasLayer or ui is CanvasItem) and ui.visible:
+			return true
+	return false
