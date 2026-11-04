@@ -12,6 +12,10 @@ const SCENES := {
 	}
 }
 const FADE_DURATION := 0.6
+const MUSIC_FADE_DURATION := 0.6
+
+# Connect a cosmetic award handler when the reward has been designed.
+signal cosmetic_reward_requested(npc: NPCData, reward_id: String)
 
 @onready var background: ColorRect = $Background
 @onready var warning_screen: ColorRect = $WarningScreen
@@ -21,6 +25,7 @@ const FADE_DURATION := 0.6
 @onready var fade_layer: CanvasLayer = $FadeLayer
 @onready var fade_rect: ColorRect = $FadeLayer/Fade
 @onready var dialogue_ui: DialogueUI = get_parent().get_node("CanvasLayer/DialogueUI")
+@onready var overworld_music: AudioStreamPlayer2D = get_parent().get_node("AudioStreamPlayer2D")
 
 var _active_npc: NPCData = null
 var _active_scene_id: String = ""
@@ -28,8 +33,12 @@ var _pending_scene_data: Dictionary = {}
 var _transitioning := false
 var _scene_dialogue_started := false
 var _post_scene_npc: NPCData = null
+var _post_scene_reward_id: String = ""
+var _music_stopped_for_scene := false
+var _music_normal_volume_db: float = 0.0
 
 func _ready() -> void:
+	_music_normal_volume_db = overworld_music.volume_db
 	background.hide()
 	warning_screen.hide()
 	fade_layer.hide()
@@ -77,7 +86,14 @@ func _on_show_pressed() -> void:
 
 
 func _start_illustration() -> void:
+	# Fade the overworld music out together with the screen, then stay silent.
+	var music_tween := create_tween()
+	music_tween.tween_property(overworld_music, "volume_db", -80.0, MUSIC_FADE_DURATION)
 	await _fade_to(1.0)
+	music_tween.kill()
+	overworld_music.stop()
+	overworld_music.volume_db = _music_normal_volume_db
+	_music_stopped_for_scene = true
 	warning_screen.hide()
 	placeholder_label.text = str(_pending_scene_data.get("title", "Illustration")) + "\n[Placeholder illustration]"
 	background.show()
@@ -93,6 +109,9 @@ func _start_illustration() -> void:
 
 func _on_conversation_finished(npc: NPCData) -> void:
 	if _post_scene_npc != null and npc == _post_scene_npc:
+		if not _post_scene_reward_id.is_empty():
+			cosmetic_reward_requested.emit(npc, _post_scene_reward_id)
+		_post_scene_reward_id = ""
 		_mark_route_complete(npc)
 		_post_scene_npc = null
 		return
@@ -108,6 +127,7 @@ func _finish_scene(completed: bool = false) -> void:
 	var finished_npc := _active_npc
 	var finished_scene_id := _active_scene_id
 	var post_path := str(_pending_scene_data.get("post_dialogue", ""))
+	var reward_id := str(_pending_scene_data.get("reward_item", ""))
 	await _fade_to(1.0)
 	# At full black, restore the overworld and normal portrait layout.
 	background.hide()
@@ -117,20 +137,29 @@ func _finish_scene(completed: bool = false) -> void:
 	_active_scene_id = ""
 	_pending_scene_data = {}
 	_scene_dialogue_started = false
+	# Restart the overworld track from its beginning as we return.
+	if _music_stopped_for_scene:
+		overworld_music.volume_db = _music_normal_volume_db
+		overworld_music.play(0.0)
+		_music_stopped_for_scene = false
 	await _fade_to(0.0)
 	_transitioning = false
 	if not completed or finished_npc == null or finished_scene_id != "silas_house":
 		return
 	if post_path.is_empty():
+		if not reward_id.is_empty():
+			cosmetic_reward_requested.emit(finished_npc, reward_id)
 		_mark_route_complete(finished_npc)
 		return
 	# Whether the player watched or skipped the optional adult scene, Silas
 	# speaks automatically after the return fade. Complete the route afterward.
 	_post_scene_npc = finished_npc
+	_post_scene_reward_id = reward_id
 	DialogueManager.request_conversation(finished_npc, post_path)
 	if not DialogueManager.is_active:
 		push_warning("Post-scene dialogue could not start: " + post_path)
 		_post_scene_npc = null
+		_post_scene_reward_id = ""
 		# Do not strand route completion if dialogue data is temporarily missing.
 		_mark_route_complete(finished_npc)
 
