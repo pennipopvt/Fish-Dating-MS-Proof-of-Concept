@@ -37,14 +37,12 @@
       "lines": [
         "Oh, I was wondering what the other shore looks like.",
         "It's a bit far to go see for myself."
-      ],
-      "next": "greeting"
+      ]
     },
     "distant_reminder": {
       "lines": [
         "Not yet. Whatever it was, I still can't make it out from here."
-      ],
-      "next": "greeting"
+      ]
     },
     "goodbye": {
       "lines": [
