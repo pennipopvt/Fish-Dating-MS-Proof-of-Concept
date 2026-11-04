@@ -17,6 +17,7 @@ const FADE_DURATION := 0.6
 @onready var dialogue_ui: DialogueUI = get_parent().get_node("CanvasLayer/DialogueUI")
 
 var _active_npc: NPCData = null
+var _active_scene_id: String = ""
 var _transitioning := false
 var _scene_dialogue_started := false
 
@@ -34,6 +35,7 @@ func _on_scene_requested(npc: NPCData, scene_id: String) -> void:
 	if _active_npc != null or not SCENES.has(scene_id) or npc == null:
 		return
 	_active_npc = npc
+	_active_scene_id = scene_id
 	_transitioning = true
 	_scene_dialogue_started = false
 	_open_scene(scene_id)
@@ -56,17 +58,23 @@ func _open_scene(scene_id: String) -> void:
 func _on_conversation_finished(npc: NPCData) -> void:
 	if _active_npc == null or not _scene_dialogue_started or _transitioning or npc != _active_npc:
 		return
-	_finish_scene()
+	_finish_scene(true)
 
-func _finish_scene() -> void:
+func _finish_scene(completed: bool = false) -> void:
 	if _transitioning:
 		return
 	_transitioning = true
 	await _fade_to(1.0)
+	# Only a fully finished house conversation completes Silas\'s route.
+	# A missing/invalid dialogue file returns to the world without progression.
+	if completed and _active_scene_id == "silas_house" and _active_npc != null:
+		var flags: Dictionary = NPCManager.get_npc_state(_active_npc.npc_id)["flags"]
+		flags[&"silas_route_complete"] = true
 	# At full black, return to the still-loaded overworld.
 	background.hide()
 	dialogue_ui.set_illustration_mode(false)
 	_active_npc = null
+	_active_scene_id = ""
 	_scene_dialogue_started = false
 	await _fade_to(0.0)
 	_transitioning = false
