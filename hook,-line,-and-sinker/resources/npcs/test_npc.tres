@@ -13,11 +13,11 @@ script = ExtResource("3_w20er")
 json_path = "res://dialogue/garden_eel.json"
 forbidden_flags = Array[StringName]([&"Recruited"])
 
-[sub_resource type="Resource" id="Resource_spyglass_hints"]
+[sub_resource type="Resource" id="Resource_silas_invitation"]
 script = ExtResource("3_w20er")
-json_pool = Array[String](["res://dialogue/garden_eel_hint_lake.json", "res://dialogue/garden_eel_hint_distant.json"])
-required_flags = Array[StringName]([&"Recruited"])
-forbidden_flags = Array[StringName]([&"spyglass_hint_heard", &"spyglass_complete"])
+json_path = "res://dialogue/garden_eel_invitation.json"
+required_flags = Array[StringName]([&"Recruited", &"spyglass_complete"])
+forbidden_flags = Array[StringName]([&"house_invitation_accepted"])
 
 [sub_resource type="Resource" id="Resource_w20er"]
 script = ExtResource("3_w20er")
@@ -33,6 +33,6 @@ desired_gift = ExtResource("5_spyglass")
 correct_gift_json = "res://dialogue/garden_eel_gift_correct.json"
 incorrect_gift_json_pool = Array[String](["res://dialogue/garden_eel_gift_wrong.json", "res://dialogue/garden_eel_gift_wrong_distant.json"])
 gift_completed_flag = &"spyglass_complete"
-encounter_rules = Array[ExtResource("3_w20er")]([SubResource("Resource_hvwbg"), SubResource("Resource_spyglass_hints"), SubResource("Resource_w20er")])
+encounter_rules = Array[ExtResource("3_w20er")]([SubResource("Resource_hvwbg"), SubResource("Resource_silas_invitation"), SubResource("Resource_w20er")])
 dialogue_json_path = "res://dialogue/garden_eel.json"
 metadata/_custom_type_script = "uid://cus4an4jfkhwc"
