@@ -27,22 +27,22 @@
       "next": "first_look"
     },
     "first_look": {
-      "cue": "spyglass_look",
       "lines": [
+        "[He raises the spyglass and looks through it.]",
         "Woah... Everything looks so close!"
       ],
       "next": "startled"
     },
     "startled": {
-      "cue": "spyglass_startle",
       "lines": [
+        "[He turns the spyglass toward you, then quickly lowers it.]",
         "AH!"
       ],
       "next": "hello"
     },
     "hello": {
-      "cue": "spyglass_hello",
       "lines": [
+        "[He hesitates, then raises the spyglass again.]",
         "...Hello."
       ],
       "choices": [
