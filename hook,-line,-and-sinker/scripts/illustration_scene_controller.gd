@@ -6,9 +6,8 @@ const SCENES := {
 	"silas_house": {
 		"title": "Silas's House",
 		"dialogue": "res://dialogue/garden_eel_house_scene.json",
-		# Reserved for the non-explicit after-scene conversation and keepsake.
-		# Leave both empty until the dialogue and reward are designed.
-		"post_dialogue": "",
+		# Post-scene dialogue runs in the overworld, after fading back in.
+		"post_dialogue": "res://dialogue/garden_eel_after_scene.json",
 		"reward_item": ""
 	}
 }
@@ -28,6 +27,7 @@ var _active_scene_id: String = ""
 var _pending_scene_data: Dictionary = {}
 var _transitioning := false
 var _scene_dialogue_started := false
+var _post_scene_npc: NPCData = null
 
 func _ready() -> void:
 	background.hide()
@@ -92,6 +92,10 @@ func _start_illustration() -> void:
 		_finish_scene()
 
 func _on_conversation_finished(npc: NPCData) -> void:
+	if _post_scene_npc != null and npc == _post_scene_npc:
+		_mark_route_complete(npc)
+		_post_scene_npc = null
+		return
 	if _active_npc == null or not _scene_dialogue_started or _transitioning or npc != _active_npc:
 		return
 	_finish_scene(true)
@@ -100,16 +104,12 @@ func _finish_scene(completed: bool = false) -> void:
 	if _transitioning:
 		return
 	_transitioning = true
+	# Hold onto the NPC and post-dialogue path before clearing scene state.
+	var finished_npc := _active_npc
+	var finished_scene_id := _active_scene_id
+	var post_path := str(_pending_scene_data.get("post_dialogue", ""))
 	await _fade_to(1.0)
-	# Finishing or intentionally skipping the house scene completes the route.
-	# Future: when post_dialogue and reward_item are defined, continue with
-	# Silas's after-scene conversation and grant the keepsake before completion.
-	# Both are deliberately blank for the current milestone.
-	# A missing/invalid dialogue file returns without progression.
-	if completed and _active_scene_id == "silas_house" and _active_npc != null:
-		var flags: Dictionary = NPCManager.get_npc_state(_active_npc.npc_id)["flags"]
-		flags[&"silas_route_complete"] = true
-	# At full black, return to the still-loaded overworld.
+	# At full black, restore the overworld and normal portrait layout.
 	background.hide()
 	warning_screen.hide()
 	dialogue_ui.set_illustration_mode(false)
@@ -119,6 +119,25 @@ func _finish_scene(completed: bool = false) -> void:
 	_scene_dialogue_started = false
 	await _fade_to(0.0)
 	_transitioning = false
+	if not completed or finished_npc == null or finished_scene_id != "silas_house":
+		return
+	if post_path.is_empty():
+		_mark_route_complete(finished_npc)
+		return
+	# Whether the player watched or skipped the optional adult scene, Silas
+	# speaks automatically after the return fade. Complete the route afterward.
+	_post_scene_npc = finished_npc
+	DialogueManager.request_conversation(finished_npc, post_path)
+	if not DialogueManager.is_active:
+		push_warning("Post-scene dialogue could not start: " + post_path)
+		_post_scene_npc = null
+		# Do not strand route completion if dialogue data is temporarily missing.
+		_mark_route_complete(finished_npc)
+
+
+func _mark_route_complete(npc: NPCData) -> void:
+	var flags: Dictionary = NPCManager.get_npc_state(npc.npc_id)["flags"]
+	flags[&"silas_route_complete"] = true
 
 func _fade_to(alpha: float) -> void:
 	fade_layer.show()
