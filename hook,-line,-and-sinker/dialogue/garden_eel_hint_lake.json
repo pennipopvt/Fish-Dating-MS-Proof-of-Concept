@@ -1,0 +1,17 @@
+{
+  "entry": "hint",
+  "nodes": {
+    "hint": {
+      "lines": [
+        "Sometimes I wonder what's on the other side of the lake.",
+        "It's a little too far away to make anything out from here."
+      ],
+      "effects": {
+        "set_flags": [
+          "spyglass_hint_heard",
+          "heard_lake_hint"
+        ]
+      }
+    }
+  }
+}
