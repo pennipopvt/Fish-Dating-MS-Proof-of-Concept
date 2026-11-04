@@ -7,7 +7,7 @@
       ],
       "choices": [
         {
-          "text": "Yeah, here.",
+          "text": "Yes, it's for you!",
           "next": "accept",
           "effects": {
             "give_held_item": true
@@ -21,8 +21,8 @@
     },
     "accept": {
       "lines": [
-        "Oh, thanks!",
-        "I wish I could get a better look at that thing in the distance."
+        "Oh! That's nice. Thank you.",
+        "I kept trying to see what was moving over there, but it's so far away."
       ],
       "effects": {
         "set_flags": [
@@ -33,7 +33,7 @@
     },
     "decline": {
       "lines": [
-        "That's okay."
+        "Oh. No problem!"
       ]
     }
   }
