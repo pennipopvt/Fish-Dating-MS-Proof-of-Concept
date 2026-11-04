@@ -3,8 +3,7 @@
   "nodes": {
     "greeting": {
       "lines": [
-        "Oh, hello again.",
-        "It's still a little strange being up here, but I'm getting used to it."
+        "Oh, hi, Penni."
       ],
       "choices": [
         {
@@ -28,25 +27,37 @@
           ]
         },
         {
-          "text": "Just saying hi!",
+          "text": "How's the spyglass?",
+          "next": "spyglass_followup",
+          "required_flags": [
+            "spyglass_complete"
+          ]
+        },
+        {
+          "text": "Just checking in.",
           "next": "goodbye"
         }
       ]
     },
     "lake_reminder": {
       "lines": [
-        "Oh, I was wondering what the other shore looks like.",
-        "It's a bit far to go see for myself."
+        "I wonder what's over there. It's too far away for me to see."
       ]
     },
     "distant_reminder": {
       "lines": [
-        "Not yet. Whatever it was, I still can't make it out from here."
+        "Not yet. I wish I could get a closer look without actually going over there."
+      ]
+    },
+    "spyglass_followup": {
+      "lines": [
+        "I've been looking at everything with it.",
+        "From right here, where it's safe."
       ]
     },
     "goodbye": {
       "lines": [
-        "Oh. That's nice. Hi!"
+        "Oh! Okay. See you."
       ]
     }
   }
