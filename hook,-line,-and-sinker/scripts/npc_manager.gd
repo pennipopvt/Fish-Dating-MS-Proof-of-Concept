@@ -131,3 +131,16 @@ func accept_gift(npc: NPCData, player: Player, expected_item_id: StringName) -> 
 		var flags: Dictionary = get_npc_state(npc.npc_id)["flags"]
 		flags[npc.gift_completed_flag] = true
 	return true
+
+
+# Development shortcut: F6 skips Silas's initial catch conversation.
+# Only active in debug builds; leaves the gift puzzle and hint selection untouched.
+func _unhandled_key_input(event: InputEvent) -> void:
+	if not OS.is_debug_build():
+		return
+	if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_F6:
+		var state := get_npc_state(&"test_npc")
+		var flags: Dictionary = state["flags"]
+		flags[&"Recruited"] = true
+		print("[DEV] Silas recruited. Next interaction begins his gift quest.")
+		get_viewport().set_input_as_handled()
