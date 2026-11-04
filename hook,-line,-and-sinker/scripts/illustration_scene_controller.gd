@@ -5,7 +5,11 @@ extends CanvasLayer
 const SCENES := {
 	"silas_house": {
 		"title": "Silas's House",
-		"dialogue": "res://dialogue/garden_eel_house_scene.json"
+		"dialogue": "res://dialogue/garden_eel_house_scene.json",
+		# Reserved for the non-explicit after-scene conversation and keepsake.
+		# Leave both empty until the dialogue and reward are designed.
+		"post_dialogue": "",
+		"reward_item": ""
 	}
 }
 const FADE_DURATION := 0.6
@@ -98,6 +102,9 @@ func _finish_scene(completed: bool = false) -> void:
 	_transitioning = true
 	await _fade_to(1.0)
 	# Finishing or intentionally skipping the house scene completes the route.
+	# Future: when post_dialogue and reward_item are defined, continue with
+	# Silas's after-scene conversation and grant the keepsake before completion.
+	# Both are deliberately blank for the current milestone.
 	# A missing/invalid dialogue file returns without progression.
 	if completed and _active_scene_id == "silas_house" and _active_npc != null:
 		var flags: Dictionary = NPCManager.get_npc_state(_active_npc.npc_id)["flags"]
