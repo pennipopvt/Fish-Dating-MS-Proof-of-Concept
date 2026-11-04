@@ -39,14 +39,20 @@ A graph has entry and nodes. Nodes have lines (strings as NPC speech, or objects
 - A node whose choices are *all* filtered away will follow its `next` target or end normally; it will not display an empty choice menu.
 - Existing recruitment dialogue and legacy resource-based dialogue are still supported.
 
-### Silas sample: spyglass hint and reminder
-The test NPC encounter rules now run in this order:
-1. Before recruitment: `garden_eel.json`
-2. Recruited, before the hint has been heard: randomly choose `garden_eel_hint_lake.json` or `garden_eel_hint_distant.json`
-3. After the hint: `garden_eel_casual.json`, with the matching reminder choice revealed by its flag.
+### Silas first arc (current implementation)
+The test NPC's encounter priority is:
+1. Not recruited: `garden_eel.json` (original recruitment dialogue retained).
+2. Recruited and `spyglass_complete` but not `house_invitation_accepted`: `garden_eel_invitation.json`.
+3. Recruited otherwise: `garden_eel_casual.json`.
 
-The two hints set both `spyglass_hint_heard` and their own specific flag, e.g. `heard_lake_hint`. The casual encounter only shows the reminder corresponding to the hint Penni heard. The `spyglass_complete` flag hides those reminders once a future gift handler sets it.
+Normal conversation is one JSON graph with two repeatable personality questions, their two response choices, and a conditional reminder submenu. No hint encounter is forced after recruitment. Penni can give the correct spyglass immediately, without hearing hints.
 
-### Still to integrate
-Gift confirmation, consuming `Player.held_item`, correct/incorrect gift responses, and completing the spyglass quest are **not** wired up yet. The item handling work will trigger an override encounter and set `spyglass_complete` when the item is accepted. These dialogue changes don't yet implement giving items.
-NPC state (including selected random encounters and flags) still exists in memory only and resets when the game restarts.
+Giving an incorrect gift picks a random reaction from `garden_eel_gift_wrong.json` and `garden_eel_gift_wrong_distant.json`. Accepting the item sets `gift_attempted` and consumes it. Reading the full hint sets `heard_lake_hint` or `heard_distant_hint`, which reveals the corresponding reminder under **Can you remind me about something?** when speaking with empty hands. Simply viewing a gift or declining the offer doesn't consume it or set these flags.
+
+Giving the spyglass starts `garden_eel_gift_correct.json`; accepting it consumes the item and sets `spyglass_complete`. The spyglass encounter includes two Penni response options after Silas says "...Hello." The next separate interaction starts the invitation. Declining doesn't change the invitation state; accepting sets `house_invitation_accepted`, so subsequent conversations return to casual dialogue.
+
+### Integration hooks for art and scenes
+- Dialogue nodes may include an optional `"cue": "spyglass_startle"`. `DialogueManager.dialogue_cue(npc, cue)` fires when that node is entered. Current cues: `spyglass_look`, `spyglass_startle`, `spyglass_hello`. No sprite animation is connected yet.
+- A node effect may contain `"request_scene": "silas_house"`. After that conversation finishes, DialogueManager emits `scene_requested(npc, scene_id)`. Connect the house illustration controller to this signal when the actual illustration scene is available. **The scene is not present yet**, so accepting the invitation currently marks the progression flag and emits the request but does not display an illustration.
+- The future next-day gating can go before the invitation's encounter rule; the current milestone unlocks it immediately after accepting the spyglass.
+- NPC flags remain in-memory until game restart; there is no persistence yet.
