@@ -31,6 +31,12 @@ func interact(_player: Node2D) -> void:
 	if npc == null:
 		push_warning("NPCInteractable needs npc assigned.")
 		return
+	var player := _player as Player
+	if player != null and player.held_item != null:
+		var path := NPCManager.get_gift_encounter_path(npc, player.held_item)
+		if not path.is_empty():
+			DialogueManager.request_conversation(npc, path, player)
+			return
 	DialogueManager.request_conversation(npc)
 
 

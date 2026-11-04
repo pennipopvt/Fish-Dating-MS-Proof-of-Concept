@@ -30,3 +30,29 @@ A graph has entry and nodes. Nodes have lines (strings as NPC speech, or objects
 - After a JSON choice is selected, DialogueManager displays the selected text as a player line. Press Continue to proceed to the choice target. Its effects apply at that point, not on the initial click.
 - Set optional `spoken_text` on a choice if Penni should say something different from the button label, and optional `expression` for the player line. Without `spoken_text`, she speaks the button text exactly.
 - Legacy resource-based dialogue remains unchanged.
+
+## Conditional reminders and random hint encounters (penni branch)
+- Optional `required_flags` and `forbidden_flags` arrays can be added to any JSON choice. DialogueManager filters unavailable choices without changing the choice indices that DialogueUI displays.
+- Optional `effects` can be placed on a JSON node, with the same `set_flags`, `clear_flags`, and `attraction` keys as choice effects. Node effects run **after the last line has been advanced**, once per node visit. This means a hint flag isn't set just because its encounter opened.
+- Each `EncounterRuleData` has optional `json_pool`: an array of resource paths. If nonempty, the matching rule picks one file at random and remembers that pick for that NPC and rule (for the current game session). The existing `json_path` is used when the pool is empty.
+- `DialogueManager.request_conversation(npc, path)` accepts an optional JSON override, with the existing one-argument request remaining compatible with DialogueUI. `start_conversation(npc, path)` also accepts an override for scripted triggers.
+- A node whose choices are *all* filtered away will follow its `next` target or end normally; it will not display an empty choice menu.
+- Existing recruitment dialogue and legacy resource-based dialogue are still supported.
+
+### Silas first arc (current implementation)
+The test NPC's encounter priority is:
+1. Not recruited: `garden_eel.json` (original recruitment dialogue retained).
+2. Recruited and `spyglass_complete` but not `house_invitation_accepted`: `garden_eel_invitation.json`.
+3. Recruited otherwise: `garden_eel_casual.json`.
+
+Normal conversation is one JSON graph with two repeatable personality questions, their two response choices, and a conditional reminder submenu. No hint encounter is forced after recruitment. Penni can give the correct spyglass immediately, without hearing hints.
+
+Giving an incorrect gift picks a random reaction from `garden_eel_gift_wrong.json` and `garden_eel_gift_wrong_distant.json`. Accepting the item sets `gift_attempted` and consumes it. Reading the full hint sets `heard_lake_hint` or `heard_distant_hint`, which reveals the corresponding reminder under **Can you remind me about something?** when speaking with empty hands. Simply viewing a gift or declining the offer doesn't consume it or set these flags.
+
+Giving the spyglass starts `garden_eel_gift_correct.json`; accepting it consumes the item and sets `spyglass_complete`. The spyglass encounter includes two Penni response options after Silas says "...Hello." The next separate interaction starts the invitation. Declining doesn't change the invitation state; accepting sets `house_invitation_accepted`, so subsequent conversations return to casual dialogue.
+
+### Integration hooks for art and scenes
+- Dialogue nodes may include an optional `"cue": "spyglass_startle"`. `DialogueManager.dialogue_cue(npc, cue)` fires when that node is entered. Current cues: `spyglass_look`, `spyglass_startle`, `spyglass_hello`. No sprite animation is connected yet.
+- A node effect may contain `"request_scene": "silas_house"`. After that conversation finishes, DialogueManager emits `scene_requested(npc, scene_id)`. Connect the house illustration controller to this signal when the actual illustration scene is available. **The scene is not present yet**, so accepting the invitation currently marks the progression flag and emits the request but does not display an illustration.
+- The future next-day gating can go before the invitation's encounter rule; the current milestone unlocks it immediately after accepting the spyglass.
+- NPC flags remain in-memory until game restart; there is no persistence yet.

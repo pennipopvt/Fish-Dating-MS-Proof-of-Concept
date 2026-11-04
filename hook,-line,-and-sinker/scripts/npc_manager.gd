@@ -77,7 +77,7 @@ func get_encounter_json_path(npc: NPCData) -> String:
 	var state: Dictionary = get_npc_state(npc.npc_id)
 	var flags: Dictionary = state.get("flags", {})
 	for rule in npc.encounter_rules:
-		if rule == null or rule.json_path.is_empty():
+		if rule == null or (rule.json_path.is_empty() and rule.json_pool.is_empty()):
 			continue
 		if rule.use_min_attraction and int(state.get("attraction", 0)) < rule.min_attraction:
 			continue
@@ -93,5 +93,54 @@ func get_encounter_json_path(npc: NPCData) -> String:
 				matches = false
 				break
 		if matches:
-			return rule.json_path
+			if rule.json_pool.is_empty():
+				return rule.json_path
+			# Remember the selection for this NPC and rule until explicitly reset.
+			var selections: Dictionary = state.get("encounter_pool_selections", {})
+			state["encounter_pool_selections"] = selections
+			var key: int = npc.encounter_rules.find(rule)
+			if not selections.has(key):
+				selections[key] = rule.json_pool.pick_random()
+			return str(selections[key])
 	return ""
+
+
+# Gift outcomes belong here; DialogueManager only requests the transfer.
+func get_gift_encounter_path(npc: NPCData, item: ItemData) -> String:
+	if npc == null or item == null or npc.desired_gift == null:
+		return ""
+	var flags: Dictionary = get_npc_state(npc.npc_id).get("flags", {})
+	if not flags.get(&"Recruited", false) or flags.get(npc.gift_completed_flag, false):
+		return ""
+	if item.item_id == npc.desired_gift.item_id:
+		return npc.correct_gift_json
+	if npc.incorrect_gift_json_pool.is_empty():
+		return ""
+	return str(npc.incorrect_gift_json_pool.pick_random())
+
+func accept_gift(npc: NPCData, player: Player, expected_item_id: StringName) -> bool:
+	if npc == null or player == null or player.held_item == null:
+		return false
+	if player.held_item.item_id != expected_item_id:
+		return false
+	if get_gift_encounter_path(npc, player.held_item).is_empty():
+		return false
+	var is_correct := player.held_item.item_id == npc.desired_gift.item_id
+	player.remove_held_item()
+	if is_correct:
+		var flags: Dictionary = get_npc_state(npc.npc_id)["flags"]
+		flags[npc.gift_completed_flag] = true
+	return true
+
+
+# Development shortcut: F6 skips Silas's initial catch conversation.
+# Only active in debug builds; leaves the gift puzzle and hint selection untouched.
+func _unhandled_key_input(event: InputEvent) -> void:
+	if not OS.is_debug_build():
+		return
+	if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_F6:
+		var state := get_npc_state(&"test_npc")
+		var flags: Dictionary = state["flags"]
+		flags[&"Recruited"] = true
+		print("[DEV] Silas recruited. Next interaction begins his gift quest.")
+		get_viewport().set_input_as_handled()
