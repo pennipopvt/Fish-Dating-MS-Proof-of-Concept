@@ -2,6 +2,27 @@
 
 [ext_resource type="Script" path="res://scripts/illustration_scene_controller.gd" id="1_ctrl"]
 
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_show"]
+bg_color = Color(0.88, 0.44, 0.59, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_show_hover"]
+bg_color = Color(0.98, 0.55, 0.68, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_show_pressed"]
+bg_color = Color(0.73, 0.32, 0.47, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+
 [node name="IllustrationScene" type="CanvasLayer"]
 layer = 5
 script = ExtResource("1_ctrl")
@@ -56,6 +77,11 @@ theme_override_font_sizes/font_size = 40
 text = "You are about to see an 18+ scene."
 horizontal_alignment = 1
 
+[node name="ButtonSpacer" type="Control" parent="WarningScreen/Center/Choices"]
+custom_minimum_size = Vector2(0, 100)
+layout_mode = 2
+mouse_filter = 2
+
 [node name="SkipButton" type="Button" parent="WarningScreen/Center/Choices"]
 layout_mode = 2
 custom_minimum_size = Vector2(450, 65)
@@ -66,6 +92,12 @@ text = "Skip"
 layout_mode = 2
 custom_minimum_size = Vector2(450, 65)
 theme_override_font_sizes/font_size = 32
+theme_override_colors/font_color = Color(0.12, 0.07, 0.1, 1)
+theme_override_colors/font_hover_color = Color(0.12, 0.07, 0.1, 1)
+theme_override_colors/font_pressed_color = Color(1, 1, 1, 1)
+theme_override_styles/normal = SubResource("StyleBoxFlat_show")
+theme_override_styles/hover = SubResource("StyleBoxFlat_show_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_show_pressed")
 text = "Let me see the porn"
 
 [node name="FadeLayer" type="CanvasLayer" parent="."]
