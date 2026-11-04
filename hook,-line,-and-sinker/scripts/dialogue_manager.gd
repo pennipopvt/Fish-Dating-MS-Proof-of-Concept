@@ -3,6 +3,9 @@ extends Node
 signal dialogue_requested(npc: NPCData)
 signal conversation_started(npc: NPCData)
 signal conversation_finished(npc: NPCData)
+# Animation cues from JSON nodes and special-scene requests after a conversation ends.
+signal dialogue_cue(npc: NPCData, cue: String)
+signal scene_requested(npc: NPCData, scene_id: String)
 
 func request_conversation(npc: NPCData, json_override: String = "", gift_player: Player = null) -> void:
 	if npc != null and not is_active:
@@ -28,6 +31,7 @@ var _requested_json_path: String = ""
 var _node_effects_applied: bool = false
 var _gift_player: Player = null
 var _expected_gift_item_id: StringName = &""
+var _scene_after_conversation: String = ""
 
 func start_conversation(npc: NPCData, json_override: String = "") -> void:
 	if is_active or npc == null:
@@ -140,6 +144,8 @@ func _apply_json_effects(effects: Variant) -> void:
 		return
 	if effects.get("give_held_item", false):
 		NPCManager.accept_gift(current_npc, _gift_player, _expected_gift_item_id)
+	if effects.has("request_scene"):
+		_scene_after_conversation = str(effects["request_scene"])
 	var state: Dictionary = NPCManager.get_npc_state(current_npc.npc_id)
 	state["attraction"] = int(state.get("attraction", 0)) + int(effects.get("attraction", 0))
 	var flags: Dictionary = state.get("flags", {})
@@ -172,6 +178,8 @@ func _enter_node(id: String) -> void:
 	_node_id = id
 	_node_effects_applied = false
 	var node: Dictionary = nodes[id]
+	if node.has("cue"):
+		dialogue_cue.emit(current_npc, str(node["cue"]))
 	_lines.clear()
 	_choices.clear()
 	_choice_defs.clear()
@@ -222,6 +230,7 @@ func _check_for_end() -> void:
 
 func end_conversation() -> void:
 	var finished_npc := current_npc
+	var requested_scene := _scene_after_conversation
 	current_npc = null
 	current_dialogue = null
 	line_index = 0
@@ -235,4 +244,7 @@ func end_conversation() -> void:
 	_node_effects_applied = false
 	_gift_player = null
 	_expected_gift_item_id = &""
+	_scene_after_conversation = ""
 	conversation_finished.emit(finished_npc)
+	if not requested_scene.is_empty():
+		scene_requested.emit(finished_npc, requested_scene)
