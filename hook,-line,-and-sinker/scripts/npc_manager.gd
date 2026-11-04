@@ -77,7 +77,7 @@ func get_encounter_json_path(npc: NPCData) -> String:
 	var state: Dictionary = get_npc_state(npc.npc_id)
 	var flags: Dictionary = state.get("flags", {})
 	for rule in npc.encounter_rules:
-		if rule == null or rule.json_path.is_empty():
+		if rule == null or (rule.json_path.is_empty() and rule.json_pool.is_empty()):
 			continue
 		if rule.use_min_attraction and int(state.get("attraction", 0)) < rule.min_attraction:
 			continue
@@ -93,5 +93,13 @@ func get_encounter_json_path(npc: NPCData) -> String:
 				matches = false
 				break
 		if matches:
-			return rule.json_path
+			if rule.json_pool.is_empty():
+				return rule.json_path
+			# Remember the selection for this NPC and rule until explicitly reset.
+			var selections: Dictionary = state.get("encounter_pool_selections", {})
+			state["encounter_pool_selections"] = selections
+			var key: int = npc.encounter_rules.find(rule)
+			if not selections.has(key):
+				selections[key] = rule.json_pool.pick_random()
+			return str(selections[key])
 	return ""
