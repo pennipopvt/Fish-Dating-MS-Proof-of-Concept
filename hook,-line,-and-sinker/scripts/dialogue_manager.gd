@@ -4,9 +4,11 @@ signal dialogue_requested(npc: NPCData)
 signal conversation_started(npc: NPCData)
 signal conversation_finished(npc: NPCData)
 
-func request_conversation(npc: NPCData, json_override: String = "") -> void:
+func request_conversation(npc: NPCData, json_override: String = "", gift_player: Player = null) -> void:
 	if npc != null and not is_active:
 		_requested_json_path = json_override
+		_gift_player = gift_player
+		_expected_gift_item_id = gift_player.held_item.item_id if gift_player != null and gift_player.held_item != null else &""
 		dialogue_requested.emit(npc)
 		_requested_json_path = ""
 
@@ -24,6 +26,8 @@ var _choice_defs: Array = []
 var _pending_choice: Dictionary = {}
 var _requested_json_path: String = ""
 var _node_effects_applied: bool = false
+var _gift_player: Player = null
+var _expected_gift_item_id: StringName = &""
 
 func start_conversation(npc: NPCData, json_override: String = "") -> void:
 	if is_active or npc == null:
@@ -134,6 +138,8 @@ func _complete_pending_choice() -> void:
 func _apply_json_effects(effects: Variant) -> void:
 	if not effects is Dictionary or current_npc == null:
 		return
+	if effects.get("give_held_item", false):
+		NPCManager.accept_gift(current_npc, _gift_player, _expected_gift_item_id)
 	var state: Dictionary = NPCManager.get_npc_state(current_npc.npc_id)
 	state["attraction"] = int(state.get("attraction", 0)) + int(effects.get("attraction", 0))
 	var flags: Dictionary = state.get("flags", {})
@@ -227,4 +233,6 @@ func end_conversation() -> void:
 	_choice_defs.clear()
 	_pending_choice.clear()
 	_node_effects_applied = false
+	_gift_player = null
+	_expected_gift_item_id = &""
 	conversation_finished.emit(finished_npc)
