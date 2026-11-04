@@ -3,8 +3,8 @@
   "nodes": {
     "hint": {
       "lines": [
-        "Something's moving way over there.",
-        "I can't tell what it is from here."
+        "There's something moving way over there.",
+        "I keep trying to see what it is, but it looks like a little dot."
       ],
       "effects": {
         "set_flags": [
