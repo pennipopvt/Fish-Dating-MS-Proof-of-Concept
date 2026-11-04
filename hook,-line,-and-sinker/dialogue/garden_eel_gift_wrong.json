@@ -23,7 +23,13 @@
       "lines": [
         "Oh! Thanks. That's really thoughtful.",
         "...I still wonder what things look like on the other side of the lake."
-      ]
+      ],
+      "effects": {
+        "set_flags": [
+          "heard_lake_hint",
+          "spyglass_hint_heard"
+        ]
+      }
     },
     "decline": {
       "lines": [
