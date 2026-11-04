@@ -75,7 +75,7 @@ func _on_show_pressed() -> void:
 func _start_illustration() -> void:
 	await _fade_to(1.0)
 	warning_screen.hide()
-	placeholder_label.text = str(_pending_scene_data.get("title", "Illustration")) + "\\n[Placeholder illustration]"
+	placeholder_label.text = str(_pending_scene_data.get("title", "Illustration")) + "\n[Placeholder illustration]"
 	background.show()
 	dialogue_ui.set_illustration_mode(true)
 	await _fade_to(0.0)
