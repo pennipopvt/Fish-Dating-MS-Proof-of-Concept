@@ -21,11 +21,12 @@ var _transitioning := false
 var _scene_dialogue_started := false
 
 func _ready() -> void:
-	hide()
+	background.hide()
 	fade_layer.hide()
 	fade_rect.color = Color.BLACK
 	fade_rect.modulate.a = 0.0
-	add_to_group(&"modal_ui")
+	background.add_to_group(&"modal_ui")
+	fade_layer.add_to_group(&"modal_ui")
 	DialogueManager.scene_requested.connect(_on_scene_requested)
 	DialogueManager.conversation_finished.connect(_on_conversation_finished)
 
@@ -41,7 +42,7 @@ func _open_scene(scene_id: String) -> void:
 	await _fade_to(1.0)
 	var scene_data: Dictionary = SCENES[scene_id]
 	placeholder_label.text = str(scene_data.get("title", "Illustration")) + "\n[Placeholder illustration]"
-	show()
+	background.show()
 	dialogue_ui.set_illustration_mode(true)
 	await _fade_to(0.0)
 	_transitioning = false
@@ -63,7 +64,7 @@ func _finish_scene() -> void:
 	_transitioning = true
 	await _fade_to(1.0)
 	# At full black, return to the still-loaded overworld.
-	hide()
+	background.hide()
 	dialogue_ui.set_illustration_mode(false)
 	_active_npc = null
 	_scene_dialogue_started = false
