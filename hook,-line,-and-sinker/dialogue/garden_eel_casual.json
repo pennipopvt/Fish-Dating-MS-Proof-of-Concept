@@ -1,11 +1,55 @@
 {
   "entry": "greeting",
   "nodes": {
-	"greeting": {
-	  "lines": [
-		"Oh, hello again.",
+    "greeting": {
+      "lines": [
+        "Oh, hello again.",
         "It's still a little strange being up here, but I'm getting used to it."
-	  ]
-	}
+      ],
+      "choices": [
+        {
+          "text": "You mentioned the other side of the lake?",
+          "next": "lake_reminder",
+          "required_flags": [
+            "heard_lake_hint"
+          ],
+          "forbidden_flags": [
+            "spyglass_complete"
+          ]
+        },
+        {
+          "text": "Did you figure out what you saw in the distance?",
+          "next": "distant_reminder",
+          "required_flags": [
+            "heard_distant_hint"
+          ],
+          "forbidden_flags": [
+            "spyglass_complete"
+          ]
+        },
+        {
+          "text": "Just saying hi!",
+          "next": "goodbye"
+        }
+      ]
+    },
+    "lake_reminder": {
+      "lines": [
+        "Oh, I was wondering what the other shore looks like.",
+        "It's a bit far to go see for myself."
+      ],
+      "next": "greeting"
+    },
+    "distant_reminder": {
+      "lines": [
+        "Not yet. Whatever it was, I still can't make it out from here."
+      ],
+      "next": "greeting"
+    },
+    "goodbye": {
+      "lines": [
+        "Oh. That's nice. Hi!"
+      ]
+    }
   }
 }
