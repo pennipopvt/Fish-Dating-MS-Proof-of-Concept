@@ -36,6 +36,9 @@ static func read_graph(path: String) -> Dictionary:
 		if node.has("next") and not nodes.has(str(node["next"])):
 			push_error("Missing next dialogue node at: " + str(id))
 			return {}
+		if node.has("cue") and not node["cue"] is String:
+			push_error("Invalid dialogue cue at: " + str(id))
+			return {}
 		if node.has("effects") and not _valid_effects(node["effects"]):
 			push_error("Invalid node effects at: " + str(id))
 			return {}
@@ -63,4 +66,10 @@ static func _string_array(value: Variant) -> bool:
 static func _valid_effects(value: Variant) -> bool:
 	if not value is Dictionary:
 		return false
-	return _string_array(value.get("set_flags", [])) and _string_array(value.get("clear_flags", []))
+	if not _string_array(value.get("set_flags", [])) or not _string_array(value.get("clear_flags", [])):
+		return false
+	if value.has("give_held_item") and not value["give_held_item"] is bool:
+		return false
+	if value.has("request_scene") and (not value["request_scene"] is String or value["request_scene"].is_empty()):
+		return false
+	return true
