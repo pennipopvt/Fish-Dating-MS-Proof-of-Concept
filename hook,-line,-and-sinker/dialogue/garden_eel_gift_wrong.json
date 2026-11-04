@@ -1,0 +1,34 @@
+{
+  "entry": "ask",
+  "nodes": {
+    "ask": {
+      "lines": [
+        "Oh! Is that for me?"
+      ],
+      "choices": [
+        {
+          "text": "Yes, it's for you!",
+          "next": "accept",
+          "effects": {
+            "give_held_item": true
+          }
+        },
+        {
+          "text": "No, sorry.",
+          "next": "decline"
+        }
+      ]
+    },
+    "accept": {
+      "lines": [
+        "Oh! Thanks. That's really thoughtful.",
+        "...I still wonder what things look like on the other side of the lake."
+      ]
+    },
+    "decline": {
+      "lines": [
+        "No worries."
+      ]
+    }
+  }
+}
