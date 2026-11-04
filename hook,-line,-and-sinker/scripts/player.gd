@@ -93,3 +93,6 @@ func _unhandled_input(event: InputEvent) -> void:
 func interact() -> void:
 	if is_instance_valid(current_interactable):
 		current_interactable.interact(self)
+	elif held_item != null:
+		# Space drops the item when there is nothing nearby to interact with.
+		drop_item()
