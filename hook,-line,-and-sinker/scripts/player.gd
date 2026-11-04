@@ -81,7 +81,22 @@ func _physics_process(delta: float) -> void:
 	move_and_slide()
 
 
+# Mouse input can be consumed by the SubViewportContainer before
+# _unhandled_input runs. Catch mouse interactions at the input stage instead.
+func _input(event: InputEvent) -> void:
+	if not event is InputEventMouseButton or not event.pressed:
+		return
+	if GameManager.is_modal_ui_open() or busy:
+		return
+	if event.is_action_pressed("Interact"):
+		interact()
+		get_viewport().set_input_as_handled()
+
+
+# Keyboard interaction stays unhandled so focused UI controls take priority.
 func _unhandled_input(event: InputEvent) -> void:
+	if event is InputEventMouseButton:
+		return
 	if GameManager.is_modal_ui_open() or busy:
 		return
 	if event.is_action_pressed("Interact"):
