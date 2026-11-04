@@ -3,32 +3,76 @@
   "nodes": {
     "ask": {
       "lines": [
-        "Oh! Is that for me?"
+        "Oh! What's that?"
       ],
       "choices": [
         {
-          "text": "Yes, I got this for you!",
+          "text": "It's for you!",
           "next": "accept",
           "effects": {
             "give_held_item": true
           }
         },
         {
-          "text": "No, I'm just carrying it.",
+          "text": "Oh, it's just something I'm carrying.",
           "next": "decline"
         }
       ]
     },
     "accept": {
       "lines": [
-        "A spyglass? Wait. I can see all the way across the lake!",
-        "Oh! You're very close!",
+        "F-for me?",
+        "Oh! Thank you!"
+      ],
+      "next": "first_look"
+    },
+    "first_look": {
+      "cue": "spyglass_look",
+      "lines": [
+        "Woah... Everything looks so close!"
+      ],
+      "next": "startled"
+    },
+    "startled": {
+      "cue": "spyglass_startle",
+      "lines": [
+        "AH!"
+      ],
+      "next": "hello"
+    },
+    "hello": {
+      "cue": "spyglass_hello",
+      "lines": [
         "...Hello."
+      ],
+      "choices": [
+        {
+          "text": "Do you like it?",
+          "next": "likes_it"
+        },
+        {
+          "text": "Hehe, hi!",
+          "next": "hi_back"
+        }
+      ]
+    },
+    "likes_it": {
+      "lines": [
+        "Yes! I love it!",
+        "It's exactly what I've been needing."
+      ]
+    },
+    "hi_back": {
+      "lines": [
+        "H-hi.",
+        "Um... your skin looks really smooth through this.",
+        "AH! No, sorry, that was weird. I'm sorry...",
+        "...Thank you for this."
       ]
     },
     "decline": {
       "lines": [
-        "Oh! Sorry, I shouldn't have assumed."
+        "Oh! Sorry."
       ]
     }
   }
