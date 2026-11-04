@@ -26,12 +26,12 @@
       "lines": [
         "F-for me?",
         "Oh! Thank you!",
-        "You know, I've been watching those strange things flying overhead.",
-        "I wish I could tell what they were. They're always so far away..."
+        "I've been wondering what's on the other side of the lake.",
+        "I don't think I'm quite ready to go over there myself, though."
       ],
       "effects": {
         "set_flags": [
-          "heard_distant_hint"
+          "heard_lake_hint"
         ]
       }
     },
