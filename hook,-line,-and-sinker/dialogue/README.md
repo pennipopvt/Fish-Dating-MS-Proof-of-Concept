@@ -30,3 +30,23 @@ A graph has entry and nodes. Nodes have lines (strings as NPC speech, or objects
 - After a JSON choice is selected, DialogueManager displays the selected text as a player line. Press Continue to proceed to the choice target. Its effects apply at that point, not on the initial click.
 - Set optional `spoken_text` on a choice if Penni should say something different from the button label, and optional `expression` for the player line. Without `spoken_text`, she speaks the button text exactly.
 - Legacy resource-based dialogue remains unchanged.
+
+## Conditional reminders and random hint encounters (penni branch)
+- Optional `required_flags` and `forbidden_flags` arrays can be added to any JSON choice. DialogueManager filters unavailable choices without changing the choice indices that DialogueUI displays.
+- Optional `effects` can be placed on a JSON node, with the same `set_flags`, `clear_flags`, and `attraction` keys as choice effects. Node effects run **after the last line has been advanced**, once per node visit. This means a hint flag isn't set just because its encounter opened.
+- Each `EncounterRuleData` has optional `json_pool`: an array of resource paths. If nonempty, the matching rule picks one file at random and remembers that pick for that NPC and rule (for the current game session). The existing `json_path` is used when the pool is empty.
+- `DialogueManager.request_conversation(npc, path)` accepts an optional JSON override, with the existing one-argument request remaining compatible with DialogueUI. `start_conversation(npc, path)` also accepts an override for scripted triggers.
+- A node whose choices are *all* filtered away will follow its `next` target or end normally; it will not display an empty choice menu.
+- Existing recruitment dialogue and legacy resource-based dialogue are still supported.
+
+### Silas sample: spyglass hint and reminder
+The test NPC encounter rules now run in this order:
+1. Before recruitment: `garden_eel.json`
+2. Recruited, before the hint has been heard: randomly choose `garden_eel_hint_lake.json` or `garden_eel_hint_distant.json`
+3. After the hint: `garden_eel_casual.json`, with the matching reminder choice revealed by its flag.
+
+The two hints set both `spyglass_hint_heard` and their own specific flag, e.g. `heard_lake_hint`. The casual encounter only shows the reminder corresponding to the hint Penni heard. The `spyglass_complete` flag hides those reminders once a future gift handler sets it.
+
+### Still to integrate
+Gift confirmation, consuming `Player.held_item`, correct/incorrect gift responses, and completing the spyglass quest are **not** wired up yet. The item handling work will trigger an override encounter and set `spyglass_complete` when the item is accepted. These dialogue changes don't yet implement giving items.
+NPC state (including selected random encounters and flags) still exists in memory only and resets when the game restarts.
