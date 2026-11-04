@@ -1,141 +1,141 @@
 {
   "entry": "greeting",
   "nodes": {
-    "greeting": {
-      "lines": [
+	"greeting": {
+	  "lines": [
         "Oh, hello again."
-      ],
-      "choices": [
-        {
-          "text": "How are you liking it here?",
-          "next": "curiosity"
-        },
-        {
-          "text": "Have you gone exploring at all?",
-          "next": "exploring"
-        },
-        {
-          "text": "Can you remind me about something?",
-          "next": "reminder_intro",
-          "required_flags": [
+	  ],
+	  "choices": [
+		{
+		  "text": "How are you liking it here?",
+		  "next": "curiosity"
+		},
+		{
+		  "text": "Have you gone exploring at all?",
+		  "next": "exploring"
+		},
+		{
+		  "text": "Can you remind me about something?",
+		  "next": "reminder_intro",
+		  "required_flags": [
             "gift_attempted"
-          ],
-          "forbidden_flags": [
+		  ],
+		  "forbidden_flags": [
             "spyglass_complete"
-          ]
-        },
-        {
-          "text": "See you later!",
-          "next": "goodbye"
-        }
-      ]
-    },
-    "curiosity": {
-      "lines": [
-        "Oh! There's so many new things to look at!",
-        "Back home, there were these fish that would swim by with the prettiest colors.",
-        "I didn't think there'd be anything like that up here, but I keep seeing these things flying overhead.",
-        "I can't really make out what they are, but it's fascinating!",
+		  ]
+		},
+		{
+		  "text": "See you later!",
+		  "next": "goodbye"
+		}
+	  ]
+	},
+	"curiosity": {
+	  "lines": [
+		"Oh! There's so many new things to look at!",
+		"Back home, there were these fish that would swim by with the prettiest colors.",
+		"I didn't think there'd be anything like that up here, but I keep seeing these things flying overhead.",
+		"I can't really make out what they are, but it's fascinating!",
         "Oh—sorry. I'm talking too much..."
-      ],
-      "choices": [
-        {
-          "text": "Hehe, no! It's cute when you get excited.",
-          "next": "curiosity_cute"
-        },
-        {
-          "text": "I'm glad you're enjoying your time here!",
-          "next": "curiosity_glad"
-        }
-      ]
-    },
-    "curiosity_cute": {
-      "lines": [
-        "O-oh. You think so?",
+	  ],
+	  "choices": [
+		{
+		  "text": "Hehe, no! It's cute when you get excited.",
+		  "next": "curiosity_cute"
+		},
+		{
+		  "text": "I'm glad you're enjoying your time here!",
+		  "next": "curiosity_glad"
+		}
+	  ]
+	},
+	"curiosity_cute": {
+	  "lines": [
+		"O-oh. You think so?",
         "...Thank you."
-      ]
-    },
-    "curiosity_glad": {
-      "lines": [
-        "Me too!",
+	  ]
+	},
+	"curiosity_glad": {
+	  "lines": [
+		"Me too!",
         "I'm glad you convinced me to stay."
-      ]
-    },
-    "exploring": {
-      "lines": [
-        "Well, I would, but—",
-        "I just keep getting this weird feeling in my legs?",
-        "I'm not used to moving around on my own like this.",
+	  ]
+	},
+	"exploring": {
+	  "lines": [
+		"Well, I would, but—",
+		"I just keep getting this weird feeling in my legs?",
+		"I'm not used to moving around on my own like this.",
         "And who knows what could happen if I did?"
-      ],
-      "choices": [
-        {
-          "text": "It's okay! You're just a little scared. You can take your time.",
-          "next": "exploring_comfort"
-        },
-        {
-          "text": "Well, maybe one day we can go exploring together!",
-          "next": "exploring_together"
-        }
-      ]
-    },
-    "exploring_comfort": {
-      "lines": [
-        "I guess you're right.",
+	  ],
+	  "choices": [
+		{
+		  "text": "It's okay! You're just a little scared. You can take your time.",
+		  "next": "exploring_comfort"
+		},
+		{
+		  "text": "Well, maybe one day we can go exploring together!",
+		  "next": "exploring_together"
+		}
+	  ]
+	},
+	"exploring_comfort": {
+	  "lines": [
+		"I guess you're right.",
         "...Thank you."
-      ]
-    },
-    "exploring_together": {
-      "lines": [
-        "T-together?",
+	  ]
+	},
+	"exploring_together": {
+	  "lines": [
+		"T-together?",
         "Oh... I'd like that."
-      ]
-    },
-    "reminder_intro": {
-      "lines": [
+	  ]
+	},
+	"reminder_intro": {
+	  "lines": [
         "Oh, sure. What was it?"
-      ],
-      "choices": [
-        {
-          "text": "You mentioned something across the lake?",
-          "next": "lake_reminder",
-          "required_flags": [
+	  ],
+	  "choices": [
+		{
+		  "text": "You mentioned something across the lake?",
+		  "next": "lake_reminder",
+		  "required_flags": [
             "heard_lake_hint"
-          ]
-        },
-        {
-          "text": "What was that thing you saw in the distance?",
-          "next": "distant_reminder",
-          "required_flags": [
+		  ]
+		},
+		{
+		  "text": "What was that thing you saw in the distance?",
+		  "next": "distant_reminder",
+		  "required_flags": [
             "heard_distant_hint"
-          ]
-        },
-        {
-          "text": "Never mind!",
-          "next": "reminder_cancel"
-        }
-      ]
-    },
-    "lake_reminder": {
-      "lines": [
-        "Oh, I was wondering what the other shore looks like.",
+		  ]
+		},
+		{
+		  "text": "Never mind!",
+		  "next": "reminder_cancel"
+		}
+	  ]
+	},
+	"lake_reminder": {
+	  "lines": [
+		"Oh, I was wondering what the other shore looks like.",
         "It's a bit far to go see for myself."
-      ]
-    },
-    "distant_reminder": {
-      "lines": [
+	  ]
+	},
+	"distant_reminder": {
+	  "lines": [
         "Not yet. Whatever it was, I still can't make it out from here."
-      ]
-    },
-    "reminder_cancel": {
-      "lines": [
+	  ]
+	},
+	"reminder_cancel": {
+	  "lines": [
         "Oh, okay!"
-      ]
-    },
-    "goodbye": {
-      "lines": [
+	  ]
+	},
+	"goodbye": {
+	  "lines": [
         "Oh! See you."
-      ]
-    }
+	  ]
+	}
   }
 }
