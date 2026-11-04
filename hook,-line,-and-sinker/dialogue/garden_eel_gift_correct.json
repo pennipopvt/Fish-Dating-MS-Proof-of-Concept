@@ -7,28 +7,29 @@
       ],
       "choices": [
         {
-          "text": "Yes, I got this for you!",
+          "text": "Yep! It's yours.",
           "next": "accept",
           "effects": {
             "give_held_item": true
           }
         },
         {
-          "text": "No, I'm just carrying it.",
+          "text": "Not right now.",
           "next": "decline"
         }
       ]
     },
     "accept": {
       "lines": [
-        "A spyglass? Wait. I can see all the way across the lake!",
-        "Oh! You're very close!",
+        "A spyglass? I can see all the way across the lake!",
+        "Wait. Let me look at you.",
+        "AH! You're huge!",
         "...Hello."
       ]
     },
     "decline": {
       "lines": [
-        "Oh! Sorry, I shouldn't have assumed."
+        "Oh! Sorry."
       ]
     }
   }
