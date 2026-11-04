@@ -3,37 +3,41 @@
   "nodes": {
     "ask": {
       "lines": [
-        "Oh! Is that for me?"
+        "Oh! What's that?"
       ],
       "choices": [
         {
-          "text": "Yes, it's for you!",
+          "text": "It's for you!",
           "next": "accept",
           "effects": {
-            "give_held_item": true
+            "give_held_item": true,
+            "set_flags": [
+              "gift_attempted"
+            ]
           }
         },
         {
-          "text": "No, sorry.",
+          "text": "Oh, it's just something I'm carrying.",
           "next": "decline"
         }
       ]
     },
     "accept": {
       "lines": [
-        "Oh! Thanks. That's really thoughtful.",
-        "...I still wonder what things look like on the other side of the lake."
+        "F-for me?",
+        "Oh! Thank you!",
+        "You know, I've been watching those strange things flying overhead.",
+        "I wish I could tell what they were. They're always so far away..."
       ],
       "effects": {
         "set_flags": [
-          "heard_lake_hint",
-          "spyglass_hint_heard"
+          "heard_distant_hint"
         ]
       }
     },
     "decline": {
       "lines": [
-        "No worries."
+        "Oh! Sorry."
       ]
     }
   }
