@@ -20,8 +20,7 @@
 [ext_resource type="Texture2D" uid="uid://xb7algatkug2" path="res://sprites/environment/medium_ripple_b.png" id="19_b1m2q"]
 [ext_resource type="Texture2D" uid="uid://dxh258uk7ryb2" path="res://sprites/environment/medium_ripple_c.png" id="20_8bx52"]
 [ext_resource type="PackedScene" uid="uid://dmjnqvhgyo6yj" path="res://prefabs/bait_box.tscn" id="21_baitb"]
-
-[ext_resource type="Script" path="res://scripts/item_pickup.gd" id="30_pickup"]
+[ext_resource type="Script" uid="uid://dmgixmvyo7qhq" path="res://scripts/item_pickup.gd" id="30_pickup"]
 [ext_resource type="Resource" path="res://resources/items/spyglass.tres" id="31_spyglass"]
 [ext_resource type="Resource" path="res://resources/items/lantern.tres" id="32_lantern"]
 
@@ -131,12 +130,12 @@ position = Vector2(166, 96)
 [node name="TestNPC" parent="." unique_id=2033605866 instance=ExtResource("4_5f5nf")]
 position = Vector2(293, 96)
 
-[node name="TestSpyglass" type="Area2D" parent="."]
+[node name="TestSpyglass" type="Area2D" parent="." unique_id=1397236402]
 position = Vector2(225, 96)
 script = ExtResource("30_pickup")
 item = ExtResource("31_spyglass")
 
-[node name="TestLantern" type="Area2D" parent="."]
+[node name="TestLantern" type="Area2D" parent="." unique_id=56151606]
 position = Vector2(252, 96)
 script = ExtResource("30_pickup")
 item = ExtResource("32_lantern")
