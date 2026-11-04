@@ -86,8 +86,6 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 	if event.is_action_pressed("Interact"):
 		interact()
-	elif event.is_action_pressed("Drop Item"):
-		drop_item()
 
 
 func interact() -> void:
