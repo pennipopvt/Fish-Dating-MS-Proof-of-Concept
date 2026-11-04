@@ -1,0 +1,17 @@
+{
+  "entry": "hint",
+  "nodes": {
+    "hint": {
+      "lines": [
+        "There's something moving way over there.",
+        "I keep trying to see what it is, but it looks like a little dot."
+      ],
+      "effects": {
+        "set_flags": [
+          "spyglass_hint_heard",
+          "heard_distant_hint"
+        ]
+      }
+    }
+  }
+}
