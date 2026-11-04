@@ -7,7 +7,7 @@
       ],
       "choices": [
         {
-          "text": "Yeah, here.",
+          "text": "Yes, it's for you!",
           "next": "accept",
           "effects": {
             "give_held_item": true
@@ -21,8 +21,8 @@
     },
     "accept": {
       "lines": [
-        "Oh, thank you!",
-        "I still wish I could see what's across the lake."
+        "Oh! Thanks. That's really thoughtful.",
+        "...I still wonder what things look like on the other side of the lake."
       ],
       "effects": {
         "set_flags": [
