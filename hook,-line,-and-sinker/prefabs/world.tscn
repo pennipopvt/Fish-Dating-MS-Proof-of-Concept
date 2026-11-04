@@ -13,7 +13,6 @@
 [ext_resource type="Texture2D" uid="uid://papjvjxenamb" path="res://sprites/environment/long_cloud.png" id="7_sxw1y"]
 [ext_resource type="Texture2D" uid="uid://dvyql68s5tvo3" path="res://sprites/environment/tileset.png" id="10_6mti1"]
 [ext_resource type="Shader" uid="uid://r4rciq67coeg" path="res://shaders/water.gdshader" id="13_le6xu"]
-[ext_resource type="Script" uid="uid://bpk51qk632c0g" path="res://scripts/water_ripples.gd" id="14_sxw1y"]
 [ext_resource type="Texture2D" uid="uid://5vh3iowi78ql" path="res://sprites/environment/small_ripple_1.png" id="16_deaom"]
 [ext_resource type="Texture2D" uid="uid://pn5ltvo8an8" path="res://sprites/environment/small_ripple_2.png" id="17_6mti1"]
 [ext_resource type="Texture2D" uid="uid://dcjlwla0wfld2" path="res://sprites/environment/medium_ripple_a.png" id="18_bpfb4"]
@@ -145,7 +144,6 @@ offset_bottom = 320.0
 
 [node name="WaterRipples" type="Node2D" parent="." unique_id=1092900859]
 position = Vector2(0, 140)
-script = ExtResource("14_sxw1y")
 
 [node name="SmallRipple1" type="Sprite2D" parent="WaterRipples" unique_id=849523420]
 position = Vector2(153, 160)

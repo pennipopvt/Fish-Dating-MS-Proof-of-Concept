@@ -9,6 +9,14 @@
 [ext_resource type="Texture2D" uid="uid://dobi1bqmsmpv7" path="res://sprites/fish/stun_flash.png" id="7_e63gx"]
 [ext_resource type="Texture2D" uid="uid://duf8vswsdhre6" path="res://sprites/fish/ripple_idle.png" id="8_r2dq0"]
 [ext_resource type="Texture2D" uid="uid://tenw26udt3yx" path="res://sprites/fish/ripple_windup.png" id="9_2505k"]
+[ext_resource type="AudioStream" uid="uid://b835org4r0fpj" path="res://sounds/sfx/hook.wav" id="10_e63gx"]
+[ext_resource type="AudioStream" uid="uid://b2wt23vvl1501" path="res://sounds/sfx/windup.wav" id="11_r2dq0"]
+[ext_resource type="AudioStream" uid="uid://de1cker8e7433" path="res://sounds/sfx/attack.wav" id="12_2505k"]
+[ext_resource type="AudioStream" uid="uid://01xoemgxdb80" path="res://sounds/sfx/counter.wav" id="13_28enk"]
+[ext_resource type="AudioStream" uid="uid://dlyoghyx12qyl" path="res://sounds/sfx/reel.wav" id="14_u81uc"]
+[ext_resource type="AudioStream" uid="uid://b2tmfm2vymnd" path="res://sounds/sfx/lose.wav" id="14_xlio7"]
+[ext_resource type="AudioStream" uid="uid://by5vwj80vigdx" path="res://sounds/sfx/catch.wav" id="14_yi17m"]
+[ext_resource type="AudioStream" uid="uid://clnvbbxytf36" path="res://sounds/sfx/land.wav" id="15_2xahb"]
 
 [sub_resource type="Gradient" id="Gradient_nshyg"]
 offsets = PackedFloat32Array(0, 0.53246754, 0.9935065)
@@ -151,7 +159,7 @@ animations = [{
 }],
 "loop": 0,
 "name": &"counter_success",
-"speed": 12.0
+"speed": 16.0
 }, {
 "frames": [{
 "duration": 1.0,
@@ -280,7 +288,7 @@ texture = ExtResource("5_nshyg")
 z_index = 10
 texture_filter = 1
 sprite_frames = SubResource("SpriteFrames_ripple")
-animation = &"windup"
+animation = &"counter_success"
 autoplay = "idle"
 
 [node name="CatchLandingPoint" type="Marker2D" parent="." unique_id=879041487]
@@ -289,3 +297,29 @@ position = Vector2(35, 0)
 [node name="CatchFishVisual" type="Sprite2D" parent="." unique_id=737049409]
 visible = false
 z_index = 12
+
+[node name="HookSfx" type="AudioStreamPlayer" parent="." unique_id=1013294083]
+stream = ExtResource("10_e63gx")
+
+[node name="WindupSfx" type="AudioStreamPlayer" parent="." unique_id=1739360774]
+stream = ExtResource("11_r2dq0")
+
+[node name="AttackSfx" type="AudioStreamPlayer" parent="." unique_id=768079172]
+stream = ExtResource("12_2505k")
+
+[node name="CounterSfx" type="AudioStreamPlayer" parent="." unique_id=449920131]
+stream = ExtResource("13_28enk")
+
+[node name="ReelSfx" type="AudioStreamPlayer" parent="." unique_id=1866191718]
+stream = ExtResource("14_u81uc")
+volume_db = -6.0
+max_polyphony = 6
+
+[node name="CatchSfx" type="AudioStreamPlayer" parent="." unique_id=1785679806]
+stream = ExtResource("14_yi17m")
+
+[node name="LandSfx" type="AudioStreamPlayer" parent="." unique_id=289011223]
+stream = ExtResource("15_2xahb")
+
+[node name="LoseSfx" type="AudioStreamPlayer" parent="." unique_id=2107377503]
+stream = ExtResource("14_xlio7")
