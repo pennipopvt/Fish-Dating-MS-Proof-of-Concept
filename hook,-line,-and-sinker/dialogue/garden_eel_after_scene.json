@@ -6,6 +6,22 @@
         "Um... last night was really wonderful.",
         "Thank you!",
         "And um... if you ever want to come over again just... let me know..."
+      ],
+      "choices": [
+        {
+          "text": "I'm glad you had fun!",
+          "next": "gift_offer"
+        },
+        {
+          "text": "Hehe, will do...",
+          "next": "gift_offer"
+        }
+      ]
+    },
+    "gift_offer": {
+      "lines": [
+        "Oh. Um, I have something for you by the way...",
+        "Here, it's not much, but I just wanted to thank you for everything!"
       ]
     }
   }
