@@ -1,0 +1,35 @@
+{
+  "entry": "ask",
+  "nodes": {
+    "ask": {
+      "lines": [
+        "Oh! Is that for me?"
+      ],
+      "choices": [
+        {
+          "text": "Yes, I got this for you!",
+          "next": "accept",
+          "effects": {
+            "give_held_item": true
+          }
+        },
+        {
+          "text": "No, I'm just carrying it.",
+          "next": "decline"
+        }
+      ]
+    },
+    "accept": {
+      "lines": [
+        "A spyglass? Wait. I can see all the way across the lake!",
+        "Oh! You're very close!",
+        "...Hello."
+      ]
+    },
+    "decline": {
+      "lines": [
+        "Oh! Sorry, I shouldn't have assumed."
+      ]
+    }
+  }
+}
