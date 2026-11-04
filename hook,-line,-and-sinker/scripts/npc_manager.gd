@@ -103,3 +103,31 @@ func get_encounter_json_path(npc: NPCData) -> String:
 				selections[key] = rule.json_pool.pick_random()
 			return str(selections[key])
 	return ""
+
+
+# Gift outcomes belong here; DialogueManager only requests the transfer.
+func get_gift_encounter_path(npc: NPCData, item: ItemData) -> String:
+	if npc == null or item == null or npc.desired_gift == null:
+		return ""
+	var flags: Dictionary = get_npc_state(npc.npc_id).get("flags", {})
+	if not flags.get(&"Recruited", false) or flags.get(npc.gift_completed_flag, false):
+		return ""
+	if item.item_id == npc.desired_gift.item_id:
+		return npc.correct_gift_json
+	if npc.incorrect_gift_json_pool.is_empty():
+		return ""
+	return str(npc.incorrect_gift_json_pool.pick_random())
+
+func accept_gift(npc: NPCData, player: Player, expected_item_id: StringName) -> bool:
+	if npc == null or player == null or player.held_item == null:
+		return false
+	if player.held_item.item_id != expected_item_id:
+		return false
+	if get_gift_encounter_path(npc, player.held_item).is_empty():
+		return false
+	var is_correct := player.held_item.item_id == npc.desired_gift.item_id
+	player.remove_held_item()
+	if is_correct:
+		var flags: Dictionary = get_npc_state(npc.npc_id)["flags"]
+		flags[npc.gift_completed_flag] = true
+	return true
