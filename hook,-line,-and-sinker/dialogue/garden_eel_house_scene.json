@@ -1,9 +1,37 @@
 {
-  "entry": "placeholder",
+  "entry": "opening",
   "nodes": {
-    "placeholder": {
+    "opening": {
       "lines": [
-        "[Illustrated house scene dialogue goes here.]"
+        "H-hah... Penni...",
+        "This is... so weird... ah—"
+      ],
+      "choices": [
+        {
+          "text": "You don't like it?",
+          "next": "reassurance"
+        }
+      ]
+    },
+    "reassurance": {
+      "lines": [
+        "N-no! I... really like it..."
+      ],
+      "choices": [
+        {
+          "text": "Hehe, I didn't know you were so bold.",
+          "next": "ending"
+        },
+        {
+          "text": "I really like it too...",
+          "next": "ending"
+        }
+      ]
+    },
+    "ending": {
+      "lines": [
+        "Y-you're so pretty.",
+        "Hah... and really soft..."
       ]
     }
   }
