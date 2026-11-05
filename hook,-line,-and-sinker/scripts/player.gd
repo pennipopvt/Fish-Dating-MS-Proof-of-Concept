@@ -3,6 +3,12 @@ extends CharacterBody2D
 
 const SPEED = 100.0
 const ACC = 2000.0
+const SPRITE_FRAME_SIZE = Vector2i(32, 32)
+
+const CARRY_WALK_LEFT = preload("res://sprites/characters/penni/penni_carry_L.png")
+const CARRY_WALK_RIGHT = preload("res://sprites/characters/penni/penni_carry_r.png")
+const CARRY_IDLE_LEFT = preload("res://sprites/characters/penni/penni_idle_carry_L.png")
+const CARRY_IDLE_RIGHT = preload("res://sprites/characters/penni/penni_idle_carry_R.png")
 
 
 signal held_item_changed(item: ItemData)
@@ -17,11 +23,36 @@ var last_direction : float;
 @onready var animator : AnimatedSprite2D = $AnimatedSprite2D
 
 func _ready() -> void:
+	_setup_carry_animations()
 	held_item_visual = Sprite2D.new()
 	held_item_visual.position = Vector2(0, -39)
 	held_item_visual.z_index = 5
 	add_child(held_item_visual)
 	_refresh_held_item()
+
+# Build carrying animations from the existing sprite strips.
+func _setup_carry_animations() -> void:
+	animator.sprite_frames = animator.sprite_frames.duplicate(true)
+	_add_carry_animation(&"walk_carry_l", CARRY_WALK_LEFT, 12.0)
+	_add_carry_animation(&"walk_carry_r", CARRY_WALK_RIGHT, 12.0)
+	_add_carry_animation(&"idle_carry_l", CARRY_IDLE_LEFT, 3.0)
+	_add_carry_animation(&"idle_carry_r", CARRY_IDLE_RIGHT, 3.0)
+
+
+func _add_carry_animation(animation_name: StringName, sheet: Texture2D, fps: float) -> void:
+	var frames := animator.sprite_frames
+	if not frames.has_animation(animation_name):
+		frames.add_animation(animation_name)
+	frames.clear(animation_name)
+	frames.set_animation_speed(animation_name, fps)
+	frames.set_animation_loop(animation_name, true)
+	var frame_count: int = sheet.get_width() / SPRITE_FRAME_SIZE.x
+	for i in range(frame_count):
+		var frame := AtlasTexture.new()
+		frame.atlas = sheet
+		frame.region = Rect2(i * SPRITE_FRAME_SIZE.x, 0, SPRITE_FRAME_SIZE.x, SPRITE_FRAME_SIZE.y)
+		frames.add_frame(animation_name, frame)
+
 
 func take_item(item: ItemData) -> bool:
 	if held_item != null or item == null:
@@ -67,16 +98,16 @@ func _physics_process(delta: float) -> void:
 	if direction:
 		velocity.x = move_toward(velocity.x, direction * SPEED, ACC * delta)
 		if sign(direction) < 0:
-			animator.play("walk_l")
+			animator.play("walk_carry_l" if held_item != null else "walk_l")
 		else:
-			animator.play("walk_r")
+			animator.play("walk_carry_r" if held_item != null else "walk_r")
 		last_direction = direction
 	else:
 		velocity.x = move_toward(velocity.x, 0, ACC * delta)
 		if sign(last_direction) < 0:
-			animator.play("idle_l")
+			animator.play("idle_carry_l" if held_item != null else "idle_l")
 		else:
-			animator.play("idle_r")
+			animator.play("idle_carry_r" if held_item != null else "idle_r")
 
 	move_and_slide()
 
