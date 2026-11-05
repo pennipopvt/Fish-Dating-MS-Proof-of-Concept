@@ -446,7 +446,8 @@ func create_npc(npc: PackedScene) -> void:
 	#i am not sure if you want the npc to persist after being caught, so... it does for now
 	var scene = npc.instantiate()
 	
-	get_tree().current_scene.add_child(scene)
+	#get_tree().current_scene.add_child(scene)
+	add_child(scene)
 	
 	scene.global_position = catch_landing_point.global_position
 	
