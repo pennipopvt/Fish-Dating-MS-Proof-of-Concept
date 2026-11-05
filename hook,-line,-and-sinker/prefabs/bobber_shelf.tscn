@@ -10,7 +10,7 @@ size = Vector2(32, 16)
 default_font_size = 32
 
 [node name="BobberShelf" type="Area2D" node_paths=PackedStringArray("prompt")]
-z_index = -2
+z_index = 1
 script = ExtResource("1")
 prompt = NodePath("InteractPrompt")
 
