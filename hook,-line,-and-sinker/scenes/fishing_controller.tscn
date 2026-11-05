@@ -237,7 +237,7 @@ bite_time_max = 5.0
 tension_gain = 0.015
 tension_recovery = 2.5
 recovery_delay = 0.2
-npc_catch_pose_length = 1.2
+npc_catch_pose_length = 2.0
 catch_peak_hang = 0.04
 catch_arc_height = 40.0
 

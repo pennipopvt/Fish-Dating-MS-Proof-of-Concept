@@ -468,3 +468,4 @@ func create_npc(npc: PackedScene) -> void:
 	#manually triggering the interact, and exiting fishing
 	exit_fishing()
 	scene.interact(get_parent())
+	RecruitmentHandler.engage_listen(scene)
