@@ -4,8 +4,8 @@ extends Resource
 @export var fish_id: StringName = &""
 #Use item data if the fish is an item
 @export var item_data: ItemData = null
-#Use NPC data if the fish is an NPC
-@export var npc_data: NPCData = null
+##The scene for the fish's initial catch
+@export var npc_data: PackedScene = null
 
 ## Constant pull against reel progress, except while stunned.
 @export_range(0.0, 0.2, 0.001) var passive_escape_rate: float = 0.015

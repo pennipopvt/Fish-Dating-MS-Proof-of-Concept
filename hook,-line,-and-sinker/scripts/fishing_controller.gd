@@ -178,7 +178,11 @@ func start_catch_sequence() -> void:
 	play_fishing_sound(catch_sfx)
 	current_state = Fish_State.CATCHING
 	catch_start = catch_fish_visual.get_parent().to_local(fishing_line.get_fish_global_position())
+	
+	#adjusts landing point to be a little beyond the baitbox if it has npc data
 	catch_end = catch_fish_visual.get_parent().to_local(catch_landing_point.global_position)
+	
+	
 	# Peak above both the water exit and the landing spot.
 	catch_peak = catch_start.lerp(catch_end, 0.48)
 	catch_peak.y = minf(catch_start.y, catch_end.y) - catch_arc_height
@@ -228,7 +232,12 @@ func _finish_catch_animation() -> void:
 	catch_fish_visual.hide()
 	catch_fish_visual.z_index = 12
 	catch_fish_visual.rotation = 0.0
-	catch_fish()
+	
+	#yea so if fish no have npc data, just catch
+	if(hooked_fish.npc_data == null) :
+		catch_fish()
+	else:
+		create_npc(hooked_fish.npc_data)
 
 func catch_fish() -> void:
 	if(hooked_fish == null):
@@ -431,3 +440,16 @@ func attempt_counter() -> bool:
 	fish_esc_rate = 0.0
 	print("COUNTER: ", active_attack.state_name)
 	return true
+
+func create_npc(npc: PackedScene) -> void:
+	
+	#i am not sure if you want the npc to persist after being caught, so... it does for now
+	var scene = npc.instantiate()
+	
+	get_tree().current_scene.add_child(scene)
+	
+	scene.global_position = catch_landing_point.global_position
+	
+	scene.z_index = 12
+	
+	

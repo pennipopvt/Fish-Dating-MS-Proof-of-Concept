@@ -4,6 +4,7 @@
 [ext_resource type="Resource" uid="uid://cpv5vnhg17vg8" path="res://resources/npcs/test_npc.tres" id="2_aqm5u"]
 [ext_resource type="PackedScene" uid="uid://d4fhg8uyom630" path="res://prefabs/interact_prompt.tscn" id="4_dibf3"]
 [ext_resource type="Texture2D" uid="uid://b606v6feem3is" path="res://sprites/characters/eel_idle.png" id="4_w7cf3"]
+[ext_resource type="Texture2D" uid="uid://daxobsglior74" path="res://sprites/characters/eel_caught.png" id="5_abqes"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_npc"]
 size = Vector2(26.83334, 31.000008)
@@ -28,6 +29,14 @@ animations = [{
 "loop": 1,
 "name": &"default",
 "speed": 3.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("5_abqes")
+}],
+"loop": 1,
+"name": &"onCaught",
+"speed": 5.0
 }]
 
 [node name="Eel" type="Area2D" unique_id=2033605866 node_paths=PackedStringArray("prompt")]
@@ -43,7 +52,8 @@ shape = SubResource("RectangleShape2D_npc")
 [node name="InteractPrompt" parent="." unique_id=1481540467 instance=ExtResource("4_dibf3")]
 position = Vector2(0, -16)
 
-[node name="EelSprite" type="AnimatedSprite2D" parent="." unique_id=204925965]
+[node name="Sprite" type="AnimatedSprite2D" parent="." unique_id=204925965]
 sprite_frames = SubResource("SpriteFrames_yd4fr")
+animation = &"onCaught"
 autoplay = "default"
 flip_h = true
