@@ -460,7 +460,7 @@ func create_npc(npc: PackedScene) -> void:
 	# Wait for the start of the second frame before swapping the fish for
 	# Ethan's existing faceplant ("on_caught") NPC sprite.
 	await npc_poof.frame_changed
-	var scene: NPCInteractable = npc.instantiate()
+	var scene := npc.instantiate() as NPCInteractable
 	var world: Node = get_parent().get_parent()
 	world.add_child(scene)
 	scene.global_position = npc_landing_point.global_position
