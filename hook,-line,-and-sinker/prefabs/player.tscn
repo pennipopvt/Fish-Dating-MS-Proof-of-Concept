@@ -7,6 +7,11 @@
 [ext_resource type="Texture2D" uid="uid://swrttjaf0x7t" path="res://sprites/characters/penni/penni_walk.png" id="4_ht1c8"]
 [ext_resource type="Texture2D" uid="uid://b8uvqbd6m7bk3" path="res://sprites/characters/penni/penni_walk_L.png" id="5_ht1c8"]
 
+[ext_resource type="Texture2D" path="res://sprites/characters/penni/penni_carry_L.png" id="carry_carry_l"]
+[ext_resource type="Texture2D" path="res://sprites/characters/penni/penni_carry_r.png" id="carry_carry_r"]
+[ext_resource type="Texture2D" path="res://sprites/characters/penni/penni_idle_carry_L.png" id="carry_idle_carry_l"]
+[ext_resource type="Texture2D" path="res://sprites/characters/penni/penni_idle_carry_R.png" id="carry_idle_carry_r"]
+
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_yd4fr"]
 size = Vector2(12, 26)
 
@@ -90,8 +95,168 @@ region = Rect2(192, 0, 32, 32)
 atlas = ExtResource("4_ht1c8")
 region = Rect2(224, 0, 32, 32)
 
+[sub_resource type="AtlasTexture" id="carry_atlas_carry_l_0"]
+atlas = ExtResource("carry_carry_l")
+region = Rect2(0, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="carry_atlas_carry_l_1"]
+atlas = ExtResource("carry_carry_l")
+region = Rect2(32, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="carry_atlas_carry_l_2"]
+atlas = ExtResource("carry_carry_l")
+region = Rect2(64, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="carry_atlas_carry_l_3"]
+atlas = ExtResource("carry_carry_l")
+region = Rect2(96, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="carry_atlas_carry_l_4"]
+atlas = ExtResource("carry_carry_l")
+region = Rect2(128, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="carry_atlas_carry_l_5"]
+atlas = ExtResource("carry_carry_l")
+region = Rect2(160, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="carry_atlas_carry_l_6"]
+atlas = ExtResource("carry_carry_l")
+region = Rect2(192, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="carry_atlas_carry_l_7"]
+atlas = ExtResource("carry_carry_l")
+region = Rect2(224, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="carry_atlas_carry_r_0"]
+atlas = ExtResource("carry_carry_r")
+region = Rect2(0, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="carry_atlas_carry_r_1"]
+atlas = ExtResource("carry_carry_r")
+region = Rect2(32, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="carry_atlas_carry_r_2"]
+atlas = ExtResource("carry_carry_r")
+region = Rect2(64, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="carry_atlas_carry_r_3"]
+atlas = ExtResource("carry_carry_r")
+region = Rect2(96, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="carry_atlas_carry_r_4"]
+atlas = ExtResource("carry_carry_r")
+region = Rect2(128, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="carry_atlas_carry_r_5"]
+atlas = ExtResource("carry_carry_r")
+region = Rect2(160, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="carry_atlas_carry_r_6"]
+atlas = ExtResource("carry_carry_r")
+region = Rect2(192, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="carry_atlas_carry_r_7"]
+atlas = ExtResource("carry_carry_r")
+region = Rect2(224, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="carry_atlas_idle_carry_l_0"]
+atlas = ExtResource("carry_idle_carry_l")
+region = Rect2(0, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="carry_atlas_idle_carry_l_1"]
+atlas = ExtResource("carry_idle_carry_l")
+region = Rect2(32, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="carry_atlas_idle_carry_r_0"]
+atlas = ExtResource("carry_idle_carry_r")
+region = Rect2(0, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="carry_atlas_idle_carry_r_1"]
+atlas = ExtResource("carry_idle_carry_r")
+region = Rect2(32, 0, 32, 32)
+
 [sub_resource type="SpriteFrames" id="SpriteFrames_yd4fr"]
 animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("carry_atlas_carry_l_0")
+}, {
+"duration": 1.0,
+"texture": SubResource("carry_atlas_carry_l_1")
+}, {
+"duration": 1.0,
+"texture": SubResource("carry_atlas_carry_l_2")
+}, {
+"duration": 1.0,
+"texture": SubResource("carry_atlas_carry_l_3")
+}, {
+"duration": 1.0,
+"texture": SubResource("carry_atlas_carry_l_4")
+}, {
+"duration": 1.0,
+"texture": SubResource("carry_atlas_carry_l_5")
+}, {
+"duration": 1.0,
+"texture": SubResource("carry_atlas_carry_l_6")
+}, {
+"duration": 1.0,
+"texture": SubResource("carry_atlas_carry_l_7")
+}],
+"loop": true,
+"name": &"walk_carry_l",
+"speed": 12.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("carry_atlas_carry_r_0")
+}, {
+"duration": 1.0,
+"texture": SubResource("carry_atlas_carry_r_1")
+}, {
+"duration": 1.0,
+"texture": SubResource("carry_atlas_carry_r_2")
+}, {
+"duration": 1.0,
+"texture": SubResource("carry_atlas_carry_r_3")
+}, {
+"duration": 1.0,
+"texture": SubResource("carry_atlas_carry_r_4")
+}, {
+"duration": 1.0,
+"texture": SubResource("carry_atlas_carry_r_5")
+}, {
+"duration": 1.0,
+"texture": SubResource("carry_atlas_carry_r_6")
+}, {
+"duration": 1.0,
+"texture": SubResource("carry_atlas_carry_r_7")
+}],
+"loop": true,
+"name": &"walk_carry_r",
+"speed": 12.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("carry_atlas_idle_carry_l_0")
+}, {
+"duration": 1.0,
+"texture": SubResource("carry_atlas_idle_carry_l_1")
+}],
+"loop": true,
+"name": &"idle_carry_l",
+"speed": 3.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("carry_atlas_idle_carry_r_0")
+}, {
+"duration": 1.0,
+"texture": SubResource("carry_atlas_idle_carry_r_1")
+}],
+"loop": true,
+"name": &"idle_carry_r",
+"speed": 3.0
+}, {
 "frames": [{
 "duration": 1.0,
 "texture": SubResource("AtlasTexture_cv2ms")
