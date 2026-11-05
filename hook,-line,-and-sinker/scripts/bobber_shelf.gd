@@ -27,6 +27,7 @@ func _ready() -> void:
 
 func _refresh() -> void:
 	for node in display.get_children():
+		display.remove_child(node)
 		node.queue_free()
 	var unlocked: Array[BobberData] = BobberManager.get_unlocked_bobbers()
 	var rows: int = maxi(1, ceili(float(unlocked.size()) / COLUMNS))
@@ -58,14 +59,14 @@ func _refresh() -> void:
 
 func _refresh_options() -> void:
 	for child in options.get_children():
+		options.remove_child(child)
 		child.queue_free()
 	for data in BobberManager.get_unlocked_bobbers():
 		var button := Button.new()
 		button.custom_minimum_size = Vector2(150, 94)
 		button.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-		var preview := ImageTexture.create_from_image(data.sprite.get_image())
 		var image := TextureRect.new()
-		image.texture = preview
+		image.texture = data.sprite
 		image.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 		image.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		image.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
@@ -87,7 +88,6 @@ func _refresh_options() -> void:
 
 func _equip(id: StringName) -> void:
 	BobberManager.equip_bobber(id)
-	_refresh_options()
 
 
 func _on_equipped_changed(_bobber: BobberData) -> void:
