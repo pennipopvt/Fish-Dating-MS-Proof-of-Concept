@@ -1,0 +1,59 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/bobber_shelf.gd" id="1"]
+[ext_resource type="PackedScene" path="res://prefabs/interact_prompt.tscn" id="2"]
+
+[sub_resource type="RectangleShape2D" id="collision"]
+size = Vector2(32, 16)
+
+[node name="BobberShelf" type="Area2D" node_paths=PackedStringArray("prompt")]
+script = ExtResource("1")
+prompt = NodePath("InteractPrompt")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(0, -8)
+shape = SubResource("collision")
+
+[node name="Display" type="Node2D" parent="."]
+
+[node name="InteractPrompt" parent="." instance=ExtResource("2")]
+position = Vector2(0, -27)
+
+[node name="Menu" type="CanvasLayer" parent="." groups=["modal_ui"]]
+visible = false
+layer = 20
+
+[node name="Center" type="CenterContainer" parent="Menu"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Panel" type="PanelContainer" parent="Menu/Center"]
+custom_minimum_size = Vector2(370, 240)
+
+[node name="Margin" type="MarginContainer" parent="Menu/Center/Panel"]
+theme_override_constants/margin_left = 18
+theme_override_constants/margin_top = 18
+theme_override_constants/margin_right = 18
+theme_override_constants/margin_bottom = 18
+
+[node name="Contents" type="VBoxContainer" parent="Menu/Center/Panel/Margin"]
+theme_override_constants/separation = 12
+
+[node name="Title" type="Label" parent="Menu/Center/Panel/Margin/Contents"]
+text = "Bobber Shelf"
+horizontal_alignment = 1
+
+[node name="Subtitle" type="Label" parent="Menu/Center/Panel/Margin/Contents"]
+text = "Choose a bobber for your fishing line"
+horizontal_alignment = 1
+
+[node name="Options" type="GridContainer" parent="Menu/Center/Panel/Margin/Contents"]
+columns = 2
+theme_override_constants/h_separation = 8
+theme_override_constants/v_separation = 8
+
+[node name="Close" type="Button" parent="Menu/Center/Panel/Margin/Contents"]
+text = "Close"
