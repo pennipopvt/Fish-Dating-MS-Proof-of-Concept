@@ -8,7 +8,7 @@ const SCENES := {
 		"dialogue": "res://dialogue/garden_eel_house_scene.json",
 		# Post-scene dialogue runs in the overworld, after fading back in.
 		"post_dialogue": "res://dialogue/garden_eel_after_scene.json",
-		"reward_item": ""
+		"reward_item": "silas"
 	}
 }
 const FADE_DURATION := 0.6
@@ -51,6 +51,7 @@ func _ready() -> void:
 	fade_layer.add_to_group(&"modal_ui")
 	DialogueManager.scene_requested.connect(_on_scene_requested)
 	DialogueManager.conversation_finished.connect(_on_conversation_finished)
+	cosmetic_reward_requested.connect(_on_cosmetic_reward_requested)
 
 func _on_scene_requested(npc: NPCData, scene_id: String) -> void:
 	if _active_npc != null or not SCENES.has(scene_id) or npc == null:
@@ -162,6 +163,13 @@ func _finish_scene(completed: bool = false) -> void:
 		_post_scene_reward_id = ""
 		# Do not strand route completion if dialogue data is temporarily missing.
 		_mark_route_complete(finished_npc)
+
+
+# Grant the bobber only after Silas's post-scene gift dialogue finishes.
+func _on_cosmetic_reward_requested(npc: NPCData, reward_id: String) -> void:
+	if npc == null or npc.npc_id != &"test_npc":
+		return
+	BobberManager.unlock_bobber(StringName(reward_id))
 
 
 func _mark_route_complete(npc: NPCData) -> void:
