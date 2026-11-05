@@ -6,7 +6,11 @@
 [sub_resource type="RectangleShape2D" id="collision"]
 size = Vector2(32, 16)
 
+[sub_resource type="Theme" id="Theme_bobber"]
+default_font_size = 32
+
 [node name="BobberShelf" type="Area2D" node_paths=PackedStringArray("prompt")]
+z_index = -2
 script = ExtResource("1")
 prompt = NodePath("InteractPrompt")
 
@@ -18,42 +22,120 @@ shape = SubResource("collision")
 
 [node name="InteractPrompt" parent="." instance=ExtResource("2")]
 position = Vector2(0, -27)
+z_index = 10
 
 [node name="Menu" type="CanvasLayer" parent="." groups=["modal_ui"]]
 visible = false
-layer = 20
+process_mode = 3
+layer = 10
 
-[node name="Center" type="CenterContainer" parent="Menu"]
+[node name="Dim" type="ColorRect" parent="Menu"]
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+color = Color(0, 0, 0, 0.5)
 
-[node name="Panel" type="PanelContainer" parent="Menu/Center"]
-custom_minimum_size = Vector2(370, 240)
+[node name="Panel" type="PanelContainer" parent="Menu"]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -560.0
+offset_top = -340.0
+offset_right = 560.0
+offset_bottom = 340.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = SubResource("Theme_bobber")
 
-[node name="Margin" type="MarginContainer" parent="Menu/Center/Panel"]
-theme_override_constants/margin_left = 18
-theme_override_constants/margin_top = 18
-theme_override_constants/margin_right = 18
-theme_override_constants/margin_bottom = 18
+[node name="Margin" type="MarginContainer" parent="Menu/Panel"]
+layout_mode = 2
+theme_override_constants/margin_left = 32
+theme_override_constants/margin_top = 24
+theme_override_constants/margin_right = 32
+theme_override_constants/margin_bottom = 24
 
-[node name="Contents" type="VBoxContainer" parent="Menu/Center/Panel/Margin"]
-theme_override_constants/separation = 12
+[node name="Layout" type="VBoxContainer" parent="Menu/Panel/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 16
 
-[node name="Title" type="Label" parent="Menu/Center/Panel/Margin/Contents"]
-text = "Bobber Shelf"
+[node name="Title" type="Label" parent="Menu/Panel/Margin/Layout"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 48
+text = "Bobbers"
 horizontal_alignment = 1
 
-[node name="Subtitle" type="Label" parent="Menu/Center/Panel/Margin/Contents"]
-text = "Choose a bobber for your fishing line"
-horizontal_alignment = 1
+[node name="Body" type="HBoxContainer" parent="Menu/Panel/Margin/Layout"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 24
 
-[node name="Options" type="GridContainer" parent="Menu/Center/Panel/Margin/Contents"]
-columns = 2
-theme_override_constants/h_separation = 8
-theme_override_constants/v_separation = 8
+[node name="Scroll" type="ScrollContainer" parent="Menu/Panel/Margin/Layout/Body"]
+custom_minimum_size = Vector2(408, 0)
+layout_mode = 2
+horizontal_scroll_mode = 0
 
-[node name="Close" type="Button" parent="Menu/Center/Panel/Margin/Contents"]
+[node name="Options" type="GridContainer" parent="Menu/Panel/Margin/Layout/Body/Scroll"]
+layout_mode = 2
+theme_override_constants/h_separation = 12
+theme_override_constants/v_separation = 12
+columns = 3
+
+[node name="Divider" type="VSeparator" parent="Menu/Panel/Margin/Layout/Body"]
+layout_mode = 2
+
+[node name="Details" type="VBoxContainer" parent="Menu/Panel/Margin/Layout/Body"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 16
+
+[node name="Header" type="HBoxContainer" parent="Menu/Panel/Margin/Layout/Body/Details"]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="BobberIconFrame" type="PanelContainer" parent="Menu/Panel/Margin/Layout/Body/Details/Header"]
+layout_mode = 2
+
+[node name="BobberIcon" type="TextureRect" parent="Menu/Panel/Margin/Layout/Body/Details/Header/BobberIconFrame"]
+custom_minimum_size = Vector2(96, 96)
+layout_mode = 2
+expand_mode = 1
+stretch_mode = 5
+texture_filter = 1
+
+[node name="Names" type="VBoxContainer" parent="Menu/Panel/Margin/Layout/Body/Details/Header"]
+layout_mode = 2
+size_flags_horizontal = 3
+alignment = 1
+
+[node name="BobberName" type="Label" parent="Menu/Panel/Margin/Layout/Body/Details/Header/Names"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 40
+autowrap_mode = 3
+
+[node name="EquippedLabel" type="Label" parent="Menu/Panel/Margin/Layout/Body/Details/Header/Names"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9490196, 0.75686276, 0.30588236, 1)
+theme_override_font_sizes/font_size = 24
+text = "Equipped"
+
+[node name="Description" type="Label" parent="Menu/Panel/Margin/Layout/Body/Details"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 26
+autowrap_mode = 3
+
+[node name="Spacer" type="Control" parent="Menu/Panel/Margin/Layout/Body/Details"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="Equip" type="Button" parent="Menu/Panel/Margin/Layout/Body/Details"]
+layout_mode = 2
+text = "Equip"
+
+[node name="Close" type="Button" parent="Menu/Panel/Margin/Layout"]
+layout_mode = 2
+size_flags_horizontal = 8
 text = "Close"
