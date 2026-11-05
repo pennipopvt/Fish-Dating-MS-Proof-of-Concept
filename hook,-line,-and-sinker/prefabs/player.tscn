@@ -348,6 +348,7 @@ shape = SubResource("RectangleShape2D_yd4fr")
 position = Vector2(-0.25, -16)
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=489744351]
+z_index = 2
 position = Vector2(0, -16)
 sprite_frames = SubResource("SpriteFrames_yd4fr")
 animation = &"walk_carry_l"
