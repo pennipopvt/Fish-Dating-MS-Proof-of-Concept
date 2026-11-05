@@ -14,6 +14,17 @@ var pos: Vector2
 var tell_phase: int = 0
 var tell_progress: float = 0.0
 @onready var ripple_tell: AnimatedSprite2D = $RippleTell
+@onready var bobber: Sprite2D = $Bobber
+@export_range(0.0, 2.0, 0.25) var bobber_float_amplitude: float = 1.0
+@export_range(0.1, 5.0, 0.1) var bobber_float_speed: float = 1.5
+var bobber_float_time: float = 0.0
+var bobber_water_position: Vector2 = Vector2.ZERO
+
+func _process(delta: float) -> void:
+	if bobber.visible and visible:
+		bobber_float_time += delta
+		bobber.position = (bobber_water_position + Vector2(0, sin(bobber_float_time * TAU * bobber_float_speed) * bobber_float_amplitude)).round()
+
 var current_ripple_animation: StringName = &""
 var counter_flash_time: float = 0.0
 var current_telegraph_phase: int = 0
@@ -81,6 +92,7 @@ func _ready() -> void:
 	stun_glow.points = points
 	ripple_tell.animation_finished.connect(_on_ripple_animation_finished)
 	ripple_tell.hide()
+	bobber.hide()
 	hide()
 
 func send(initial_progress: float = 0.0) -> void:
@@ -90,12 +102,17 @@ func send(initial_progress: float = 0.0) -> void:
 	update_line_dist(initial_progress)
 	show()
 	update_ripple_position()
+	bobber_float_time = 0.0
+	bobber.position = bobber_water_position
+	bobber.show()
 	if stun_glow != null:
 		stun_glow.visible = stunned_line
 	fish.hide()
 
 #idk how to listen for signals in godot tbh but this would trigger by signal ill adjust later
 func hook(item: FishData) -> void:
+	# The bite pulls the bobber under immediately; keep telegraphs clear.
+	bobber.hide()
 	fish.texture = item.item_data.sprite
 	fish.show() # Let the scene's water layer determine visibility.
 
@@ -112,12 +129,14 @@ func get_fish_texture() -> Texture2D:
 	return fish.texture
 
 func hide_fish_for_catch() -> void:
+	bobber.hide()
 	fish.hide()
 	ripple_tell.hide()
 	# Hide the line itself during the airborne catch sequence.
 	hide()
 
 func close() -> void:
+	bobber.hide()
 	set_stunned(false)
 	ripple_tell.hide()
 	current_ripple_animation = &""
@@ -153,7 +172,11 @@ func update_ripple_position() -> void:
 	var fraction: float = 1.0
 	if absf(difference) > 0.001:
 		fraction = clampf((water_surface_y - start.y) / difference, 0.0, 1.0)
-	ripple_tell.position = start.lerp(tip, fraction).round()
+	var surface_position: Vector2 = start.lerp(tip, fraction).round()
+	ripple_tell.position = surface_position
+	bobber_water_position = surface_position
+	if bobber.visible:
+		bobber.position = (surface_position + Vector2(0, sin(bobber_float_time * TAU * bobber_float_speed) * bobber_float_amplitude)).round()
 
 # Fish sprite is centered: its position marks its midpoint.
 # Catch as soon as that midpoint reaches the ripple's water surface.
