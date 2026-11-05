@@ -1,0 +1,9 @@
+[gd_resource type="Resource" script_class="ItemData" format=3]
+
+[ext_resource type="Script" path="res://resources/item_data.gd" id="1"]
+[ext_resource type="Texture2D" path="res://sprites/items/lantern.svg" id="2"]
+
+[resource]
+script = ExtResource("1")
+item_id = &"lantern"
+sprite = ExtResource("2")

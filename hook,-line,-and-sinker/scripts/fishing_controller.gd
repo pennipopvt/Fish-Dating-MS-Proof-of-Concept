@@ -48,6 +48,8 @@ var delay_time = 0
 ##delay before recovery starts after reeling ends
 @export var recovery_delay: float = 0.1
 
+@export var npc_catch_pose_length: float = 0.1
+
 @onready var fishing_progress: TextureProgressBar = $FishingProgress
 @onready var tension_bar: TextureProgressBar = $TensionBar
 @onready var fishing_line: Line2D = $FishingLine
@@ -71,7 +73,9 @@ func play_fishing_sound(player: AudioStreamPlayer) -> void:
 		player.play()
 
 @onready var catch_landing_point: Marker2D = $CatchLandingPoint
+@onready var npc_landing_point: Marker2D = $NpcLandingPoint
 @onready var catch_fish_visual: Sprite2D = $CatchFishVisual
+@onready var npc_poof: AnimatedSprite2D = $NpcPoof
 @export_range(0.1, 2.0, 0.05) var catch_flight_duration: float = 0.65
 @export_range(0.0, 0.5, 0.01) var catch_peak_hang: float = 0.08
 @export_range(0.0, 150.0, 1.0) var catch_arc_height: float = 75.0
@@ -178,7 +182,12 @@ func start_catch_sequence() -> void:
 	play_fishing_sound(catch_sfx)
 	current_state = Fish_State.CATCHING
 	catch_start = catch_fish_visual.get_parent().to_local(fishing_line.get_fish_global_position())
-	catch_end = catch_fish_visual.get_parent().to_local(catch_landing_point.global_position)
+	
+	if(hooked_fish.npc_data == null) :
+		catch_end = catch_fish_visual.get_parent().to_local(catch_landing_point.global_position)
+	else: 
+		catch_end = catch_fish_visual.get_parent().to_local(npc_landing_point.global_position)
+	
 	# Peak above both the water exit and the landing spot.
 	catch_peak = catch_start.lerp(catch_end, 0.48)
 	catch_peak.y = minf(catch_start.y, catch_end.y) - catch_arc_height
@@ -225,10 +234,18 @@ func _on_catch_landed() -> void:
 	catch_fish_visual.z_index = -1
 
 func _finish_catch_animation() -> void:
-	catch_fish_visual.hide()
+	# Keep the caught fish visible for poof frame 1. It becomes the NPC
+	# faceplant precisely when the poof advances to frame 2.
+	if hooked_fish == null or hooked_fish.npc_data == null:
+		catch_fish_visual.hide()
 	catch_fish_visual.z_index = 12
 	catch_fish_visual.rotation = 0.0
-	catch_fish()
+	
+	#yea so if fish no have npc data, just catch
+	if(hooked_fish.npc_data == null) :
+		catch_fish()
+	else:
+		create_npc(hooked_fish.npc_data)
 
 func catch_fish() -> void:
 	if(hooked_fish == null):
@@ -262,6 +279,8 @@ func reset_values() -> void:
 	if catch_tween != null and catch_tween.is_running():
 		catch_tween.kill()
 	catch_fish_visual.hide()
+	npc_poof.stop()
+	npc_poof.hide()
 	progress = 0
 	bite_time = 0
 	fishing_progress.value = 0
@@ -431,3 +450,31 @@ func attempt_counter() -> bool:
 	fish_esc_rate = 0.0
 	print("COUNTER: ", active_attack.state_name)
 	return true
+
+func create_npc(npc: PackedScene) -> void:
+	# The fish remains at the NPC landing spot on poof frame 1.
+	npc_poof.position = npc_landing_point.position
+	npc_poof.show()
+	npc_poof.play(&"poof")
+
+	# Wait for the start of the second frame before swapping the fish for
+	# Ethan's existing faceplant ("on_caught") NPC sprite.
+	await npc_poof.frame_changed
+	var scene := npc.instantiate() as NPCInteractable
+	var world: Node = get_parent().get_parent()
+	world.add_child(scene)
+	scene.global_position = npc_landing_point.global_position
+	scene.z_index = 12
+	var sprite: AnimatedSprite2D = scene.get_node("Sprite")
+	sprite.play(&"on_caught")
+	catch_fish_visual.hide()
+	get_parent().animator.play(&"idle_r")
+
+	# Let the full poof finish, then retain Ethan's faceplant beat
+	# before restoring the NPC idle and starting dialogue.
+	await npc_poof.animation_finished
+	npc_poof.hide()
+	await get_tree().create_timer(npc_catch_pose_length).timeout
+	sprite.play(&"default")
+	exit_fishing()
+	scene.interact(get_parent())

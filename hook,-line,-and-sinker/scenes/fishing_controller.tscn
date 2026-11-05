@@ -17,6 +17,8 @@
 [ext_resource type="AudioStream" uid="uid://b2tmfm2vymnd" path="res://sounds/sfx/lose.wav" id="14_xlio7"]
 [ext_resource type="AudioStream" uid="uid://by5vwj80vigdx" path="res://sounds/sfx/catch.wav" id="14_yi17m"]
 [ext_resource type="AudioStream" uid="uid://clnvbbxytf36" path="res://sounds/sfx/land.wav" id="15_2xahb"]
+[ext_resource type="Texture2D" uid="uid://6jyqmi5motc2" path="res://sprites/bobbers/bobber_default.png" id="bobber_default"]
+[ext_resource type="Texture2D" uid="uid://dv81fkdnukh65" path="res://sprites/characters/poof.png" id="npc_poof_sheet"]
 
 [sub_resource type="Gradient" id="Gradient_nshyg"]
 offsets = PackedFloat32Array(0, 0.53246754, 0.9935065)
@@ -230,6 +232,42 @@ animations = [{
 "speed": 12.0
 }]
 
+[sub_resource type="AtlasTexture" id="npc_poof_frame_0"]
+atlas = ExtResource("npc_poof_sheet")
+region = Rect2(0, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="npc_poof_frame_1"]
+atlas = ExtResource("npc_poof_sheet")
+region = Rect2(32, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="npc_poof_frame_2"]
+atlas = ExtResource("npc_poof_sheet")
+region = Rect2(64, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="npc_poof_frame_3"]
+atlas = ExtResource("npc_poof_sheet")
+region = Rect2(96, 0, 32, 32)
+
+[sub_resource type="SpriteFrames" id="NPCPoofFrames"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("npc_poof_frame_0")
+}, {
+"duration": 1.0,
+"texture": SubResource("npc_poof_frame_1")
+}, {
+"duration": 1.0,
+"texture": SubResource("npc_poof_frame_2")
+}, {
+"duration": 1.0,
+"texture": SubResource("npc_poof_frame_3")
+}],
+"loop": 0,
+"name": &"poof",
+"speed": 12.0
+}]
+
 [node name="FishingController" type="Node2D" unique_id=104125951]
 script = ExtResource("1_nhr4m")
 reel_gain = 0.01
@@ -237,6 +275,7 @@ bite_time_max = 5.0
 tension_gain = 0.015
 tension_recovery = 2.5
 recovery_delay = 0.2
+npc_catch_pose_length = 1.2
 catch_peak_hang = 0.04
 catch_arc_height = 40.0
 
@@ -284,12 +323,21 @@ position = Vector2(-115.5, 5)
 scale = Vector2(0.005826272, 0.005826272)
 texture = ExtResource("5_nshyg")
 
+[node name="Bobber" type="Sprite2D" parent="FishingLine" unique_id=211134826]
+visible = false
+z_index = 9
+texture_filter = 1
+texture = ExtResource("bobber_default")
+
 [node name="RippleTell" type="AnimatedSprite2D" parent="FishingLine" unique_id=1885188316]
 z_index = 10
 texture_filter = 1
 sprite_frames = SubResource("SpriteFrames_ripple")
 animation = &"counter_success"
 autoplay = "idle"
+
+[node name="NpcLandingPoint" type="Marker2D" parent="." unique_id=1438232025]
+position = Vector2(22, 0)
 
 [node name="CatchLandingPoint" type="Marker2D" parent="." unique_id=879041487]
 position = Vector2(35, 0)
@@ -323,3 +371,9 @@ stream = ExtResource("15_2xahb")
 
 [node name="LoseSfx" type="AudioStreamPlayer" parent="." unique_id=2107377503]
 stream = ExtResource("14_xlio7")
+
+[node name="NpcPoof" type="AnimatedSprite2D" parent="." unique_id=1203300164]
+visible = false
+z_index = 13
+sprite_frames = SubResource("NPCPoofFrames")
+animation = &"poof"

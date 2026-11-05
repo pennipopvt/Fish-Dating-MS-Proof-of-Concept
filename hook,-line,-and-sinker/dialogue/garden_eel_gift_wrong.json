@@ -1,0 +1,44 @@
+{
+  "entry": "ask",
+  "nodes": {
+    "ask": {
+      "lines": [
+        "Oh! What's that?"
+      ],
+      "choices": [
+        {
+          "text": "It's for you!",
+          "next": "accept",
+          "effects": {
+            "give_held_item": true,
+            "set_flags": [
+              "gift_attempted"
+            ]
+          }
+        },
+        {
+          "text": "Oh, it's just something I'm carrying.",
+          "next": "decline"
+        }
+      ]
+    },
+    "accept": {
+      "lines": [
+        "F-for me?",
+        "Oh! Thank you!",
+        "I've been wondering what's on the other side of the lake.",
+        "I don't think I'm quite ready to go over there myself, though."
+      ],
+      "effects": {
+        "set_flags": [
+          "heard_lake_hint"
+        ]
+      }
+    },
+    "decline": {
+      "lines": [
+        "Oh! Sorry."
+      ]
+    }
+  }
+}
