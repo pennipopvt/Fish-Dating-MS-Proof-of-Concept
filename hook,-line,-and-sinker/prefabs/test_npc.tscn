@@ -35,7 +35,7 @@ animations = [{
 "texture": ExtResource("5_abqes")
 }],
 "loop": 1,
-"name": &"onCaught",
+"name": &"on_caught",
 "speed": 5.0
 }]
 
@@ -54,6 +54,6 @@ position = Vector2(0, -16)
 
 [node name="Sprite" type="AnimatedSprite2D" parent="." unique_id=204925965]
 sprite_frames = SubResource("SpriteFrames_yd4fr")
-animation = &"onCaught"
+animation = &"on_caught"
 autoplay = "default"
 flip_h = true

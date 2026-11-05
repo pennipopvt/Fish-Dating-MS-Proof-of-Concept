@@ -48,7 +48,7 @@ player_portrait = ExtResource("4_tbgi4")
 [node name="BaitMenu" parent="CanvasLayer" unique_id=1609560605 instance=ExtResource("9_baitm")]
 visible = false
 
-[node name="IllustrationScene" parent="." instance=ExtResource("10_illustration")]
+[node name="IllustrationScene" parent="." unique_id=1706556582 instance=ExtResource("10_illustration")]
 
 [node name="AudioStreamPlayer2D" type="AudioStreamPlayer2D" parent="." unique_id=1332507421]
 stream = ExtResource("4_jyhfs")
