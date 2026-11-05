@@ -90,10 +90,16 @@ func _ready() -> void:
 	stun_glow.visible = false
 	add_child(stun_glow)
 	stun_glow.points = points
+	BobberManager.equipped_changed.connect(_on_bobber_equipped)
+	_on_bobber_equipped(BobberManager.get_equipped_bobber())
 	ripple_tell.animation_finished.connect(_on_ripple_animation_finished)
 	ripple_tell.hide()
 	bobber.hide()
 	hide()
+
+func _on_bobber_equipped(data: BobberData) -> void:
+	bobber.texture = data.sprite if data != null else null
+
 
 func send(initial_progress: float = 0.0) -> void:
 	#later i wanna add an animation of it being sent into da water
