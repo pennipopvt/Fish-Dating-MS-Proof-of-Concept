@@ -6,16 +6,13 @@ signal equipped_changed(bobber: BobberData)
 const SAVE_PATH := "user://bobbers.cfg"
 const DEFAULT_ID: StringName = &"default"
 const SILAS_ID: StringName = &"silas"
-const TEST_ID: StringName = &"test"
-
-# Temporary playtest unlock: Silas's bobber is available immediately.
-# Remove SILAS_ID from this array when the romance reward is connected.
-const STARTING_UNLOCKS: Array[StringName] = [&"default", &"silas", &"test"]
+# V1 removes original development-only grants from existing test saves.
+const SAVE_VERSION := 1
+const STARTING_UNLOCKS: Array[StringName] = [&"default"]
 
 var bobbers: Array[BobberData] = [
 	preload("res://resources/bobbers/default.tres"),
-	preload("res://resources/bobbers/silas.tres"),
-	preload("res://resources/bobbers/test.tres")
+	preload("res://resources/bobbers/silas.tres")
 ]
 var unlocked_ids: Array[StringName] = []
 var equipped_id: StringName = DEFAULT_ID
@@ -69,6 +66,7 @@ func equip_bobber(id: StringName) -> bool:
 
 func _save_selection() -> void:
 	var config := ConfigFile.new()
+	config.set_value("bobbers", "version", SAVE_VERSION)
 	config.set_value("bobbers", "equipped", String(equipped_id))
 	config.set_value("bobbers", "unlocked", Array(unlocked_ids).map(func(id): return String(id)))
 	config.save(SAVE_PATH)
@@ -77,6 +75,14 @@ func _save_selection() -> void:
 func _load_selection() -> void:
 	var config := ConfigFile.new()
 	if config.load(SAVE_PATH) != OK:
+		return
+	# Older builds granted Silas and the duplicate bobber for testing.
+	# Migrate that test collection once without altering future rewards.
+	if int(config.get_value("bobbers", "version", 0)) < SAVE_VERSION:
+		unlocked_ids.clear()
+		unlocked_ids.append(DEFAULT_ID)
+		equipped_id = DEFAULT_ID
+		_save_selection()
 		return
 	for value in config.get_value("bobbers", "unlocked", []):
 		var id := StringName(str(value))
