@@ -6,7 +6,7 @@
 [ext_resource type="PackedScene" path="res://prefabs/shop_menu.tscn" id="5_choun"]
 [ext_resource type="PackedScene" uid="uid://dgsl8ux5hh1tt" path="res://prefabs/dialogue_ui.tscn" id="8_trceg"]
 [ext_resource type="PackedScene" path="res://prefabs/bait_menu.tscn" id="9_baitm"]
-[ext_resource type="PackedScene" path="res://prefabs/illustration_scene.tscn" id="10_illustration"]
+[ext_resource type="PackedScene" uid="uid://bt2iu4iois2sb" path="res://prefabs/illustration_scene.tscn" id="10_illustration"]
 
 [node name="Main" type="Control" unique_id=51723177]
 layout_mode = 3
