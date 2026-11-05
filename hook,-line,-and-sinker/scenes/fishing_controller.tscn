@@ -18,6 +18,8 @@
 [ext_resource type="AudioStream" uid="uid://by5vwj80vigdx" path="res://sounds/sfx/catch.wav" id="14_yi17m"]
 [ext_resource type="AudioStream" uid="uid://clnvbbxytf36" path="res://sounds/sfx/land.wav" id="15_2xahb"]
 
+[ext_resource type="Texture2D" path="res://sprites/characters/poof.png" id="npc_poof_sheet"]
+
 [sub_resource type="Gradient" id="Gradient_nshyg"]
 offsets = PackedFloat32Array(0, 0.53246754, 0.9935065)
 colors = PackedColorArray(0, 1, 0, 1, 0.53594774, 0.46405226, 0, 1, 1, 0, 0, 1)
@@ -122,6 +124,42 @@ region = Rect2(64, 0, 32, 32)
 [sub_resource type="AtlasTexture" id="AtlasTexture_irnyp"]
 atlas = ExtResource("9_2505k")
 region = Rect2(96, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="npc_poof_frame_0"]
+atlas = ExtResource("npc_poof_sheet")
+region = Rect2(0, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="npc_poof_frame_1"]
+atlas = ExtResource("npc_poof_sheet")
+region = Rect2(32, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="npc_poof_frame_2"]
+atlas = ExtResource("npc_poof_sheet")
+region = Rect2(64, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="npc_poof_frame_3"]
+atlas = ExtResource("npc_poof_sheet")
+region = Rect2(96, 0, 32, 32)
+
+[sub_resource type="SpriteFrames" id="NPCPoofFrames"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("npc_poof_frame_0")
+}, {
+"duration": 1.0,
+"texture": SubResource("npc_poof_frame_1")
+}, {
+"duration": 1.0,
+"texture": SubResource("npc_poof_frame_2")
+}, {
+"duration": 1.0,
+"texture": SubResource("npc_poof_frame_3")
+}],
+"loop": false,
+"name": &"poof",
+"speed": 12.0
+}]
 
 [sub_resource type="SpriteFrames" id="SpriteFrames_ripple"]
 animations = [{
@@ -327,3 +365,9 @@ stream = ExtResource("15_2xahb")
 
 [node name="LoseSfx" type="AudioStreamPlayer" parent="." unique_id=2107377503]
 stream = ExtResource("14_xlio7")
+
+[node name="NpcPoof" type="AnimatedSprite2D" parent="."]
+visible = false
+z_index = 13
+sprite_frames = SubResource("NPCPoofFrames")
+animation = &"poof"
