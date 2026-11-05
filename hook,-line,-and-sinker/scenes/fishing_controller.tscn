@@ -20,6 +20,8 @@
 
 [ext_resource type="Texture2D" path="res://sprites/characters/poof.png" id="npc_poof_sheet"]
 
+[ext_resource type="Texture2D" path="res://sprites/bobbers/bobber_default.png" id="bobber_default"]
+
 [sub_resource type="Gradient" id="Gradient_nshyg"]
 offsets = PackedFloat32Array(0, 0.53246754, 0.9935065)
 colors = PackedColorArray(0, 1, 0, 1, 0.53594774, 0.46405226, 0, 1, 1, 0, 0, 1)
@@ -322,6 +324,12 @@ danger_line_color = Color(1, 0, 0, 1)
 position = Vector2(-115.5, 5)
 scale = Vector2(0.005826272, 0.005826272)
 texture = ExtResource("5_nshyg")
+
+[node name="Bobber" type="Sprite2D" parent="FishingLine"]
+visible = false
+z_index = 9
+texture_filter = 1
+texture = ExtResource("bobber_default")
 
 [node name="RippleTell" type="AnimatedSprite2D" parent="FishingLine" unique_id=1885188316]
 z_index = 10
