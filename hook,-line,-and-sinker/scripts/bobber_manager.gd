@@ -6,14 +6,16 @@ signal equipped_changed(bobber: BobberData)
 const SAVE_PATH := "user://bobbers.cfg"
 const DEFAULT_ID: StringName = &"default"
 const SILAS_ID: StringName = &"silas"
+const TEST_ID: StringName = &"test"
 
 # Temporary playtest unlock: Silas's bobber is available immediately.
 # Remove SILAS_ID from this array when the romance reward is connected.
-const STARTING_UNLOCKS: Array[StringName] = [&"default", &"silas"]
+const STARTING_UNLOCKS: Array[StringName] = [&"default", &"silas", &"test"]
 
 var bobbers: Array[BobberData] = [
 	preload("res://resources/bobbers/default.tres"),
-	preload("res://resources/bobbers/silas.tres")
+	preload("res://resources/bobbers/silas.tres"),
+	preload("res://resources/bobbers/test.tres")
 ]
 var unlocked_ids: Array[StringName] = []
 var equipped_id: StringName = DEFAULT_ID
