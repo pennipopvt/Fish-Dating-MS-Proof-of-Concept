@@ -27,6 +27,14 @@ const ADVANCE_ACTION := &"Interact"
 
 var _npc: NPCData = null
 var _opened_frame := -1
+var _illustration_mode := false
+
+# Illustration scenes reuse the dialogue box, but suppress both portraits.
+func set_illustration_mode(enabled: bool) -> void:
+	_illustration_mode = enabled
+	if is_node_ready():
+		_player_portrait.visible = not enabled
+		_npc_portrait.visible = not enabled
 
 
 func _ready() -> void:
