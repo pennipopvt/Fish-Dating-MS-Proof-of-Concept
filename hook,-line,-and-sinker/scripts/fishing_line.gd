@@ -1,9 +1,5 @@
 extends Line2D
 
-#this is kinda temporary im figuring out line2D
-#also idk if ur gonna make like, a manually animated fishing rod or not
-#so im not putting too much stock into this
-
 ## Horizontal distance at zero reel progress (pixels left from rod).
 @export_range(1.0, 600.0, 1.0) var max_horizontal_distance: float = 340.0
 ## Distance from rod when the fish breaches the surface.
