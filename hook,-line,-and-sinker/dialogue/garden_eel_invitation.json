@@ -1,0 +1,45 @@
+{
+  "entry": "invite",
+  "nodes": {
+    "invite": {
+      "lines": [
+        "Oh, um... Penni. Hi.",
+        "I've been meaning to ask you. Um... if you would. Like. Um.",
+        "Want to spend some time with me?",
+        "I decorated my house some more, so you could see that.",
+        "I don't really know what we would do... I just—",
+        "What I'm trying to ask is, do you wanna come inside? My house?"
+      ],
+      "choices": [
+        {
+          "text": "Yes, Silas, I would love to.",
+          "next": "accept",
+          "effects": {
+            "set_flags": [
+              "house_invitation_accepted"
+            ]
+          }
+        },
+        {
+          "text": "Maybe another time.",
+          "next": "decline"
+        }
+      ]
+    },
+    "accept": {
+      "lines": [
+        "Oh! Really?",
+        "Okay! Um. Come on in!"
+      ],
+      "effects": {
+        "request_scene": "silas_house"
+      }
+    },
+    "decline": {
+      "lines": [
+        "Oh! Yeah, of course.",
+        "Just... let me know!"
+      ]
+    }
+  }
+}

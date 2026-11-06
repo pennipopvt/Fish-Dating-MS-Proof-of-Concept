@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="FishData" format=3 uid="uid://d2u8m5wcxohtw"]
+
+[ext_resource type="Script" uid="uid://d2iidpvp5wrw7" path="res://resources/fish_data.gd" id="1_23k1o"]
+[ext_resource type="Script" uid="uid://yvmtx3kcsond" path="res://resources/item_data.gd" id="1_w6cfk"]
+[ext_resource type="Script" uid="uid://cur8k0lqp6jxh" path="res://resources/fish_escape_state.gd" id="2_boabf"]
+[ext_resource type="PackedScene" uid="uid://bu27c1m43q585" path="res://prefabs/test_npc.tscn" id="2_g34ht"]
+[ext_resource type="Texture2D" uid="uid://dn0yrxotq30fx" path="res://sprites/placeholders/reelprogress.png" id="2_xg58l"]
+
+[sub_resource type="Resource" id="Resource_nm365"]
+script = ExtResource("1_w6cfk")
+item_id = &"test_silas"
+sprite = ExtResource("2_xg58l")
+metadata/_custom_type_script = "uid://yvmtx3kcsond"
+
+[sub_resource type="Resource" id="Resource_g34ht"]
+script = ExtResource("2_boabf")
+state_name = "Default"
+escape_rate = 0.05
+state_length = 5.0
+state_probability = 0.6
+metadata/_custom_type_script = "uid://cur8k0lqp6jxh"
+
+[resource]
+script = ExtResource("1_23k1o")
+fish_id = &"test_silas"
+item_data = SubResource("Resource_nm365")
+npc_data = ExtResource("2_g34ht")
+states = Array[ExtResource("2_boabf")]([SubResource("Resource_g34ht")])
+metadata/_custom_type_script = "uid://d2iidpvp5wrw7"

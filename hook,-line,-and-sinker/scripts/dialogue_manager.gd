@@ -3,10 +3,17 @@ extends Node
 signal dialogue_requested(npc: NPCData)
 signal conversation_started(npc: NPCData)
 signal conversation_finished(npc: NPCData)
+# Animation cues from JSON nodes and special-scene requests after a conversation ends.
+signal dialogue_cue(npc: NPCData, cue: String)
+signal scene_requested(npc: NPCData, scene_id: String)
 
-func request_conversation(npc: NPCData) -> void:
+func request_conversation(npc: NPCData, json_override: String = "", gift_player: Player = null) -> void:
 	if npc != null and not is_active:
+		_requested_json_path = json_override
+		_gift_player = gift_player
+		_expected_gift_item_id = gift_player.held_item.item_id if gift_player != null and gift_player.held_item != null else &""
 		dialogue_requested.emit(npc)
+		_requested_json_path = ""
 
 # API kept compatible with DialogueUI. JSON graphs are instantiated at runtime.
 var current_npc: NPCData = null
@@ -20,16 +27,21 @@ var _lines: Array[DialogueLineData] = []
 var _choices: Array[DialogueChoiceData] = []
 var _choice_defs: Array = []
 var _pending_choice: Dictionary = {}
+var _requested_json_path: String = ""
+var _node_effects_applied: bool = false
+var _gift_player: Player = null
+var _expected_gift_item_id: StringName = &""
+var _scene_after_conversation: String = ""
 
-func start_conversation(npc: NPCData) -> void:
+func start_conversation(npc: NPCData, json_override: String = "") -> void:
 	if is_active or npc == null:
 		return
-	var path := ""
-	if not npc.encounter_rules.is_empty():
+	var path: String = json_override if not json_override.is_empty() else _requested_json_path
+	if path.is_empty() and not npc.encounter_rules.is_empty():
 		path = NPCManager.get_encounter_json_path(npc)
 		if path.is_empty():
 			return
-	else:
+	elif path.is_empty():
 		path = npc.dialogue_json_path
 	if not path.is_empty():
 		var graph := DialogueJsonLoader.read_graph(path)
@@ -130,6 +142,10 @@ func _complete_pending_choice() -> void:
 func _apply_json_effects(effects: Variant) -> void:
 	if not effects is Dictionary or current_npc == null:
 		return
+	if effects.get("give_held_item", false):
+		NPCManager.accept_gift(current_npc, _gift_player, _expected_gift_item_id)
+	if effects.has("request_scene"):
+		_scene_after_conversation = str(effects["request_scene"])
 	var state: Dictionary = NPCManager.get_npc_state(current_npc.npc_id)
 	state["attraction"] = int(state.get("attraction", 0)) + int(effects.get("attraction", 0))
 	var flags: Dictionary = state.get("flags", {})
@@ -139,6 +155,20 @@ func _apply_json_effects(effects: Variant) -> void:
 	for flag in effects.get("clear_flags", []):
 		flags[StringName(str(flag))] = false
 
+
+# Conditions are evaluated when the menu becomes visible, using the NPC's current flags.
+func _choice_available(choice: Dictionary) -> bool:
+	if current_npc == null:
+		return false
+	var flags: Dictionary = NPCManager.get_npc_state(current_npc.npc_id).get("flags", {})
+	for flag in choice.get("required_flags", []):
+		if not flags.get(StringName(str(flag)), false):
+			return false
+	for flag in choice.get("forbidden_flags", []):
+		if flags.get(StringName(str(flag)), false):
+			return false
+	return true
+
 func _enter_node(id: String) -> void:
 	var nodes: Dictionary = _graph["nodes"]
 	if not nodes.has(id):
@@ -146,7 +176,10 @@ func _enter_node(id: String) -> void:
 		end_conversation()
 		return
 	_node_id = id
+	_node_effects_applied = false
 	var node: Dictionary = nodes[id]
+	if node.has("cue"):
+		dialogue_cue.emit(current_npc, str(node["cue"]))
 	_lines.clear()
 	_choices.clear()
 	_choice_defs.clear()
@@ -164,6 +197,8 @@ func _enter_node(id: String) -> void:
 		_lines.append(line)
 	for raw_choice in node.get("choices", []):
 		var choice: Dictionary = raw_choice
+		if not _choice_available(choice):
+			continue
 		var display_choice := DialogueChoiceData.new()
 		display_choice.text = str(choice.get("text", ""))
 		_choices.append(display_choice)
@@ -174,8 +209,17 @@ func _check_for_end() -> void:
 	if not is_active:
 		return
 	if not _graph.is_empty():
-		if line_index >= _lines.size() and _choices.is_empty():
+		if line_index >= _lines.size():
 			var node: Dictionary = _graph["nodes"][_node_id]
+			# Node effects fire only after all its lines have been read, once per visit.
+			if not _choices.is_empty():
+				if not _node_effects_applied:
+					_apply_json_effects(node.get("effects", {}))
+					_node_effects_applied = true
+				return
+			if not _node_effects_applied:
+				_apply_json_effects(node.get("effects", {}))
+				_node_effects_applied = true
 			if node.has("next"):
 				_enter_node(str(node["next"]))
 			else:
@@ -186,6 +230,7 @@ func _check_for_end() -> void:
 
 func end_conversation() -> void:
 	var finished_npc := current_npc
+	var requested_scene := _scene_after_conversation
 	current_npc = null
 	current_dialogue = null
 	line_index = 0
@@ -196,4 +241,10 @@ func end_conversation() -> void:
 	_choices.clear()
 	_choice_defs.clear()
 	_pending_choice.clear()
+	_node_effects_applied = false
+	_gift_player = null
+	_expected_gift_item_id = &""
+	_scene_after_conversation = ""
 	conversation_finished.emit(finished_npc)
+	if not requested_scene.is_empty():
+		scene_requested.emit(finished_npc, requested_scene)

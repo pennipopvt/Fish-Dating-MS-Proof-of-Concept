@@ -10,6 +10,5 @@ display_name = "Bait B"
 icon = ExtResource("2_icon")
 description = "TODO: placeholder description. Attracts Placeholder Fish B more often."
 catch_weights = Dictionary[StringName, float]({
-&"easy_test_fish": 1.0,
-&"hard_test_fish": 3.0
+&"test_silas": 5.0
 })

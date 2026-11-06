@@ -1,0 +1,79 @@
+{
+  "entry": "ask",
+  "nodes": {
+    "ask": {
+      "lines": [
+        "Oh! What's that?"
+      ],
+      "choices": [
+        {
+          "text": "It's for you!",
+          "next": "accept",
+          "effects": {
+            "give_held_item": true
+          }
+        },
+        {
+          "text": "Oh, it's just something I'm carrying.",
+          "next": "decline"
+        }
+      ]
+    },
+    "accept": {
+      "lines": [
+        "F-for me?",
+        "Oh! Thank you!"
+      ],
+      "next": "first_look"
+    },
+    "first_look": {
+      "lines": [
+        "[He raises the spyglass and looks through it.]",
+        "Woah... Everything looks so close!"
+      ],
+      "next": "startled"
+    },
+    "startled": {
+      "lines": [
+        "[He turns the spyglass toward you, then quickly lowers it.]",
+        "AH!"
+      ],
+      "next": "hello"
+    },
+    "hello": {
+      "lines": [
+        "[He hesitates, then raises the spyglass again.]",
+        "...Hello."
+      ],
+      "choices": [
+        {
+          "text": "Do you like it?",
+          "next": "likes_it"
+        },
+        {
+          "text": "Hehe, hi!",
+          "next": "hi_back"
+        }
+      ]
+    },
+    "likes_it": {
+      "lines": [
+        "Yes! I love it!",
+        "It's exactly what I've been needing."
+      ]
+    },
+    "hi_back": {
+      "lines": [
+        "H-hi.",
+        "Um... your skin looks really smooth through this.",
+        "AH! No, sorry, that was weird. I'm sorry...",
+        "...Thank you for this."
+      ]
+    },
+    "decline": {
+      "lines": [
+        "Oh! Sorry."
+      ]
+    }
+  }
+}
