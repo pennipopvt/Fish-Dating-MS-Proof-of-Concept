@@ -128,6 +128,18 @@ texture = ExtResource("6_q76tg")
 position = Vector2(89, 8)
 texture = ExtResource("7_sxw1y")
 
+[node name="AvailableHomeList" parent="." unique_id=1246650794 node_paths=PackedStringArray("available_homes") instance=ExtResource("1_u7kri")]
+script = ExtResource("2_n7i1a")
+available_homes = [NodePath("FreeHouseA"), NodePath("FreeHouseB")]
+
+[node name="FreeHouseA" parent="AvailableHomeList" unique_id=852988363 instance=ExtResource("24_xfqyr")]
+position = Vector2(333, 96)
+offset = Vector2(0, -16)
+
+[node name="FreeHouseB" parent="AvailableHomeList" unique_id=1681937105 instance=ExtResource("24_xfqyr")]
+position = Vector2(445, 96)
+offset = Vector2(0, -16)
+
 [node name="Dock" parent="." unique_id=501821169 instance=ExtResource("1_4284n")]
 position = Vector2(46, 101)
 
