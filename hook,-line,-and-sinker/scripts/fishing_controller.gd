@@ -477,4 +477,7 @@ func create_npc(npc: PackedScene) -> void:
 	await get_tree().create_timer(npc_catch_pose_length).timeout
 	sprite.play(&"default")
 	exit_fishing()
+	# RecruitmentHandler only reacts to the first conversation after an NPC is caught.
+	# Register this specific NPC before opening the conversation.
+	RecruitmentHandler.engage_listen(scene)
 	scene.interact(get_parent())
