@@ -10,4 +10,5 @@ display_name = "Hooked on a Feeling"
 description = "Catch 15 fish in a row without losing one."
 icon = ExtResource("2_icon")
 requirement_type = 0
+hidden = true
 target_amount = 15

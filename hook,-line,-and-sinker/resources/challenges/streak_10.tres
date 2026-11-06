@@ -10,4 +10,5 @@ display_name = "Reel Deal"
 description = "Catch 10 fish in a row without losing one."
 icon = ExtResource("2_icon")
 requirement_type = 0
+hidden = true
 target_amount = 10

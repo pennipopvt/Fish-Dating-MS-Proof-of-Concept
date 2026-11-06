@@ -65,11 +65,15 @@ func refresh() -> void:
 	# Completed first (newest on top), then incomplete in authored order.
 	var completed: Array[ChallengeData] = []
 	var incomplete: Array[ChallengeData] = []
+	var hidden_remaining := 0
 	for challenge in ChallengeManager.challenges:
 		if challenge == null:
 			continue
 		if challenge.completed:
 			completed.append(challenge)
+		elif challenge.hidden:
+			# Hidden challenges don't appear until they're unlocked.
+			hidden_remaining += 1
 		else:
 			incomplete.append(challenge)
 
@@ -77,6 +81,9 @@ func refresh() -> void:
 
 	for challenge in completed + incomplete:
 		_list.add_child(_make_row(challenge))
+
+	if hidden_remaining > 0:
+		_list.add_child(_make_hidden_row(hidden_remaining))
 
 
 # ---- Layout --------------------------------------------------------------
@@ -187,6 +194,41 @@ func _make_row(challenge: ChallengeData) -> Control:
 		date.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 		date.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		columns.add_child(date)
+
+	return row
+
+
+# Steam-style footer: "+3 hidden challenges remaining".
+func _make_hidden_row(count: int) -> Control:
+	var row := PanelContainer.new()
+	row.add_theme_stylebox_override("panel", _row_style)
+
+	var columns := HBoxContainer.new()
+	columns.add_theme_constant_override("separation", 5 * S)
+	row.add_child(columns)
+
+	var icon := TextureRect.new()
+	icon.texture = HIDDEN_ICON
+	icon.custom_minimum_size = ICON_SIZE
+	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	columns.add_child(icon)
+
+	var text := VBoxContainer.new()
+	text.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	text.alignment = BoxContainer.ALIGNMENT_CENTER
+	text.add_theme_constant_override("separation", 2 * S)
+	columns.add_child(text)
+
+	text.add_child(PixelUI.label(
+		"+%d hidden challenge%s remaining" % [count, "" if count == 1 else "s"],
+		&"TitleLabel", PixelUI.TEXT_DIM.lerp(PixelUI.TEXT, 0.5)
+	))
+	var hint := PixelUI.label(
+		"Details for each challenge will be revealed once unlocked.", &"DimLabel"
+	)
+	hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	text.add_child(hint)
 
 	return row
 

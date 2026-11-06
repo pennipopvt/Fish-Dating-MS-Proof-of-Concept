@@ -10,4 +10,5 @@ display_name = "Legend of the Lake"
 description = "Catch 100 fish in a row without losing one."
 icon = ExtResource("2_icon")
 requirement_type = 0
+hidden = true
 target_amount = 100
