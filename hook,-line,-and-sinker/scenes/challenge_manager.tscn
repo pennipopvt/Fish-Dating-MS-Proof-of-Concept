@@ -1,0 +1,23 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/challenge_manager.gd" id="1_chman"]
+[ext_resource type="Script" path="res://resources/challenge_data.gd" id="2_chdat"]
+[ext_resource type="Resource" path="res://resources/challenges/hot_streak.tres" id="3_hotst"]
+[ext_resource type="Script" path="res://scripts/challenge_toast.gd" id="4_toast"]
+[ext_resource type="Resource" path="res://resources/challenges/streak_5.tres" id="5_s5"]
+[ext_resource type="Resource" path="res://resources/challenges/streak_10.tres" id="6_s10"]
+[ext_resource type="Resource" path="res://resources/challenges/streak_15.tres" id="7_s15"]
+[ext_resource type="Resource" path="res://resources/challenges/streak_20.tres" id="8_s20"]
+[ext_resource type="Resource" path="res://resources/challenges/streak_25.tres" id="9_s25"]
+[ext_resource type="Resource" path="res://resources/challenges/streak_50.tres" id="10_s50"]
+[ext_resource type="Resource" path="res://resources/challenges/streak_100.tres" id="11_s100"]
+
+[node name="ChallengeManager" type="Node"]
+process_mode = 3
+script = ExtResource("1_chman")
+challenges = Array[ExtResource("2_chdat")]([ExtResource("3_hotst"), ExtResource("5_s5"), ExtResource("6_s10"), ExtResource("7_s15"), ExtResource("8_s20"), ExtResource("9_s25"), ExtResource("10_s50"), ExtResource("11_s100")])
+
+[node name="ChallengeToast" type="Node" parent="."]
+script = ExtResource("4_toast")
+
+[node name="UnlockSfx" type="AudioStreamPlayer" parent="."]
