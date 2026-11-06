@@ -9,6 +9,9 @@ signal bait_changed(bait: BaitData)
 @export var possible_catches: Array[FishData] = []
 @export var current_storage: Array[ItemData] = []
 
+@export var catch_dex: Array[FishData] = []
+@export var catch_lifetime: Dictionary[FishData,int]
+
 @export_category("Bait")
 @export var available_baits: Array[BaitData] = []
 # Applies to the next cast. A fish that's already decided is never swapped.
@@ -96,7 +99,19 @@ func hook_fish(item: FishData) -> void:
 # Call when the player has successfully caught the fish
 func catch_fish(item: FishData) -> void:
 	current_storage.append(item.item_data)
-	fish_caught.emit(item)
+	
+	if(!catch_dex.has(item)):
+		catch_dex.append(item)
+	
+	if(catch_lifetime.has(item)):
+		catch_lifetime[item] += 1
+	else:
+		catch_lifetime[item] = 1
+		
+	#print("CATCH DEX", catch_dex)
+	#print("LIFETIME CATCHES", catch_lifetime)
+	
+	fish_caught.emit(item.item_data)
 
 # Call when the player has failed to catch the fish
 func lose_fish(item: FishData) -> void:

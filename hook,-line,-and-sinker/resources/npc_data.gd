@@ -6,6 +6,7 @@ extends Resource
 
 @export_group("Appearance")
 @export var portrait: Texture2D
+@export var house: Texture2D
 
 @export_group("JSON Encounter Rules (first matching rule wins)")
 @export var encounter_rules: Array[EncounterRuleData] = []
