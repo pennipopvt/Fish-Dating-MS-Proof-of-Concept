@@ -17,7 +17,7 @@ process_mode = 3
 script = ExtResource("1_chman")
 challenges = Array[ExtResource("2_chdat")]([ExtResource("3_hotst"), ExtResource("5_s5"), ExtResource("6_s10"), ExtResource("7_s15"), ExtResource("8_s20"), ExtResource("9_s25"), ExtResource("10_s50"), ExtResource("11_s100")])
 
-[node name="ChallengeToast" type="CanvasLayer" parent="."]
+[node name="ChallengeToast" type="Node" parent="."]
 script = ExtResource("4_toast")
 
 [node name="UnlockSfx" type="AudioStreamPlayer" parent="."]

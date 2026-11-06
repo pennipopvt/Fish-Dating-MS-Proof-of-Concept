@@ -118,6 +118,11 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 func interact() -> void:
+	# Overlapping interactables (e.g. a delivery dropped on the bobber shelf):
+	# use the best one in reach, not just whichever was entered last.
+	var best := _best_interactable(null)
+	if best != null:
+		current_interactable = best
 	if is_instance_valid(current_interactable):
 		current_interactable.interact(self)
 	elif held_item != null:
@@ -125,8 +130,8 @@ func interact() -> void:
 		drop_item()
 
 
-# Hold a just-picked-up thing overhead for a moment (it has already gone into
-# the inventory or been applied). Doesn't use the held-item slot.
+# Hold a just-picked-up thing overhead for a moment (e.g. an upgrade package,
+# already applied). Doesn't use the held-item slot.
 func show_pickup(texture: Texture2D) -> void:
 	if texture == null:
 		return
@@ -148,16 +153,25 @@ func show_pickup(texture: Texture2D) -> void:
 func release_interactable(which: Interactable) -> void:
 	if current_interactable != which:
 		return
-	current_interactable = null
-	var best_distance := INF
+	current_interactable = _best_interactable(which)
+
+
+# Of the interactables the player overlaps: loose pickups first, then the
+# closest one.
+func _best_interactable(exclude: Interactable) -> Interactable:
+	var best: Interactable = null
+	var best_score := INF
 	for node in get_tree().get_nodes_in_group(Interactable.GROUP):
 		var other := node as Interactable
-		if other == which or other.is_queued_for_deletion() or not other.overlaps_body(self):
+		if other == exclude or other.is_queued_for_deletion() or not other.overlaps_body(self):
 			continue
-		var distance := absf(other.global_position.x - global_position.x)
-		if distance < best_distance:
-			best_distance = distance
-			current_interactable = other
+		var score := absf(other.global_position.x - global_position.x)
+		if not other is ItemPickup:
+			score += 1000.0
+		if score < best_score:
+			best_score = score
+			best = other
+	return best
 
 
 func _is_carrying() -> bool:

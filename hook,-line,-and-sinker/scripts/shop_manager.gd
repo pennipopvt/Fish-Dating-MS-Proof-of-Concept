@@ -87,8 +87,9 @@ func make_trade(trade: TradeData) -> bool:
 			FishingManager.current_storage.remove_at(index)
 
 	if is_instance_valid(delivery_point):
-		# A drone drops everything next to the terminal. Upgrades arrive as
-		# a package that applies when picked up.
+		# A drone drops everything next to the terminal. Items stay on the
+		# ground until carried off by hand; upgrades arrive as a package that
+		# applies when picked up.
 		delivery_point.deliver(_make_pickups(trade))
 	else:
 		_apply_rewards(trade)
@@ -109,7 +110,6 @@ func _make_pickups(trade: TradeData) -> Array[ItemPickup]:
 		for i in range(trade.reward_item_amount):
 			var pickup := ItemPickup.new()
 			pickup.item = trade.reward_item
-			pickup.to_inventory = true
 			pickups.append(pickup)
 
 	return pickups

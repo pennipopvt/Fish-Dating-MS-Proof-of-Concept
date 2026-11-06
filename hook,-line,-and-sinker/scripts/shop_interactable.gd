@@ -4,10 +4,16 @@ extends Interactable
 @export var prompt: InteractPrompt
 
 @export_group("Delivery")
-## Where purchased items land, relative to the terminal.
-@export var drop_offset := Vector2(-26, 0)
+## Where purchased items land, relative to the terminal (to its right, clear
+## of the bobber shelf).
+@export var drop_offset := Vector2(26, 0)
 ## Extra items from the same trade line up along this step.
-@export var drop_spacing := Vector2(-18, 0)
+@export var drop_spacing := Vector2(18, 0)
+
+@export_group("Notices")
+## Where challenge notices point their tail, relative to the terminal
+## (just above the interact prompt).
+@export var notice_offset := Vector2(0, -29)
 
 var _player_in_range := false
 var _pending: Array[ItemPickup] = []  # bought while the menu is open
