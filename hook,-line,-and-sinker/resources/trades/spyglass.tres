@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="TradeData" format=3 uid="uid://b4eklxcwsk0ff"]
+[gd_resource type="Resource" script_class="TradeData" format=3 uid="uid://t0n1uunm22by"]
 
 [ext_resource type="Script" uid="uid://co23u2dkxgpsq" path="res://resources/trade_data.gd" id="1_trade"]
 [ext_resource type="Script" uid="uid://dou1ei8c0alhj" path="res://resources/trade_requirement.gd" id="2_req"]

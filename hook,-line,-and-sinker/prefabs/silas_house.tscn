@@ -1,6 +1,6 @@
-[gd_scene format=3 uid="uid://86k4q6ioi03u"]
+[gd_scene format=3 uid="uid://gdban7rp5035"]
 
-[ext_resource type="Texture2D" uid="uid://dgq5ngslogdof" path="res://sprites/placeholders/placeholderhousebad.png" id="1_f8tau"]
+[ext_resource type="Texture2D" path="res://sprites/placeholders/placeholderhousebad.png" id="1_f8tau"]
 
 [node name="SilasHouse" type="Sprite2D" unique_id=852988363]
 z_index = -1
