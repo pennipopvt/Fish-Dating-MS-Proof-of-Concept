@@ -16,6 +16,7 @@
 [ext_resource type="Shader" uid="uid://r4rciq67coeg" path="res://shaders/water.gdshader" id="13_le6xu"]
 [ext_resource type="PackedScene" uid="uid://dmjnqvhgyo6yj" path="res://prefabs/bait_box.tscn" id="21_baitb"]
 [ext_resource type="PackedScene" path="res://prefabs/bobber_shelf.tscn" id="bobber_shelf"]
+[ext_resource type="PackedScene" uid="uid://86k4q6ioi03u" path="res://prefabs/silas_house.tscn" id="24_xfqyr"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_4284n"]
 shader = ExtResource("6_07nuu")
@@ -148,27 +149,6 @@ position = Vector2(148, 112)
 
 [node name="Shop" parent="." unique_id=1156017474 instance=ExtResource("3_07nuu")]
 position = Vector2(195, 96)
-[node name="AvailableHomeList" parent="." unique_id=1246650794 node_paths=PackedStringArray("available_homes") instance=ExtResource("1_u7kri")]
-script = ExtResource("2_n7i1a")
-available_homes = [NodePath("FreeHouseA"), NodePath("FreeHouseB")]
-
-[node name="FreeHouseA" parent="AvailableHomeList" unique_id=852988363 instance=ExtResource("24_xfqyr")]
-position = Vector2(333, 96)
-offset = Vector2(0, -16)
-
-[node name="FreeHouseB" parent="AvailableHomeList" unique_id=1681937105 instance=ExtResource("24_xfqyr")]
-position = Vector2(445, 96)
-offset = Vector2(0, -16)
-
-[node name="Dock" parent="." unique_id=501821169 instance=ExtResource("1_4284n")]
-position = Vector2(46, 101)
-
-[node name="BobberShelf" parent="." unique_id=1600055831 instance=ExtResource("bobber_shelf")]
-position = Vector2(148, 112)
-
-[node name="Shop" parent="." unique_id=1156017474 instance=ExtResource("3_07nuu")]
-position = Vector2(195, 96)
-
 [node name="BaitBox" parent="." unique_id=2141990703 instance=ExtResource("21_baitb")]
 z_index = 0
 position = Vector2(98, 104)
