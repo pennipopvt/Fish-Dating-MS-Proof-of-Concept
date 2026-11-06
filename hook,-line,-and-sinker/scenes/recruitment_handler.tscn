@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://binty5hfqmf0c"]
+
+[ext_resource type="Script" path="res://scripts/recruitment_handler.gd" id="1_re75e"]
+
+[node name="RecruitmentHandler" type="Node2D" unique_id=1246650794]
+script = ExtResource("1_re75e")
