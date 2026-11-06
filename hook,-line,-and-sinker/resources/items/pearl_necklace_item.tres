@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="ItemData" format=3]
+
+[ext_resource type="Script" uid="uid://yvmtx3kcsond" path="res://resources/item_data.gd" id="1_item"]
+[ext_resource type="Texture2D" path="res://sprites/placeholders/gift_pearl_necklace.png" id="2_sprite"]
+
+[resource]
+script = ExtResource("1_item")
+item_id = &"pearl_necklace"
+sprite = ExtResource("2_sprite")
+metadata/_custom_type_script = "uid://yvmtx3kcsond"

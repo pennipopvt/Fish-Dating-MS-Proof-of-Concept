@@ -1,16 +1,9 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene format=3 uid="uid://bt2iu4iois2sb"]
 
-[ext_resource type="Script" path="res://scripts/illustration_scene_controller.gd" id="1_ctrl"]
+[ext_resource type="Script" uid="uid://bxntwr1rnd7aa" path="res://scripts/illustration_scene_controller.gd" id="1_ctrl"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_show"]
 bg_color = Color(0.88, 0.44, 0.59, 1)
-corner_radius_top_left = 12
-corner_radius_top_right = 12
-corner_radius_bottom_right = 12
-corner_radius_bottom_left = 12
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_show_hover"]
-bg_color = Color(0.98, 0.55, 0.68, 1)
 corner_radius_top_left = 12
 corner_radius_top_right = 12
 corner_radius_bottom_right = 12
@@ -23,11 +16,18 @@ corner_radius_top_right = 12
 corner_radius_bottom_right = 12
 corner_radius_bottom_left = 12
 
-[node name="IllustrationScene" type="CanvasLayer"]
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_show_hover"]
+bg_color = Color(0.98, 0.55, 0.68, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+
+[node name="IllustrationScene" type="CanvasLayer" unique_id=815136662]
 layer = 5
 script = ExtResource("1_ctrl")
 
-[node name="Background" type="ColorRect" parent="."]
+[node name="Background" type="ColorRect" parent="." unique_id=1418291172]
 visible = false
 anchors_preset = 15
 anchor_right = 1.0
@@ -37,7 +37,7 @@ grow_vertical = 2
 mouse_filter = 1
 color = Color(0.16, 0.2, 0.25, 1)
 
-[node name="PlaceholderLabel" type="Label" parent="Background"]
+[node name="PlaceholderLabel" type="Label" parent="Background" unique_id=2043233632]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -45,21 +45,20 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 theme_override_font_sizes/font_size = 52
+text = "Illustration placeholder"
 horizontal_alignment = 1
 vertical_alignment = 1
-text = "Illustration placeholder"
 
-[node name="WarningScreen" type="ColorRect" parent="."]
+[node name="WarningScreen" type="ColorRect" parent="." unique_id=2002475697]
 visible = false
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-mouse_filter = 0
 color = Color(0.07, 0.08, 0.12, 1)
 
-[node name="Center" type="CenterContainer" parent="WarningScreen"]
+[node name="Center" type="CenterContainer" parent="WarningScreen" unique_id=1528711845]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -67,48 +66,47 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="Choices" type="VBoxContainer" parent="WarningScreen/Center"]
+[node name="Choices" type="VBoxContainer" parent="WarningScreen/Center" unique_id=1327800370]
 layout_mode = 2
 theme_override_constants/separation = 20
 
-[node name="WarningLabel" type="Label" parent="WarningScreen/Center/Choices"]
+[node name="WarningLabel" type="Label" parent="WarningScreen/Center/Choices" unique_id=1311184912]
 layout_mode = 2
 theme_override_font_sizes/font_size = 40
 text = "You are about to see an 18+ scene."
 horizontal_alignment = 1
 
-[node name="ButtonSpacer" type="Control" parent="WarningScreen/Center/Choices"]
+[node name="ButtonSpacer" type="Control" parent="WarningScreen/Center/Choices" unique_id=952155423]
 custom_minimum_size = Vector2(0, 100)
 layout_mode = 2
 mouse_filter = 2
 
-[node name="SkipButton" type="Button" parent="WarningScreen/Center/Choices"]
-layout_mode = 2
+[node name="SkipButton" type="Button" parent="WarningScreen/Center/Choices" unique_id=845614222]
 custom_minimum_size = Vector2(450, 65)
+layout_mode = 2
 theme_override_font_sizes/font_size = 32
 text = "Skip"
 
-[node name="ShowButton" type="Button" parent="WarningScreen/Center/Choices"]
-layout_mode = 2
+[node name="ShowButton" type="Button" parent="WarningScreen/Center/Choices" unique_id=849167980]
 custom_minimum_size = Vector2(450, 65)
-theme_override_font_sizes/font_size = 32
+layout_mode = 2
 theme_override_colors/font_color = Color(0.12, 0.07, 0.1, 1)
-theme_override_colors/font_hover_color = Color(0.12, 0.07, 0.1, 1)
 theme_override_colors/font_pressed_color = Color(1, 1, 1, 1)
+theme_override_colors/font_hover_color = Color(0.12, 0.07, 0.1, 1)
+theme_override_font_sizes/font_size = 32
 theme_override_styles/normal = SubResource("StyleBoxFlat_show")
-theme_override_styles/hover = SubResource("StyleBoxFlat_show_hover")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_show_pressed")
+theme_override_styles/hover = SubResource("StyleBoxFlat_show_hover")
 text = "Let me see the porn"
 
-[node name="FadeLayer" type="CanvasLayer" parent="."]
-visible = false
+[node name="FadeLayer" type="CanvasLayer" parent="." unique_id=794095072]
 layer = 20
+visible = false
 
-[node name="Fade" type="ColorRect" parent="FadeLayer"]
+[node name="Fade" type="ColorRect" parent="FadeLayer" unique_id=1738346240]
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-mouse_filter = 0
 color = Color(0, 0, 0, 1)

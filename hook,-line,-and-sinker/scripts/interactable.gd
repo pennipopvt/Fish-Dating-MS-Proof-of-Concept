@@ -1,7 +1,10 @@
 class_name Interactable
 extends Area2D
 
+const GROUP := &"interactables"
+
 func _ready() -> void:
+	add_to_group(GROUP)
 	body_entered.connect(_on_body_entered)
 	body_exited.connect(_on_body_exited)
 

@@ -1,8 +1,10 @@
 [gd_scene format=4 uid="uid://bjt7lp2qss3qh"]
 
 [ext_resource type="PackedScene" uid="uid://d0hk7isls5uj3" path="res://prefabs/dock.tscn" id="1_4284n"]
+[ext_resource type="PackedScene" uid="uid://oc43ktitli70" path="res://scenes/recruitment_handler.tscn" id="1_u7kri"]
 [ext_resource type="Shader" uid="uid://c3qwox4urobgx" path="res://shaders/sun_glow.gdshader" id="2_5hu44"]
 [ext_resource type="PackedScene" uid="uid://hstq18vwr026" path="res://prefabs/player.tscn" id="2_m1sej"]
+[ext_resource type="Script" uid="uid://c4y6oxceqx56r" path="res://scripts/available_home_info.gd" id="2_n7i1a"]
 [ext_resource type="PackedScene" uid="uid://dkva15le6ficd" path="res://prefabs/shop.tscn" id="3_07nuu"]
 [ext_resource type="Texture2D" uid="uid://c00uarqfug6h2" path="res://sprites/environment/sun.png" id="3_vbln7"]
 [ext_resource type="Script" uid="uid://cure67x3a0766" path="res://scripts/clouds.gd" id="4_k40i2"]
@@ -13,9 +15,6 @@
 [ext_resource type="Texture2D" uid="uid://dvyql68s5tvo3" path="res://sprites/environment/tileset.png" id="10_6mti1"]
 [ext_resource type="Shader" uid="uid://r4rciq67coeg" path="res://shaders/water.gdshader" id="13_le6xu"]
 [ext_resource type="PackedScene" uid="uid://dmjnqvhgyo6yj" path="res://prefabs/bait_box.tscn" id="21_baitb"]
-[ext_resource type="Script" uid="uid://dmgixmvyo7qhq" path="res://scripts/item_pickup.gd" id="30_pickup"]
-[ext_resource type="Resource" path="res://resources/items/spyglass.tres" id="31_spyglass"]
-[ext_resource type="Resource" path="res://resources/items/lantern.tres" id="32_lantern"]
 [ext_resource type="PackedScene" path="res://prefabs/bobber_shelf.tscn" id="bobber_shelf"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_4284n"]
@@ -137,16 +136,26 @@ position = Vector2(148, 112)
 
 [node name="Shop" parent="." unique_id=1156017474 instance=ExtResource("3_07nuu")]
 position = Vector2(195, 96)
+[node name="AvailableHomeList" parent="." unique_id=1246650794 node_paths=PackedStringArray("available_homes") instance=ExtResource("1_u7kri")]
+script = ExtResource("2_n7i1a")
+available_homes = [NodePath("FreeHouseA"), NodePath("FreeHouseB")]
 
-[node name="TestSpyglass" type="Area2D" parent="." unique_id=1397236402]
-position = Vector2(225, 96)
-script = ExtResource("30_pickup")
-item = ExtResource("31_spyglass")
+[node name="FreeHouseA" parent="AvailableHomeList" unique_id=852988363 instance=ExtResource("24_xfqyr")]
+position = Vector2(333, 96)
+offset = Vector2(0, -16)
 
-[node name="TestLantern" type="Area2D" parent="." unique_id=56151606]
-position = Vector2(252, 96)
-script = ExtResource("30_pickup")
-item = ExtResource("32_lantern")
+[node name="FreeHouseB" parent="AvailableHomeList" unique_id=1681937105 instance=ExtResource("24_xfqyr")]
+position = Vector2(445, 96)
+offset = Vector2(0, -16)
+
+[node name="Dock" parent="." unique_id=501821169 instance=ExtResource("1_4284n")]
+position = Vector2(46, 101)
+
+[node name="BobberShelf" parent="." unique_id=1600055831 instance=ExtResource("bobber_shelf")]
+position = Vector2(148, 112)
+
+[node name="Shop" parent="." unique_id=1156017474 instance=ExtResource("3_07nuu")]
+position = Vector2(195, 96)
 
 [node name="BaitBox" parent="." unique_id=2141990703 instance=ExtResource("21_baitb")]
 z_index = 0
