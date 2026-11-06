@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="ChallengeData" format=3]
+
+[ext_resource type="Script" path="res://resources/challenge_data.gd" id="1_chdat"]
+[ext_resource type="Texture2D" path="res://sprites/challenges/streak_20.png" id="2_icon"]
+
+[resource]
+script = ExtResource("1_chdat")
+challenge_id = &"streak_20"
+display_name = "Fin-tastic Twenty"
+description = "Catch 20 fish in a row without losing one."
+icon = ExtResource("2_icon")
+requirement_type = 0
+hidden = true
+target_amount = 20

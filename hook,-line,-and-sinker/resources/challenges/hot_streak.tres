@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="ChallengeData" format=3]
+
+[ext_resource type="Script" path="res://resources/challenge_data.gd" id="1_chdat"]
+[ext_resource type="Texture2D" path="res://sprites/challenges/streak_3.png" id="2_icon"]
+[ext_resource type="Script" uid="uid://co23u2dkxgpsq" path="res://resources/trade_data.gd" id="3_trade"]
+[ext_resource type="Resource" path="res://resources/trades/pearl_necklace_gift.tres" id="4_gift"]
+
+[resource]
+script = ExtResource("1_chdat")
+challenge_id = &"hot_streak"
+display_name = "Hot Streak"
+description = "Catch 3 fish in a row without losing one."
+icon = ExtResource("2_icon")
+requirement_type = 0
+target_amount = 3
+unlocks_trades = Array[ExtResource("3_trade")]([ExtResource("4_gift")])
+reward_text = "Pearl Necklace gift trade"

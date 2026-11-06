@@ -12,3 +12,10 @@ extends Resource
 @export_group("Fishing Manager Reward")
 @export var reward_method: StringName = &""
 @export var reward_amount: int = 1
+## World sprite for the drone-delivered upgrade package; defaults to a crate.
+@export var delivery_sprite: Texture2D = null
+
+@export_group("Item Reward")
+## Delivered by drone next to the terminal on purchase, e.g. a gift for an NPC.
+@export var reward_item: ItemData = null
+@export_range(1, 99) var reward_item_amount: int = 1
