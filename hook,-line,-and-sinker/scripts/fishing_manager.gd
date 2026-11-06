@@ -96,7 +96,7 @@ func hook_fish(item: FishData) -> void:
 # Call when the player has successfully caught the fish
 func catch_fish(item: FishData) -> void:
 	current_storage.append(item.item_data)
-	fish_caught.emit(item.item_data)
+	fish_caught.emit(item)
 
 # Call when the player has failed to catch the fish
 func lose_fish(item: FishData) -> void:

@@ -12,3 +12,8 @@ extends Resource
 @export_group("Fishing Manager Reward")
 @export var reward_method: StringName = &""
 @export var reward_amount: int = 1
+
+@export_group("Item Reward")
+## Added to the player's storage on purchase, e.g. a gift for an NPC.
+@export var reward_item: ItemData = null
+@export_range(1, 99) var reward_item_amount: int = 1

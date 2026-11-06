@@ -33,6 +33,12 @@ func can_trade(trade: TradeData) -> bool:
 	if trade.requirements.is_empty():
 		return false
 
+	if is_trade_locked(trade):
+		return false
+
+	if trade.reward_item != null and trade.reward_item_amount <= 0:
+		return false
+
 	# Validate the function before removing any items.
 	if trade.reward_method != &"":
 		if not String(trade.reward_method).begins_with("shop_reward_"):
@@ -83,8 +89,18 @@ func make_trade(trade: TradeData) -> bool:
 			trade.reward_amount
 		)
 
+	# Give an optional item, e.g. a gift.
+	if trade.reward_item != null:
+		for i in range(trade.reward_item_amount):
+			FishingManager.current_storage.append(trade.reward_item)
+
 	trade_completed.emit(trade)
 	return true
+
+
+# Trades rewarded by an incomplete challenge are locked.
+func is_trade_locked(trade: TradeData) -> bool:
+	return ChallengeManager.is_trade_locked(trade)
 
 
 # Total amount needed per item_id, combining repeated requirements.
