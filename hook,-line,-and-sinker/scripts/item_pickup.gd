@@ -2,6 +2,9 @@ class_name ItemPickup
 extends Interactable
 
 @export var item: ItemData
+## Shop deliveries: picking up shows the item overhead for a moment and puts
+## it in the inventory, instead of holding it in the player's hands.
+@export var to_inventory := false
 
 func _ready() -> void:
 	var collision := CollisionShape2D.new()
@@ -11,16 +14,22 @@ func _ready() -> void:
 	add_child(collision)
 	var icon := Sprite2D.new()
 	icon.position = Vector2(0, -10)
-	if item != null:
-		icon.texture = item.sprite
+	icon.texture = get_icon()
 	add_child(icon)
 	super._ready()
+
+# What the pickup looks like in the world (and while a drone carries it).
+func get_icon() -> Texture2D:
+	return item.sprite if item != null else null
 
 func interact(_player: Node2D) -> void:
 	var player := _player as Player
 	if player == null or item == null:
 		return
-	if player.take_item(item):
-		if player.current_interactable == self:
-			player.current_interactable = null
-		queue_free()
+	if to_inventory:
+		FishingManager.current_storage.append(item)
+		player.show_pickup(get_icon())
+	elif not player.take_item(item):
+		return
+	player.release_interactable(self)
+	queue_free()

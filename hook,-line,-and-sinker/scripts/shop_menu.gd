@@ -328,6 +328,8 @@ func _on_trade_completed(trade: TradeData) -> void:
 		return
 
 	_status_label.text = "Purchased %s!" % trade.display_name
+	if is_instance_valid(ShopManager.delivery_point):
+		_status_label.text += " A drone is on the way."
 	_refresh()
 
 	# Keep keyboard focus usable if the trade is no longer affordable.

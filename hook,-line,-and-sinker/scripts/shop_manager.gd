@@ -25,6 +25,10 @@ func set_shop_open(opened: bool) -> void:
 
 var money: int = 0
 
+## Where rewards get delivered (the world terminal). Set by ShopInteractable.
+## If none is in the scene, rewards apply immediately instead.
+var delivery_point: ShopInteractable = null
+
 
 func can_trade(trade: TradeData) -> bool:
 	if trade == null or not trades.has(trade):
@@ -82,20 +86,43 @@ func make_trade(trade: TradeData) -> bool:
 
 			FishingManager.current_storage.remove_at(index)
 
-	# Execute an optional FishingManager upgrade.
-	if trade.reward_method != &"":
-		FishingManager.call(
-			trade.reward_method,
-			trade.reward_amount
-		)
-
-	# Give an optional item, e.g. a gift.
-	if trade.reward_item != null:
-		for i in range(trade.reward_item_amount):
-			FishingManager.current_storage.append(trade.reward_item)
+	if is_instance_valid(delivery_point):
+		# A drone drops everything next to the terminal. Upgrades arrive as
+		# a package that applies when picked up.
+		delivery_point.deliver(_make_pickups(trade))
+	else:
+		_apply_rewards(trade)
 
 	trade_completed.emit(trade)
 	return true
+
+
+func _make_pickups(trade: TradeData) -> Array[ItemPickup]:
+	var pickups: Array[ItemPickup] = []
+
+	if trade.reward_method != &"":
+		var package := UpgradePickup.new()
+		package.trade = trade
+		pickups.append(package)
+
+	if trade.reward_item != null:
+		for i in range(trade.reward_item_amount):
+			var pickup := ItemPickup.new()
+			pickup.item = trade.reward_item
+			pickup.to_inventory = true
+			pickups.append(pickup)
+
+	return pickups
+
+
+# No terminal in the scene (e.g. tests): apply rewards immediately.
+func _apply_rewards(trade: TradeData) -> void:
+	if trade.reward_method != &"":
+		FishingManager.call(trade.reward_method, trade.reward_amount)
+
+	if trade.reward_item != null:
+		for i in range(trade.reward_item_amount):
+			FishingManager.current_storage.append(trade.reward_item)
 
 
 # Trades rewarded by an incomplete challenge are locked.
