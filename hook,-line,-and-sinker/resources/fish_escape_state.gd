@@ -25,4 +25,3 @@ extends Resource
 @export_range(0.0, 0.5, 0.01) var miss_progress_loss: float = 0.04
 ## A failed parry adds tension scaled by the fish's attack strength.
 @export_range(0.0, 1.0, 0.01) var miss_tension_gain: float = 0.10
-
