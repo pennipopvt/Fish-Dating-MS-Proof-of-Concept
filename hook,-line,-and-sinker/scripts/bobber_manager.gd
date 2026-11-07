@@ -12,7 +12,6 @@ const STARTING_UNLOCKS: Array[StringName] = [&"default"]
 
 var bobbers: Array[BobberData] = [
 	preload("res://resources/bobbers/default.tres"),
-	preload("res://resources/bobbers/silas.tres")
 ]
 var unlocked_ids: Array[StringName] = []
 var equipped_id: StringName = DEFAULT_ID
