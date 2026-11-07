@@ -7,7 +7,8 @@ extends Resource
 ##The scene for the fish's initial catch
 @export var npc_data: PackedScene = null
 
-## Constant pull against reel progress, except while stunned.
+## Legacy setting retained so existing fish resources still load. In the
+## parry/dash combat system fish do not drift backward automatically.
 @export_range(0.0, 0.2, 0.001) var passive_escape_rate: float = 0.015
 ## Additional tension while reeling against an active escape attack.
 @export_range(0.0, 5.0, 0.05) var attack_tension_multiplier: float = 1.2

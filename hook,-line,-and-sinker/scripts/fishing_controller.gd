@@ -139,11 +139,9 @@ func _process(delta: float) -> void:
 		if(hooked_fish == null):
 			#failsafe
 			return
-		#fish escape rate fights da player
-		# The authored miss dash owns progress for its 0.2-second burst.
-		# Suppress passive/attack drift until the dash reaches its endpoint.
-		if not _miss_dash_active:
-			progress -= (0.0 if attack_phase == AttackPhase.STUN else hooked_fish.passive_escape_rate + fish_esc_rate) * delta
+		# Fish never drift backward by themselves. The only movement away
+		# is the 0.2s dash after a missed parry. Otherwise distance changes
+		# only when the player reels.
 		progress = clampf(progress, 0.0, 1.0)
 		
 		recover_tension(delta)
@@ -322,12 +320,14 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 
 	if event.is_action_pressed("Reel") and current_state == Fish_State.FISHING:
-		# Scrolls are parry attempts until a close/perfect parry creates
-		# an opening. Ordinary reeling is completely disabled otherwise.
-		if not reel_open:
-			attempt_counter()
-		else:
+		# Ignore input while the fish completes its single continuous dash.
+		# Once finished, allow the player to reel it back in.
+		if _miss_dash_active:
+			return
+		if reel_open:
 			_reel_during_opening()
+		else:
+			attempt_counter()
 
 	if event.is_action_pressed("Interact") and current_state != Fish_State.NOT and current_state != Fish_State.CATCHING:
 		exit_fishing()
@@ -537,9 +537,8 @@ func _fail_parry() -> void:
 	counter_locked = true
 	scroll_streak = 0
 	_set_reel_open(false, false)
-	# An unsuccessful parry triggers a brief dash away. The distance loss
-	# happens in ONE smooth motion, rather than teleporting or applying a
-	# continuous extra escape rate to the fish.
+	# A miss triggers ONE dash, then the fish stays put until the player
+	# reels. Do not apply the old continuous passive/attack escape rate.
 	var strength: float = maxf(1.0, absf(active_attack.escape_rate) / 0.08)
 	var dash_target: float = clampf(progress - active_attack.miss_progress_loss * strength, 0.0, 1.0)
 	tension = clampf(tension + active_attack.miss_tension_gain * hooked_fish.attack_tension_multiplier * strength, 0.0, 1.0)
@@ -552,20 +551,32 @@ func _fail_parry() -> void:
 		_miss_dash_tween.kill()
 	_miss_dash_active = true
 	_miss_dash_tween = create_tween().set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
-	_miss_dash_tween.tween_property(self, "progress", dash_target, miss_dash_duration)
+	_miss_dash_tween.tween_method(_update_miss_dash, progress, dash_target, miss_dash_duration)
 	_miss_dash_tween.tween_callback(_on_miss_dash_finished)
 	print("MISSED PARRY / DASH: ", active_attack.state_name)
+
+
+# Tween the combat distance AND visual line together. With no per-frame
+# escape drift there is no second movement to fight this animation.
+func _update_miss_dash(value: float) -> void:
+	progress = clampf(value, 0.0, 1.0)
+	fishing_line.update_line_dist(progress)
+	fishing_progress.value = progress
 
 
 func _on_miss_dash_finished() -> void:
 	_miss_dash_active = false
 	if current_state != Fish_State.FISHING or hooked_fish == null:
 		return
-	# Finish the full dash even when the endpoint loses the encounter.
-	fishing_line.update_line_dist(progress)
-	fishing_progress.value = progress
+	# Finish the dash before checking whether the line is lost.
 	if progress <= 0.0 or tension >= 1.0:
 		lose_fish()
+		return
+	# A miss does not permanently lock reeling. It opens an ordinary
+	# (tension-generating) reel window once the fish stops dashing.
+	# Don't reopen a window after the next pre-windup already began.
+	if attack_phase != AttackPhase.PRE_WINDUP:
+		_set_reel_open(true, false)
 
 
 func create_npc(npc: PackedScene) -> void:
