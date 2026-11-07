@@ -260,10 +260,12 @@ func _finish_catch_animation() -> void:
 	catch_fish_visual.z_index = 12
 	catch_fish_visual.rotation = 0.0
 	
-	#yea so if fish no have npc data, just catch
-	if(hooked_fish.npc_data == null) :
+	# Every landed fish counts toward challenges and the Pokédex.
+	# NPCs transform into characters rather than adding an item to storage.
+	if hooked_fish.npc_data == null:
 		catch_fish()
 	else:
+		FishingManager.catch_fish(hooked_fish, false)
 		create_npc(hooked_fish.npc_data)
 
 func catch_fish() -> void:

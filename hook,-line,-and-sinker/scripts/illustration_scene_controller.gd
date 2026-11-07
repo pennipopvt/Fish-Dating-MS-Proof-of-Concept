@@ -184,6 +184,10 @@ func _on_cosmetic_reward_requested(npc: NPCData, reward_id: String) -> void:
 func _mark_route_complete(npc: NPCData) -> void:
 	var flags: Dictionary = NPCManager.get_npc_state(npc.npc_id)["flags"]
 	flags[&"silas_route_complete"] = true
+	# Complete routes grant their reward even if the post-scene dialogue
+	# could not start. unlock_bobber is safe to call twice.
+	if npc.npc_id == &"test_npc":
+		BobberManager.unlock_bobber(BobberManager.SILAS_ID)
 
 func _fade_to(alpha: float) -> void:
 	fade_layer.show()

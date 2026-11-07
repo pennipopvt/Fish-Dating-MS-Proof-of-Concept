@@ -109,10 +109,14 @@ static func simulate_catch_odds(pool: Array[FishData], bait: BaitData, draws: in
 func hook_fish(item: FishData) -> void:
 	fish_hooked.emit(item)
 
-# Call when the player has successfully caught the fish
-func catch_fish(item: FishData) -> void:
-	current_storage.append(item.item_data)
-	
+# Called for any successful catch, including NPC fish. NPC catches count
+# toward challenges/dex, but they do not become an item in storage.
+func catch_fish(item: FishData, store_item: bool = true) -> void:
+	if item == null:
+		return
+	if store_item and item.item_data != null:
+		current_storage.append(item.item_data)
+
 	if(!catch_dex.has(item)):
 		catch_dex.append(item)
 	
@@ -124,7 +128,9 @@ func catch_fish(item: FishData) -> void:
 	#print("CATCH DEX", catch_dex)
 	#print("LIFETIME CATCHES", catch_lifetime)
 	
-	fish_caught.emit(item.item_data)
+	# ChallengeManager listens for FishData, not ItemData.
+	# Emitting item_data here silently broke typed catch notifications.
+	fish_caught.emit(item)
 
 # Call when the player has failed to catch the fish
 func lose_fish(item: FishData) -> void:
