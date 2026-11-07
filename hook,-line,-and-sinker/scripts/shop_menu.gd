@@ -17,11 +17,12 @@ const LOCK_ICON := preload("res://sprites/placeholders/lock.png")
 const LOCK_BADGE_SIZE := Vector2(16 * S, 16 * S)
 const LOCKED_COLOR := PixelUI.GOLD
 
-enum Tab { SHOP, CHALLENGES }
+enum Tab { SHOP, CHALLENGES, STORAGE }
 
 @onready var _tabs: TabBar = %Tabs
 @onready var _shop_body: Control = %Body
 @onready var _challenges_panel: ChallengesPanel = %ChallengesPanel
+@onready var _storage_panel: StoragePanel = %StoragePanel
 @onready var _trade_grid: GridContainer = %TradeGrid
 @onready var _trade_icon_frame: PanelContainer = %TradeIconFrame
 @onready var _trade_icon: TextureRect = %TradeIcon
@@ -57,6 +58,7 @@ func _ready() -> void:
 
 	_tabs.add_tab("Shop")
 	_tabs.add_tab("Challenges")
+	_tabs.add_tab("Storage")
 	_tabs.tab_changed.connect(_show_tab)
 
 
@@ -91,10 +93,14 @@ func close() -> void:
 func _show_tab(tab: int) -> void:
 	_shop_body.visible = tab == Tab.SHOP
 	_challenges_panel.visible = tab == Tab.CHALLENGES
+	_storage_panel.visible = tab == Tab.STORAGE
 
 	if tab == Tab.SHOP:
 		_refresh()
 		_focus_selected_trade()
+	elif tab == Tab.STORAGE:
+		_storage_panel.refresh()
+		_storage_panel.focus_selected()
 	else:
 		_tabs.grab_focus()
 

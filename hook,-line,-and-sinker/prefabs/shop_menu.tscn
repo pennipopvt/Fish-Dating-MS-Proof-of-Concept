@@ -2,6 +2,7 @@
 
 [ext_resource type="Script" path="res://scripts/shop_menu.gd" id="1_shopm"]
 [ext_resource type="Script" path="res://scripts/challenges_panel.gd" id="2_chpan"]
+[ext_resource type="Script" path="res://scripts/storage_panel.gd" id="3_storage"]
 
 [sub_resource type="Theme" id="Theme_shopm"]
 default_font_size = 32
@@ -129,6 +130,82 @@ visible = false
 layout_mode = 2
 size_flags_vertical = 3
 script = ExtResource("2_chpan")
+
+
+[node name="StoragePanel" type="VBoxContainer" parent="Panel/Margin/Layout"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 15
+script = ExtResource("3_storage")
+
+[node name="StorageSummary" type="Label" parent="Panel/Margin/Layout/StoragePanel"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"DimLabel"
+horizontal_alignment = 1
+text = "0 stored"
+
+[node name="StorageBody" type="HBoxContainer" parent="Panel/Margin/Layout/StoragePanel"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 24
+
+[node name="StorageScroll" type="ScrollContainer" parent="Panel/Margin/Layout/StoragePanel/StorageBody"]
+custom_minimum_size = Vector2(408, 0)
+layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="StorageGrid" type="GridContainer" parent="Panel/Margin/Layout/StoragePanel/StorageBody/StorageScroll"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/h_separation = 12
+theme_override_constants/v_separation = 12
+columns = 3
+
+[node name="StorageDivider" type="VSeparator" parent="Panel/Margin/Layout/StoragePanel/StorageBody"]
+layout_mode = 2
+
+[node name="StorageDetails" type="VBoxContainer" parent="Panel/Margin/Layout/StoragePanel/StorageBody"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 21
+
+[node name="StorageIconFrame" type="PanelContainer" parent="Panel/Margin/Layout/StoragePanel/StorageBody/StorageDetails"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 0
+
+[node name="StorageIcon" type="TextureRect" parent="Panel/Margin/Layout/StoragePanel/StorageBody/StorageDetails/StorageIconFrame"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(112, 80)
+layout_mode = 2
+expand_mode = 1
+stretch_mode = 5
+texture_filter = 1
+
+[node name="StorageName" type="Label" parent="Panel/Margin/Layout/StoragePanel/StorageBody/StorageDetails"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"HeaderLabel"
+autowrap_mode = 3
+
+[node name="StorageCount" type="Label" parent="Panel/Margin/Layout/StoragePanel/StorageBody/StorageDetails"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"TitleLabel"
+
+[node name="StorageDescription" type="Label" parent="Panel/Margin/Layout/StoragePanel/StorageBody/StorageDetails"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"DimLabel"
+autowrap_mode = 3
+
+[node name="StorageSpacer" type="Control" parent="Panel/Margin/Layout/StoragePanel/StorageBody/StorageDetails"]
+layout_mode = 2
+size_flags_vertical = 3
 
 [node name="CloseButton" type="Button" parent="Panel/Margin/Layout"]
 unique_name_in_owner = true
