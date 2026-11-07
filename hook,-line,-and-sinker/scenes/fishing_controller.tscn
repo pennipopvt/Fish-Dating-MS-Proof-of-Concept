@@ -144,10 +144,33 @@ animations = [{
 "name": &"attacking",
 "speed": 12.0
 }, {
-"frames": [],
-"loop": 1,
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_28enk")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_xlio7")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_yi17m")
+}],
+"loop": 0,
 "name": &"counter_fail",
-"speed": 10.0
+"speed": 15.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_u81uc")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_kgori")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_tphvd")
+}],
+"loop": 0,
+"name": &"counter_close",
+"speed": 16.0
 }, {
 "frames": [{
 "duration": 1.0,
@@ -178,6 +201,23 @@ animations = [{
 }],
 "loop": 1,
 "name": &"idle",
+"speed": 12.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_vgkoe")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_a4dpb")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_30gbn")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_irnyp")
+}],
+"loop": 1,
+"name": &"pre_windup",
 "speed": 12.0
 }, {
 "frames": [{

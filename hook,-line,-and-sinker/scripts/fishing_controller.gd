@@ -21,12 +21,18 @@ var fish_esc_rate: float = 0
 var recovery_timer: float = 0
 
 # The chosen FishEscapeState owns the attack properties.
-enum AttackPhase { RECOVERY, WINDUP, ATTACK, STUN }
+enum AttackPhase { RECOVERY, PRE_WINDUP, WINDUP, ATTACK, STUN }
+
+# Animation hooks: connect these to player/ripple effects without changing combat rules.
+signal parry_resolved(result: StringName)  # &"miss", &"close", &"perfect"
+signal reel_window_changed(is_open: bool, is_free: bool)
 var attack_phase: AttackPhase = AttackPhase.RECOVERY
 var active_attack: FishEscapeState = null
 var phase_time: float = 0.0
 var attack_elapsed: float = 0.0
 var counter_locked: bool = false
+var reel_open: bool = false
+var free_reel: bool = false
 var scroll_streak: int = 0
 var last_scroll_ms: int = -100000
 @export_range(0.02, 0.3, 0.01) var scrolling_threshold: float = 0.12
@@ -160,10 +166,8 @@ func begin_reeling() -> void:
 	#once we actually get it, we will let the fishing manager know what fish we have
 	FishingManager.hook_fish(hooked_fish)
 	fishing_line.update_line_dist(progress)
-	# Give the first attack its normal windup and counter telegraph.
-	start_windup()
-	if attack_phase == AttackPhase.WINDUP:
-		fishing_line.set_telegraph(2, 0.0)
+	# Let the player see a short warning BEFORE the first windup.
+	start_pre_windup()
 	print("Found ", hooked_fish.fish_id)
 	print("Fish behavior available: ", hooked_fish.states.size(), " states.")
 
@@ -298,34 +302,51 @@ func reset_values() -> void:
 	attack_phase = AttackPhase.RECOVERY
 	counter_locked = false
 	scroll_streak = 0
+	_set_reel_open(false, false)
+	last_scroll_ms = -100000
 
 func _unhandled_input(event: InputEvent) -> void:
 	if GameManager.is_modal_ui_open():
 		return
-	if(event.is_action_pressed("Reel") && current_state == Fish_State.FISHING):
-		play_fishing_sound(reel_sfx)
-		if attempt_counter():
-			return
-		progress += reel_gain
-		progress = clamp(progress,0,1)
-		# A counter grants unrestricted reeling until the stun ends.
-		if attack_phase != AttackPhase.STUN:
-			tension = tension + tension_gain if fish_esc_rate <= 0 else tension + (tension_gain * hooked_fish.attack_tension_multiplier)
-		tension = clamp(tension, 0, 1)
-		fishing_line.set_tension(tension)
-		
-		recovery_timer = recovery_delay
-		
-		# Position, not an arbitrary progress threshold, determines landing.
-		fishing_line.update_line_dist(progress)
-		if fishing_line.fish_midpoint_above_water():
-			start_catch_sequence()
-			return
-		if tension >= 1:
-			lose_fish()
-	
-	if(event.is_action_pressed("Interact") && current_state != Fish_State.NOT && current_state != Fish_State.CATCHING):
+
+	if event.is_action_pressed("Reel") and current_state == Fish_State.FISHING:
+		# Scrolls are parry attempts until a close/perfect parry creates
+		# an opening. Ordinary reeling is completely disabled otherwise.
+		if not reel_open:
+			attempt_counter()
+		else:
+			_reel_during_opening()
+
+	if event.is_action_pressed("Interact") and current_state != Fish_State.NOT and current_state != Fish_State.CATCHING:
 		exit_fishing()
+
+
+func _set_reel_open(enabled: bool, free: bool) -> void:
+	if reel_open == enabled and free_reel == free:
+		return
+	reel_open = enabled
+	free_reel = free
+	reel_window_changed.emit(enabled, free)
+
+
+func _reel_during_opening() -> void:
+	if hooked_fish == null:
+		return
+	play_fishing_sound(reel_sfx)
+	progress = clampf(progress + reel_gain, 0.0, 1.0)
+	if not free_reel:
+		# Preserve the existing fish-strength tension multiplier during attacks.
+		var multiplier: float = hooked_fish.attack_tension_multiplier if fish_esc_rate > 0.0 else 1.0
+		tension = clampf(tension + tension_gain * multiplier, 0.0, 1.0)
+		fishing_line.set_tension(tension)
+		recovery_timer = recovery_delay
+
+	fishing_line.update_line_dist(progress)
+	if fishing_line.fish_midpoint_above_water():
+		start_catch_sequence()
+	elif tension >= 1.0:
+		lose_fish()
+
 
 func recover_tension(delta: float) -> void:
 	if(recovery_timer <= 0):
@@ -357,23 +378,44 @@ func select_attack() -> FishEscapeState:
 func start_recovery(duration: float) -> void:
 	fishing_line.set_stunned(false)
 	attack_phase = AttackPhase.RECOVERY
-	phase_time = duration
+	phase_time = maxf(duration, 0.05)
 	fish_esc_rate = 0.0
+	# An earned reel window persists through the recovery phase and is
+	# revoked at the next pre-windup warning.
+	_set_reel_open(reel_open, false)
 	fishing_line.set_telegraph(1, 0.0)
 
-func start_windup() -> void:
+
+func start_pre_windup() -> void:
+	# Warning the player is the hard cut-off for every reel opening.
+	_set_reel_open(false, false)
 	active_attack = select_attack()
 	if active_attack == null:
 		start_recovery(0.5)
 		return
-	play_fishing_sound(windup_sfx)
-	attack_phase = AttackPhase.WINDUP
-	phase_time = active_attack.windup_duration
-	fishing_line.set_windup_duration(active_attack.windup_duration)
+	attack_phase = AttackPhase.PRE_WINDUP
+	phase_time = maxf(active_attack.pre_windup_duration, 0.05)
+	fish_esc_rate = 0.0
 	counter_locked = false
 	scroll_streak = 0
+	last_scroll_ms = -100000
+	fishing_line.set_stunned(false)
+	fishing_line.set_telegraph(5, 0.0)
+
+
+func start_windup() -> void:
+	if active_attack == null:
+		start_pre_windup()
+		return
+	play_fishing_sound(windup_sfx)
+	attack_phase = AttackPhase.WINDUP
+	phase_time = maxf(active_attack.windup_duration, 0.05)
+	fishing_line.set_windup_duration(phase_time)
+	# Do not clear counter_locked here: an early miss during the warning
+	# must remain a miss for this same attack.
 	fish_esc_rate = 0.0
 	print("Windup: ", active_attack.state_name)
+
 
 func begin_attack() -> void:
 	play_fishing_sound(attack_sfx)
@@ -382,74 +424,119 @@ func begin_attack() -> void:
 	attack_elapsed = 0.0
 	fish_esc_rate = active_attack.escape_rate
 
+
 func update_attack_cycle(delta: float) -> void:
 	if active_attack == null and attack_phase != AttackPhase.RECOVERY:
 		start_recovery(0.3)
 	phase_time -= delta
-	# Transition before updating the visuals so completed one-shots do not
-	# linger for a frame at the end of their gameplay phase.
 	if phase_time <= 0.0:
 		match attack_phase:
-			AttackPhase.RECOVERY: start_windup()
+			AttackPhase.RECOVERY: start_pre_windup()
+			AttackPhase.PRE_WINDUP: start_windup()
 			AttackPhase.WINDUP: begin_attack()
 			AttackPhase.ATTACK: start_recovery(active_attack.recovery_duration)
 			AttackPhase.STUN: start_recovery(0.25)
-	if attack_phase == AttackPhase.WINDUP:
-		var elapsed: float = active_attack.windup_duration - phase_time
-		# Reeling in early windup is forgiven, but not at the grace boundary.
-		if elapsed >= active_attack.grace_start and not counter_locked:
-			if Time.get_ticks_msec() - last_scroll_ms < int(scrolling_threshold * 1000.0):
-				invalidate_counter()
-		fishing_line.set_telegraph(2, clampf(elapsed / maxf(active_attack.windup_duration, 0.01), 0.0, 1.0))
-	elif attack_phase == AttackPhase.ATTACK:
-		attack_elapsed += delta
-		fishing_line.set_telegraph(3, clampf(attack_elapsed / maxf(active_attack.state_length, 0.01), 0.0, 1.0))
-	elif attack_phase == AttackPhase.STUN:
-		fishing_line.set_telegraph(4, 0.0)
-	else:
-		fishing_line.set_telegraph(1, 0.0)
 
-func invalidate_counter() -> void:
-	if counter_locked:
-		return
-	counter_locked = true
-	scroll_streak = 0
-	# A missed counter does not interrupt the current ripple animation.
+	# Ripple animation is just a presentation of the authoritative timers.
+	match attack_phase:
+		AttackPhase.PRE_WINDUP:
+			fishing_line.set_telegraph(5, 1.0 - phase_time / maxf(active_attack.pre_windup_duration, 0.01))
+		AttackPhase.WINDUP:
+			var elapsed: float = active_attack.windup_duration - phase_time
+			fishing_line.set_telegraph(2, clampf(elapsed / maxf(active_attack.windup_duration, 0.01), 0.0, 1.0))
+		AttackPhase.ATTACK:
+			attack_elapsed += delta
+			fishing_line.set_telegraph(3, clampf(attack_elapsed / maxf(active_attack.state_length, 0.01), 0.0, 1.0))
+		AttackPhase.STUN:
+			fishing_line.set_telegraph(4, 0.0)
+		_:
+			fishing_line.set_telegraph(1, 0.0)
+
 
 func attempt_counter() -> bool:
+	# True means the scroll was consumed as a parry attempt, regardless of
+	# result; no reeling happens on the parry scroll itself.
+	if hooked_fish == null or active_attack == null or counter_locked:
+		return true
+
+	var perfect: bool = false
+	var close: bool = false
+	match attack_phase:
+		AttackPhase.WINDUP:
+			# The final moments before attack count as an early close parry.
+			close = phase_time <= active_attack.close_early_window
+		AttackPhase.ATTACK:
+			perfect = attack_elapsed <= active_attack.counter_window
+			close = not perfect and attack_elapsed <= active_attack.counter_window + active_attack.close_late_window
+		_:
+			pass
+
+	if not perfect and not close:
+		_fail_parry()
+		return true
+
 	var now: int = Time.get_ticks_msec()
-	var previous: int = last_scroll_ms
+	if scroll_streak > 0 and now - last_scroll_ms > int(strong_reel_interval * 1000.0):
+		# A broken strong-reel sequence counts as an unsuccessful attempt.
+		_fail_parry()
+		return true
 	last_scroll_ms = now
-	if active_attack == null or counter_locked:
-		return false
-	if attack_phase == AttackPhase.WINDUP:
-		var elapsed: float = active_attack.windup_duration - phase_time
-		if elapsed >= active_attack.grace_start:
-			invalidate_counter()
-		return false
-	if attack_phase != AttackPhase.ATTACK:
-		return false
-	if attack_elapsed > active_attack.counter_window:
-		invalidate_counter()
-		return false
-	# No stored scrolls from before the actual attack.
-	if scroll_streak > 0 and now - previous > int(strong_reel_interval * 1000.0):
-		invalidate_counter()
-		return false
 	scroll_streak += 1
 	if scroll_streak < strong_reel_scrolls:
-		return false
+		return true
+
 	counter_locked = true
+	scroll_streak = 0
+	if perfect:
+		_perfect_parry()
+	else:
+		_close_parry()
+	return true
+
+
+func _perfect_parry() -> void:
+	# Existing stun, tension relief, and free reeling are preserved.
 	tension = maxf(0.0, tension - active_attack.counter_tension_relief)
 	fishing_line.set_tension(tension)
-	fishing_line.flash_counter(true)
+	fishing_line.flash_parry_result(&"perfect")
 	play_fishing_sound(counter_sfx)
 	attack_phase = AttackPhase.STUN
 	fishing_line.set_stunned(true)
-	phase_time = active_attack.stun_duration
+	phase_time = maxf(active_attack.stun_duration, 0.1)
 	fish_esc_rate = 0.0
-	print("COUNTER: ", active_attack.state_name)
-	return true
+	_set_reel_open(true, true)
+	parry_resolved.emit(&"perfect")
+	print("PERFECT PARRY: ", active_attack.state_name)
+
+
+func _close_parry() -> void:
+	# The fish keeps pulling (and adding attack tension) during the opening.
+	fishing_line.flash_parry_result(&"close")
+	play_fishing_sound(counter_sfx)
+	_set_reel_open(true, false)
+	parry_resolved.emit(&"close")
+	print("CLOSE PARRY: ", active_attack.state_name)
+
+
+func _fail_parry() -> void:
+	counter_locked = true
+	scroll_streak = 0
+	_set_reel_open(false, false)
+	# The fish retaliates with both distance loss and strength-scaled tension.
+	# These values are per FishEscapeState and editable in the Inspector.
+	var strength: float = maxf(1.0, absf(active_attack.escape_rate) / 0.08)
+	progress = clampf(progress - active_attack.miss_progress_loss * strength, 0.0, 1.0)
+	tension = clampf(tension + active_attack.miss_tension_gain * hooked_fish.attack_tension_multiplier * strength, 0.0, 1.0)
+	recovery_timer = recovery_delay
+	fishing_line.set_tension(tension)
+	fishing_line.update_line_dist(progress)
+	fishing_line.flash_parry_result(&"miss")
+	parry_resolved.emit(&"miss")
+	if progress <= 0.0 or tension >= 1.0:
+		lose_fish()
+	else:
+		print("MISSED PARRY: ", active_attack.state_name)
+
 
 func create_npc(npc: PackedScene) -> void:
 	# The fish remains at the NPC landing spot on poof frame 1.

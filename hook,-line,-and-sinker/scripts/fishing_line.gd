@@ -45,6 +45,8 @@ func set_windup_duration(seconds: float) -> void:
 
 
 @export var stunned_line_color: Color = Color("#ffe55c")
+@export var pre_windup_line_color: Color = Color("#fff2a0")
+var pre_windup_warning: bool = false
 @export var stun_glow_color: Color = Color(1.0, 0.83, 0.18, 0.32)
 var stunned_line: bool = false
 var stun_glow: Line2D
@@ -68,6 +70,9 @@ func set_tension(amount: float) -> void:
 	current_tension = amount
 	if stunned_line:
 		default_color = stunned_line_color
+		return
+	if pre_windup_warning:
+		default_color = pre_windup_line_color
 		return
 	var normalized: float = clampf(amount, 0.0, 1.0)
 	if normalized <= strained_threshold:
@@ -143,6 +148,7 @@ func hide_fish_for_catch() -> void:
 
 func close() -> void:
 	bobber.hide()
+	pre_windup_warning = false
 	set_stunned(false)
 	ripple_tell.hide()
 	current_ripple_animation = &""
@@ -196,18 +202,30 @@ func play_ripple(animation: StringName) -> void:
 	if animation != current_ripple_animation:
 		current_ripple_animation = animation
 		ripple_tell.speed_scale = windup_playback_scale if animation == &"windup" else 1.0
+		# Color-coded temporary feedback. Replace animation frames in the scene
+		# later without changing any of the timing/combat code.
+		match animation:
+			&"pre_windup": ripple_tell.modulate = Color(1.0, 0.85, 0.45)
+			&"counter_close": ripple_tell.modulate = Color(0.42, 1.0, 0.70)
+			&"counter_fail": ripple_tell.modulate = Color(1.0, 0.38, 0.30)
+			_: ripple_tell.modulate = Color.WHITE
 		ripple_tell.play(animation)
 	ripple_tell.show()
 
 func set_telegraph(phase: int, amount: float) -> void:
+	tell_progress = amount
 	var entering_attack: bool = phase == 3 and current_telegraph_phase != 3
 	current_telegraph_phase = phase
+	if pre_windup_warning != (phase == 5):
+		pre_windup_warning = phase == 5
+		set_tension(current_tension)
 	if entering_attack:
 		attack_start_pending = true
 	elif phase != 3:
 		attack_start_pending = false
 	update_ripple_position()
-	if current_ripple_animation == &"counter_success":
+	# Don't restart a close/miss/perfect flash while combat continues.
+	if current_ripple_animation in [&"counter_success", &"counter_close", &"counter_fail"]:
 		return
 	match phase:
 		0:
@@ -233,30 +251,42 @@ func set_telegraph(phase: int, amount: float) -> void:
 				play_ripple(&"attacking")
 		4:
 			play_ripple(&"stun")
+		5:
+			play_ripple(&"pre_windup")
 		_:
 			ripple_tell.hide()
 
 func _on_ripple_animation_finished() -> void:
 	# A counter flash should immediately hand control back to the active
 	# telegraph instead of holding its last frame.
-	if current_ripple_animation == &"counter_success":
+	if current_ripple_animation in [&"counter_success", &"counter_close", &"counter_fail"]:
 		counter_flash_time = 0.0
 		current_ripple_animation = &""
 		attack_start_pending = false
-		set_telegraph(current_telegraph_phase, 0.0)
+		set_telegraph(current_telegraph_phase, tell_progress)
 		return
 	# A one-shot splash marks attack onset; the sustained pull then loops.
 	if current_ripple_animation == &"start_attack" and current_telegraph_phase == 3 and counter_flash_time <= 0.0:
 		play_ripple(&"attacking")
 
-func flash_counter(success: bool) -> void:
-	# Only successful counters have a feedback animation.
-	# A miss lets windup / start_attack / attacking play uninterrupted.
-	if not success:
-		return
-	# Cancel start_attack immediately; do not queue or resume its remaining frames.
+# Named result hooks keep all feedback art editable in RippleTell's
+# SpriteFrames resource (fishing_controller.tscn).
+func flash_parry_result(result: StringName) -> void:
+	var animation: StringName
+	match result:
+		&"perfect": animation = &"counter_success"
+		&"close": animation = &"counter_close"
+		&"miss": animation = &"counter_fail"
+		_: return
+
 	attack_start_pending = false
 	counter_flash_time = 1.0
 	ripple_tell.stop()
 	current_ripple_animation = &""
-	play_ripple(&"counter_success")
+	play_ripple(animation)
+
+
+# Backwards-compatible name for other callers.
+func flash_counter(success: bool) -> void:
+	if success:
+		flash_parry_result(&"perfect")
