@@ -157,9 +157,8 @@ func _finish_scene(completed: bool = false) -> void:
 	if not completed or finished_npc == null or finished_scene_id != "silas_house":
 		return
 	if post_path.is_empty():
-		if not reward_id.is_empty():
-			cosmetic_reward_requested.emit(finished_npc, reward_id)
-		_mark_route_complete(finished_npc)
+		# No gift dialogue means no reward was given; never auto-unlock.
+		push_warning("Silas reward dialogue is missing; bobber remains locked.")
 		return
 	# Whether the player watched or skipped the optional adult scene, Silas
 	# speaks automatically after the return fade. Complete the route afterward.
@@ -170,8 +169,8 @@ func _finish_scene(completed: bool = false) -> void:
 		push_warning("Post-scene dialogue could not start: " + post_path)
 		_post_scene_npc = null
 		_post_scene_reward_id = ""
-		# Do not strand route completion if dialogue data is temporarily missing.
-		_mark_route_complete(finished_npc)
+		# No reward is granted without completing the gift dialogue.
+		# Leave the route incomplete if the gift dialogue fails to start.
 
 
 # Grant the bobber only after Silas's post-scene gift dialogue finishes.
@@ -184,10 +183,6 @@ func _on_cosmetic_reward_requested(npc: NPCData, reward_id: String) -> void:
 func _mark_route_complete(npc: NPCData) -> void:
 	var flags: Dictionary = NPCManager.get_npc_state(npc.npc_id)["flags"]
 	flags[&"silas_route_complete"] = true
-	# Complete routes grant their reward even if the post-scene dialogue
-	# could not start. unlock_bobber is safe to call twice.
-	if npc.npc_id == &"test_npc":
-		BobberManager.unlock_bobber(BobberManager.SILAS_ID)
 
 func _fade_to(alpha: float) -> void:
 	fade_layer.show()

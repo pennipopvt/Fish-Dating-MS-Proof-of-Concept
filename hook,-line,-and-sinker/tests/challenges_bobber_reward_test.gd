@@ -41,15 +41,37 @@ func _run_tests() -> void:
 	_expect(fish_manager.catch_dex.has(SILAS_FISH), "NPC catch appears in catch history")
 	fish_manager.free()
 
-	# The Silas reward must be registered or unlock_bobber() returns false.
-	# Test in isolation without writing to bobbers.cfg.
+	# Silas can be registered while staying locked. Test the save-file
+	# migration and real reward restoration without touching bobbers.cfg.
 	var bobber_manager: Variant = BobberManagerScript.new()
 	var silas: BobberData = bobber_manager.get_bobber(&"silas")
 	_expect(silas != null, "Silas's spyglass bobber is registered")
 	if silas != null:
 		_expect(silas.sprite != null, "Silas's bobber has its own texture")
-		bobber_manager.unlocked_ids.append(&"silas")
-		_expect(bobber_manager.get_unlocked_bobbers().has(silas), "unlock appears in shelf and selection list")
+		_expect(not bobber_manager.get_unlocked_bobbers().has(silas), "Silas starts locked even though the resource is registered")
+
+		var legacy_save := ConfigFile.new()
+		legacy_save.set_value("bobbers", "version", 1)
+		legacy_save.set_value("bobbers", "unlocked", ["default", "silas"])
+		legacy_save.set_value("bobbers", "equipped", "silas")
+		bobber_manager._restore_selection(legacy_save, false)
+		_expect(not bobber_manager.get_unlocked_bobbers().has(silas), "legacy test save cannot auto-unlock Silas")
+		_expect(bobber_manager.equipped_id == &"default", "legacy Silas equipment is reset to default")
+
+		var unproven_save := ConfigFile.new()
+		unproven_save.set_value("bobbers", "version", 2)
+		unproven_save.set_value("bobbers", "unlocked", ["default", "silas"])
+		bobber_manager._restore_selection(unproven_save, false)
+		_expect(not bobber_manager.get_unlocked_bobbers().has(silas), "v2 save needs reward provenance")
+
+		var rewarded_save := ConfigFile.new()
+		rewarded_save.set_value("bobbers", "version", 2)
+		rewarded_save.set_value("bobbers", "unlocked", ["default", "silas"])
+		rewarded_save.set_value("bobbers", "silas_reward_claimed", true)
+		rewarded_save.set_value("bobbers", "equipped", "silas")
+		bobber_manager._restore_selection(rewarded_save, false)
+		_expect(bobber_manager.get_unlocked_bobbers().has(silas), "earned Silas reward survives loading")
+		_expect(bobber_manager.equipped_id == &"silas", "earned Silas reward remains equipped")
 	bobber_manager.free()
 
 	print("FAILED: %d" % failures if failures > 0 else "All challenge and bobber checks passed")
