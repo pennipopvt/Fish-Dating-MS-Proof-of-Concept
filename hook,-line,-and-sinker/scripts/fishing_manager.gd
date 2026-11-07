@@ -5,6 +5,16 @@ signal fish_hooked(item: FishData)
 signal fish_caught(item: FishData)
 signal fish_lost(item: FishData)
 signal bait_changed(bait: BaitData)
+signal parry_resolved(result: StringName)
+signal upgrades_changed
+
+# Overridable for isolated regression tests; player saves use this default.
+var upgrade_save_path: String = "user://fishing_upgrades.cfg"
+const HARD_BAIT_ID: StringName = &"bait_b"
+const BASIC_BAIT_ID: StringName = &"bait_a"
+const STRONGER_REEL_ID: StringName = &"stronger_reel"
+const REINFORCED_LINE_ID: StringName = &"reinforced_line"
+const HARD_BAIT_UPGRADE_ID: StringName = &"hard_fish_bait"
 
 @export var possible_catches: Array[FishData] = []
 @export var current_storage: Array[ItemData] = []
@@ -16,9 +26,105 @@ signal bait_changed(bait: BaitData)
 @export var available_baits: Array[BaitData] = []
 # Applies to the next cast. A fish that's already decided is never swapped.
 @export var equipped_bait: BaitData = null
+var unlocked_bait_ids: Array[StringName] = [BASIC_BAIT_ID]
+var owned_upgrade_ids: Array[StringName] = []
+var reel_strength_multiplier: float = 1.0
+var tension_gain_multiplier: float = 1.0
 
 @export_category("Fishing Stats")
 @export var max_casts_per_session: int = 3
+
+func _ready() -> void:
+	_load_upgrade_progress()
+	# Always start with basic bait if the selected bait hasn't been earned.
+	if equipped_bait == null or not unlocked_bait_ids.has(equipped_bait.bait_id):
+		equipped_bait = _find_bait(BASIC_BAIT_ID)
+
+
+func _find_bait(id: StringName) -> BaitData:
+	for bait in available_baits:
+		if bait != null and bait.bait_id == id:
+			return bait
+	return null
+
+
+func get_unlocked_baits() -> Array[BaitData]:
+	var unlocked: Array[BaitData] = []
+	for bait in available_baits:
+		if bait != null and unlocked_bait_ids.has(bait.bait_id):
+			unlocked.append(bait)
+	return unlocked
+
+
+func has_upgrade(id: StringName) -> bool:
+	return owned_upgrade_ids.has(id)
+
+
+# Upgrade packages are applied when picked up from the drone's delivery.
+# Idempotent so taking a package twice cannot stack the effect.
+func shop_reward_unlock_hard_bait(amount: int) -> void:
+	if amount <= 0 or has_upgrade(HARD_BAIT_UPGRADE_ID):
+		return
+	if _find_bait(HARD_BAIT_ID) == null:
+		return
+	owned_upgrade_ids.append(HARD_BAIT_UPGRADE_ID)
+	if not unlocked_bait_ids.has(HARD_BAIT_ID):
+		unlocked_bait_ids.append(HARD_BAIT_ID)
+	bait_changed.emit(equipped_bait)
+	upgrades_changed.emit()
+	_save_upgrade_progress()
+
+
+func shop_reward_stronger_reel(amount: int) -> void:
+	if amount <= 0 or has_upgrade(STRONGER_REEL_ID):
+		return
+	owned_upgrade_ids.append(STRONGER_REEL_ID)
+	reel_strength_multiplier = 1.25
+	upgrades_changed.emit()
+	_save_upgrade_progress()
+
+
+func shop_reward_reinforced_line(amount: int) -> void:
+	if amount <= 0 or has_upgrade(REINFORCED_LINE_ID):
+		return
+	owned_upgrade_ids.append(REINFORCED_LINE_ID)
+	tension_gain_multiplier = 0.8
+	upgrades_changed.emit()
+	_save_upgrade_progress()
+
+
+func _save_upgrade_progress() -> void:
+	var config := ConfigFile.new()
+	config.set_value("upgrades", "owned", Array(owned_upgrade_ids).map(func(id): return String(id)))
+	config.set_value("upgrades", "equipped_bait", String(equipped_bait.bait_id) if equipped_bait != null else String(BASIC_BAIT_ID))
+	if config.save(upgrade_save_path) != OK:
+		push_warning("Could not save fishing upgrades")
+
+
+func _load_upgrade_progress() -> void:
+	var config := ConfigFile.new()
+	if config.load(upgrade_save_path) != OK:
+		return
+	for raw_id in config.get_value("upgrades", "owned", []):
+		var id := StringName(str(raw_id))
+		match id:
+			HARD_BAIT_UPGRADE_ID:
+				if not owned_upgrade_ids.has(id) and _find_bait(HARD_BAIT_ID) != null:
+					owned_upgrade_ids.append(id)
+					if not unlocked_bait_ids.has(HARD_BAIT_ID):
+						unlocked_bait_ids.append(HARD_BAIT_ID)
+			STRONGER_REEL_ID:
+				if not owned_upgrade_ids.has(id):
+					owned_upgrade_ids.append(id)
+					reel_strength_multiplier = 1.25
+			REINFORCED_LINE_ID:
+				if not owned_upgrade_ids.has(id):
+					owned_upgrade_ids.append(id)
+					tension_gain_multiplier = 0.8
+	var chosen := StringName(str(config.get_value("upgrades", "equipped_bait", String(BASIC_BAIT_ID))))
+	if unlocked_bait_ids.has(chosen):
+		equipped_bait = _find_bait(chosen)
+
 
 func shop_reward_add_casts(amount: int) -> void:
 	if amount <= 0:
@@ -27,11 +133,14 @@ func shop_reward_add_casts(amount: int) -> void:
 	max_casts_per_session += amount
 
 func equip_bait(bait: BaitData) -> void:
+	if bait == null or not available_baits.has(bait) or not unlocked_bait_ids.has(bait.bait_id):
+		return
 	if bait == equipped_bait:
 		return
 
 	equipped_bait = bait
 	bait_changed.emit(bait)
+	_save_upgrade_progress()
 
 # Remove a recruited NPC from the pool, including duplicate entries or
 # multiple FishData resources using the same NPC scene. Ordinary fish and

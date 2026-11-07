@@ -1,0 +1,98 @@
+extends SceneTree
+
+# Covers the first-arc upgrades without modifying the player's real save.
+# Run from Godot project folder:
+# godot --headless --path . -s res://tests/first_arc_upgrades_test.gd
+
+const FISHING_SCRIPT = preload("res://scripts/fishing_manager.gd")
+const BASIC: BaitData = preload("res://resources/bait/bait_a.tres")
+const HARD: BaitData = preload("res://resources/bait/bait_b.tres")
+const EASY_FISH: FishData = preload("res://resources/fish/easy_test_fish.tres")
+const HARD_FISH: FishData = preload("res://resources/fish/hard_test_fish.tres")
+const BAIT_TRADE: TradeData = preload("res://resources/trades/hard_fish_bait.tres")
+const REEL_TRADE: TradeData = preload("res://resources/trades/stronger_reel.tres")
+const LINE_TRADE: TradeData = preload("res://resources/trades/reinforced_line.tres")
+const PARRY_CHALLENGE: ChallengeData = preload("res://resources/challenges/perfect_parry_streak.tres")
+const CATCH_CHALLENGE: ChallengeData = preload("res://resources/challenges/hot_streak.tres")
+const TEMP_SAVE: String = "user://first_arc_upgrades_test.cfg"
+
+var failures: int = 0
+
+
+func _initialize() -> void:
+	call_deferred("_run")
+
+
+func _run() -> void:
+	var fish: Variant = FISHING_SCRIPT.new()
+	fish.upgrade_save_path = TEMP_SAVE
+	var baits: Array[BaitData] = [BASIC, HARD]
+	fish.available_baits = baits
+	fish.equipped_bait = BASIC
+	_expect(fish.get_unlocked_baits().size() == 1, "only easy fish bait is available initially")
+	fish.equip_bait(HARD)
+	_expect(fish.equipped_bait == BASIC, "hard bait cannot be equipped before purchase")
+	_expect(BAIT_TRADE.icon == HARD.icon and BAIT_TRADE.delivery_sprite == HARD.icon, "new hard bait icon used in shop and delivery")
+	_expect(REEL_TRADE.icon != null and REEL_TRADE.delivery_sprite == REEL_TRADE.icon, "new reel strength icon used in shop and delivery")
+	_expect(LINE_TRADE.icon != null and LINE_TRADE.delivery_sprite == LINE_TRADE.icon, "new tension icon used in shop and delivery")
+
+	var two_fish_pool: Array[FishData] = [EASY_FISH, HARD_FISH]
+	var basic_odds: Dictionary[FishData, float] = FISHING_SCRIPT.get_catch_odds(two_fish_pool, BASIC)
+	var hard_odds: Dictionary[FishData, float] = FISHING_SCRIPT.get_catch_odds(two_fish_pool, HARD)
+	_expect(hard_odds.get(HARD_FISH, 0.0) > basic_odds.get(HARD_FISH, 0.0), "hard bait significantly raises hard-fish odds")
+
+	_expect(BAIT_TRADE.one_time_purchase and BAIT_TRADE.requirements[0].amount == 2, "hard bait costs two easy fish")
+	_expect(REEL_TRADE.one_time_purchase and REEL_TRADE.requirements[0].amount == 1, "stronger reel costs one easy fish")
+	_expect(LINE_TRADE.one_time_purchase and LINE_TRADE.requirements[0].item.item_id == HARD_FISH.item_data.item_id, "reinforced line costs one hard fish")
+	_expect(PARRY_CHALLENGE.unlocks_trade(REEL_TRADE), "perfect parry challenge unlocks stronger reel")
+	_expect(CATCH_CHALLENGE.unlocks_trade(LINE_TRADE), "three-catch challenge unlocks reinforced line")
+
+	var streak := ChallengeData.new()
+	streak.requirement_type = ChallengeData.RequirementType.CONSECUTIVE_PERFECT_PARRIES
+	streak.target_amount = 3
+	streak.record_parry(&"perfect")
+	streak.record_parry(&"perfect")
+	_expect(streak.progress == 2, "two perfect parries build a streak")
+	streak.record_catch(EASY_FISH)
+	_expect(streak.progress == 2, "catching a fish does not reset the perfect-parry streak")
+	streak.record_parry(&"close")
+	_expect(streak.progress == 0, "close parry resets the streak")
+	streak.record_parry(&"perfect")
+	streak.record_parry(&"miss")
+	_expect(streak.progress == 0, "miss resets the streak")
+	streak.record_parry(&"perfect")
+	streak.record_parry(&"perfect")
+	_expect(streak.record_parry(&"perfect"), "third perfect parry completes the challenge")
+
+	# Check that delivered upgrades grant exactly the desired effects and
+	# that progress survives reloads. Only a distinct test cfg is written.
+	fish.shop_reward_unlock_hard_bait(1)
+	_expect(fish.get_unlocked_baits().has(HARD), "hard bait unlocks when the upgrade is collected")
+	fish.equip_bait(HARD)
+	_expect(fish.equipped_bait == HARD, "hard bait is equippable after delivery")
+	fish.shop_reward_stronger_reel(1)
+	fish.shop_reward_reinforced_line(1)
+	_expect(is_equal_approx(fish.reel_strength_multiplier, 1.25), "reel gets a 25 percent increase")
+	_expect(is_equal_approx(fish.tension_gain_multiplier, 0.8), "line reduces tension gains by 20 percent")
+	fish.shop_reward_stronger_reel(1)
+	fish.shop_reward_reinforced_line(1)
+	_expect(is_equal_approx(fish.reel_strength_multiplier, 1.25) and is_equal_approx(fish.tension_gain_multiplier, 0.8), "upgrade methods cannot stack rewards")
+
+	var reloaded: Variant = FISHING_SCRIPT.new()
+	reloaded.upgrade_save_path = TEMP_SAVE
+	reloaded.available_baits = baits
+	reloaded._load_upgrade_progress()
+	_expect(reloaded.equipped_bait == HARD, "equipped hard bait persists")
+	_expect(reloaded.has_upgrade(&"stronger_reel") and reloaded.has_upgrade(&"reinforced_line"), "owned upgrades persist")
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(TEMP_SAVE))
+	fish.free()
+	reloaded.free()
+
+	print("FAILED: %d" % failures if failures > 0 else "All first-arc upgrade checks passed")
+	quit(1 if failures > 0 else 0)
+
+
+func _expect(ok: bool, description: String) -> void:
+	print(("  PASS " if ok else "  FAIL ") + description)
+	if not ok:
+		failures += 1

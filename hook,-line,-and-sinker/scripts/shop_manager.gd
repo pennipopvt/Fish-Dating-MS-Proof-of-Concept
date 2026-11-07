@@ -2,6 +2,7 @@
 extends Node
 
 signal trade_completed(trade: TradeData)
+signal upgrade_state_changed(trade: TradeData)
 signal shop_requested
 signal shop_opened
 signal shop_closed
@@ -22,6 +23,8 @@ func set_shop_open(opened: bool) -> void:
 		shop_closed.emit()
 
 @export var trades: Array[TradeData] = []
+# An ordered upgrade is reserved until its delivered package is collected.
+var pending_upgrade_ids: Array[StringName] = []
 
 var money: int = 0
 
@@ -30,8 +33,26 @@ var money: int = 0
 var delivery_point: ShopInteractable = null
 
 
+func is_upgrade_owned(trade: TradeData) -> bool:
+	return trade != null and trade.one_time_purchase and FishingManager.has_upgrade(trade.trade_id)
+
+
+func is_upgrade_ordered(trade: TradeData) -> bool:
+	return trade != null and trade.one_time_purchase and pending_upgrade_ids.has(trade.trade_id)
+
+
+# Called when the player actually takes the delivered upgrade package.
+func mark_upgrade_delivered(trade: TradeData) -> void:
+	if trade == null or not trade.one_time_purchase:
+		return
+	pending_upgrade_ids.erase(trade.trade_id)
+	upgrade_state_changed.emit(trade)
+
+
 func can_trade(trade: TradeData) -> bool:
 	if trade == null or not trades.has(trade):
+		return false
+	if is_upgrade_owned(trade) or is_upgrade_ordered(trade):
 		return false
 
 	if trade.requirements.is_empty():
@@ -86,6 +107,9 @@ func make_trade(trade: TradeData) -> bool:
 
 			FishingManager.current_storage.remove_at(index)
 
+	if trade.one_time_purchase:
+		pending_upgrade_ids.append(trade.trade_id)
+
 	if is_instance_valid(delivery_point):
 		# A drone drops everything next to the terminal. Items stay on the
 		# ground until carried off by hand; upgrades arrive as a package that
@@ -119,6 +143,8 @@ func _make_pickups(trade: TradeData) -> Array[ItemPickup]:
 func _apply_rewards(trade: TradeData) -> void:
 	if trade.reward_method != &"":
 		FishingManager.call(trade.reward_method, trade.reward_amount)
+	if trade.one_time_purchase:
+		mark_upgrade_delivered(trade)
 
 	if trade.reward_item != null:
 		for i in range(trade.reward_item_amount):

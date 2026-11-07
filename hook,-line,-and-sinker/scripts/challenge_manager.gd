@@ -28,6 +28,7 @@ func _ready() -> void:
 	_load()
 	FishingManager.fish_caught.connect(_on_fish_caught)
 	FishingManager.fish_lost.connect(_on_fish_lost)
+	FishingManager.parry_resolved.connect(_on_parry_resolved)
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -70,7 +71,7 @@ func _on_fish_caught(fish: FishData) -> void:
 
 	var changed := false
 	for challenge in challenges:
-		if challenge == null or challenge.completed or not challenge.counts_fish(fish):
+		if challenge == null or challenge.completed or challenge.requirement_type == ChallengeData.RequirementType.CONSECUTIVE_PERFECT_PARRIES or not challenge.counts_fish(fish):
 			continue
 
 		changed = true
@@ -95,6 +96,25 @@ func _on_fish_lost(_fish: FishData) -> void:
 			changed = true
 			challenge_progressed.emit(challenge)
 
+	if changed:
+		_save()
+
+
+# Perfect-parry challenges advance on successful counters, not fish catches.
+# Catching a fish between parries preserves the streak. A close or miss
+# counter resets it, regardless of which fish was hooked.
+func _on_parry_resolved(result: StringName) -> void:
+	var changed := false
+	for challenge in challenges:
+		if challenge == null or challenge.completed or challenge.requirement_type != ChallengeData.RequirementType.CONSECUTIVE_PERFECT_PARRIES:
+			continue
+		var before: int = challenge.progress
+		if challenge.record_parry(result):
+			_complete(challenge)
+		elif challenge.progress != before:
+			challenge_progressed.emit(challenge)
+		if challenge.progress != before:
+			changed = true
 	if changed:
 		_save()
 

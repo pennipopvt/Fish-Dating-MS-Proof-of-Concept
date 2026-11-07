@@ -10,6 +10,8 @@ enum RequirementType {
 	CONSECUTIVE_CATCHES,
 	## Catch target_amount fish in total. Losing a fish does not reset progress.
 	TOTAL_CATCHES,
+	## Land target_amount perfect parries consecutively (a close/miss resets it).
+	CONSECUTIVE_PERFECT_PARRIES,
 }
 
 ## Stable save key. Don't rename after release or saved completion is lost.
@@ -60,7 +62,7 @@ func counts_fish(fish: FishData) -> bool:
 
 # Returns true when this catch completes the challenge.
 func record_catch(fish: FishData) -> bool:
-	if completed or not counts_fish(fish):
+	if completed or requirement_type == RequirementType.CONSECUTIVE_PERFECT_PARRIES or not counts_fish(fish):
 		return false
 
 	progress = mini(progress + 1, target_amount)
@@ -77,6 +79,18 @@ func record_loss() -> bool:
 
 	progress = 0
 	return true
+
+
+# Returns true only when a perfect parry completes the challenge.
+# Other parry results reset progress, but do not mark completion.
+func record_parry(result: StringName) -> bool:
+	if completed or requirement_type != RequirementType.CONSECUTIVE_PERFECT_PARRIES:
+		return false
+	if result != &"perfect":
+		progress = 0
+		return false
+	progress = mini(progress + 1, target_amount)
+	return progress >= target_amount
 
 
 func get_progress_ratio() -> float:

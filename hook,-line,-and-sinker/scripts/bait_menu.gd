@@ -74,7 +74,7 @@ func _refresh() -> void:
 	_bait_tiles.clear()
 
 	var baits: Array[BaitData] = []
-	for bait in FishingManager.available_baits:
+	for bait in FishingManager.get_unlocked_baits():
 		if bait != null:
 			baits.append(bait)
 	if baits.size() > GRID_SLOTS:

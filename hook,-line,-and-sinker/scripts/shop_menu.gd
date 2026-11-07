@@ -78,6 +78,7 @@ func _ready() -> void:
 	_close_button.pressed.connect(close)
 	ShopManager.shop_requested.connect(open)
 	ShopManager.trade_completed.connect(_on_trade_completed)
+	ShopManager.upgrade_state_changed.connect(_on_upgrade_state_changed)
 	ChallengeManager.challenge_progressed.connect(_on_challenge_changed)
 	ChallengeManager.challenge_completed.connect(_on_challenge_changed)
 	ChallengeManager.progress_reset.connect(_on_challenge_reset)
@@ -465,7 +466,7 @@ func _show_details() -> void:
 
 
 func _show_trade_details(trade: TradeData) -> void:
-	_description.text = "Fishing equipment upgrade." if _page == Page.UPGRADES else "A present for someone in town."
+	_description.text = trade.description if not trade.description.is_empty() else ("Fishing equipment upgrade." if _page == Page.UPGRADES else "A present for someone in town.")
 	_add_detail_line("REQUIRES:", DIM_TEXT)
 	# Sprite + actual owned/required counts, one row per required fish.
 	for requirement in trade.requirements:
@@ -474,10 +475,13 @@ func _show_trade_details(trade: TradeData) -> void:
 		_costs.add_child(_make_requirement_row(requirement))
 
 	if trade.reward_method != &"":
-		_add_detail_line("REWARD: %s +%d" % [
-			String(trade.reward_method).trim_prefix("shop_reward_").replace("_", " ").to_upper(),
-			trade.reward_amount
-		], DIM_TEXT)
+		if trade.one_time_purchase:
+			_add_detail_line("ONE-TIME UPGRADE", DIM_TEXT)
+		else:
+			_add_detail_line("REWARD: %s +%d" % [
+				String(trade.reward_method).trim_prefix("shop_reward_").replace("_", " ").to_upper(),
+				trade.reward_amount
+			], DIM_TEXT)
 	elif trade.reward_item != null:
 		_add_detail_line("REWARD: %s x%d" % [
 			_human_name(trade.reward_item.item_id), trade.reward_item_amount
@@ -487,7 +491,13 @@ func _show_trade_details(trade: TradeData) -> void:
 	_order_button.text = "ORDER"
 	var locking: ChallengeData = ChallengeManager.get_locking_challenge(trade)
 	_order_button.disabled = locking != null or not ShopManager.can_trade(trade)
-	if locking != null:
+	if ShopManager.is_upgrade_owned(trade):
+		_status.text = "OWNED"
+		_order_button.text = "OWNED"
+	elif ShopManager.is_upgrade_ordered(trade):
+		_status.text = "DELIVERY ORDERED"
+		_order_button.text = "ORDERED"
+	elif locking != null:
 		_status.text = "LOCKED: %s" % ("Complete a hidden challenge" if locking.hidden else locking.display_name)
 	elif _order_button.disabled:
 		_status.text = "Not enough items to trade."
@@ -576,6 +586,11 @@ func _on_order_pressed() -> void:
 	if trade == null or not ShopManager.make_trade(trade):
 		_refresh_page()
 		_status.text = "Unable to place order."
+
+
+func _on_upgrade_state_changed(_trade: TradeData) -> void:
+	if visible and _page == Page.UPGRADES:
+		_refresh_page()
 
 
 func _on_trade_completed(trade: TradeData) -> void:
