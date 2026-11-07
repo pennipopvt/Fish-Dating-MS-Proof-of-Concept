@@ -18,7 +18,7 @@ const WARNING_TEXT := Color("984b24")
 const TAB_VISIBLE_WIDTH := 72.0
 const TAB_CLOSED_HEIGHT := 66.0
 const TAB_TEXT_PADDING := 12.0
-const TAB_TEXT_GAP := 9.0
+const TAB_TEXT_GAP := 12.0
 
 @onready var _upgrades_tab: Button = %UpgradesTab
 @onready var _gifts_tab: Button = %GiftsTab

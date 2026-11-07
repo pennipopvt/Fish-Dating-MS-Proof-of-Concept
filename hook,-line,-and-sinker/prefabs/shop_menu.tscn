@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://dua3yfus0j5uq"]
 
 [ext_resource type="Script" uid="uid://d3oyn3ofcf70q" path="res://scripts/shop_menu.gd" id="1_shopm"]
-[ext_resource type="Theme" path="res://resources/ui/terminal_theme.tres" id="2_theme"]
+[ext_resource type="Theme" uid="uid://bdrro20rs5qmt" path="res://resources/ui/terminal_theme.tres" id="2_theme"]
 [ext_resource type="StyleBox" path="res://resources/ui/terminal_border.tres" id="3_border"]
 [ext_resource type="Texture2D" uid="uid://bgu6xgbtt40kh" path="res://sprites/placeholders/cast_upgrade.svg" id="4_upgrade_icon"]
 [ext_resource type="Texture2D" uid="uid://by1jxw6gujp5d" path="res://sprites/items/spyglass.svg" id="5_gift_icon"]
@@ -40,10 +40,10 @@ mouse_filter = 2
 
 [node name="NavTabs" type="VBoxContainer" parent="TerminalRoot" unique_id=845387299]
 layout_mode = 0
-offset_left = 36.0
-offset_top = 135.0
-offset_right = 132.0
-offset_bottom = 735.0
+offset_left = 48.0
+offset_top = 134.0
+offset_right = 144.0
+offset_bottom = 734.0
 theme = ExtResource("2_theme")
 theme_override_constants/separation = 9
 
@@ -69,14 +69,16 @@ stretch_mode = 5
 
 [node name="VerticalTitle" type="Label" parent="TerminalRoot/NavTabs/UpgradesTab" unique_id=1609800718]
 layout_mode = 0
-offset_left = 21.0
-offset_top = 201.0
-offset_right = 201.0
-offset_bottom = 234.0
+offset_left = 21.000015
+offset_top = 199.0
+offset_right = 237.00002
+offset_bottom = 232.0
 rotation = -1.5707964
 theme_type_variation = &"TitleLabel"
 theme_override_font_sizes/font_size = 27
 text = "UPGRADES"
+horizontal_alignment = 1
+vertical_alignment = 1
 
 [node name="GiftsTab" type="Button" parent="TerminalRoot/NavTabs" unique_id=1320023177]
 unique_name_in_owner = true
@@ -100,14 +102,16 @@ stretch_mode = 5
 
 [node name="VerticalTitle" type="Label" parent="TerminalRoot/NavTabs/GiftsTab" unique_id=1944682948]
 layout_mode = 0
-offset_left = 21.0
-offset_top = 201.0
-offset_right = 201.0
-offset_bottom = 234.0
+offset_left = 21.000015
+offset_top = 199.0
+offset_right = 201.00002
+offset_bottom = 232.0
 rotation = -1.5707964
 theme_type_variation = &"TitleLabel"
 theme_override_font_sizes/font_size = 27
 text = "GIFTS"
+horizontal_alignment = 1
+vertical_alignment = 1
 
 [node name="StorageTab" type="Button" parent="TerminalRoot/NavTabs" unique_id=879580532]
 unique_name_in_owner = true
@@ -131,14 +135,16 @@ stretch_mode = 5
 
 [node name="VerticalTitle" type="Label" parent="TerminalRoot/NavTabs/StorageTab" unique_id=483907256]
 layout_mode = 0
-offset_left = 21.0
-offset_top = 201.0
-offset_right = 201.0
-offset_bottom = 234.0
+offset_left = 21.000015
+offset_top = 199.0
+offset_right = 210.00002
+offset_bottom = 232.0
 rotation = -1.5707964
 theme_type_variation = &"TitleLabel"
 theme_override_font_sizes/font_size = 27
 text = "STORAGE"
+horizontal_alignment = 1
+vertical_alignment = 1
 
 [node name="CollectionTab" type="Button" parent="TerminalRoot/NavTabs" unique_id=89272909]
 unique_name_in_owner = true
@@ -162,14 +168,16 @@ stretch_mode = 5
 
 [node name="VerticalTitle" type="Label" parent="TerminalRoot/NavTabs/CollectionTab" unique_id=1756251613]
 layout_mode = 0
-offset_left = 21.0
-offset_top = 201.0
-offset_right = 201.0
-offset_bottom = 234.0
+offset_left = 21.000015
+offset_top = 199.0
+offset_right = 284.0
+offset_bottom = 232.0
 rotation = -1.5707964
 theme_type_variation = &"TitleLabel"
 theme_override_font_sizes/font_size = 27
 text = "COLLECTION"
+horizontal_alignment = 1
+vertical_alignment = 1
 
 [node name="ChallengesTab" type="Button" parent="TerminalRoot/NavTabs" unique_id=490205985]
 unique_name_in_owner = true
@@ -193,14 +201,16 @@ stretch_mode = 5
 
 [node name="VerticalTitle" type="Label" parent="TerminalRoot/NavTabs/ChallengesTab" unique_id=1520668699]
 layout_mode = 0
-offset_left = 21.0
-offset_top = 201.0
-offset_right = 201.0
-offset_bottom = 234.0
+offset_left = 21.000015
+offset_top = 199.0
+offset_right = 291.0
+offset_bottom = 232.0
 rotation = -1.5707964
 theme_type_variation = &"TitleLabel"
 theme_override_font_sizes/font_size = 27
 text = "CHALLENGES"
+horizontal_alignment = 1
+vertical_alignment = 1
 
 [node name="Panel" type="PanelContainer" parent="TerminalRoot" unique_id=1931615164]
 texture_filter = 1
