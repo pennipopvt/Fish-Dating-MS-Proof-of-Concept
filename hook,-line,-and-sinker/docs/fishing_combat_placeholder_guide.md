@@ -3,8 +3,8 @@
 The new combat loop is **pre-windup warning → windup → attack → recovery**. 
 A **close parry** allows resisted reeling; a **perfect parry** retains the
 existing stun, tension relief, and free reeling. On a miss, the fish makes
-exactly one 0.2-second dash away, adds tension, and can be reeled back in
-as soon as the dash finishes. There is no passive or continuous attack-driven
+exactly one 0.2-second dash away, adds tension, then immediately starts a new attack warning. Reeling stays locked until
+the player earns a close or perfect parry. There is no passive or continuous attack-driven
 backward movement in this version.
 
 ## Replacing the animation placeholders (no code changes)
@@ -57,7 +57,8 @@ properties still work. The new exports are:
 The FishingController has `miss_dash_duration` (default **0.20 s**) to control
 how quickly a failed parry dashes away. The dash animates the distance and
 line together; **all** passive and attack-rate backward drift is disabled,
-including after the dash. Reeling becomes available when the dash completes.
+including after the dash. The next pre-windup begins when the dash completes,
+so reeling remains locked until a close/perfect parry.
 `FishData.passive_escape_rate` is retained for existing resources but not used
 for backward movement.
 
@@ -74,7 +75,7 @@ These signals are ready for future player animation, sound, or UI hooks.
 ## Manual gameplay checklist
 
 1. Scroll during pre-windup or recovery: no reel progress and no failed-parry penalty. Scroll outside the parry windows *during windup or attack*: a miss dashes the fish away over 0.2 seconds and increases tension.
-2. Miss during windup/attack: fish dashes once, stays at that distance, then can be reeled back in (with normal tension cost).
+2. Miss during windup/attack: the fish dashes once over 0.2 seconds, then immediately starts a new pre-windup warning; scrolling cannot reel it in until a close/perfect parry.
 3. Scroll at the late end of windup or just after the perfect interval: close parry opens resisted reeling without automatic backward drift.
 4. Counter immediately after attack starts: perfect parry gives the old stun and free reeling.
 5. An upcoming `pre_windup` warning closes the reel window for the next parry opportunity.

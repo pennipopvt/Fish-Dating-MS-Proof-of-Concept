@@ -145,7 +145,10 @@ func _process(delta: float) -> void:
 		progress = clampf(progress, 0.0, 1.0)
 		
 		recover_tension(delta)
-		update_attack_cycle(delta)
+		# Keep the current attack from advancing mid-dash. When the dash
+		# finishes, we restart at pre-windup with a fresh attack.
+		if not _miss_dash_active:
+			update_attack_cycle(delta)
 		
 		tension = clamp(tension,0,1)
 		fishing_line.set_tension(tension)
@@ -320,8 +323,8 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 
 	if event.is_action_pressed("Reel") and current_state == Fish_State.FISHING:
-		# Ignore input while the fish completes its single continuous dash.
-		# Once finished, allow the player to reel it back in.
+		# Ignore input during a missed-parry dash. Once it ends, the
+		# next attack begins; reeling stays locked until a good parry.
 		if _miss_dash_active:
 			return
 		if reel_open:
@@ -537,8 +540,8 @@ func _fail_parry() -> void:
 	counter_locked = true
 	scroll_streak = 0
 	_set_reel_open(false, false)
-	# A miss triggers ONE dash, then the fish stays put until the player
-	# reels. Do not apply the old continuous passive/attack escape rate.
+	# A miss triggers ONE dash followed immediately by a fresh attack.
+	# Do not apply the old continuous passive/attack escape rate.
 	var strength: float = maxf(1.0, absf(active_attack.escape_rate) / 0.08)
 	var dash_target: float = clampf(progress - active_attack.miss_progress_loss * strength, 0.0, 1.0)
 	tension = clampf(tension + active_attack.miss_tension_gain * hooked_fish.attack_tension_multiplier * strength, 0.0, 1.0)
@@ -572,11 +575,9 @@ func _on_miss_dash_finished() -> void:
 	if progress <= 0.0 or tension >= 1.0:
 		lose_fish()
 		return
-	# A miss does not permanently lock reeling. It opens an ordinary
-	# (tension-generating) reel window once the fish stops dashing.
-	# Don't reopen a window after the next pre-windup already began.
-	if attack_phase != AttackPhase.PRE_WINDUP:
-		_set_reel_open(true, false)
+	# The fish immediately starts its next attack sequence: warning,
+	# windup, attack. The player cannot reel until a close/perfect parry.
+	start_pre_windup()
 
 
 func create_npc(npc: PackedScene) -> void:
