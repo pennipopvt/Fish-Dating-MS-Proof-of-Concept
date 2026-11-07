@@ -10,7 +10,7 @@ movement speed. The visible attack/feedback animations are still editable in
 | --- | --- | --- |
 | **PRE_WINDUP** | Immediately starts when a fish hooks or the previous attack resolves. Reeling/parry scrolls are ignored. Plays `pre_windup`. | WINDUP after `pre_windup_duration` |
 | **WINDUP** | Plays the timed `windup` telegraph. A close-enough parry near the attack opens contested reeling; an early miss starts DASH. | ATTACK when the windup ends, or DASH on miss |
-| **ATTACK** | Plays `start_attack` then `attacking`. Close parry allows reeling **while the fish swims away**; perfect parry interrupts with STUN. A missed parry, including letting the attack expire without parrying, starts DASH. | PRE_WINDUP after a successful close encounter's attack finishes, DASH on miss, or STUN on perfect |
+| **ATTACK** | Plays `start_attack` then `attacking`. Close parry allows reeling **while the fish swims away**; perfect parry interrupts with STUN. A missed parry, including letting the last close-parry window expire without input, starts DASH immediately (the full attack duration is not waited out). | PRE_WINDUP after a successful close encounter's attack finishes, DASH on miss, or STUN on perfect |
 | **DASH** | Exactly one constant-speed backward movement; **all reel input is locked**. | Immediately PRE_WINDUP at the end of `miss_dash_duration` |
 | **STUN** | Perfect parry. Fish cannot pull away and **reeling adds no tension**. Existing counter-tension relief still applies. | Immediately PRE_WINDUP when `stun_duration` ends |
 
@@ -19,10 +19,15 @@ backward on its own outside a close-parry contest or the brief miss dash.
 
 ## Distance and tension
 
-- **Dash distance:** `max(escape_rate, 0) × miss_dash_duration`. For
-  example, a fish moving at 0.3 progress/second dashes backward by 0.06
-  progress during a 0.20-second dash. Dash interpolation is linear so it is
-  one clean movement.
+- **Dash distance:** `max(escape_rate, 0) × miss_dash_speed_multiplier × miss_dash_duration`.
+  At the default 3× dash-speed multiplier, a fish with `escape_rate = 0.1`
+  dashes 0.075 progress over a 0.25-second dash (roughly 23 world pixels
+  for the current line-distance settings). Dash interpolation is linear so
+  it is one clean movement. Slow fish have shorter dashes unless you
+  increase the multiplier or the fish's `escape_rate`.
+- **Automatic miss timing:** If no close or perfect parry is landed,
+  the dash starts when `counter_window + close_late_window` elapses
+  after attack onset, not when `state_length` expires.
 - **Close parry:** The player can reel as usual, with normal
   tension buildup. In WINDUP/ATTACK the fish simultaneously retreats at
   `escape_rate` progress/second; the player's reeling fights that movement.
@@ -39,6 +44,7 @@ backward on its own outside a close-parry contest or the brief miss dash.
 | --- | --- | --- |
 | `FishEscapeState` | `escape_rate` | Movement speed for close-parry resistance and the dash (progress/second) |
 | `FishingController` | `miss_dash_duration` | How long each miss dash lasts (default 0.20 s) |
+| `FishingController` | `miss_dash_speed_multiplier` | Dash speed boost relative to the fish's `escape_rate` (default 3×) |
 | `FishEscapeState` | `pre_windup_duration` | Uninterruptible attack-warning length |
 | `FishEscapeState` | `windup_duration` | Parry telegraph length |
 | `FishEscapeState` | `close_early_window` / `counter_window` / `close_late_window` | Early close, perfect, and late close timing |

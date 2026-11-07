@@ -45,16 +45,16 @@ func _test_combat() -> void:
 	combat.call("update_attack_cycle", 0.46)
 	_expect(int(combat.get("attack_phase")) == 2, "windup advances into ATTACK")
 
-	# A miss: a single dash with distance exactly speed * duration.
+	# A miss: one dash with distance speed * dash boost * duration.
 	var before_dash: float = combat.get("progress")
 	combat.call("_fail_parry")
 	_expect(int(combat.get("attack_phase")) == 3 and not combat.get("reel_open"), "miss locks input in DASH")
-	var expected_dash: float = before_dash - attack.escape_rate * combat.get("miss_dash_duration")
+	var expected_dash: float = before_dash - attack.escape_rate * combat.get("miss_dash_speed_multiplier") * combat.get("miss_dash_duration")
 	var dash_tween: Tween = combat.get("_miss_dash_tween")
 	dash_tween.kill()  # Advance deterministically without waiting for wall time.
 	combat.call("_update_miss_dash", expected_dash)
 	combat.call("_on_miss_dash_finished")
-	_expect(is_equal_approx(combat.get("progress"), expected_dash), "dash distance equals move speed times dash duration")
+	_expect(is_equal_approx(combat.get("progress"), expected_dash), "dash distance equals boosted move speed times dash duration")
 	_expect(int(combat.get("attack_phase")) == 0 and not combat.get("reel_open"), "dash immediately returns to locked PRE_WINDUP")
 
 	# A close parry permits contested reeling and fish movement.
@@ -85,11 +85,14 @@ func _test_combat() -> void:
 	combat.call("update_attack_cycle", 0.70)
 	_expect(int(combat.get("attack_phase")) == 0 and not combat.get("reel_open"), "stun ends at next locked PRE_WINDUP")
 
-	# An attack that expires without a parry also counts as a miss.
+	# The attack MUST dash immediately when its parry grace expires, not
+	# several seconds later at the end of its state_length animation.
 	combat.call("start_windup")
 	combat.call("begin_attack")
-	combat.call("update_attack_cycle", 1.10)
-	_expect(int(combat.get("attack_phase")) == 3 and not combat.get("reel_open"), "unparried attack expires into DASH")
+	combat.call("update_attack_cycle", 0.15)
+	_expect(int(combat.get("attack_phase")) == 2, "still in attack while perfect window is open")
+	combat.call("update_attack_cycle", 0.20)
+	_expect(int(combat.get("attack_phase")) == 3 and not combat.get("reel_open"), "unparried fish immediately dashes at grace-window expiry")
 	var final_dash: Tween = combat.get("_miss_dash_tween")
 	final_dash.kill()
 

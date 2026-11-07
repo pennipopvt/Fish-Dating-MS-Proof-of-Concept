@@ -44,6 +44,9 @@ var last_scroll_ms: int = -100000
 
 ## One continuous burst of distance loss on a failed parry (seconds).
 @export_range(0.05, 0.5, 0.01) var miss_dash_duration: float = 0.20
+## Dash speed is multiplied relative to this fish's regular escape_rate.
+## A dash should travel noticeably farther than ordinary swimming.
+@export_range(1.0, 8.0, 0.25) var miss_dash_speed_multiplier: float = 3.0
 var _miss_dash_tween: Tween
 
 #band-aid fix to avoid accidentally requeueing interact when exiting since exit and interact are the same input
@@ -440,6 +443,16 @@ func update_attack_cycle(delta: float) -> void:
 		start_pre_windup()
 		return
 
+	# The parry is a TIME WINDOW, not the full-length attack animation.
+	# Once the last close-parry grace moment passes, an uncountered fish
+	# immediately dashes away even if the player hasn't scrolled.
+	if attack_phase == AttackPhase.ATTACK:
+		attack_elapsed += delta
+		var parry_deadline: float = active_attack.counter_window + active_attack.close_late_window
+		if not reel_open and attack_elapsed > parry_deadline:
+			_fail_parry()
+			return
+
 	phase_time -= delta
 	if phase_time <= 0.0:
 		match attack_phase:
@@ -467,7 +480,6 @@ func update_attack_cycle(delta: float) -> void:
 			var elapsed: float = active_attack.windup_duration - phase_time
 			fishing_line.set_telegraph(2, clampf(elapsed / maxf(active_attack.windup_duration, 0.01), 0.0, 1.0))
 		AttackPhase.ATTACK:
-			attack_elapsed += delta
 			fishing_line.set_telegraph(3, clampf(attack_elapsed / maxf(active_attack.state_length, 0.01), 0.0, 1.0))
 		AttackPhase.STUN:
 			fishing_line.set_telegraph(4, 0.0)
@@ -547,10 +559,10 @@ func _fail_parry() -> void:
 	counter_locked = true
 	scroll_streak = 0
 	_set_reel_open(false, false)
-	# Distance = fish movement speed (progress/second) * dash duration.
-	# One constant-speed backwards motion, independent of reel input.
-	var move_speed: float = maxf(active_attack.escape_rate, 0.0)
-	var dash_target: float = clampf(progress - move_speed * miss_dash_duration, 0.0, 1.0)
+	# One constant-speed burst: normal fish movement speed, boosted for
+	# the dash, multiplied by the dash duration. This is in progress units.
+	var dash_speed: float = maxf(active_attack.escape_rate, 0.0) * miss_dash_speed_multiplier
+	var dash_target: float = clampf(progress - dash_speed * miss_dash_duration, 0.0, 1.0)
 	tension = clampf(tension + active_attack.miss_tension_gain * hooked_fish.attack_tension_multiplier, 0.0, 1.0)
 	attack_phase = AttackPhase.DASH
 	phase_time = miss_dash_duration
