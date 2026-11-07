@@ -35,9 +35,12 @@ backward on its own outside a close-parry contest or the brief miss dash.
 - **Perfect parry:** Fish movement is stopped for the stun. Scrolls
   increase reel progress but add **zero tension**, even if the attack was
   previously in progress.
-- **Miss:** Applies the existing `miss_tension_gain` penalty once,
-  then completes the dash before deciding if the fish escaped. Reeling
-  cannot resume during the dash or pre-windup.
+- **Miss:** The existing `FishEscapeState.miss_tension_gain × FishData.attack_tension_multiplier`
+  is added **gradually over the entire dash**, alongside the fish's backward
+  motion. Tension recovery pauses for the dash; there is no extra
+  immediate penalty at the start. If tension reaches the breaking point,
+  the fish is lost when the dash finishes. Reeling cannot resume during
+  the dash or pre-windup.
 
 ## Inspector tuning
 
@@ -51,7 +54,7 @@ backward on its own outside a close-parry contest or the brief miss dash.
 | `FishEscapeState` | `close_early_window` / `counter_window` / `close_late_window` | Early close, perfect, and late close timing |
 | `FishEscapeState` | `state_length` | Active attack duration |
 | `FishEscapeState` | `stun_duration` | Perfect-parry free-reel duration |
-| `FishEscapeState` | `miss_tension_gain` | One-time extra tension on a miss |
+| `FishEscapeState` | `miss_tension_gain` | Total tension added smoothly during the miss dash (scaled by the fish's attack_tension_multiplier) |
 | `FishingController` | `strong_reel_scrolls` / `strong_reel_interval` | Existing fast-scroll gesture; final qualifying scroll determines the parry outcome |
 
 `FishEscapeState.miss_progress_loss`, `recovery_duration`, and

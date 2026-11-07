@@ -51,13 +51,21 @@ func _test_combat() -> void:
 
 	# A miss: one dash with distance speed * dash boost * duration.
 	var before_dash: float = combat.get("progress")
+	var before_dash_tension: float = combat.get("tension")
 	combat.call("_fail_parry")
 	_expect(int(combat.get("attack_phase")) == 3 and not combat.get("reel_open"), "miss locks input in DASH")
 	_expect(is_equal_approx(combat.get("phase_time"), test_fish.miss_dash_duration), "dash duration comes from hooked FishData")
+	_expect(is_equal_approx(combat.get("tension"), before_dash_tension), "miss does not add all tension instantly")
 	var expected_dash: float = before_dash - attack.escape_rate * test_fish.miss_dash_speed_multiplier * test_fish.miss_dash_duration
 	var dash_tween: Tween = combat.get("_miss_dash_tween")
 	dash_tween.kill()  # Advance deterministically without waiting for wall time.
+	var final_dash_tension: float = minf(1.0, before_dash_tension + attack.miss_tension_gain * test_fish.attack_tension_multiplier)
+	combat.call("_update_miss_dash", (before_dash + expected_dash) * 0.5)
+	combat.call("_update_miss_dash_tension", (before_dash_tension + final_dash_tension) * 0.5)
+	_expect(combat.get("tension") > before_dash_tension, "tension visibly rises during the dash")
 	combat.call("_update_miss_dash", expected_dash)
+	combat.call("_update_miss_dash_tension", final_dash_tension)
+	_expect(is_equal_approx(combat.get("tension"), final_dash_tension), "dash ends with exactly one miss tension penalty")
 	combat.call("_on_miss_dash_finished")
 	_expect(is_equal_approx(combat.get("progress"), expected_dash), "dash distance equals boosted move speed times dash duration")
 	_expect(int(combat.get("attack_phase")) == 0 and not combat.get("reel_open"), "dash immediately returns to locked PRE_WINDUP")

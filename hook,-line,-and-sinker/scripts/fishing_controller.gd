@@ -147,7 +147,10 @@ func _process(delta: float) -> void:
 			progress -= maxf(active_attack.escape_rate, 0.0) * delta
 		progress = clampf(progress, 0.0, 1.0)
 
-		recover_tension(delta)
+		# No tension recovery during DASH: the same tween that moves the
+		# fish steadily increases tension for the full dash duration.
+		if attack_phase != AttackPhase.DASH:
+			recover_tension(delta)
 		if attack_phase != AttackPhase.DASH:
 			update_attack_cycle(delta)
 		if current_state != Fish_State.FISHING or hooked_fish == null:
@@ -560,7 +563,11 @@ func _fail_parry() -> void:
 	var dash_duration: float = hooked_fish.miss_dash_duration
 	var dash_speed: float = maxf(active_attack.escape_rate, 0.0) * hooked_fish.miss_dash_speed_multiplier
 	var dash_target: float = clampf(progress - dash_speed * dash_duration, 0.0, 1.0)
-	tension = clampf(tension + active_attack.miss_tension_gain * hooked_fish.attack_tension_multiplier, 0.0, 1.0)
+	# Apply the existing attack-specific miss tension gain *over the dash*,
+	# not immediately on the first frame. This gives the fish a visible pull
+	# on the line, without doubling the old miss penalty.
+	var starting_tension: float = tension
+	var ending_tension: float = clampf(starting_tension + active_attack.miss_tension_gain * hooked_fish.attack_tension_multiplier, 0.0, 1.0)
 	attack_phase = AttackPhase.DASH
 	phase_time = dash_duration
 	recovery_timer = recovery_delay
@@ -572,6 +579,7 @@ func _fail_parry() -> void:
 		_miss_dash_tween.kill()
 	_miss_dash_tween = create_tween().set_trans(Tween.TRANS_LINEAR)
 	_miss_dash_tween.tween_method(_update_miss_dash, progress, dash_target, dash_duration)
+	_miss_dash_tween.parallel().tween_method(_update_miss_dash_tension, starting_tension, ending_tension, dash_duration)
 	_miss_dash_tween.tween_callback(_on_miss_dash_finished)
 	print("MISSED PARRY / DASH: ", active_attack.state_name)
 
@@ -582,6 +590,13 @@ func _update_miss_dash(value: float) -> void:
 	progress = clampf(value, 0.0, 1.0)
 	fishing_line.update_line_dist(progress)
 	fishing_progress.value = progress
+
+
+func _update_miss_dash_tension(value: float) -> void:
+	# Matches the dash position tween exactly; no recovery until it ends.
+	tension = clampf(value, 0.0, 1.0)
+	tension_bar.value = tension
+	fishing_line.set_tension(tension)
 
 
 func _on_miss_dash_finished() -> void:
