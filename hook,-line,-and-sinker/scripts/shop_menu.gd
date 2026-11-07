@@ -20,6 +20,17 @@ const TAB_CLOSED_HEIGHT := 66.0
 const TAB_TEXT_PADDING := 12.0
 const TAB_TEXT_GAP := 12.0
 
+# Terminal boot sequence: horizontal expansion, vertical expansion, tabs emerge.
+const BOOT_LINE := 36.0  # 12 art pixels; fits both 9-slice corner margins
+const OPEN_HORIZONTAL_TIME := 0.20
+const OPEN_VERTICAL_TIME := 0.26
+const TABS_POP_TIME := 0.30
+const TABS_HIDDEN_X_OFFSET := 12.0
+
+@onready var _terminal_panel: PanelContainer = $TerminalRoot/Panel
+@onready var _opening_frame: NinePatchRect = $TerminalRoot/OpeningFrame
+@onready var _nav_tabs: VBoxContainer = $TerminalRoot/NavTabs
+
 @onready var _upgrades_tab: Button = %UpgradesTab
 @onready var _gifts_tab: Button = %GiftsTab
 @onready var _storage_tab: Button = %StorageTab
@@ -47,11 +58,18 @@ var _selected_index: int = 0
 var _button_group := ButtonGroup.new()
 var _last_order_message := ""
 var _tab_tween: Tween
+var _boot_tween: Tween
+var _tabs_pop_tween: Tween
+var _nav_rest_x: float = 0.0
 
 
 func _ready() -> void:
 	hide()
 	add_to_group(&"modal_ui")
+	_nav_rest_x = _nav_tabs.position.x
+	_terminal_panel.hide()
+	_nav_tabs.hide()
+	_opening_frame.hide()
 	_nav_buttons = [_upgrades_tab, _gifts_tab, _storage_tab, _collection_tab, _challenges_tab]
 	for i in range(_nav_buttons.size()):
 		_nav_buttons[i].pressed.connect(_select_page.bind(i))
@@ -85,15 +103,82 @@ func open() -> void:
 	ShopManager.set_shop_open(true)
 	_refresh_page()
 	_update_nav_tabs(false)
-	_upgrades_tab.grab_focus()
+	_start_open_animation()
 
 
 func close() -> void:
 	if not visible:
 		return
+	_cancel_open_animation()
+	_terminal_panel.hide()
+	_nav_tabs.hide()
+	_opening_frame.hide()
+	_nav_tabs.position.x = _nav_rest_x
 	hide()
 	# ShopInteractable dispatches queued deliveries when this fires.
 	ShopManager.set_shop_open(false)
+
+
+
+# The visible 9-slice frame animates on its own, so item grids/buttons keep
+# their real sizes. Only reveal the fully laid out terminal after the frame grows.
+func _start_open_animation() -> void:
+	_cancel_open_animation()
+	_terminal_panel.hide()
+	_nav_tabs.hide()
+	_opening_frame.show()
+
+	var end_position: Vector2 = _terminal_panel.position
+	var end_size: Vector2 = _terminal_panel.size
+	var center: Vector2 = end_position + end_size * 0.5
+
+	_opening_frame.size = Vector2(BOOT_LINE, BOOT_LINE)
+	_opening_frame.position = center - _opening_frame.size * 0.5
+
+	_boot_tween = create_tween()
+	_boot_tween.set_trans(Tween.TRANS_CUBIC)
+	_boot_tween.set_ease(Tween.EASE_OUT)
+	# 1. Expand from the center to the full horizontal width.
+	_boot_tween.tween_property(_opening_frame, "size:x", end_size.x, OPEN_HORIZONTAL_TIME)
+	_boot_tween.parallel().tween_property(
+		_opening_frame, "position:x", end_position.x, OPEN_HORIZONTAL_TIME
+	)
+	# 2. Then grow vertically, preserving the top/bottom 9-slice corners.
+	_boot_tween.tween_property(_opening_frame, "size:y", end_size.y, OPEN_VERTICAL_TIME)
+	_boot_tween.parallel().tween_property(
+		_opening_frame, "position:y", end_position.y, OPEN_VERTICAL_TIME
+	)
+	_boot_tween.tween_callback(_on_frame_opened)
+
+
+func _on_frame_opened() -> void:
+	if not visible:
+		return
+	_opening_frame.hide()
+	_terminal_panel.show()
+
+	# 3. Side tabs slide out from behind the main panel with a little bounce.
+	# NavTabs precedes Panel in the scene tree, so the panel covers their
+	# right-hand (hidden) portions as they emerge.
+	_nav_tabs.position.x = _terminal_panel.position.x + TABS_HIDDEN_X_OFFSET
+	_nav_tabs.show()
+	_tabs_pop_tween = create_tween()
+	_tabs_pop_tween.tween_property(
+		_nav_tabs, "position:x", _nav_rest_x, TABS_POP_TIME
+	).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	_tabs_pop_tween.tween_callback(_on_tabs_opened)
+
+
+func _on_tabs_opened() -> void:
+	if visible:
+		_upgrades_tab.grab_focus()
+
+
+func _cancel_open_animation() -> void:
+	if _boot_tween != null and _boot_tween.is_running():
+		_boot_tween.kill()
+	if _tabs_pop_tween != null and _tabs_pop_tween.is_running():
+		_tabs_pop_tween.kill()
 
 
 func _select_page(page: int) -> void:

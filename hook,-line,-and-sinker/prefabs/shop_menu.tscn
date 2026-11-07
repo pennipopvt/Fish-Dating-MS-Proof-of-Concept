@@ -8,6 +8,7 @@
 [ext_resource type="Texture2D" uid="uid://dyks2bu2dla76" path="res://sprites/ui/icon_storage.png" id="6_storage_icon"]
 [ext_resource type="Texture2D" uid="uid://be2mehv3j2ohp" path="res://sprites/ui/icon_collection.png" id="7_collection_icon"]
 [ext_resource type="Texture2D" uid="uid://cy6m4p32euy7d" path="res://sprites/ui/icon_challenges.png" id="8_challenge_icon"]
+[ext_resource type="Texture2D" path="res://sprites/ui/ui_background_3x.png" id="9_boot_frame"]
 
 [node name="ShopMenu" type="CanvasLayer" unique_id=21315034]
 process_mode = 3
@@ -220,6 +221,22 @@ offset_right = 1680.0
 offset_bottom = 900.0
 theme = ExtResource("2_theme")
 theme_override_styles/panel = ExtResource("3_border")
+
+
+[node name="OpeningFrame" type="NinePatchRect" parent="TerminalRoot"]
+visible = false
+layout_mode = 0
+offset_right = 36.0
+offset_bottom = 36.0
+mouse_filter = 2
+texture_filter = 1
+texture = ExtResource("9_boot_frame")
+patch_margin_left = 12
+patch_margin_top = 12
+patch_margin_right = 12
+patch_margin_bottom = 12
+axis_stretch_horizontal = 1
+axis_stretch_vertical = 1
 
 [node name="Margin" type="MarginContainer" parent="TerminalRoot/Panel" unique_id=1371121174]
 layout_mode = 2
