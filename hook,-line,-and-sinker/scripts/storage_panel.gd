@@ -5,7 +5,6 @@ extends VBoxContainer
 # Use the same shared pixel UI as Shop, and read the existing live storage.
 const S := PixelUI.SCALE
 const TILE_SIZE := Vector2(40 * S, 40 * S)
-const TILE_PADDING := 2
 
 @onready var _summary: Label = %StorageSummary
 @onready var _grid: GridContainer = %StorageGrid
@@ -21,9 +20,6 @@ var _items: Dictionary = {}
 var _tiles: Dictionary = {}
 var _button_group := ButtonGroup.new()
 
-
-func _ready() -> void:
-	_icon_frame.add_theme_stylebox_override("panel", PixelUI.box(PixelUI.TEAL, PixelUI.CYAN_DARK, TILE_PADDING))
 
 
 # Recount every time this tab opens. Trades and catches modify this same array.
@@ -76,11 +72,6 @@ func _make_tile(id: StringName) -> Button:
 	tile.button_group = _button_group
 	tile.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	tile.tooltip_text = _display_name(id)
-	tile.add_theme_stylebox_override("normal", PixelUI.box(PixelUI.TEAL, PixelUI.CYAN_DARK, TILE_PADDING))
-	tile.add_theme_stylebox_override("hover", PixelUI.box(PixelUI.TEAL_HOVER, PixelUI.CYAN, TILE_PADDING))
-	tile.add_theme_stylebox_override("pressed", PixelUI.box(PixelUI.TEAL_SELECTED, PixelUI.CYAN, TILE_PADDING))
-	tile.add_theme_stylebox_override("hover_pressed", PixelUI.box(PixelUI.TEAL_SELECTED, PixelUI.CYAN, TILE_PADDING))
-	tile.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
 
 	var item: ItemData = _items[id]
 	if item.sprite != null:
@@ -94,7 +85,7 @@ func _make_tile(id: StringName) -> Button:
 	var badge := Label.new()
 	badge.text = "x%d" % _counts[id]
 	badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	badge.add_theme_color_override("font_color", PixelUI.GOLD)
+	badge.add_theme_color_override("font_color", Color("745600"))
 	badge.add_theme_font_size_override("font_size", PixelUI.SMALL_SIZE)
 	badge.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	tile.add_child(badge)

@@ -1,9 +1,8 @@
 [gd_scene format=3]
 
 [ext_resource type="Script" path="res://scripts/bait_menu.gd" id="1_baitm"]
-
-[sub_resource type="Theme" id="Theme_baitm"]
-default_font_size = 32
+[ext_resource type="Theme" path="res://resources/ui/terminal_theme.tres" id="4_theme"]
+[ext_resource type="StyleBoxTexture" path="res://resources/ui/terminal_border.tres" id="5_border"]
 
 [node name="BaitMenu" type="CanvasLayer"]
 process_mode = 3
@@ -30,7 +29,9 @@ offset_right = 560.0
 offset_bottom = 340.0
 grow_horizontal = 2
 grow_vertical = 2
-theme = SubResource("Theme_baitm")
+theme = ExtResource("4_theme")
+theme_override_styles/panel = ExtResource("5_border")
+texture_filter = 1
 
 [node name="Margin" type="MarginContainer" parent="Panel"]
 layout_mode = 2

@@ -14,8 +14,8 @@ const EQUIPPED_BORDER_COLOR := Color("f2c14e")
 const TILE_PADDING := 16
 const TILE_CORNER_RADIUS := 20
 const FISH_ICON_SIZE := Vector2(96, 28)
-const ODDS_UP_COLOR := Color(0.55, 0.9, 0.55)
-const ODDS_DOWN_COLOR := Color(0.95, 0.45, 0.45)
+const ODDS_UP_COLOR := Color("12673c")
+const ODDS_DOWN_COLOR := Color("a33838")
 
 @onready var _bait_grid: GridContainer = %BaitGrid
 @onready var _bait_icon_frame: PanelContainer = %BaitIconFrame
@@ -36,7 +36,6 @@ func _ready() -> void:
 	hide()
 	add_to_group(&"bait_menu")
 	add_to_group(&"modal_ui")
-	_bait_icon_frame.add_theme_stylebox_override("panel", _make_tile_style(TILE_NORMAL_COLOR))
 	FishingManager.bait_changed.connect(_on_bait_changed)
 	_equip_button.pressed.connect(_on_equip_pressed)
 	_close_button.pressed.connect(close)
@@ -109,11 +108,7 @@ func _make_bait_tile(bait: BaitData) -> Button:
 	tile.tooltip_text = _bait_name(bait)
 
 	var equipped: bool = bait == FishingManager.equipped_bait
-	tile.add_theme_stylebox_override("normal", _make_tile_style(TILE_NORMAL_COLOR, equipped))
-	tile.add_theme_stylebox_override("hover", _make_tile_style(TILE_HOVER_COLOR, equipped))
-	tile.add_theme_stylebox_override("pressed", _make_tile_style(TILE_SELECTED_COLOR, equipped))
-	tile.add_theme_stylebox_override("hover_pressed", _make_tile_style(TILE_SELECTED_COLOR, equipped))
-	tile.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
+	tile.self_modulate = Color("fff5d3") if equipped else Color.WHITE
 
 	if bait.icon != null:
 		tile.icon = bait.icon
@@ -129,20 +124,7 @@ func _make_bait_tile(bait: BaitData) -> Button:
 func _make_empty_tile() -> Panel:
 	var tile := Panel.new()
 	tile.custom_minimum_size = TILE_SIZE
-	tile.add_theme_stylebox_override("panel", _make_tile_style(TILE_EMPTY_COLOR))
 	return tile
-
-
-# A solid rounded background; the equipped bait also gets a gold border.
-func _make_tile_style(fill_color: Color, equipped: bool = false) -> StyleBoxFlat:
-	var style := StyleBoxFlat.new()
-	style.bg_color = fill_color
-	style.set_corner_radius_all(TILE_CORNER_RADIUS)
-	style.set_content_margin_all(TILE_PADDING)
-	if equipped:
-		style.set_border_width_all(6)
-		style.border_color = EQUIPPED_BORDER_COLOR
-	return style
 
 
 func _select_bait(bait: BaitData) -> void:

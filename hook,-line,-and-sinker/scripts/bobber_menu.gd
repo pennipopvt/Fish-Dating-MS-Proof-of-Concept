@@ -29,7 +29,6 @@ func _ready() -> void:
 	hide()
 	add_to_group(&"bobber_menu")
 	add_to_group(&"modal_ui")
-	_icon_frame.add_theme_stylebox_override("panel", _make_style(TILE_NORMAL_COLOR))
 	BobberManager.equipped_changed.connect(_on_equipped_changed)
 	BobberManager.collection_changed.connect(_on_collection_changed)
 	_equip_button.pressed.connect(_on_equip_pressed)
@@ -76,10 +75,7 @@ func _refresh() -> void:
 		tile.tooltip_text = data.display_name
 		tile.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 		var equipped := data.bobber_id == BobberManager.equipped_id
-		for state in ["normal", "hover", "pressed", "hover_pressed"]:
-			var base: Color = TILE_NORMAL_COLOR if state == "normal" else TILE_HOVER_COLOR if state == "hover" else TILE_SELECTED_COLOR
-			tile.add_theme_stylebox_override(state, _make_style(base, equipped))
-		tile.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
+		tile.self_modulate = Color("fff5d3") if equipped else Color.WHITE
 		tile.icon = data.sprite
 		tile.expand_icon = true
 		tile.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -97,19 +93,7 @@ func _refresh() -> void:
 func _make_empty_tile() -> Panel:
 	var tile := Panel.new()
 	tile.custom_minimum_size = TILE_SIZE
-	tile.add_theme_stylebox_override("panel", _make_style(TILE_EMPTY_COLOR))
 	return tile
-
-
-func _make_style(color: Color, equipped: bool = false) -> StyleBoxFlat:
-	var style := StyleBoxFlat.new()
-	style.bg_color = color
-	style.set_corner_radius_all(20)
-	style.set_content_margin_all(16)
-	if equipped:
-		style.set_border_width_all(6)
-		style.border_color = EQUIPPED_BORDER_COLOR
-	return style
 
 
 func _select(data: BobberData) -> void:

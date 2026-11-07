@@ -15,7 +15,7 @@ const REWARD_ICON_SIZE := Vector2(16 * S, 16 * S)
 const LOCKED_MODULATE := Color(0.6, 0.6, 0.6, 0.8)
 const LOCK_ICON := preload("res://sprites/placeholders/lock.png")
 const LOCK_BADGE_SIZE := Vector2(16 * S, 16 * S)
-const LOCKED_COLOR := PixelUI.GOLD
+const LOCKED_COLOR := Color("745600")
 
 enum Tab { SHOP, CHALLENGES, STORAGE }
 
@@ -35,25 +35,10 @@ enum Tab { SHOP, CHALLENGES, STORAGE }
 var _selected_trade: TradeData = null
 var _trade_tiles: Dictionary = {}
 var _button_group := ButtonGroup.new()
-var _tile_styles := {
-	"normal": PixelUI.box(PixelUI.TEAL, PixelUI.CYAN_DARK, TILE_PADDING),
-	"hover": PixelUI.box(PixelUI.TEAL_HOVER, PixelUI.CYAN, TILE_PADDING),
-	"pressed": PixelUI.box(PixelUI.TEAL_SELECTED, PixelUI.CYAN, TILE_PADDING),
-	"hover_pressed": PixelUI.box(PixelUI.TEAL_SELECTED, PixelUI.CYAN, TILE_PADDING),
-	"focus": StyleBoxEmpty.new(),
-}
-
-
 func _ready() -> void:
 	hide()
 	add_to_group(&"modal_ui")
-	$Panel.theme = PixelUI.get_theme()
-	# First pass: test the new hand-drawn thick border on the outer Terminal only.
-	# Other pixel UI panels and item slots keep their existing styles for now.
-	$Panel.add_theme_stylebox_override("panel", PixelUI.terminal_frame_style())
-	$Panel.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	ChallengeManager.progress_reset.connect(_on_challenge_completed.bind(null))
-	_trade_icon_frame.add_theme_stylebox_override("panel", _tile_styles["normal"])
 	ShopManager.trade_completed.connect(_on_trade_completed)
 	ShopManager.shop_requested.connect(open)
 	ChallengeManager.challenge_completed.connect(_on_challenge_completed)
@@ -144,9 +129,6 @@ func _make_trade_tile(trade: TradeData) -> Button:
 	tile.button_group = _button_group
 	tile.tooltip_text = trade.display_name
 
-	for style_name in _tile_styles:
-		tile.add_theme_stylebox_override(style_name, _tile_styles[style_name])
-
 	if trade.icon != null:
 		tile.icon = trade.icon
 		tile.expand_icon = true
@@ -215,7 +197,7 @@ func _show_details() -> void:
 		_exchange_row.add_child(_make_slot(
 			trade.icon,
 			"+%d" % trade.reward_amount,
-			Color.WHITE,
+			Color("17363b"),
 			_describe_reward(trade),
 			true
 		))
@@ -224,7 +206,7 @@ func _show_details() -> void:
 		_exchange_row.add_child(_make_slot(
 			trade.reward_item.sprite,
 			"+%d" % trade.reward_item_amount,
-			Color.WHITE,
+			Color("17363b"),
 			String(trade.reward_item.item_id).capitalize(),
 			true
 		))
@@ -283,7 +265,6 @@ func _make_slot(
 		var frame := PanelContainer.new()
 		frame.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 		frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		frame.add_theme_stylebox_override("panel", _tile_styles["normal"])
 		frame.add_child(icon)
 		slot.add_child(frame)
 	else:
