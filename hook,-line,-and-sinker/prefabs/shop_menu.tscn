@@ -1,8 +1,13 @@
-[gd_scene load_steps=4 format=3]
+[gd_scene load_steps=9 format=3]
 
 [ext_resource type="Script" path="res://scripts/shop_menu.gd" id="1_shopm"]
 [ext_resource type="Theme" path="res://resources/ui/terminal_theme.tres" id="2_theme"]
 [ext_resource type="StyleBoxTexture" path="res://resources/ui/terminal_border.tres" id="3_border"]
+[ext_resource type="Texture2D" path="res://sprites/placeholders/cast_upgrade.svg" id="4_upgrade_icon"]
+[ext_resource type="Texture2D" path="res://sprites/items/spyglass.svg" id="5_gift_icon"]
+[ext_resource type="Texture2D" path="res://sprites/environment/tackle_box.png" id="6_storage_icon"]
+[ext_resource type="Texture2D" path="res://sprites/placeholders/fish.png" id="7_collection_icon"]
+[ext_resource type="Texture2D" path="res://sprites/challenges/streak_3.png" id="8_challenge_icon"]
 
 [node name="ShopMenu" type="CanvasLayer"]
 process_mode = 3
@@ -32,50 +37,166 @@ grow_vertical = 2
 mouse_filter = 2
 
 [node name="NavTabs" type="VBoxContainer" parent="TerminalRoot"]
-offset_top = 165
+offset_top = 135
 offset_right = 132
-offset_bottom = 645
+offset_bottom = 735
 theme = ExtResource("2_theme")
 theme_override_constants/separation = 9
+
 [node name="UpgradesTab" type="Button" parent="TerminalRoot/NavTabs"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(132, 86)
+custom_minimum_size = Vector2(132, 252)
 layout_mode = 2
 toggle_mode = true
-text = "UPG"
-tooltip_text = "Upgrades"
+clip_contents = true
+text = ""
+tooltip_text = "upgrades"
+
+[node name="Icon" type="TextureRect" parent="TerminalRoot/NavTabs/UpgradesTab"]
+offset_left = 24.0
+offset_top = 12.0
+offset_right = 84.0
+offset_bottom = 64.0
+mouse_filter = 2
+texture = ExtResource("4_upgrade_icon")
+expand_mode = 1
+stretch_mode = 5
+texture_filter = 1
+
+[node name="VerticalTitle" type="Label" parent="TerminalRoot/NavTabs/UpgradesTab"]
+offset_left = 88.0
+offset_top = 76.0
+offset_right = 340.0
+offset_bottom = 106.0
+rotation = 1.57079632679
+mouse_filter = 2
+text = "UPGRADES"
+theme_type_variation = &"TitleLabel"
+theme_override_font_sizes/font_size = 30
 
 [node name="GiftsTab" type="Button" parent="TerminalRoot/NavTabs"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(132, 86)
+custom_minimum_size = Vector2(132, 72)
 layout_mode = 2
 toggle_mode = true
-text = "GFT"
-tooltip_text = "Gifts"
+clip_contents = true
+text = ""
+tooltip_text = "gifts"
+
+[node name="Icon" type="TextureRect" parent="TerminalRoot/NavTabs/GiftsTab"]
+offset_left = 24.0
+offset_top = 12.0
+offset_right = 84.0
+offset_bottom = 64.0
+mouse_filter = 2
+texture = ExtResource("5_gift_icon")
+expand_mode = 1
+stretch_mode = 5
+texture_filter = 1
+
+[node name="VerticalTitle" type="Label" parent="TerminalRoot/NavTabs/GiftsTab"]
+offset_left = 88.0
+offset_top = 76.0
+offset_right = 340.0
+offset_bottom = 106.0
+rotation = 1.57079632679
+mouse_filter = 2
+text = "GIFTS"
+theme_type_variation = &"TitleLabel"
+theme_override_font_sizes/font_size = 30
 
 [node name="StorageTab" type="Button" parent="TerminalRoot/NavTabs"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(132, 86)
+custom_minimum_size = Vector2(132, 72)
 layout_mode = 2
 toggle_mode = true
-text = "BOX"
-tooltip_text = "Storage"
+clip_contents = true
+text = ""
+tooltip_text = "storage"
+
+[node name="Icon" type="TextureRect" parent="TerminalRoot/NavTabs/StorageTab"]
+offset_left = 24.0
+offset_top = 12.0
+offset_right = 84.0
+offset_bottom = 64.0
+mouse_filter = 2
+texture = ExtResource("6_storage_icon")
+expand_mode = 1
+stretch_mode = 5
+texture_filter = 1
+
+[node name="VerticalTitle" type="Label" parent="TerminalRoot/NavTabs/StorageTab"]
+offset_left = 88.0
+offset_top = 76.0
+offset_right = 340.0
+offset_bottom = 106.0
+rotation = 1.57079632679
+mouse_filter = 2
+text = "STORAGE"
+theme_type_variation = &"TitleLabel"
+theme_override_font_sizes/font_size = 30
 
 [node name="CollectionTab" type="Button" parent="TerminalRoot/NavTabs"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(132, 86)
+custom_minimum_size = Vector2(132, 72)
 layout_mode = 2
 toggle_mode = true
-text = "DEX"
-tooltip_text = "Collection"
+clip_contents = true
+text = ""
+tooltip_text = "collection"
+
+[node name="Icon" type="TextureRect" parent="TerminalRoot/NavTabs/CollectionTab"]
+offset_left = 24.0
+offset_top = 12.0
+offset_right = 84.0
+offset_bottom = 64.0
+mouse_filter = 2
+texture = ExtResource("7_collection_icon")
+expand_mode = 1
+stretch_mode = 5
+texture_filter = 1
+
+[node name="VerticalTitle" type="Label" parent="TerminalRoot/NavTabs/CollectionTab"]
+offset_left = 88.0
+offset_top = 76.0
+offset_right = 340.0
+offset_bottom = 106.0
+rotation = 1.57079632679
+mouse_filter = 2
+text = "COLLECTION"
+theme_type_variation = &"TitleLabel"
+theme_override_font_sizes/font_size = 30
 
 [node name="ChallengesTab" type="Button" parent="TerminalRoot/NavTabs"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(132, 86)
+custom_minimum_size = Vector2(132, 72)
 layout_mode = 2
 toggle_mode = true
-text = "CHL"
-tooltip_text = "Challenges"
+clip_contents = true
+text = ""
+tooltip_text = "challenges"
+
+[node name="Icon" type="TextureRect" parent="TerminalRoot/NavTabs/ChallengesTab"]
+offset_left = 24.0
+offset_top = 12.0
+offset_right = 84.0
+offset_bottom = 64.0
+mouse_filter = 2
+texture = ExtResource("8_challenge_icon")
+expand_mode = 1
+stretch_mode = 5
+texture_filter = 1
+
+[node name="VerticalTitle" type="Label" parent="TerminalRoot/NavTabs/ChallengesTab"]
+offset_left = 88.0
+offset_top = 76.0
+offset_right = 340.0
+offset_bottom = 106.0
+rotation = 1.57079632679
+mouse_filter = 2
+text = "CHALLENGES"
+theme_type_variation = &"TitleLabel"
+theme_override_font_sizes/font_size = 30
 
 [node name="Panel" type="PanelContainer" parent="TerminalRoot"]
 offset_left = 108

@@ -13,6 +13,8 @@ const LOCKED_TINT := Color(0.72, 0.75, 0.75, 0.82)
 const DARK_TEXT := Color("17363b")
 const DIM_TEXT := Color("45646a")
 const WARNING_TEXT := Color("984b24")
+const TAB_CLOSED_HEIGHT := 72.0
+const TAB_OPEN_HEIGHT := 252.0
 
 @onready var _upgrades_tab: Button = %UpgradesTab
 @onready var _gifts_tab: Button = %GiftsTab
@@ -40,6 +42,7 @@ var _entry_buttons: Array[Button] = []
 var _selected_index: int = 0
 var _button_group := ButtonGroup.new()
 var _last_order_message := ""
+var _tab_tween: Tween
 
 
 func _ready() -> void:
@@ -58,6 +61,7 @@ func _ready() -> void:
 	ChallengeManager.progress_reset.connect(_on_challenge_reset)
 	FishingManager.fish_caught.connect(_on_inventory_changed)
 	_refresh_page()
+	_update_nav_tabs(false)
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -76,6 +80,7 @@ func open() -> void:
 	show()
 	ShopManager.set_shop_open(true)
 	_refresh_page()
+	_update_nav_tabs(false)
 	_upgrades_tab.grab_focus()
 
 
@@ -92,8 +97,29 @@ func _select_page(page: int) -> void:
 	_selected_index = 0
 	_last_order_message = ""
 	_refresh_page()
+	_update_nav_tabs(true)
 	if not _entry_buttons.is_empty():
 		_entry_buttons[0].grab_focus()
+
+
+# The active icon-tab unfolds downwards to show its sideways title.
+# The labels and icons themselves are editable child nodes in shop_menu.tscn.
+func _update_nav_tabs(animate: bool) -> void:
+	if _tab_tween != null and _tab_tween.is_running():
+		_tab_tween.kill()
+	if animate:
+		_tab_tween = create_tween().set_parallel(true).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	for i in range(_nav_buttons.size()):
+		var tab: Button = _nav_buttons[i]
+		var caption: Label = tab.get_node("VerticalTitle") as Label
+		var new_height := TAB_OPEN_HEIGHT if i == _page else TAB_CLOSED_HEIGHT
+		var new_alpha := 1.0 if i == _page else 0.0
+		if animate:
+			_tab_tween.tween_property(tab, "custom_minimum_size:y", new_height, 0.23)
+			_tab_tween.tween_property(caption, "modulate:a", new_alpha, 0.16)
+		else:
+			tab.custom_minimum_size.y = new_height
+			caption.modulate.a = new_alpha
 
 
 func _refresh_page() -> void:
@@ -324,12 +350,11 @@ func _show_details() -> void:
 func _show_trade_details(trade: TradeData) -> void:
 	_description.text = "Fishing equipment upgrade." if _page == Page.UPGRADES else "A present for someone in town."
 	_add_detail_line("REQUIRES:", DIM_TEXT)
+	# Sprite + actual owned/required counts, one row per required fish.
 	for requirement in trade.requirements:
 		if requirement == null or requirement.item == null:
 			continue
-		var have: int = ShopManager.count_item(requirement.item.item_id)
-		var line := "%s   %d / %d" % [_human_name(requirement.item.item_id), have, requirement.amount]
-		_add_detail_line(line, DARK_TEXT if have >= requirement.amount else WARNING_TEXT)
+		_costs.add_child(_make_requirement_row(requirement))
 
 	if trade.reward_method != &"":
 		_add_detail_line("REWARD: %s +%d" % [
@@ -349,6 +374,38 @@ func _show_trade_details(trade: TradeData) -> void:
 		_status.text = "LOCKED: %s" % ("Complete a hidden challenge" if locking.hidden else locking.display_name)
 	elif _order_button.disabled:
 		_status.text = "Not enough items to trade."
+
+
+# Use the real ItemData sprite and the count from the existing inventory.
+# Keep the readable name as a tooltip, rather than crowding the details panel.
+func _make_requirement_row(requirement: TradeRequirement) -> Control:
+	var have: int = ShopManager.count_item(requirement.item.item_id)
+	var row := HBoxContainer.new()
+	row.custom_minimum_size.y = 60.0
+	row.add_theme_constant_override("separation", 12)
+	row.tooltip_text = _human_name(requirement.item.item_id)
+
+	var icon_frame := PanelContainer.new()
+	icon_frame.custom_minimum_size = Vector2(60, 60)
+	icon_frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	row.add_child(icon_frame)
+
+	var icon := TextureRect.new()
+	icon.texture = requirement.item.sprite
+	icon.custom_minimum_size = Vector2(48, 48)
+	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	icon_frame.add_child(icon)
+
+	var count := Label.new()
+	count.theme_type_variation = &"TitleLabel"
+	count.text = "%d / %d" % [have, requirement.amount]
+	count.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	count.add_theme_color_override("font_color", DARK_TEXT if have >= requirement.amount else WARNING_TEXT)
+	row.add_child(count)
+	return row
 
 
 func _show_storage_details(entry: Dictionary) -> void:
