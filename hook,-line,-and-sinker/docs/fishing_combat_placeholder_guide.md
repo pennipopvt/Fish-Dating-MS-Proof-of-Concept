@@ -19,12 +19,13 @@ backward on its own outside a close-parry contest or the brief miss dash.
 
 ## Distance and tension
 
-- **Dash distance:** `max(escape_rate, 0) × miss_dash_speed_multiplier × miss_dash_duration`.
-  At the default 3× dash-speed multiplier, a fish with `escape_rate = 0.1`
-  dashes 0.075 progress over a 0.25-second dash (roughly 23 world pixels
-  for the current line-distance settings). Dash interpolation is linear so
-  it is one clean movement. Slow fish have shorter dashes unless you
-  increase the multiplier or the fish's `escape_rate`.
+- **Dash distance:** `max(attack.escape_rate, 0) × fish.miss_dash_speed_multiplier × fish.miss_dash_duration`.
+  Each fish has its own dash duration (default 0.25 s) and speed multiplier
+  (default 3×), editable on its **FishData** resource. At these defaults,
+  an attack with `escape_rate = 0.1` dashes 0.075 progress (roughly 23 world
+  pixels with the current line settings). Interpolation stays linear.
+  The attack's own escape rate remains in **FishEscapeState**, allowing
+  individual attacks to have different movement speeds.
 - **Automatic miss timing:** If no close or perfect parry is landed,
   the dash starts when `counter_window + close_late_window` elapses
   after attack onset, not when `state_length` expires.
@@ -43,8 +44,8 @@ backward on its own outside a close-parry contest or the brief miss dash.
 | Source | Property | Meaning |
 | --- | --- | --- |
 | `FishEscapeState` | `escape_rate` | Movement speed for close-parry resistance and the dash (progress/second) |
-| `FishingController` | `miss_dash_duration` | How long each miss dash lasts (default 0.20 s) |
-| `FishingController` | `miss_dash_speed_multiplier` | Dash speed boost relative to the fish's `escape_rate` (default 3×) |
+| `FishData → Miss Dash` | `miss_dash_duration` | How long this fish dashes on a miss (default 0.25 s) |
+| `FishData → Miss Dash` | `miss_dash_speed_multiplier` | Dash speed boost relative to the current attack's `escape_rate` (default 3×) |
 | `FishEscapeState` | `pre_windup_duration` | Uninterruptible attack-warning length |
 | `FishEscapeState` | `windup_duration` | Parry telegraph length |
 | `FishEscapeState` | `close_early_window` / `counter_window` / `close_late_window` | Early close, perfect, and late close timing |

@@ -42,11 +42,7 @@ var last_scroll_ms: int = -100000
 @export_range(2, 6, 1) var strong_reel_scrolls: int = 3
 @export_range(0.05, 0.3, 0.01) var strong_reel_interval: float = 0.15
 
-## One continuous burst of distance loss on a failed parry (seconds).
-@export_range(0.05, 0.5, 0.01) var miss_dash_duration: float = 0.20
-## Dash speed is multiplied relative to this fish's regular escape_rate.
-## A dash should travel noticeably farther than ordinary swimming.
-@export_range(1.0, 8.0, 0.25) var miss_dash_speed_multiplier: float = 3.0
+# Dash settings live on FishData, so every species can behave differently.
 var _miss_dash_tween: Tween
 
 #band-aid fix to avoid accidentally requeueing interact when exiting since exit and interact are the same input
@@ -561,11 +557,12 @@ func _fail_parry() -> void:
 	_set_reel_open(false, false)
 	# One constant-speed burst: normal fish movement speed, boosted for
 	# the dash, multiplied by the dash duration. This is in progress units.
-	var dash_speed: float = maxf(active_attack.escape_rate, 0.0) * miss_dash_speed_multiplier
-	var dash_target: float = clampf(progress - dash_speed * miss_dash_duration, 0.0, 1.0)
+	var dash_duration: float = hooked_fish.miss_dash_duration
+	var dash_speed: float = maxf(active_attack.escape_rate, 0.0) * hooked_fish.miss_dash_speed_multiplier
+	var dash_target: float = clampf(progress - dash_speed * dash_duration, 0.0, 1.0)
 	tension = clampf(tension + active_attack.miss_tension_gain * hooked_fish.attack_tension_multiplier, 0.0, 1.0)
 	attack_phase = AttackPhase.DASH
-	phase_time = miss_dash_duration
+	phase_time = dash_duration
 	recovery_timer = recovery_delay
 	fishing_line.set_tension(tension)
 	fishing_line.flash_parry_result(&"miss")
@@ -574,7 +571,7 @@ func _fail_parry() -> void:
 	if _miss_dash_tween != null and _miss_dash_tween.is_running():
 		_miss_dash_tween.kill()
 	_miss_dash_tween = create_tween().set_trans(Tween.TRANS_LINEAR)
-	_miss_dash_tween.tween_method(_update_miss_dash, progress, dash_target, miss_dash_duration)
+	_miss_dash_tween.tween_method(_update_miss_dash, progress, dash_target, dash_duration)
 	_miss_dash_tween.tween_callback(_on_miss_dash_finished)
 	print("MISSED PARRY / DASH: ", active_attack.state_name)
 
