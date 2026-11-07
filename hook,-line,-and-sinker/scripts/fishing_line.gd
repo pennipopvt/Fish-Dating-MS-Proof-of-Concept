@@ -45,8 +45,6 @@ func set_windup_duration(seconds: float) -> void:
 
 
 @export var stunned_line_color: Color = Color("#ffe55c")
-@export var pre_windup_line_color: Color = Color("#fff2a0")
-var pre_windup_warning: bool = false
 @export var stun_glow_color: Color = Color(1.0, 0.83, 0.18, 0.32)
 var stunned_line: bool = false
 var stun_glow: Line2D
@@ -70,9 +68,6 @@ func set_tension(amount: float) -> void:
 	current_tension = amount
 	if stunned_line:
 		default_color = stunned_line_color
-		return
-	if pre_windup_warning:
-		default_color = pre_windup_line_color
 		return
 	var normalized: float = clampf(amount, 0.0, 1.0)
 	if normalized <= strained_threshold:
@@ -148,7 +143,6 @@ func hide_fish_for_catch() -> void:
 
 func close() -> void:
 	bobber.hide()
-	pre_windup_warning = false
 	set_stunned(false)
 	ripple_tell.hide()
 	current_ripple_animation = &""
@@ -202,13 +196,8 @@ func play_ripple(animation: StringName) -> void:
 	if animation != current_ripple_animation:
 		current_ripple_animation = animation
 		ripple_tell.speed_scale = windup_playback_scale if animation == &"windup" else 1.0
-		# Color-coded temporary feedback. Replace animation frames in the scene
-		# later without changing any of the timing/combat code.
-		match animation:
-			&"pre_windup": ripple_tell.modulate = Color(1.0, 0.85, 0.45)
-			&"counter_close": ripple_tell.modulate = Color(0.42, 1.0, 0.70)
-			&"counter_fail": ripple_tell.modulate = Color(1.0, 0.38, 0.30)
-			_: ripple_tell.modulate = Color.WHITE
+		# Show the authored frames without applying a tint.
+		ripple_tell.modulate = Color.WHITE
 		ripple_tell.play(animation)
 	ripple_tell.show()
 
@@ -216,9 +205,6 @@ func set_telegraph(phase: int, amount: float) -> void:
 	tell_progress = amount
 	var entering_attack: bool = phase == 3 and current_telegraph_phase != 3
 	current_telegraph_phase = phase
-	if pre_windup_warning != (phase == 5):
-		pre_windup_warning = phase == 5
-		set_tension(current_tension)
 	if entering_attack:
 		attack_start_pending = true
 	elif phase != 3:

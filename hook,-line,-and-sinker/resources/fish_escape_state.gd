@@ -21,7 +21,7 @@ extends Resource
 @export_range(0.0, 0.5, 0.01) var close_early_window: float = 0.10
 ## Near-hit just after the perfect window closes (resisted reeling).
 @export_range(0.0, 0.5, 0.01) var close_late_window: float = 0.18
-## A failed parry makes the fish pull farther away immediately.
+## How far a failed parry dashes away; movement duration is on FishingController.
 @export_range(0.0, 0.5, 0.01) var miss_progress_loss: float = 0.04
 ## A failed parry adds tension scaled by the fish's attack strength.
 @export_range(0.0, 1.0, 0.01) var miss_tension_gain: float = 0.10

@@ -31,9 +31,9 @@ names unchanged. `start_attack`, `counter_close`, `counter_fail`, and
 `counter_success` should be **non-looping**; `pre_windup`, `attacking`,
 `stun`, and `idle` may loop.
 
-The fishing line turns pale yellow during pre-windup; its color is exported as
-`pre_windup_line_color` in `FishingLine`. The flash tints are temporarily set
-in `res://scripts/fishing_line.gd` under `play_ripple()`.
+Ripple animations use their own authored colors, with no extra tint. The
+existing line color still reflects line tension (and stun) but does not change
+color just because pre-windup begins.
 
 Do **not** draw a visible fish sprite for in-combat attacks: the fish stays
 beneath the opaque water; water/line/ripple effects do the telegraphing.
@@ -49,9 +49,13 @@ properties still work. The new exports are:
 | `close_early_window` | 0.10 s | Close-parry timing just before attack starts |
 | `counter_window` | 0.16 s | Existing perfect timing from attack onset |
 | `close_late_window` | 0.18 s | Close-parry timing just after perfect timing |
-| `miss_progress_loss` | 0.04 | Distance lost for a failed parry, before strength scaling |
+| `miss_progress_loss` | 0.04 | Distance lost in a smooth failed-parry dash, before strength scaling |
 | `miss_tension_gain` | 0.10 | Tension added for a failed parry, before strength scaling |
 | `stun_duration` | 1.7 s | Existing perfect-parry stun |
+
+The FishingController has `miss_dash_duration` (default **0.20 s**) to control
+how quickly a failed parry moves the fish away. Passive escape pauses during
+the dash so it is one continuous motion.
 
 `strong_reel_scrolls` (default 3) and `strong_reel_interval`
 (default 0.15 s) remain editable on the `FishingController`: a parry
@@ -65,7 +69,7 @@ These signals are ready for future player animation, sound, or UI hooks.
 
 ## Manual gameplay checklist
 
-1. Scroll before a parry window: no reel progress; failed parry pushes fish out and increases tension.
+1. Scroll during pre-windup or recovery: no reel progress and no failed-parry penalty. Scroll outside the parry windows *during windup or attack*: a miss dashes the fish away over 0.2 seconds and increases tension.
 2. Scroll at the late end of windup or just after the perfect interval: close parry opens resisted reeling while the fish keeps pulling.
 3. Counter immediately after attack starts: perfect parry gives the old stun and free reeling.
 4. Reeling stops being effective when the next `pre_windup` warning begins.
