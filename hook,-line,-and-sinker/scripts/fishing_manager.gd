@@ -8,8 +8,7 @@ signal bait_changed(bait: BaitData)
 signal parry_resolved(result: StringName)
 signal upgrades_changed
 
-# Overridable for isolated regression tests; player saves use this default.
-var upgrade_save_path: String = "user://fishing_upgrades.cfg"
+# Upgrade ownership, unlocks and equipped bait are session-only for now.
 const HARD_BAIT_ID: StringName = &"bait_b"
 const BASIC_BAIT_ID: StringName = &"bait_a"
 const STRONGER_REEL_ID: StringName = &"stronger_reel"
@@ -35,10 +34,14 @@ var tension_gain_multiplier: float = 1.0
 @export var max_casts_per_session: int = 3
 
 func _ready() -> void:
-	_load_upgrade_progress()
-	# Always start with basic bait if the selected bait hasn't been earned.
-	if equipped_bait == null or not unlocked_bait_ids.has(equipped_bait.bait_id):
-		equipped_bait = _find_bait(BASIC_BAIT_ID)
+	# A fresh launch starts with no purchases or unlocked hard bait.
+	# The fishing manager is an autoload and keeps these during this run.
+	owned_upgrade_ids.clear()
+	unlocked_bait_ids.clear()
+	unlocked_bait_ids.append(BASIC_BAIT_ID)
+	reel_strength_multiplier = 1.0
+	tension_gain_multiplier = 1.0
+	equipped_bait = _find_bait(BASIC_BAIT_ID)
 
 
 func _find_bait(id: StringName) -> BaitData:
@@ -72,7 +75,6 @@ func shop_reward_unlock_hard_bait(amount: int) -> void:
 		unlocked_bait_ids.append(HARD_BAIT_ID)
 	bait_changed.emit(equipped_bait)
 	upgrades_changed.emit()
-	_save_upgrade_progress()
 
 
 func shop_reward_stronger_reel(amount: int) -> void:
@@ -81,7 +83,6 @@ func shop_reward_stronger_reel(amount: int) -> void:
 	owned_upgrade_ids.append(STRONGER_REEL_ID)
 	reel_strength_multiplier = 1.25
 	upgrades_changed.emit()
-	_save_upgrade_progress()
 
 
 func shop_reward_reinforced_line(amount: int) -> void:
@@ -90,40 +91,6 @@ func shop_reward_reinforced_line(amount: int) -> void:
 	owned_upgrade_ids.append(REINFORCED_LINE_ID)
 	tension_gain_multiplier = 0.8
 	upgrades_changed.emit()
-	_save_upgrade_progress()
-
-
-func _save_upgrade_progress() -> void:
-	var config := ConfigFile.new()
-	config.set_value("upgrades", "owned", Array(owned_upgrade_ids).map(func(id): return String(id)))
-	config.set_value("upgrades", "equipped_bait", String(equipped_bait.bait_id) if equipped_bait != null else String(BASIC_BAIT_ID))
-	if config.save(upgrade_save_path) != OK:
-		push_warning("Could not save fishing upgrades")
-
-
-func _load_upgrade_progress() -> void:
-	var config := ConfigFile.new()
-	if config.load(upgrade_save_path) != OK:
-		return
-	for raw_id in config.get_value("upgrades", "owned", []):
-		var id := StringName(str(raw_id))
-		match id:
-			HARD_BAIT_UPGRADE_ID:
-				if not owned_upgrade_ids.has(id) and _find_bait(HARD_BAIT_ID) != null:
-					owned_upgrade_ids.append(id)
-					if not unlocked_bait_ids.has(HARD_BAIT_ID):
-						unlocked_bait_ids.append(HARD_BAIT_ID)
-			STRONGER_REEL_ID:
-				if not owned_upgrade_ids.has(id):
-					owned_upgrade_ids.append(id)
-					reel_strength_multiplier = 1.25
-			REINFORCED_LINE_ID:
-				if not owned_upgrade_ids.has(id):
-					owned_upgrade_ids.append(id)
-					tension_gain_multiplier = 0.8
-	var chosen := StringName(str(config.get_value("upgrades", "equipped_bait", String(BASIC_BAIT_ID))))
-	if unlocked_bait_ids.has(chosen):
-		equipped_bait = _find_bait(chosen)
 
 
 func shop_reward_add_casts(amount: int) -> void:
@@ -140,7 +107,6 @@ func equip_bait(bait: BaitData) -> void:
 
 	equipped_bait = bait
 	bait_changed.emit(bait)
-	_save_upgrade_progress()
 
 # Remove a recruited NPC from the pool, including duplicate entries or
 # multiple FishData resources using the same NPC scene. Ordinary fish and

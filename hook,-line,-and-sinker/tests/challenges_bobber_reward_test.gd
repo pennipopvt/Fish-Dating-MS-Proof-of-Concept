@@ -41,63 +41,39 @@ func _run_tests() -> void:
 	_expect(fish_manager.catch_dex.has(SILAS_FISH), "NPC catch appears in catch history")
 	fish_manager.free()
 
-	# A resource can be registered and even present in a previous save
-	# without appearing before Silas completes this playthrough's route.
-	const TEMP_SAVE: String = "user://bobber_session_unlock_test.cfg"
+	# Bobbers have no save file now. Every launch starts with the default,
+	# and Silas's reward is earned only during his post-scene dialogue.
 	var bobber_manager: Variant = BobberManagerScript.new()
-	bobber_manager.save_path = TEMP_SAVE
+	bobber_manager._ready()
 	var npc_id: StringName = &"test_npc"
 	var had_npc_state: bool = NPCManager.npc_states.has(npc_id)
 	var original_state: Dictionary = NPCManager.get_npc_state(npc_id).duplicate(true)
 	var flags: Dictionary = NPCManager.get_npc_state(npc_id)["flags"]
 	flags.erase(&"silas_route_complete")
 	var silas: BobberData = bobber_manager.get_bobber(&"silas")
-	_expect(silas != null, "Silas's spyglass bobber is registered")
+	_expect(silas != null, "Silas's spyglass is registered but starts locked")
+	_expect(bobber_manager.equipped_id == &"default", "classic bobber starts equipped")
+	_expect(bobber_manager.get_unlocked_bobbers().size() == 1, "only classic bobber starts available")
+	_expect(not bobber_manager.unlock_bobber(&"silas"), "Silas can't unlock before reward dialogue")
 	if silas != null:
-		_expect(silas.sprite != null, "Silas's bobber has a texture")
-		_expect(not bobber_manager.get_unlocked_bobbers().has(silas), "fresh playthrough starts with Silas bobber locked")
-		_expect(not bobber_manager.unlock_bobber(&"silas"), "can't unlock Silas's bobber before story completion")
-
-		var legacy_save := ConfigFile.new()
-		legacy_save.set_value("bobbers", "version", 1)
-		legacy_save.set_value("bobbers", "unlocked", ["default", "silas"])
-		legacy_save.set_value("bobbers", "equipped", "silas")
-		bobber_manager._restore_selection(legacy_save, false)
-		_expect(not bobber_manager.get_unlocked_bobbers().has(silas), "legacy test save cannot auto-unlock Silas")
-		_expect(bobber_manager.equipped_id == &"default", "legacy selection becomes classic bobber")
-
-		var rewarded_save := ConfigFile.new()
-		rewarded_save.set_value("bobbers", "version", 2)
-		rewarded_save.set_value("bobbers", "unlocked", ["default", "silas"])
-		rewarded_save.set_value("bobbers", "silas_reward_claimed", true)
-		rewarded_save.set_value("bobbers", "equipped", "silas")
-		bobber_manager._restore_selection(rewarded_save, false)
-		_expect(not bobber_manager.get_unlocked_bobbers().has(silas), "prior-run reward stays hidden before Silas's new route")
-		_expect(bobber_manager.get_equipped_bobber().bobber_id == &"default", "prior-run equipped Spyglass falls back to classic")
-
-		# The actual post-scene gift call only succeeds AFTER route completion.
+		_expect(not bobber_manager.get_unlocked_bobbers().has(silas), "Silas is hidden from the shelf before gift")
 		flags[&"silas_route_complete"] = true
-		bobber_manager.unlock_bobber(&"silas")
-		_expect(bobber_manager.get_unlocked_bobbers().has(silas), "reward dialogue reveals the Spyglass on the shelf")
-		_expect(bobber_manager.equip_bobber(&"silas"), "earned Spyglass is equipable")
-
-		# Simulate a full restart: restore a v2 file that explicitly says the
-		# Spyglass was claimed, but with no Silas story progress in this run.
+		_expect(bobber_manager.unlock_bobber(&"silas"), "Silas reward can unlock after dialogue")
+		_expect(bobber_manager.get_unlocked_bobbers().has(silas), "earned Spyglass appears on shelf")
+		_expect(bobber_manager.equip_bobber(&"silas"), "earned Spyglass can be equipped")
+		# A new play session resets NPC state and builds a fresh manager.
 		flags.erase(&"silas_route_complete")
-		var next_run: Variant = BobberManagerScript.new()
-		next_run.save_path = TEMP_SAVE
-		next_run._load_selection()
-		_expect(not next_run.get_unlocked_bobbers().has(silas), "restart with earned save still starts with Silas locked")
-		_expect(next_run.get_equipped_bobber().bobber_id == &"default", "restart falls back to classic bobber")
-		_expect(not next_run.equip_bobber(&"silas"), "restart cannot equip the old Spyglass")
-		next_run.free()
+		var fresh: Variant = BobberManagerScript.new()
+		fresh._ready()
+		_expect(not fresh.get_unlocked_bobbers().has(silas), "relaunch hides Silas again")
+		_expect(fresh.equipped_id == &"default", "relaunch equips classic bobber")
+		_expect(not fresh.equip_bobber(&"silas"), "relaunch cannot equip Silas")
+		fresh.free()
 
 	if had_npc_state:
 		NPCManager.npc_states[npc_id] = original_state
 	else:
 		NPCManager.npc_states.erase(npc_id)
-	if FileAccess.file_exists(TEMP_SAVE):
-		DirAccess.remove_absolute(ProjectSettings.globalize_path(TEMP_SAVE))
 	bobber_manager.free()
 	print("FAILED: %d" % failures if failures > 0 else "All challenge and bobber checks passed")
 	quit(1 if failures > 0 else 0)
