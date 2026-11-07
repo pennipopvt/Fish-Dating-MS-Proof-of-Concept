@@ -40,6 +40,7 @@ mouse_filter = 2
 
 [node name="NavTabs" type="VBoxContainer" parent="TerminalRoot" unique_id=845387299]
 layout_mode = 0
+offset_left = 36.0
 offset_top = 135.0
 offset_right = 132.0
 offset_bottom = 735.0
@@ -48,7 +49,7 @@ theme_override_constants/separation = 9
 
 [node name="UpgradesTab" type="Button" parent="TerminalRoot/NavTabs" unique_id=471544707]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(132, 252)
+custom_minimum_size = Vector2(96, 216)
 clip_contents = true
 layout_mode = 2
 tooltip_text = "upgrades"
@@ -57,10 +58,10 @@ toggle_mode = true
 [node name="Icon" type="TextureRect" parent="TerminalRoot/NavTabs/UpgradesTab" unique_id=2143776163]
 texture_filter = 1
 layout_mode = 0
-offset_left = 24.0
-offset_top = 12.0
-offset_right = 84.0
-offset_bottom = 64.0
+offset_left = 12.0
+offset_top = 9.0
+offset_right = 60.0
+offset_bottom = 57.0
 mouse_filter = 2
 texture = ExtResource("4_upgrade_icon")
 expand_mode = 1
@@ -68,18 +69,18 @@ stretch_mode = 5
 
 [node name="VerticalTitle" type="Label" parent="TerminalRoot/NavTabs/UpgradesTab" unique_id=1609800718]
 layout_mode = 0
-offset_left = 88.0
-offset_top = 76.0
-offset_right = 340.0
-offset_bottom = 106.0
-rotation = 1.5707964
+offset_left = 21.0
+offset_top = 201.0
+offset_right = 201.0
+offset_bottom = 234.0
+rotation = -1.5707964
 theme_type_variation = &"TitleLabel"
-theme_override_font_sizes/font_size = 30
+theme_override_font_sizes/font_size = 27
 text = "UPGRADES"
 
 [node name="GiftsTab" type="Button" parent="TerminalRoot/NavTabs" unique_id=1320023177]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(132, 72)
+custom_minimum_size = Vector2(96, 66)
 clip_contents = true
 layout_mode = 2
 tooltip_text = "gifts"
@@ -88,10 +89,10 @@ toggle_mode = true
 [node name="Icon" type="TextureRect" parent="TerminalRoot/NavTabs/GiftsTab" unique_id=1339411846]
 texture_filter = 1
 layout_mode = 0
-offset_left = 24.0
-offset_top = 12.0
-offset_right = 84.0
-offset_bottom = 64.0
+offset_left = 12.0
+offset_top = 9.0
+offset_right = 60.0
+offset_bottom = 57.0
 mouse_filter = 2
 texture = ExtResource("5_gift_icon")
 expand_mode = 1
@@ -99,18 +100,18 @@ stretch_mode = 5
 
 [node name="VerticalTitle" type="Label" parent="TerminalRoot/NavTabs/GiftsTab" unique_id=1944682948]
 layout_mode = 0
-offset_left = 88.0
-offset_top = 76.0
-offset_right = 340.0
-offset_bottom = 106.0
-rotation = 1.5707964
+offset_left = 21.0
+offset_top = 201.0
+offset_right = 201.0
+offset_bottom = 234.0
+rotation = -1.5707964
 theme_type_variation = &"TitleLabel"
-theme_override_font_sizes/font_size = 30
+theme_override_font_sizes/font_size = 27
 text = "GIFTS"
 
 [node name="StorageTab" type="Button" parent="TerminalRoot/NavTabs" unique_id=879580532]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(132, 72)
+custom_minimum_size = Vector2(96, 66)
 clip_contents = true
 layout_mode = 2
 tooltip_text = "storage"
@@ -119,10 +120,10 @@ toggle_mode = true
 [node name="Icon" type="TextureRect" parent="TerminalRoot/NavTabs/StorageTab" unique_id=1857474765]
 texture_filter = 1
 layout_mode = 0
-offset_left = 24.0
-offset_top = 12.0
-offset_right = 84.0
-offset_bottom = 64.0
+offset_left = 12.0
+offset_top = 9.0
+offset_right = 60.0
+offset_bottom = 57.0
 mouse_filter = 2
 texture = ExtResource("6_storage_icon")
 expand_mode = 1
@@ -130,18 +131,18 @@ stretch_mode = 5
 
 [node name="VerticalTitle" type="Label" parent="TerminalRoot/NavTabs/StorageTab" unique_id=483907256]
 layout_mode = 0
-offset_left = 88.0
-offset_top = 76.0
-offset_right = 340.0
-offset_bottom = 106.0
-rotation = 1.5707964
+offset_left = 21.0
+offset_top = 201.0
+offset_right = 201.0
+offset_bottom = 234.0
+rotation = -1.5707964
 theme_type_variation = &"TitleLabel"
-theme_override_font_sizes/font_size = 30
+theme_override_font_sizes/font_size = 27
 text = "STORAGE"
 
 [node name="CollectionTab" type="Button" parent="TerminalRoot/NavTabs" unique_id=89272909]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(132, 72)
+custom_minimum_size = Vector2(96, 66)
 clip_contents = true
 layout_mode = 2
 tooltip_text = "collection"
@@ -150,10 +151,10 @@ toggle_mode = true
 [node name="Icon" type="TextureRect" parent="TerminalRoot/NavTabs/CollectionTab" unique_id=1557686522]
 texture_filter = 1
 layout_mode = 0
-offset_left = 24.0
-offset_top = 12.0
-offset_right = 84.0
-offset_bottom = 64.0
+offset_left = 12.0
+offset_top = 9.0
+offset_right = 60.0
+offset_bottom = 57.0
 mouse_filter = 2
 texture = ExtResource("7_collection_icon")
 expand_mode = 1
@@ -161,18 +162,18 @@ stretch_mode = 5
 
 [node name="VerticalTitle" type="Label" parent="TerminalRoot/NavTabs/CollectionTab" unique_id=1756251613]
 layout_mode = 0
-offset_left = 88.0
-offset_top = 76.0
-offset_right = 340.0
-offset_bottom = 106.0
-rotation = 1.5707964
+offset_left = 21.0
+offset_top = 201.0
+offset_right = 201.0
+offset_bottom = 234.0
+rotation = -1.5707964
 theme_type_variation = &"TitleLabel"
-theme_override_font_sizes/font_size = 30
+theme_override_font_sizes/font_size = 27
 text = "COLLECTION"
 
 [node name="ChallengesTab" type="Button" parent="TerminalRoot/NavTabs" unique_id=490205985]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(132, 72)
+custom_minimum_size = Vector2(96, 66)
 clip_contents = true
 layout_mode = 2
 tooltip_text = "challenges"
@@ -181,10 +182,10 @@ toggle_mode = true
 [node name="Icon" type="TextureRect" parent="TerminalRoot/NavTabs/ChallengesTab" unique_id=671309702]
 texture_filter = 1
 layout_mode = 0
-offset_left = 24.0
-offset_top = 12.0
-offset_right = 84.0
-offset_bottom = 64.0
+offset_left = 12.0
+offset_top = 9.0
+offset_right = 60.0
+offset_bottom = 57.0
 mouse_filter = 2
 texture = ExtResource("8_challenge_icon")
 expand_mode = 1
@@ -192,13 +193,13 @@ stretch_mode = 5
 
 [node name="VerticalTitle" type="Label" parent="TerminalRoot/NavTabs/ChallengesTab" unique_id=1520668699]
 layout_mode = 0
-offset_left = 88.0
-offset_top = 76.0
-offset_right = 340.0
-offset_bottom = 106.0
-rotation = 1.5707964
+offset_left = 21.0
+offset_top = 201.0
+offset_right = 201.0
+offset_bottom = 234.0
+rotation = -1.5707964
 theme_type_variation = &"TitleLabel"
-theme_override_font_sizes/font_size = 30
+theme_override_font_sizes/font_size = 27
 text = "CHALLENGES"
 
 [node name="Panel" type="PanelContainer" parent="TerminalRoot" unique_id=1931615164]

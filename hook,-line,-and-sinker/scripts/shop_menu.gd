@@ -13,8 +13,12 @@ const LOCKED_TINT := Color(0.72, 0.75, 0.75, 0.82)
 const DARK_TEXT := Color("17363b")
 const DIM_TEXT := Color("45646a")
 const WARNING_TEXT := Color("984b24")
-const TAB_CLOSED_HEIGHT := 72.0
-const TAB_OPEN_HEIGHT := 252.0
+# Art pixels are scaled x3. The visible part of each tab is 72 screen pixels.
+# A further 24 screen pixels sit under the terminal panel.
+const TAB_VISIBLE_WIDTH := 72.0
+const TAB_CLOSED_HEIGHT := 66.0
+const TAB_TEXT_PADDING := 12.0
+const TAB_TEXT_GAP := 9.0
 
 @onready var _upgrades_tab: Button = %UpgradesTab
 @onready var _gifts_tab: Button = %GiftsTab
@@ -102,24 +106,52 @@ func _select_page(page: int) -> void:
 		_entry_buttons[0].grab_focus()
 
 
-# The active icon-tab unfolds downwards to show its sideways title.
-# The labels and icons themselves are editable child nodes in shop_menu.tscn.
+# The active icon-tab unfolds downwards to fit its exact caption.
+# Rotate the title counterclockwise and center it in the exposed tab area.
+# Labels and icons are scene nodes, so their art remains Inspector-editable.
 func _update_nav_tabs(animate: bool) -> void:
 	if _tab_tween != null and _tab_tween.is_running():
 		_tab_tween.kill()
+
 	if animate:
 		_tab_tween = create_tween().set_parallel(true).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+
 	for i in range(_nav_buttons.size()):
 		var tab: Button = _nav_buttons[i]
 		var caption: Label = tab.get_node("VerticalTitle") as Label
-		var new_height := TAB_OPEN_HEIGHT if i == _page else TAB_CLOSED_HEIGHT
-		var new_alpha := 1.0 if i == _page else 0.0
+		var text_width: float = _layout_vertical_caption(caption)
+		var padded_height: float = TAB_CLOSED_HEIGHT + TAB_TEXT_GAP + text_width + TAB_TEXT_PADDING
+		# Round to the game's 3x pixel-art grid.
+		var expanded_height: float = ceil(padded_height / float(PixelUI.SCALE)) * float(PixelUI.SCALE)
+		var target_height: float = expanded_height if i == _page else TAB_CLOSED_HEIGHT
+		var target_alpha: float = 1.0 if i == _page else 0.0
+
 		if animate:
-			_tab_tween.tween_property(tab, "custom_minimum_size:y", new_height, 0.23)
-			_tab_tween.tween_property(caption, "modulate:a", new_alpha, 0.16)
+			_tab_tween.tween_property(tab, "custom_minimum_size:y", target_height, 0.23)
+			_tab_tween.tween_property(caption, "modulate:a", target_alpha, 0.15)
 		else:
-			tab.custom_minimum_size.y = new_height
-			caption.modulate.a = new_alpha
+			tab.custom_minimum_size.y = target_height
+			caption.modulate.a = target_alpha
+
+
+func _layout_vertical_caption(caption: Label) -> float:
+	var font: Font = caption.get_theme_font("font")
+	var font_size: int = caption.get_theme_font_size("font_size")
+	var text_width: float = ceil(font.get_string_size(caption.text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x)
+	var text_height: float = ceil(font.get_height(font_size))
+
+	# A -90 degree rotation displays the word bottom-to-top.
+	# Rotating around its top-left means the resulting bounds are:
+	# x = [position.x, position.x + text_height]
+	# y = [position.y - text_width, position.y]
+	caption.rotation = -PI / 2.0
+	caption.pivot_offset = Vector2.ZERO
+	caption.size = Vector2(text_width, text_height)
+	caption.position = Vector2(
+		round((TAB_VISIBLE_WIDTH - text_height) / 2.0),
+		TAB_CLOSED_HEIGHT + TAB_TEXT_GAP + text_width
+	)
+	return text_width
 
 
 func _refresh_page() -> void:
