@@ -1,85 +1,74 @@
-# Fishing combat — temporary art and tuning
+# Fishing combat state machine
 
-The new combat loop is **pre-windup warning → windup → attack → recovery**. 
-A **close parry** allows resisted reeling; a **perfect parry** retains the
-existing stun, tension relief, and free reeling. On a miss, the fish makes
-exactly one 0.2-second dash away, adds tension, then immediately starts a new attack warning. Reeling stays locked until
-the player earns a close or perfect parry. There is no passive or continuous attack-driven
-backward movement in this version.
+Combat uses the fish's current `FishEscapeState` for attack timings and
+movement speed. The visible attack/feedback animations are still editable in
+`res://scenes/fishing_controller.tscn` → `FishingLine/RippleTell`.
 
-## Replacing the animation placeholders (no code changes)
+## State transitions
 
-Open `res://scenes/fishing_controller.tscn`. Select:
-`FishingController / FishingLine / RippleTell`, then open **Sprite Frames** in the Inspector.
-
-The animations are named:
-
-| Animation | Temporary effect | Intended replacement |
+| Current state | What happens | Next state |
 | --- | --- | --- |
-| `pre_windup` | your authored animation | warning ripple/line cue |
-| `windup` | existing ripples (preserved) | building attack tell |
-| `start_attack` | existing small splash (preserved) | one-shot attack onset |
-| `attacking` | existing ripples (preserved) | looping fish-pull effect |
-| `counter_close` | your authored animation | close-parry splash |
-| `counter_success` | existing stun flash (preserved) | perfect-parry effect |
-| `counter_fail` | your authored animation | failed-parry effect |
-| `stun` | existing ripple (preserved) | stunned water effect |
-| `idle` | existing calm water ripples (preserved) | recovery effect |
+| **PRE_WINDUP** | Immediately starts when a fish hooks or the previous attack resolves. Reeling/parry scrolls are ignored. Plays `pre_windup`. | WINDUP after `pre_windup_duration` |
+| **WINDUP** | Plays the timed `windup` telegraph. A close-enough parry near the attack opens contested reeling; an early miss starts DASH. | ATTACK when the windup ends, or DASH on miss |
+| **ATTACK** | Plays `start_attack` then `attacking`. Close parry allows reeling **while the fish swims away**; perfect parry interrupts with STUN. A missed parry, including letting the attack expire without parrying, starts DASH. | PRE_WINDUP after a successful close encounter's attack finishes, DASH on miss, or STUN on perfect |
+| **DASH** | Exactly one constant-speed backward movement; **all reel input is locked**. | Immediately PRE_WINDUP at the end of `miss_dash_duration` |
+| **STUN** | Perfect parry. Fish cannot pull away and **reeling adds no tension**. Existing counter-tension relief still applies. | Immediately PRE_WINDUP when `stun_duration` ends |
 
-The animation frames remain editable under these names. Continue using
-**32×32 art-pixel frames** with transparent backgrounds, and keep the
-animation names unchanged. `start_attack`, `counter_close`, `counter_fail`, and
-`counter_success` should be **non-looping**; `pre_windup`, `attacking`,
-`stun`, and `idle` may loop.
+There is **no recovery/idle delay between attacks**. The fish does not drift
+backward on its own outside a close-parry contest or the brief miss dash.
 
-Ripple animations use their own authored colors, with no extra tint. The
-existing line color still reflects line tension (and stun) but does not change
-color just because pre-windup begins.
+## Distance and tension
 
-Do **not** draw a visible fish sprite for in-combat attacks: the fish stays
-beneath the opaque water; water/line/ripple effects do the telegraphing.
+- **Dash distance:** `max(escape_rate, 0) × miss_dash_duration`. For
+  example, a fish moving at 0.3 progress/second dashes backward by 0.06
+  progress during a 0.20-second dash. Dash interpolation is linear so it is
+  one clean movement.
+- **Close parry:** The player can reel as usual, with normal
+  tension buildup. In WINDUP/ATTACK the fish simultaneously retreats at
+  `escape_rate` progress/second; the player's reeling fights that movement.
+- **Perfect parry:** Fish movement is stopped for the stun. Scrolls
+  increase reel progress but add **zero tension**, even if the attack was
+  previously in progress.
+- **Miss:** Applies the existing `miss_tension_gain` penalty once,
+  then completes the dash before deciding if the fish escaped. Reeling
+  cannot resume during the dash or pre-windup.
 
-## Adjusting combat difficulty in the Inspector
+## Inspector tuning
 
-Each fish's attack entries are `FishEscapeState` resources. Existing attack
-properties still work. The new exports are:
-
-| Property | Default | Meaning |
+| Source | Property | Meaning |
 | --- | --- | --- |
-| `pre_windup_duration` | 0.22 s | Warning before windup; closes the reel opening |
-| `close_early_window` | 0.10 s | Close-parry timing just before attack starts |
-| `counter_window` | 0.16 s | Existing perfect timing from attack onset |
-| `close_late_window` | 0.18 s | Close-parry timing just after perfect timing |
-| `miss_progress_loss` | 0.04 | Distance lost in a smooth failed-parry dash, before strength scaling |
-| `miss_tension_gain` | 0.10 | Tension added for a failed parry, before strength scaling |
-| `stun_duration` | 1.7 s | Existing perfect-parry stun |
+| `FishEscapeState` | `escape_rate` | Movement speed for close-parry resistance and the dash (progress/second) |
+| `FishingController` | `miss_dash_duration` | How long each miss dash lasts (default 0.20 s) |
+| `FishEscapeState` | `pre_windup_duration` | Uninterruptible attack-warning length |
+| `FishEscapeState` | `windup_duration` | Parry telegraph length |
+| `FishEscapeState` | `close_early_window` / `counter_window` / `close_late_window` | Early close, perfect, and late close timing |
+| `FishEscapeState` | `state_length` | Active attack duration |
+| `FishEscapeState` | `stun_duration` | Perfect-parry free-reel duration |
+| `FishEscapeState` | `miss_tension_gain` | One-time extra tension on a miss |
+| `FishingController` | `strong_reel_scrolls` / `strong_reel_interval` | Existing fast-scroll gesture; final qualifying scroll determines the parry outcome |
 
-The FishingController has `miss_dash_duration` (default **0.20 s**) to control
-how quickly a failed parry dashes away. The dash animates the distance and
-line together; **all** passive and attack-rate backward drift is disabled,
-including after the dash. The next pre-windup begins when the dash completes,
-so reeling remains locked until a close/perfect parry.
-`FishData.passive_escape_rate` is retained for existing resources but not used
-for backward movement.
+`FishEscapeState.miss_progress_loss`, `recovery_duration`, and
+`grace_start`, plus `FishData.passive_escape_rate`, are retained for
+saved-resource compatibility but do not determine the current combat movement.
 
-`strong_reel_scrolls` (default 3) and `strong_reel_interval`
-(default 0.15 s) remain editable on the `FishingController`: a parry
-resolves after the existing strong-reel scroll sequence. The last qualifying
-scroll determines perfect vs. close timing.
+## Swapping animation art
 
-The controller emits `parry_resolved(result)` with `"miss"`,
-`"close"`, or `"perfect"`, plus
-`reel_window_changed(is_open, is_free)`.
-These signals are ready for future player animation, sound, or UI hooks.
+Open `scenes/fishing_controller.tscn` → `FishingLine` →
+`RippleTell` and edit its **SpriteFrames**. Keep these animation names:
+`pre_windup`, `windup`, `start_attack`, `attacking`,
+`counter_close`, `counter_fail`, `counter_success`, `stun`,
+and `idle`. Your current frames are kept. No temporary color tints are
+applied. A new `pre_windup` immediately replaces an unfinished
+`counter_fail` flash after a dash.
 
-## Manual gameplay checklist
+## Regression checks
 
-1. Scroll during pre-windup or recovery: no reel progress and no failed-parry penalty. Scroll outside the parry windows *during windup or attack*: a miss dashes the fish away over 0.2 seconds and increases tension.
-2. Miss during windup/attack: the fish dashes once over 0.2 seconds, then immediately starts a new pre-windup warning; scrolling cannot reel it in until a close/perfect parry.
-3. Scroll at the late end of windup or just after the perfect interval: close parry opens resisted reeling without automatic backward drift.
-4. Counter immediately after attack starts: perfect parry gives the old stun and free reeling.
-5. An upcoming `pre_windup` warning closes the reel window for the next parry opportunity.
-6. Catch, lost line, exit, and recast still reset the combat state.
+Run the optional script from the Godot project folder:
 
-Gameplay is **not engine-tested** by this guide; run the scene in Godot and tune
-the per-fish values to your desired timing.
+```sh
+godot --headless --path . -s res://tests/fishing_combat_states_test.gd
+```
+
+It checks the state transitions, dash distance, close-parry resistance,
+perfect-parry zero-tension movement, and scroll lock. These tests must
+still be run locally in Godot.

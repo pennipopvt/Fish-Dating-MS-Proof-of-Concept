@@ -21,12 +21,15 @@ var fish_esc_rate: float = 0
 var recovery_timer: float = 0
 
 # The chosen FishEscapeState owns the attack properties.
-enum AttackPhase { RECOVERY, PRE_WINDUP, WINDUP, ATTACK, STUN }
+# Each encounter progresses through mutually exclusive combat states.
+# PRE_WINDUP -> WINDUP -> ATTACK -> PRE_WINDUP
+# Miss -> DASH -> PRE_WINDUP; perfect -> STUN -> PRE_WINDUP.
+enum AttackPhase { PRE_WINDUP, WINDUP, ATTACK, DASH, STUN }
 
 # Animation hooks: connect these to player/ripple effects without changing combat rules.
 signal parry_resolved(result: StringName)  # &"miss", &"close", &"perfect"
 signal reel_window_changed(is_open: bool, is_free: bool)
-var attack_phase: AttackPhase = AttackPhase.RECOVERY
+var attack_phase: AttackPhase = AttackPhase.PRE_WINDUP
 var active_attack: FishEscapeState = null
 var phase_time: float = 0.0
 var attack_elapsed: float = 0.0
@@ -42,7 +45,6 @@ var last_scroll_ms: int = -100000
 ## One continuous burst of distance loss on a failed parry (seconds).
 @export_range(0.05, 0.5, 0.01) var miss_dash_duration: float = 0.20
 var _miss_dash_tween: Tween
-var _miss_dash_active: bool = false
 
 #band-aid fix to avoid accidentally requeueing interact when exiting since exit and interact are the same input
 var press_delay: float = 0.10
@@ -139,17 +141,19 @@ func _process(delta: float) -> void:
 		if(hooked_fish == null):
 			#failsafe
 			return
-		# Fish never drift backward by themselves. The only movement away
-		# is the 0.2s dash after a missed parry. Otherwise distance changes
-		# only when the player reels.
+		# A close parry lets the player reel, but the fish keeps swimming
+		# away at this attack's authored escape speed. No passive drift and
+		# no movement while stunned or dashing.
+		if reel_open and not free_reel and active_attack != null and (attack_phase == AttackPhase.ATTACK or attack_phase == AttackPhase.WINDUP):
+			progress -= maxf(active_attack.escape_rate, 0.0) * delta
 		progress = clampf(progress, 0.0, 1.0)
-		
+
 		recover_tension(delta)
-		# Keep the current attack from advancing mid-dash. When the dash
-		# finishes, we restart at pre-windup with a fresh attack.
-		if not _miss_dash_active:
+		if attack_phase != AttackPhase.DASH:
 			update_attack_cycle(delta)
-		
+		if current_state != Fish_State.FISHING or hooked_fish == null:
+			return
+
 		tension = clamp(tension,0,1)
 		fishing_line.set_tension(tension)
 		fishing_progress.value = progress
@@ -158,8 +162,8 @@ func _process(delta: float) -> void:
 		if fishing_line.fish_midpoint_above_water():
 			start_catch_sequence()
 			return
-		# Allow the fish to finish the dash rather than disappearing mid-motion.
-		if progress <= 0.0 and not _miss_dash_active:
+		# Finish the dash before checking loss at its destination.
+		if progress <= 0.0 and attack_phase != AttackPhase.DASH:
 			lose_fish()
 	elif(current_state == Fish_State.NOT && delay_time != 0):
 		delay_time -= delta
@@ -292,7 +296,6 @@ func exit_fishing() -> void:
 func reset_values() -> void:
 	if _miss_dash_tween != null and _miss_dash_tween.is_running():
 		_miss_dash_tween.kill()
-	_miss_dash_active = false
 	if catch_tween != null and catch_tween.is_running():
 		catch_tween.kill()
 	catch_fish_visual.hide()
@@ -312,7 +315,7 @@ func reset_values() -> void:
 	fishing_line.set_telegraph(0, 0.0)
 	active_attack = null
 	fishing_line.set_stunned(false)
-	attack_phase = AttackPhase.RECOVERY
+	attack_phase = AttackPhase.PRE_WINDUP
 	counter_locked = false
 	scroll_streak = 0
 	_set_reel_open(false, false)
@@ -323,13 +326,13 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 
 	if event.is_action_pressed("Reel") and current_state == Fish_State.FISHING:
-		# Ignore input during a missed-parry dash. Once it ends, the
-		# next attack begins; reeling stays locked until a good parry.
-		if _miss_dash_active:
+		# Pre-windup is only a warning; dash is a full input lock.
+		# A parry is only possible during WINDUP / ATTACK.
+		if attack_phase == AttackPhase.DASH or attack_phase == AttackPhase.PRE_WINDUP:
 			return
 		if reel_open:
 			_reel_during_opening()
-		else:
+		elif attack_phase == AttackPhase.WINDUP or attack_phase == AttackPhase.ATTACK:
 			attempt_counter()
 
 	if event.is_action_pressed("Interact") and current_state != Fish_State.NOT and current_state != Fish_State.CATCHING:
@@ -390,23 +393,13 @@ func select_attack() -> FishEscapeState:
 			return state
 	return hooked_fish.states.back()
 
-func start_recovery(duration: float) -> void:
-	fishing_line.set_stunned(false)
-	attack_phase = AttackPhase.RECOVERY
-	phase_time = maxf(duration, 0.05)
-	fish_esc_rate = 0.0
-	# An earned reel window persists through the recovery phase and is
-	# revoked at the next pre-windup warning.
-	_set_reel_open(reel_open, false)
-	fishing_line.set_telegraph(1, 0.0)
-
-
 func start_pre_windup() -> void:
 	# Warning the player is the hard cut-off for every reel opening.
 	_set_reel_open(false, false)
 	active_attack = select_attack()
 	if active_attack == null:
-		start_recovery(0.5)
+		push_warning("Hooked fish has no usable attack states")
+		lose_fish()
 		return
 	attack_phase = AttackPhase.PRE_WINDUP
 	phase_time = maxf(active_attack.pre_windup_duration, 0.05)
@@ -426,7 +419,7 @@ func start_windup() -> void:
 	attack_phase = AttackPhase.WINDUP
 	phase_time = maxf(active_attack.windup_duration, 0.05)
 	fishing_line.set_windup_duration(phase_time)
-	# Keep any genuine failed parry during windup locked for this attack.
+	# A failed parry never reaches this stage: it goes through DASH first.
 	fish_esc_rate = 0.0
 	print("Windup: ", active_attack.state_name)
 
@@ -440,18 +433,33 @@ func begin_attack() -> void:
 
 
 func update_attack_cycle(delta: float) -> void:
-	if active_attack == null and attack_phase != AttackPhase.RECOVERY:
-		start_recovery(0.3)
+	# The DASH tween owns that state and its timer, not this phase machine.
+	if attack_phase == AttackPhase.DASH:
+		return
+	if active_attack == null:
+		start_pre_windup()
+		return
+
 	phase_time -= delta
 	if phase_time <= 0.0:
 		match attack_phase:
-			AttackPhase.RECOVERY: start_pre_windup()
-			AttackPhase.PRE_WINDUP: start_windup()
-			AttackPhase.WINDUP: begin_attack()
-			AttackPhase.ATTACK: start_recovery(active_attack.recovery_duration)
-			AttackPhase.STUN: start_recovery(0.25)
+			AttackPhase.PRE_WINDUP:
+				start_windup()
+			AttackPhase.WINDUP:
+				begin_attack()
+			AttackPhase.ATTACK:
+				# If no parry was landed by the time the attack ends,
+				# that attack was missed too. Dash, then try again.
+				if reel_open:
+					start_pre_windup()
+				else:
+					_fail_parry()
+			AttackPhase.STUN:
+				start_pre_windup()
 
-	# Ripple animation is just a presentation of the authoritative timers.
+	if current_state != Fish_State.FISHING or active_attack == null:
+		return
+	# The selected animation follows the state; timing stays authoritative.
 	match attack_phase:
 		AttackPhase.PRE_WINDUP:
 			fishing_line.set_telegraph(5, 1.0 - phase_time / maxf(active_attack.pre_windup_duration, 0.01))
@@ -463,8 +471,8 @@ func update_attack_cycle(delta: float) -> void:
 			fishing_line.set_telegraph(3, clampf(attack_elapsed / maxf(active_attack.state_length, 0.01), 0.0, 1.0))
 		AttackPhase.STUN:
 			fishing_line.set_telegraph(4, 0.0)
-		_:
-			fishing_line.set_telegraph(1, 0.0)
+		AttackPhase.DASH:
+			pass
 
 
 func attempt_counter() -> bool:
@@ -472,9 +480,8 @@ func attempt_counter() -> bool:
 	# result; no reeling happens on the parry scroll itself.
 	if hooked_fish == null or active_attack == null or counter_locked:
 		return true
-	# Pre-windup is only a warning: scrolling here is harmless.
-	# Recovery also has no parry to miss; do not punish accidental scrolls.
-	if attack_phase == AttackPhase.PRE_WINDUP or attack_phase == AttackPhase.RECOVERY:
+	# A pre-windup warning and a dash both ignore scrolls.
+	if attack_phase == AttackPhase.PRE_WINDUP or attack_phase == AttackPhase.DASH:
 		return true
 
 	var perfect: bool = false
@@ -540,11 +547,13 @@ func _fail_parry() -> void:
 	counter_locked = true
 	scroll_streak = 0
 	_set_reel_open(false, false)
-	# A miss triggers ONE dash followed immediately by a fresh attack.
-	# Do not apply the old continuous passive/attack escape rate.
-	var strength: float = maxf(1.0, absf(active_attack.escape_rate) / 0.08)
-	var dash_target: float = clampf(progress - active_attack.miss_progress_loss * strength, 0.0, 1.0)
-	tension = clampf(tension + active_attack.miss_tension_gain * hooked_fish.attack_tension_multiplier * strength, 0.0, 1.0)
+	# Distance = fish movement speed (progress/second) * dash duration.
+	# One constant-speed backwards motion, independent of reel input.
+	var move_speed: float = maxf(active_attack.escape_rate, 0.0)
+	var dash_target: float = clampf(progress - move_speed * miss_dash_duration, 0.0, 1.0)
+	tension = clampf(tension + active_attack.miss_tension_gain * hooked_fish.attack_tension_multiplier, 0.0, 1.0)
+	attack_phase = AttackPhase.DASH
+	phase_time = miss_dash_duration
 	recovery_timer = recovery_delay
 	fishing_line.set_tension(tension)
 	fishing_line.flash_parry_result(&"miss")
@@ -552,8 +561,7 @@ func _fail_parry() -> void:
 
 	if _miss_dash_tween != null and _miss_dash_tween.is_running():
 		_miss_dash_tween.kill()
-	_miss_dash_active = true
-	_miss_dash_tween = create_tween().set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	_miss_dash_tween = create_tween().set_trans(Tween.TRANS_LINEAR)
 	_miss_dash_tween.tween_method(_update_miss_dash, progress, dash_target, miss_dash_duration)
 	_miss_dash_tween.tween_callback(_on_miss_dash_finished)
 	print("MISSED PARRY / DASH: ", active_attack.state_name)
@@ -568,8 +576,7 @@ func _update_miss_dash(value: float) -> void:
 
 
 func _on_miss_dash_finished() -> void:
-	_miss_dash_active = false
-	if current_state != Fish_State.FISHING or hooked_fish == null:
+	if current_state != Fish_State.FISHING or hooked_fish == null or attack_phase != AttackPhase.DASH:
 		return
 	# Finish the dash before checking whether the line is lost.
 	if progress <= 0.0 or tension >= 1.0:

@@ -210,6 +210,12 @@ func set_telegraph(phase: int, amount: float) -> void:
 	elif phase != 3:
 		attack_start_pending = false
 	update_ripple_position()
+	# A new warning must start the instant the miss dash ends, even if
+	# counter_fail still has a fraction of a second of animation left.
+	if phase == 5 and current_ripple_animation == &"counter_fail":
+		ripple_tell.stop()
+		current_ripple_animation = &""
+		counter_flash_time = 0.0
 	# Don't restart a close/miss/perfect flash while combat continues.
 	if current_ripple_animation in [&"counter_success", &"counter_close", &"counter_fail"]:
 		return
