@@ -33,6 +33,19 @@ func equip_bait(bait: BaitData) -> void:
 	equipped_bait = bait
 	bait_changed.emit(bait)
 
+# Remove a recruited NPC from the pool, including duplicate entries or
+# multiple FishData resources using the same NPC scene. Ordinary fish and
+# NPCs whose recruitment was declined remain available.
+func remove_recruited_catch(recruited_fish: FishData) -> void:
+	if recruited_fish == null or recruited_fish.npc_data == null:
+		return
+	for index in range(possible_catches.size() - 1, -1, -1):
+		var candidate: FishData = possible_catches[index]
+		if candidate != null and candidate.npc_data != null:
+			if candidate == recruited_fish or candidate.npc_data == recruited_fish.npc_data:
+				possible_catches.remove_at(index)
+
+
 # Get a random fish from the current pool, weighted by the equipped bait.
 # Returns null if the pool has no catchable fish.
 func get_random_catch() -> FishData:

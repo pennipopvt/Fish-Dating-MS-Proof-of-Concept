@@ -616,6 +616,9 @@ func _on_miss_dash_finished() -> void:
 
 
 func create_npc(npc: PackedScene) -> void:
+	# Capture the fish BEFORE any awaits or exit_fishing(), which clears
+	# hooked_fish. Recruitment is decided later by the NPC's conversation.
+	var caught_fish: FishData = hooked_fish
 	# The fish remains at the NPC landing spot on poof frame 1.
 	npc_poof.position = npc_landing_point.position
 	npc_poof.show()
@@ -643,5 +646,5 @@ func create_npc(npc: PackedScene) -> void:
 	exit_fishing()
 	# RecruitmentHandler only reacts to the first conversation after an NPC is caught.
 	# Register this specific NPC before opening the conversation.
-	RecruitmentHandler.engage_listen(scene)
+	RecruitmentHandler.engage_listen(scene, caught_fish)
 	scene.interact(get_parent())
