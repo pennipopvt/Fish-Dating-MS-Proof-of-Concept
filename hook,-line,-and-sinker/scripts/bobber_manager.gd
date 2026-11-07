@@ -10,6 +10,12 @@ const SILAS_ID: StringName = &"silas"
 # Future real rewards carry explicit provenance and survive restarts.
 const SAVE_VERSION := 2
 const STARTING_UNLOCKS: Array[StringName] = [&"default"]
+# The NPC story is currently session-local. Do not let a persisted bobber
+# unlock appear in a new run before Silas's reward dialogue has finished.
+const SILAS_ROUTE_FLAG: StringName = &"silas_route_complete"
+
+# Can be overridden by isolated tests; production uses the normal save.
+var save_path: String = SAVE_PATH
 
 var bobbers: Array[BobberData] = [
 	preload("res://resources/bobbers/default.tres"),
@@ -37,28 +43,53 @@ func get_bobber(id: StringName) -> BobberData:
 	return null
 
 
+func _silas_route_completed() -> bool:
+	var flags: Dictionary = NPCManager.get_npc_state(&"test_npc").get("flags", {})
+	return bool(flags.get(SILAS_ROUTE_FLAG, false))
+
+
+func _silas_available() -> bool:
+	return silas_reward_claimed and unlocked_ids.has(SILAS_ID) and _silas_route_completed()
+
+
 func get_unlocked_bobbers() -> Array[BobberData]:
 	var result: Array[BobberData] = []
 	for entry in bobbers:
 		if entry != null and unlocked_ids.has(entry.bobber_id):
-			if entry.bobber_id == SILAS_ID and not silas_reward_claimed:
+			if entry.bobber_id == SILAS_ID and not _silas_available():
 				continue
 			result.append(entry)
 	return result
 
 
 func get_equipped_bobber() -> BobberData:
+	# A previous save may have Silas equipped. Always use the classic
+	# bobber until his reward has been earned in this playthrough.
+	if equipped_id == SILAS_ID and not _silas_available():
+		return get_bobber(DEFAULT_ID)
 	return get_bobber(equipped_id)
 
 
 func unlock_bobber(id: StringName) -> bool:
 	if get_bobber(id) == null:
 		return false
+	# Only Silas's actual completed gift dialogue is allowed to make the
+	# bobber usable. A stale saved unlock isn't enough on its own.
+	if id == SILAS_ID:
+		if not _silas_route_completed():
+			return false
+		var newly_earned := not silas_reward_claimed or not unlocked_ids.has(id)
+		silas_reward_claimed = true
+		if not unlocked_ids.has(id):
+			unlocked_ids.append(id)
+		# Emit even for previously saved rewards, so the shelf refreshes
+		# after the completion flag is restored for this playthrough.
+		collection_changed.emit()
+		_save_selection()
+		return newly_earned
 	if unlocked_ids.has(id):
 		return false
 	unlocked_ids.append(id)
-	if id == SILAS_ID:
-		silas_reward_claimed = true
 	collection_changed.emit()
 	_save_selection()
 	return true
@@ -67,7 +98,7 @@ func unlock_bobber(id: StringName) -> bool:
 func equip_bobber(id: StringName) -> bool:
 	if not unlocked_ids.has(id) or get_bobber(id) == null:
 		return false
-	if id == SILAS_ID and not silas_reward_claimed:
+	if id == SILAS_ID and not _silas_available():
 		return false
 	if equipped_id == id:
 		return true
@@ -83,12 +114,12 @@ func _save_selection() -> void:
 	config.set_value("bobbers", "equipped", String(equipped_id))
 	config.set_value("bobbers", "unlocked", Array(unlocked_ids).map(func(id): return String(id)))
 	config.set_value("bobbers", "silas_reward_claimed", silas_reward_claimed)
-	config.save(SAVE_PATH)
+	config.save(save_path)
 
 
 func _load_selection() -> void:
 	var config := ConfigFile.new()
-	if config.load(SAVE_PATH) != OK:
+	if config.load(save_path) != OK:
 		return
 	_restore_selection(config)
 
@@ -121,4 +152,5 @@ func _restore_selection(config: ConfigFile, persist_migration: bool = true) -> v
 	# Don't leave Silas's bobber equipped if a legacy save had it selected.
 	var selected := StringName(str(config.get_value("bobbers", "equipped", "default")))
 	if unlocked_ids.has(selected) and get_bobber(selected) != null:
-		equipped_id = selected
+		if selected != SILAS_ID or _silas_available():
+			equipped_id = selected

@@ -119,10 +119,12 @@ func _start_illustration() -> void:
 
 func _on_conversation_finished(npc: NPCData) -> void:
 	if _post_scene_npc != null and npc == _post_scene_npc:
+		# Finish the NPC's route first, then grant the gift. The bobber
+		# manager checks this flag before accepting Silas's unlock.
+		_mark_route_complete(npc)
 		if not _post_scene_reward_id.is_empty():
 			cosmetic_reward_requested.emit(npc, _post_scene_reward_id)
 		_post_scene_reward_id = ""
-		_mark_route_complete(npc)
 		_post_scene_npc = null
 		return
 	if _active_npc == null or not _scene_dialogue_started or _transitioning or npc != _active_npc:
