@@ -1,10 +1,8 @@
-[gd_scene format=3]
+[gd_scene load_steps=4 format=3]
 
 [ext_resource type="Script" path="res://scripts/shop_menu.gd" id="1_shopm"]
-[ext_resource type="Script" path="res://scripts/challenges_panel.gd" id="2_chpan"]
-[ext_resource type="Script" path="res://scripts/storage_panel.gd" id="3_storage"]
-[ext_resource type="Theme" path="res://resources/ui/terminal_theme.tres" id="4_theme"]
-[ext_resource type="StyleBoxTexture" path="res://resources/ui/terminal_border.tres" id="5_border"]
+[ext_resource type="Theme" path="res://resources/ui/terminal_theme.tres" id="2_theme"]
+[ext_resource type="StyleBoxTexture" path="res://resources/ui/terminal_border.tres" id="3_border"]
 
 [node name="ShopMenu" type="CanvasLayer"]
 process_mode = 3
@@ -13,203 +11,235 @@ script = ExtResource("1_shopm")
 
 [node name="Dim" type="ColorRect" parent="."]
 anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
+anchor_right = 1
+anchor_bottom = 1
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
 color = Color(0, 0, 0, 0.5)
 
-[node name="Panel" type="PanelContainer" parent="."]
-anchors_preset = 8
+[node name="TerminalRoot" type="Control" parent="."]
 anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -561.0
-offset_top = -381.0
-offset_right = 561.0
-offset_bottom = 381.0
+offset_left = -840
+offset_top = -450
+offset_right = 840
+offset_bottom = 450
 grow_horizontal = 2
 grow_vertical = 2
-theme = ExtResource("4_theme")
-theme_override_styles/panel = ExtResource("5_border")
+mouse_filter = 2
+
+[node name="NavTabs" type="VBoxContainer" parent="TerminalRoot"]
+offset_top = 165
+offset_right = 132
+offset_bottom = 645
+theme = ExtResource("2_theme")
+theme_override_constants/separation = 9
+[node name="UpgradesTab" type="Button" parent="TerminalRoot/NavTabs"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(132, 86)
+layout_mode = 2
+toggle_mode = true
+text = "UPG"
+tooltip_text = "Upgrades"
+
+[node name="GiftsTab" type="Button" parent="TerminalRoot/NavTabs"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(132, 86)
+layout_mode = 2
+toggle_mode = true
+text = "GFT"
+tooltip_text = "Gifts"
+
+[node name="StorageTab" type="Button" parent="TerminalRoot/NavTabs"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(132, 86)
+layout_mode = 2
+toggle_mode = true
+text = "BOX"
+tooltip_text = "Storage"
+
+[node name="CollectionTab" type="Button" parent="TerminalRoot/NavTabs"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(132, 86)
+layout_mode = 2
+toggle_mode = true
+text = "DEX"
+tooltip_text = "Collection"
+
+[node name="ChallengesTab" type="Button" parent="TerminalRoot/NavTabs"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(132, 86)
+layout_mode = 2
+toggle_mode = true
+text = "CHL"
+tooltip_text = "Challenges"
+
+[node name="Panel" type="PanelContainer" parent="TerminalRoot"]
+offset_left = 108
+offset_right = 1680
+offset_bottom = 900
+mouse_filter = 0
+theme = ExtResource("2_theme")
+theme_override_styles/panel = ExtResource("3_border")
 texture_filter = 1
 
-[node name="Margin" type="MarginContainer" parent="Panel"]
+[node name="Margin" type="MarginContainer" parent="TerminalRoot/Panel"]
 layout_mode = 2
-theme_override_constants/margin_left = 33
-theme_override_constants/margin_top = 24
-theme_override_constants/margin_right = 33
-theme_override_constants/margin_bottom = 24
+theme_override_constants/margin_left = 27
+theme_override_constants/margin_top = 22
+theme_override_constants/margin_right = 27
+theme_override_constants/margin_bottom = 22
 
-[node name="Layout" type="VBoxContainer" parent="Panel/Margin"]
-layout_mode = 2
-theme_override_constants/separation = 15
-
-[node name="Title" type="Label" parent="Panel/Margin/Layout"]
-layout_mode = 2
-theme_type_variation = &"HeaderLabel"
-text = "Terminal"
-horizontal_alignment = 1
-
-[node name="Tabs" type="TabBar" parent="Panel/Margin/Layout"]
-unique_name_in_owner = true
-layout_mode = 2
-
-[node name="Body" type="HBoxContainer" parent="Panel/Margin/Layout"]
-unique_name_in_owner = true
-layout_mode = 2
-size_flags_vertical = 3
-theme_override_constants/separation = 24
-
-[node name="TradeScroll" type="ScrollContainer" parent="Panel/Margin/Layout/Body"]
-custom_minimum_size = Vector2(408, 0)
-layout_mode = 2
-horizontal_scroll_mode = 0
-
-[node name="TradeGrid" type="GridContainer" parent="Panel/Margin/Layout/Body/TradeScroll"]
-unique_name_in_owner = true
-layout_mode = 2
-theme_override_constants/h_separation = 12
-theme_override_constants/v_separation = 12
-columns = 3
-
-[node name="Divider" type="VSeparator" parent="Panel/Margin/Layout/Body"]
-layout_mode = 2
-
-[node name="Details" type="VBoxContainer" parent="Panel/Margin/Layout/Body"]
-layout_mode = 2
-size_flags_horizontal = 3
-theme_override_constants/separation = 21
-
-[node name="Header" type="HBoxContainer" parent="Panel/Margin/Layout/Body/Details"]
+[node name="Layout" type="VBoxContainer" parent="TerminalRoot/Panel/Margin"]
 layout_mode = 2
 theme_override_constants/separation = 15
 
-[node name="TradeIconFrame" type="PanelContainer" parent="Panel/Margin/Layout/Body/Details/Header"]
-unique_name_in_owner = true
+[node name="Header" type="HBoxContainer" parent="TerminalRoot/Panel/Margin/Layout"]
 layout_mode = 2
+theme_override_constants/separation = 12
 
-[node name="TradeIcon" type="TextureRect" parent="Panel/Margin/Layout/Body/Details/Header/TradeIconFrame"]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(72, 72)
-layout_mode = 2
-expand_mode = 1
-stretch_mode = 5
-
-[node name="TradeName" type="Label" parent="Panel/Margin/Layout/Body/Details/Header"]
-unique_name_in_owner = true
-layout_mode = 2
-size_flags_horizontal = 3
-theme_type_variation = &"HeaderLabel"
-autowrap_mode = 3
-
-[node name="ExchangeRow" type="HBoxContainer" parent="Panel/Margin/Layout/Body/Details"]
-unique_name_in_owner = true
-layout_mode = 2
-theme_override_constants/separation = 21
-alignment = 1
-
-[node name="Spacer" type="Control" parent="Panel/Margin/Layout/Body/Details"]
-layout_mode = 2
-size_flags_vertical = 3
-
-[node name="StatusLabel" type="Label" parent="Panel/Margin/Layout/Body/Details"]
-unique_name_in_owner = true
-layout_mode = 2
-horizontal_alignment = 1
-autowrap_mode = 3
-
-[node name="ConfirmButton" type="Button" parent="Panel/Margin/Layout/Body/Details"]
-unique_name_in_owner = true
-layout_mode = 2
-text = "Trade"
-
-[node name="ChallengesPanel" type="VBoxContainer" parent="Panel/Margin/Layout"]
-unique_name_in_owner = true
-visible = false
-layout_mode = 2
-size_flags_vertical = 3
-script = ExtResource("2_chpan")
-
-
-[node name="StoragePanel" type="VBoxContainer" parent="Panel/Margin/Layout"]
-unique_name_in_owner = true
-visible = false
-layout_mode = 2
-size_flags_vertical = 3
-theme_override_constants/separation = 15
-script = ExtResource("3_storage")
-
-[node name="StorageSummary" type="Label" parent="Panel/Margin/Layout/StoragePanel"]
-unique_name_in_owner = true
-layout_mode = 2
-theme_type_variation = &"DimLabel"
-horizontal_alignment = 1
-text = "0 stored"
-
-[node name="StorageBody" type="HBoxContainer" parent="Panel/Margin/Layout/StoragePanel"]
-layout_mode = 2
-size_flags_vertical = 3
-theme_override_constants/separation = 24
-
-[node name="StorageScroll" type="ScrollContainer" parent="Panel/Margin/Layout/StoragePanel/StorageBody"]
-custom_minimum_size = Vector2(408, 0)
-layout_mode = 2
-size_flags_vertical = 3
-horizontal_scroll_mode = 0
-
-[node name="StorageGrid" type="GridContainer" parent="Panel/Margin/Layout/StoragePanel/StorageBody/StorageScroll"]
-unique_name_in_owner = true
-layout_mode = 2
-theme_override_constants/h_separation = 12
-theme_override_constants/v_separation = 12
-columns = 3
-
-[node name="StorageDivider" type="VSeparator" parent="Panel/Margin/Layout/StoragePanel/StorageBody"]
-layout_mode = 2
-
-[node name="StorageDetails" type="VBoxContainer" parent="Panel/Margin/Layout/StoragePanel/StorageBody"]
-layout_mode = 2
-size_flags_horizontal = 3
-theme_override_constants/separation = 21
-
-[node name="StorageIconFrame" type="PanelContainer" parent="Panel/Margin/Layout/StoragePanel/StorageBody/StorageDetails"]
-unique_name_in_owner = true
-layout_mode = 2
-size_flags_horizontal = 0
-
-[node name="StorageIcon" type="TextureRect" parent="Panel/Margin/Layout/StoragePanel/StorageBody/StorageDetails/StorageIconFrame"]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(112, 80)
-layout_mode = 2
-expand_mode = 1
-stretch_mode = 5
-texture_filter = 1
-
-[node name="StorageName" type="Label" parent="Panel/Margin/Layout/StoragePanel/StorageBody/StorageDetails"]
-unique_name_in_owner = true
+[node name="Brand" type="Label" parent="TerminalRoot/Panel/Margin/Layout/Header"]
 layout_mode = 2
 theme_type_variation = &"HeaderLabel"
-autowrap_mode = 3
+text = "FISH CO."
+size_flags_vertical = 4
 
-[node name="StorageCount" type="Label" parent="Panel/Margin/Layout/StoragePanel/StorageBody/StorageDetails"]
+[node name="HeaderSpacer" type="Control" parent="TerminalRoot/Panel/Margin/Layout/Header"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="DeliveryPanel" type="PanelContainer" parent="TerminalRoot/Panel/Margin/Layout/Header"]
+custom_minimum_size = Vector2(340, 60)
+layout_mode = 2
+size_flags_vertical = 4
+
+[node name="DeliveryStatus" type="Label" parent="TerminalRoot/Panel/Margin/Layout/Header/DeliveryPanel"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "NO DELIVERIES"
+horizontal_alignment = 1
+vertical_alignment = 1
+theme_type_variation = &"TitleLabel"
+
+[node name="HeaderRule" type="ColorRect" parent="TerminalRoot/Panel/Margin/Layout"]
+custom_minimum_size = Vector2(0, 3)
+layout_mode = 2
+mouse_filter = 2
+color = Color(0.18, 0.38, 0.4, 1)
+
+[node name="Body" type="HBoxContainer" parent="TerminalRoot/Panel/Margin/Layout"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 18
+
+[node name="Left" type="VBoxContainer" parent="TerminalRoot/Panel/Margin/Layout/Body"]
+custom_minimum_size = Vector2(744, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 8
+
+[node name="PageTitle" type="Label" parent="TerminalRoot/Panel/Margin/Layout/Body/Left"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_type_variation = &"TitleLabel"
+theme_override_font_sizes/font_size = 30
+text = "UPGRADES"
 
-[node name="StorageDescription" type="Label" parent="Panel/Margin/Layout/StoragePanel/StorageBody/StorageDetails"]
+[node name="PageHint" type="Label" parent="TerminalRoot/Panel/Margin/Layout/Body/Left"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_type_variation = &"DimLabel"
+text = "Permanent fishing improvements"
+
+[node name="GridScroll" type="ScrollContainer" parent="TerminalRoot/Panel/Margin/Layout/Body/Left"]
+layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="ItemGrid" type="GridContainer" parent="TerminalRoot/Panel/Margin/Layout/Body/Left/GridScroll"]
+unique_name_in_owner = true
+layout_mode = 2
+columns = 4
+theme_override_constants/h_separation = 12
+theme_override_constants/v_separation = 12
+
+[node name="MiddleDivider" type="VSeparator" parent="TerminalRoot/Panel/Margin/Layout/Body"]
+layout_mode = 2
+
+[node name="Details" type="VBoxContainer" parent="TerminalRoot/Panel/Margin/Layout/Body"]
+custom_minimum_size = Vector2(500, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 12
+
+[node name="PreviewFrame" type="PanelContainer" parent="TerminalRoot/Panel/Margin/Layout/Body/Details"]
+custom_minimum_size = Vector2(0, 310)
+layout_mode = 2
+
+[node name="PreviewIcon" type="TextureRect" parent="TerminalRoot/Panel/Margin/Layout/Body/Details/PreviewFrame"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(360, 280)
+layout_mode = 2
+expand_mode = 1
+stretch_mode = 5
+texture_filter = 1
+
+[node name="ItemName" type="Label" parent="TerminalRoot/Panel/Margin/Layout/Body/Details"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"HeaderLabel"
+theme_override_font_sizes/font_size = 36
+text = "SELECT AN ITEM"
 autowrap_mode = 3
 
-[node name="StorageSpacer" type="Control" parent="Panel/Margin/Layout/StoragePanel/StorageBody/StorageDetails"]
+[node name="DescriptionLabel" type="Label" parent="TerminalRoot/Panel/Margin/Layout/Body/Details"]
+unique_name_in_owner = true
+layout_mode = 2
+text = ""
+autowrap_mode = 3
+
+[node name="Costs" type="VBoxContainer" parent="TerminalRoot/Panel/Margin/Layout/Body/Details"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 5
+
+[node name="DetailsSpacer" type="Control" parent="TerminalRoot/Panel/Margin/Layout/Body/Details"]
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="CloseButton" type="Button" parent="Panel/Margin/Layout"]
+[node name="StatusLabel" type="Label" parent="TerminalRoot/Panel/Margin/Layout/Body/Details"]
 unique_name_in_owner = true
 layout_mode = 2
-size_flags_horizontal = 8
-text = "Close"
+autowrap_mode = 3
+theme_type_variation = &"DimLabel"
+
+[node name="OrderButton" type="Button" parent="TerminalRoot/Panel/Margin/Layout/Body/Details"]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(0, 52)
+layout_mode = 2
+text = "ORDER"
+
+[node name="Footer" type="HBoxContainer" parent="TerminalRoot/Panel/Margin/Layout"]
+layout_mode = 2
+theme_override_constants/separation = 18
+
+[node name="PageIndicator" type="Label" parent="TerminalRoot/Panel/Margin/Layout/Footer"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"DimLabel"
+text = "UPGRADES / 0 ENTRIES"
+size_flags_vertical = 4
+
+[node name="FooterSpacer" type="Control" parent="TerminalRoot/Panel/Margin/Layout/Footer"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="CloseButton" type="Button" parent="TerminalRoot/Panel/Margin/Layout/Footer"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(156, 52)
+layout_mode = 2
+text = "CLOSE"
