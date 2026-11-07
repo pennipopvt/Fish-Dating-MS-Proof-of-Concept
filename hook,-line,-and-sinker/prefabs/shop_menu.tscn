@@ -3,11 +3,11 @@
 [ext_resource type="Script" uid="uid://d3oyn3ofcf70q" path="res://scripts/shop_menu.gd" id="1_shopm"]
 [ext_resource type="Theme" uid="uid://bdrro20rs5qmt" path="res://resources/ui/terminal_theme.tres" id="2_theme"]
 [ext_resource type="StyleBox" path="res://resources/ui/terminal_border.tres" id="3_border"]
-[ext_resource type="Texture2D" uid="uid://bgu6xgbtt40kh" path="res://sprites/placeholders/cast_upgrade.svg" id="4_upgrade_icon"]
-[ext_resource type="Texture2D" uid="uid://by1jxw6gujp5d" path="res://sprites/items/spyglass.svg" id="5_gift_icon"]
-[ext_resource type="Texture2D" uid="uid://eqi55phviwat" path="res://sprites/environment/tackle_box.png" id="6_storage_icon"]
-[ext_resource type="Texture2D" uid="uid://bq0k0382ebpcd" path="res://sprites/placeholders/fish.png" id="7_collection_icon"]
-[ext_resource type="Texture2D" uid="uid://c7xn0dd4rsb12" path="res://sprites/challenges/streak_3.png" id="8_challenge_icon"]
+[ext_resource type="Texture2D" uid="uid://dd18egqrlej6b" path="res://sprites/ui/icon_upgrade.png" id="4_upgrade_icon"]
+[ext_resource type="Texture2D" uid="uid://d0is4m3pcb3ai" path="res://sprites/ui/icon_gift.png" id="5_gift_icon"]
+[ext_resource type="Texture2D" uid="uid://dyks2bu2dla76" path="res://sprites/ui/icon_storage.png" id="6_storage_icon"]
+[ext_resource type="Texture2D" uid="uid://be2mehv3j2ohp" path="res://sprites/ui/icon_collection.png" id="7_collection_icon"]
+[ext_resource type="Texture2D" uid="uid://cy6m4p32euy7d" path="res://sprites/ui/icon_challenges.png" id="8_challenge_icon"]
 
 [node name="ShopMenu" type="CanvasLayer" unique_id=21315034]
 process_mode = 3
