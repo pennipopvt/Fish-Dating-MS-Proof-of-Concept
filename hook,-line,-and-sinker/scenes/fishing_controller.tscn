@@ -369,7 +369,6 @@ animations = [{
 script = ExtResource("1_nhr4m")
 reel_gain = 0.01
 bite_time_max = 5.0
-tension_gain = 0.015
 tension_recovery = 2.5
 recovery_delay = 0.2
 npc_catch_pose_length = 1.2

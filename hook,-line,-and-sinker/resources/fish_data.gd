@@ -11,7 +11,12 @@ extends Resource
 ## parry/dash combat system fish do not drift backward automatically.
 ## Per-attack FishEscapeState.escape_rate controls contested pull and dash speed.
 @export_range(0.0, 0.2, 0.001) var passive_escape_rate: float = 0.015
-## Additional tension while reeling against an active escape attack.
+@export_group("Tension")
+## Tension added per reel scroll (the old scene value was 0.015).
+@export_range(0.0, 1.0, 0.001) var reel_tension_gain: float = 0.015
+## Total tension added over a missed-parry dash before the multiplier.
+@export_range(0.0, 1.0, 0.01) var miss_tension_gain: float = 0.10
+## Multiplies dash tension; also multiplies reel tension during an attack.
 @export_range(0.0, 5.0, 0.05) var attack_tension_multiplier: float = 1.2
 
 @export_group("Miss Dash")

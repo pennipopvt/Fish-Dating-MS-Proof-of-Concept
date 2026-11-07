@@ -18,6 +18,7 @@ extends Resource
 ## immediately at pre-windup (there is no extra recovery phase).
 @export_range(0.05, 2.0, 0.01) var recovery_duration: float = 0.4
 @export_range(0.1, 4.0, 0.01) var stun_duration: float = 1.7
+## Legacy value retained for old resources. Perfect parries now clear tension.
 @export_range(0.0, 1.0, 0.01) var counter_tension_relief: float = 0.25
 
 @export_group("Parry Combat")
@@ -30,5 +31,6 @@ extends Resource
 ## Legacy field kept for older .tres files. A miss now moves exactly
 ## escape_rate * FishingController.miss_dash_duration; this is not used.
 @export_range(0.0, 0.5, 0.01) var miss_progress_loss: float = 0.04
-## A failed parry adds tension scaled by the fish's attack strength.
+## Legacy value retained for older attack resources.
+## Actual miss tension is now FishData.miss_tension_gain.
 @export_range(0.0, 1.0, 0.01) var miss_tension_gain: float = 0.10

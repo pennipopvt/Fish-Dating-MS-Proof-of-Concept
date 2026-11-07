@@ -55,7 +55,6 @@ var delay_time = 0
 @export var bite_time_max: float = 20
 
 #maybe later these variables can be moved to the manager for shop items to influence dem
-@export var tension_gain: float = 0.7
 @export var tension_recovery: float = 0.2
 ##delay before recovery starts after reeling ends
 @export var recovery_delay: float = 0.1
@@ -147,9 +146,9 @@ func _process(delta: float) -> void:
 			progress -= maxf(active_attack.escape_rate, 0.0) * delta
 		progress = clampf(progress, 0.0, 1.0)
 
-		# No tension recovery during DASH: the same tween that moves the
-		# fish steadily increases tension for the full dash duration.
-		if attack_phase != AttackPhase.DASH:
+		# Locked phases preserve their tension. The player can only
+		# recover it during an earned reel opening (including STUN).
+		if reel_open:
 			recover_tension(delta)
 		if attack_phase != AttackPhase.DASH:
 			update_attack_cycle(delta)
@@ -355,9 +354,10 @@ func _reel_during_opening() -> void:
 	play_fishing_sound(reel_sfx)
 	progress = clampf(progress + reel_gain, 0.0, 1.0)
 	if not free_reel:
-		# Preserve the existing fish-strength tension multiplier during attacks.
+		# Each species determines how much tension it generates per reel.
+		# The existing attack multiplier applies while the fish is fighting.
 		var multiplier: float = hooked_fish.attack_tension_multiplier if fish_esc_rate > 0.0 else 1.0
-		tension = clampf(tension + tension_gain * multiplier, 0.0, 1.0)
+		tension = clampf(tension + hooked_fish.reel_tension_gain * multiplier, 0.0, 1.0)
 		fishing_line.set_tension(tension)
 		recovery_timer = recovery_delay
 
@@ -369,11 +369,14 @@ func _reel_during_opening() -> void:
 
 
 func recover_tension(delta: float) -> void:
-	if(recovery_timer <= 0):
-			#tension recovery always happens, is higher during desperation phase
-			tension = tension - (tension_recovery * delta)
+	# Tension cannot dissipate during pre-windup, windup, or a missed dash.
+	# Perfect STUN makes this a no-op because its tension is already zero.
+	if not reel_open:
+		return
+	if recovery_timer <= 0.0:
+		tension = maxf(0.0, tension - tension_recovery * delta)
 	else:
-		recovery_timer -= delta
+		recovery_timer = maxf(0.0, recovery_timer - delta)
 
 
 # Preserve the fish's authored state selection, using nonnegative weights.
@@ -531,8 +534,11 @@ func attempt_counter() -> bool:
 
 
 func _perfect_parry() -> void:
-	# Existing stun, tension relief, and free reeling are preserved.
-	tension = maxf(0.0, tension - active_attack.counter_tension_relief)
+	# A perfect parry clears ALL existing tension and lets the player
+	# reel freely while the fish is stunned.
+	tension = 0.0
+	tension_bar.value = tension
+	recovery_timer = 0.0
 	fishing_line.set_tension(tension)
 	fishing_line.flash_parry_result(&"perfect")
 	play_fishing_sound(counter_sfx)
@@ -563,11 +569,9 @@ func _fail_parry() -> void:
 	var dash_duration: float = hooked_fish.miss_dash_duration
 	var dash_speed: float = maxf(active_attack.escape_rate, 0.0) * hooked_fish.miss_dash_speed_multiplier
 	var dash_target: float = clampf(progress - dash_speed * dash_duration, 0.0, 1.0)
-	# Apply the existing attack-specific miss tension gain *over the dash*,
-	# not immediately on the first frame. This gives the fish a visible pull
-	# on the line, without doubling the old miss penalty.
+	# This fish's miss penalty builds over the dash, never upfront.
 	var starting_tension: float = tension
-	var ending_tension: float = clampf(starting_tension + active_attack.miss_tension_gain * hooked_fish.attack_tension_multiplier, 0.0, 1.0)
+	var ending_tension: float = clampf(starting_tension + hooked_fish.miss_tension_gain * hooked_fish.attack_tension_multiplier, 0.0, 1.0)
 	attack_phase = AttackPhase.DASH
 	phase_time = dash_duration
 	recovery_timer = recovery_delay
