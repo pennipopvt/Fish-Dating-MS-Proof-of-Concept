@@ -48,6 +48,10 @@ func _ready() -> void:
 	hide()
 	add_to_group(&"modal_ui")
 	$Panel.theme = PixelUI.get_theme()
+	# First pass: test the new hand-drawn thick border on the outer Terminal only.
+	# Other pixel UI panels and item slots keep their existing styles for now.
+	$Panel.add_theme_stylebox_override("panel", PixelUI.terminal_frame_style())
+	$Panel.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	ChallengeManager.progress_reset.connect(_on_challenge_completed.bind(null))
 	_trade_icon_frame.add_theme_stylebox_override("panel", _tile_styles["normal"])
 	ShopManager.trade_completed.connect(_on_trade_completed)

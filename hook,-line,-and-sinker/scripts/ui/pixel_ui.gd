@@ -33,7 +33,36 @@ const FONT_SMALL := preload("res://fonts/pixel_operator(1)/PixelOperator8.ttf")
 const FONT_SMALL_BOLD := preload("res://fonts/pixel_operator(1)/PixelOperator8-Bold.ttf")
 const FONT_LARGE_BOLD := preload("res://fonts/pixel_operator(1)/PixelOperator-Bold.ttf")
 
+# User-drawn 32x32 terminal panel: 4 art-pixel patches around the corners.
+# Kept separate from the generic PixelUI.box() until the appearance is approved.
+const TERMINAL_FRAME_TEXTURE: Texture2D = preload("res://sprites/ui/ui_background.png")
+const TERMINAL_PATCH_MARGIN := 4
+static var _terminal_frame_style: StyleBoxTexture
+
 static var _theme: Theme
+
+
+# Show the hand-drawn 9-slice at the game's 3x integer art scale.
+# Enlarge with nearest-neighbor BEFORE nine-slicing so the corners stay pixel sharp.
+# This only applies to the Terminal's large outer frame for the initial visual test.
+static func terminal_frame_style() -> StyleBoxTexture:
+	if _terminal_frame_style != null:
+		return _terminal_frame_style
+
+	var source_image: Image = TERMINAL_FRAME_TEXTURE.get_image()
+	source_image.resize(
+		source_image.get_width() * SCALE,
+		source_image.get_height() * SCALE,
+		Image.INTERPOLATE_NEAREST
+	)
+
+	var style := StyleBoxTexture.new()
+	style.texture = ImageTexture.create_from_image(source_image)
+	style.set_texture_margin_all(TERMINAL_PATCH_MARGIN * SCALE)
+	# The scene already has a MarginContainer to keep text away from the border.
+	style.set_content_margin_all(0)
+	_terminal_frame_style = style
+	return style
 
 
 # A pixel box: 1-px ink outline with cut corners, 1-px border, optional

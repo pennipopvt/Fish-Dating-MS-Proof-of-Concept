@@ -41,6 +41,11 @@ theme_override_constants/margin_top = 24
 theme_override_constants/margin_right = 33
 theme_override_constants/margin_bottom = 24
 
+[node name="ContentBacking" type="ColorRect" parent="Panel/Margin"]
+layout_mode = 2
+mouse_filter = 2
+color = Color(0.078431375, 0.13725491, 0.18039216, 1)
+
 [node name="Layout" type="VBoxContainer" parent="Panel/Margin"]
 layout_mode = 2
 theme_override_constants/separation = 15
