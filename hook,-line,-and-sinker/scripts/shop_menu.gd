@@ -15,7 +15,7 @@ const DIM_TEXT := Color("45646a")
 const WARNING_TEXT := Color("984b24")
 # Art pixels are scaled x3. The visible part of each tab is 72 screen pixels.
 # A further 24 screen pixels sit under the terminal panel.
-const TAB_VISIBLE_WIDTH := 72.0
+const TAB_VISIBLE_WIDTH := 66.0
 const TAB_CLOSED_HEIGHT := 66.0
 const TAB_TEXT_PADDING := 12.0
 const TAB_TEXT_GAP := 12.0
