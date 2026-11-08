@@ -11,16 +11,19 @@ func _ready() -> void:
 	add_child(collision)
 	var icon := Sprite2D.new()
 	icon.position = Vector2(0, -10)
-	if item != null:
-		icon.texture = item.sprite
+	icon.texture = get_icon()
 	add_child(icon)
 	super._ready()
+
+# What the pickup looks like in the world (and while a drone carries it).
+func get_icon() -> Texture2D:
+	return item.sprite if item != null else null
 
 func interact(_player: Node2D) -> void:
 	var player := _player as Player
 	if player == null or item == null:
 		return
-	if player.take_item(item):
-		if player.current_interactable == self:
-			player.current_interactable = null
-		queue_free()
+	if not player.take_item(item):
+		return
+	player.release_interactable(self)
+	queue_free()
