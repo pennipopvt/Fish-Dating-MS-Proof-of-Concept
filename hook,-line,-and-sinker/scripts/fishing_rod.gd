@@ -4,7 +4,9 @@ extends Node2D
 # Visual fishing rod held by the player. Purely cosmetic: it watches the
 # FishingController's state from outside and never changes the fishing rules.
 #  - whips out when fishing starts, flicks back and forward on every cast
-#  - throws the bobber (with the equipped bait hanging under it) on a parabola
+#  - throws the equipped bait on the end of the line along a parabola; it then
+#    sits where the controller's line ends underwater (the controller's own
+#    bobber appears on the surface as before)
 #  - spins the reel while the player scrolls to reel
 #  - keeps a line from the rod tip to the fish while it flies out of the water
 #  - turns the player to face the water and holds the idle pose
@@ -20,7 +22,7 @@ const FishState = FishingControllerScript.Fish_State
 @export_range(0.05, 1.0, 0.01) var backswing_duration: float = 0.25
 @export_range(0.02, 0.5, 0.01) var flick_duration: float = 0.12
 @export_range(0.05, 1.0, 0.01) var settle_duration: float = 0.2
-@export_range(0.1, 2.0, 0.05) var bobber_flight_duration: float = 0.5
+@export_range(0.1, 2.0, 0.05) var cast_flight_duration: float = 0.5
 @export_range(0.0, 0.5, 0.01) var put_away_duration: float = 0.1
 
 @export_group("Poses (degrees, positive = clockwise)")
@@ -32,15 +34,13 @@ const FishState = FishingControllerScript.Fish_State
 @export_range(0.0, 90.0, 1.0) var catch_jerk_angle: float = 35.0
 
 @export_group("Cast")
-## Extra height of the bobber's parabola above the straight line to the water.
-@export_range(0.0, 150.0, 1.0) var bobber_arc_height: float = 30.0
-## Slack in the line while the bobber flies.
+## Extra height of the cast's parabola above the straight line to the water.
+@export_range(0.0, 150.0, 1.0) var cast_arc_height: float = 30.0
+## Slack in the line while the cast flies.
 @export_range(0.0, 20.0, 0.5) var line_sag: float = 4.0
 
 @export_group("Bait")
 @export_range(0.1, 2.0, 0.05) var bait_scale: float = 0.5
-## How far the bait hangs below the bobber.
-@export_range(0.0, 40.0, 0.5) var bait_drop: float = 7.0
 
 @export_group("Reel")
 @export_range(1.0, 60.0, 1.0) var reel_fps: float = 16.0
@@ -51,9 +51,7 @@ const FishState = FishingControllerScript.Fish_State
 @onready var sprite: Sprite2D = $Pivot/Sprite
 @onready var tip: Marker2D = $Pivot/Tip
 @onready var cast_line: Line2D = $CastLine
-@onready var flying_bobber: Sprite2D = $FlyingBobber
 @onready var bait: Sprite2D = $Bait
-@onready var bait_string: Line2D = $BaitString
 
 var controller: FishingControllerScript
 var fishing_line: Line2D
@@ -65,6 +63,7 @@ var _flight_tween: Tween
 var _flying: bool = false
 var _flight_start: Vector2
 var _flight_end: Vector2
+var _flight_pos: Vector2
 var _reel_time_left: float = 0.0
 var _reel_frame_time: float = 0.0
 var _catch_time: float = 0.0
@@ -80,23 +79,16 @@ func _ready() -> void:
 		return
 	fishing_line = controller.fishing_line
 
-	for line: Line2D in [cast_line, bait_string]:
-		line.top_level = true
-		line.clear_points()
+	cast_line.top_level = true
+	cast_line.clear_points()
 	cast_line.width = fishing_line.width
 	cast_line.width_curve = fishing_line.width_curve
-	flying_bobber.top_level = true
 	bait.top_level = true
 	bait.scale = Vector2.ONE * bait_scale
-	# Match the draw order of the controller's own line and bobber.
-	for item: CanvasItem in [cast_line, bait_string, flying_bobber]:
-		item.z_as_relative = false
+	# Match the draw order of the controller's own line.
+	cast_line.z_as_relative = false
 	cast_line.z_index = _absolute_z(fishing_line)
-	bait_string.z_index = _absolute_z(fishing_line)
-	flying_bobber.z_index = _absolute_z(fishing_line.bobber)
 
-	BobberManager.equipped_changed.connect(_on_bobber_equipped)
-	_on_bobber_equipped(BobberManager.get_equipped_bobber())
 	FishingManager.bait_changed.connect(_on_bait_changed)
 	_on_bait_changed(FishingManager.equipped_bait)
 
@@ -123,17 +115,17 @@ func _process(delta: float) -> void:
 
 
 # Runs after every node and tween has moved this frame, so the lines never
-# trail one frame behind the bobber or the flying fish.
+# trail one frame behind the cast or the flying fish.
 func _update_visuals() -> void:
 	if controller == null or not visible:
 		return
 	match controller.current_state:
 		FishState.WAITING:
 			if _flying:
-				_draw_line_between(tip.global_position, flying_bobber.global_position, line_sag)
-				_place_bait(flying_bobber.global_position)
-			elif fishing_line.visible and fishing_line.bobber.visible:
-				_place_bait(fishing_line.bobber.global_position)
+				_draw_line_between(tip.global_position, _flight_pos, line_sag)
+				_place_bait(_flight_pos)
+			elif fishing_line.visible:
+				_place_bait(_line_end())
 			else:
 				_hide_bait()
 		FishState.CATCHING:
@@ -171,10 +163,10 @@ func _on_state_changed(from: int, to: int) -> void:
 func _cast(whip_out: bool) -> void:
 	_end_flight()
 	_hide_bait()
-	# Hide the controller's line until the bobber has landed, and push the
+	# Hide the controller's line until the cast has landed, and push the
 	# bite back by the length of the throw so a fish can't bite mid-air.
 	fishing_line.hide()
-	var cast_time: float = backswing_duration + flick_duration + bobber_flight_duration
+	var cast_time: float = backswing_duration + flick_duration + cast_flight_duration
 	if whip_out:
 		cast_time += whip_out_duration
 	controller.bite_time += cast_time
@@ -191,35 +183,34 @@ func _cast(whip_out: bool) -> void:
 		_rod_tween.set_parallel(false)
 	_rod_tween.tween_property(pivot, "rotation", deg_to_rad(backswing_angle), backswing_duration).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 	_rod_tween.tween_property(pivot, "rotation", deg_to_rad(-flick_angle), flick_duration).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
-	_rod_tween.tween_callback(_release_bobber)
+	_rod_tween.tween_callback(_release_cast)
 	_rod_tween.tween_property(pivot, "rotation", 0.0, settle_duration).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 
 
-func _release_bobber() -> void:
+func _release_cast() -> void:
 	if controller.current_state != FishState.WAITING:
 		return
 	_flying = true
 	_flight_start = tip.global_position
-	_flight_end = fishing_line.to_global(fishing_line.bobber_water_position)
-	flying_bobber.global_position = _flight_start
-	flying_bobber.show()
+	_flight_end = _line_end()
+	_flight_pos = _flight_start
 	cast_line.default_color = fishing_line.default_color
 	cast_line.show()
 	if _flight_tween != null and _flight_tween.is_running():
 		_flight_tween.kill()
 	_flight_tween = create_tween()
-	_flight_tween.tween_method(_update_flight, 0.0, 1.0, bobber_flight_duration)
-	_flight_tween.tween_callback(_land_bobber)
+	_flight_tween.tween_method(_update_flight, 0.0, 1.0, cast_flight_duration)
+	_flight_tween.tween_callback(_land_cast)
 
 
 func _update_flight(t: float) -> void:
 	# Straight-line travel plus a symmetric bump = a parabola from tip to water.
 	var p: Vector2 = _flight_start.lerp(_flight_end, t)
-	p.y -= bobber_arc_height * 4.0 * t * (1.0 - t)
-	flying_bobber.global_position = p.round()
+	p.y -= cast_arc_height * 4.0 * t * (1.0 - t)
+	_flight_pos = p.round()
 
 
-func _land_bobber() -> void:
+func _land_cast() -> void:
 	_end_flight()
 	if controller.current_state == FishState.WAITING:
 		fishing_line.show()
@@ -229,7 +220,6 @@ func _end_flight() -> void:
 	_flying = false
 	if _flight_tween != null and _flight_tween.is_running():
 		_flight_tween.kill()
-	flying_bobber.hide()
 	cast_line.hide()
 
 
@@ -291,22 +281,15 @@ func _place_bait(hang_point: Vector2) -> void:
 	if bait.texture == null:
 		_hide_bait()
 		return
-	var bait_position: Vector2 = (hang_point + Vector2(0.0, bait_drop)).round()
-	bait.global_position = bait_position
-	bait_string.clear_points()
-	bait_string.add_point(hang_point)
-	bait_string.add_point(bait_position)
-	bait_string.default_color = fishing_line.default_color
+	bait.global_position = hang_point.round()
 	# Draw at the hooked fish's layer so the water treats the bait the same way.
 	bait.z_as_relative = false
 	bait.z_index = _absolute_z(fishing_line.fish)
 	bait.show()
-	bait_string.show()
 
 
 func _hide_bait() -> void:
 	bait.hide()
-	bait_string.hide()
 
 
 func _hide_all() -> void:
@@ -323,8 +306,9 @@ func _kill_rod_tween() -> void:
 	pivot.scale = Vector2.ONE
 
 
-func _on_bobber_equipped(data: BobberData) -> void:
-	flying_bobber.texture = data.sprite if data != null else null
+# Where the controller's line ends: the hidden fish's spot underwater.
+func _line_end() -> Vector2:
+	return fishing_line.to_global(fishing_line.get_point_position(fishing_line.get_point_count() - 1))
 
 
 func _on_bait_changed(data: BaitData) -> void:

@@ -46,8 +46,8 @@ people who might settle in your empty town.
 - **Player** movement on the dock, plus interactables for NPCs and the shop.
 - **Fishing rod (visual only):** `prefabs/fishing_rod.tscn` on the player. When you
   start fishing, the player faces the water and pulls out the rod. Every cast swings
-  the rod back and flicks it forward, and the bobber flies to the water on a parabola
-  with the equipped bait's icon hanging under it. The reel spins while you scroll,
+  the rod back and flicks it forward, and the equipped bait's icon flies out on the
+  end of the line along a parabola, then sits where the line ends underwater. The reel spins while you scroll,
   and the line stays attached to the fish as it flies out of the water.
   `fishing_rod.gd` only watches `FishingController`'s state; timings and angles are
   exported on the FishingRod node.
