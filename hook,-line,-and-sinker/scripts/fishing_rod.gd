@@ -4,9 +4,8 @@ extends Node2D
 # Visual fishing rod held by the player. Purely cosmetic: it watches the
 # FishingController's state from outside and never changes the fishing rules.
 #  - whips out when fishing starts, flicks back and forward on every cast
-#  - throws the equipped bait on the end of the line along a parabola; it then
-#    sits where the controller's line ends underwater (the controller's own
-#    bobber appears on the surface as before)
+#  - throws the equipped bait on the end of the line along a parabola to where
+#    the controller's bobber floats, then sinks it along the underwater line
 #  - spins the reel while the player scrolls to reel
 #  - keeps a line from the rod tip to the fish while it flies out of the water
 #  - turns the player to face the water and holds the idle pose
@@ -23,6 +22,8 @@ const FishState = FishingControllerScript.Fish_State
 @export_range(0.02, 0.5, 0.01) var flick_duration: float = 0.12
 @export_range(0.05, 1.0, 0.01) var settle_duration: float = 0.2
 @export_range(0.1, 2.0, 0.05) var cast_flight_duration: float = 0.5
+## Time for the bait to sink from the bobber to the end of the line.
+@export_range(0.0, 2.0, 0.05) var bait_sink_duration: float = 0.4
 @export_range(0.0, 0.5, 0.01) var put_away_duration: float = 0.1
 
 @export_group("Poses (degrees, positive = clockwise)")
@@ -64,9 +65,11 @@ var _flying: bool = false
 var _flight_start: Vector2
 var _flight_end: Vector2
 var _flight_pos: Vector2
+var _flight_t: float = 0.0
+var _sink_tween: Tween
 var _reel_time_left: float = 0.0
 var _reel_frame_time: float = 0.0
-var _catch_time: float = 0.0
+var _catch_line_tween: Tween
 
 
 func _ready() -> void:
@@ -94,7 +97,6 @@ func _ready() -> void:
 
 	_hide_all()
 	_attach_line_to_tip.call_deferred()
-	RenderingServer.frame_pre_draw.connect(_update_visuals)
 
 
 # The controller's line starts at a fixed point; move that point to the rod
@@ -110,30 +112,6 @@ func _process(delta: float) -> void:
 		_last_state = state
 
 	_update_reel(delta)
-	if state == FishState.CATCHING:
-		_catch_time += delta
-
-
-# Runs after every node and tween has moved this frame, so the lines never
-# trail one frame behind the cast or the flying fish.
-func _update_visuals() -> void:
-	if controller == null or not visible:
-		return
-	match controller.current_state:
-		FishState.WAITING:
-			if _flying:
-				_draw_line_between(tip.global_position, _flight_pos, line_sag)
-				_place_bait(_flight_pos)
-			elif fishing_line.visible:
-				_place_bait(_line_end())
-			else:
-				_hide_bait()
-		FishState.CATCHING:
-			var flight_time: float = controller.catch_flight_duration + controller.catch_peak_hang
-			if _catch_time < flight_time and controller.catch_fish_visual.visible:
-				_draw_line_between(tip.global_position, controller.catch_fish_visual.global_position, 0.0)
-			else:
-				cast_line.hide()
 
 
 func _input(event: InputEvent) -> void:
@@ -154,8 +132,8 @@ func _on_state_changed(from: int, to: int) -> void:
 			_hide_bait()
 		FishState.CATCHING:
 			_hide_bait()
-			_catch_time = 0.0
 			_play_catch_jerk()
+			_start_catch_line()
 		FishState.NOT:
 			_put_away()
 
@@ -166,7 +144,7 @@ func _cast(whip_out: bool) -> void:
 	# Hide the controller's line until the cast has landed, and push the
 	# bite back by the length of the throw so a fish can't bite mid-air.
 	fishing_line.hide()
-	var cast_time: float = backswing_duration + flick_duration + cast_flight_duration
+	var cast_time: float = backswing_duration + flick_duration + cast_flight_duration + bait_sink_duration
 	if whip_out:
 		cast_time += whip_out_duration
 	controller.bite_time += cast_time
@@ -184,7 +162,14 @@ func _cast(whip_out: bool) -> void:
 	_rod_tween.tween_property(pivot, "rotation", deg_to_rad(backswing_angle), backswing_duration).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 	_rod_tween.tween_property(pivot, "rotation", deg_to_rad(-flick_angle), flick_duration).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
 	_rod_tween.tween_callback(_release_cast)
-	_rod_tween.tween_property(pivot, "rotation", 0.0, settle_duration).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	# Settle via a method so the flying line's start follows the tip.
+	_rod_tween.tween_method(_settle_rod, deg_to_rad(-flick_angle), 0.0, settle_duration).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+
+
+func _settle_rod(angle: float) -> void:
+	pivot.rotation = angle
+	if _flying:
+		_draw_line_between(tip.global_position, _flight_pos, line_sag * (1.0 - _flight_t))
 
 
 func _release_cast() -> void:
@@ -192,9 +177,11 @@ func _release_cast() -> void:
 		return
 	_flying = true
 	_flight_start = tip.global_position
-	_flight_end = _line_end()
-	_flight_pos = _flight_start
+	# Land where the controller's bobber will float.
+	_flight_end = fishing_line.to_global(fishing_line.bobber_water_position)
 	cast_line.default_color = fishing_line.default_color
+	# Draw the first frame now so the line never shows stale points.
+	_update_flight(0.0)
 	cast_line.show()
 	if _flight_tween != null and _flight_tween.is_running():
 		_flight_tween.kill()
@@ -207,19 +194,38 @@ func _update_flight(t: float) -> void:
 	# Straight-line travel plus a symmetric bump = a parabola from tip to water.
 	var p: Vector2 = _flight_start.lerp(_flight_end, t)
 	p.y -= cast_arc_height * 4.0 * t * (1.0 - t)
-	_flight_pos = p.round()
+	_flight_pos = p if t < 1.0 else _flight_end
+	_flight_t = t
+	# Drawn from the tween itself: Line2D rebuilds on a deferred call, which
+	# still lands before this frame renders.
+	_draw_line_between(tip.global_position, _flight_pos, line_sag * (1.0 - t))
+	_place_bait(_flight_pos)
 
 
 func _land_cast() -> void:
 	_end_flight()
 	if controller.current_state == FishState.WAITING:
 		fishing_line.show()
+		_sink_bait()
+
+
+# The bait follows the controller's line from the surface down to its end.
+func _sink_bait() -> void:
+	var from: Vector2 = _flight_end
+	var to: Vector2 = _line_end()
+	_place_bait(from)
+	_sink_tween = create_tween()
+	_sink_tween.tween_method(func(t: float) -> void: _place_bait(from.lerp(to, t)), 0.0, 1.0, bait_sink_duration).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 
 
 func _end_flight() -> void:
 	_flying = false
 	if _flight_tween != null and _flight_tween.is_running():
 		_flight_tween.kill()
+	if _catch_line_tween != null and _catch_line_tween.is_running():
+		_catch_line_tween.kill()
+	if _sink_tween != null and _sink_tween.is_running():
+		_sink_tween.kill()
 	cast_line.hide()
 
 
@@ -228,8 +234,27 @@ func _play_catch_jerk() -> void:
 	_rod_tween = create_tween()
 	_rod_tween.tween_property(pivot, "rotation", deg_to_rad(catch_jerk_angle), 0.12).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 	_rod_tween.tween_property(pivot, "rotation", 0.0, 0.35).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN_OUT)
+
+
+# Tweens run in creation order, so this one updates after the controller's
+# catch tween has moved the fish, and the line end stays on the fish.
+func _start_catch_line() -> void:
+	if _catch_line_tween != null and _catch_line_tween.is_running():
+		_catch_line_tween.kill()
 	cast_line.default_color = fishing_line.calm_line_color
+	_update_catch_line(0.0)
 	cast_line.show()
+	var flight_time: float = controller.catch_flight_duration + controller.catch_peak_hang
+	_catch_line_tween = create_tween()
+	_catch_line_tween.tween_method(_update_catch_line, 0.0, 1.0, flight_time)
+	_catch_line_tween.tween_callback(cast_line.hide)
+
+
+func _update_catch_line(_t: float) -> void:
+	if not controller.catch_fish_visual.visible:
+		cast_line.hide()
+		return
+	_draw_line_between(tip.global_position, controller.catch_fish_visual.global_position, 0.0)
 
 
 func _put_away() -> void:
