@@ -11,8 +11,8 @@ const SCENES := {
 		"reward_item": "silas"
 	}
 }
-const FADE_DURATION := 0.6
-const MUSIC_FADE_DURATION := 0.6
+const FADE_DURATION := 0.75
+const MUSIC_FADE_DURATION := 0.75
 
 # Connect a cosmetic award handler when the reward has been designed.
 signal cosmetic_reward_requested(npc: NPCData, reward_id: String)
@@ -51,6 +51,9 @@ func _ready() -> void:
 	fade_layer.add_to_group(&"modal_ui")
 	DialogueManager.scene_requested.connect(_on_scene_requested)
 	DialogueManager.conversation_finished.connect(_on_conversation_finished)
+	
+	#im uh gonna FORCE myself in here
+	RecruitmentHandler.fade_to.connect(_basic_fade)
 	cosmetic_reward_requested.connect(_on_cosmetic_reward_requested)
 
 func _on_scene_requested(npc: NPCData, scene_id: String) -> void:
@@ -71,6 +74,12 @@ func _open_scene(scene_id: String) -> void:
 	_transitioning = false
 	skip_button.grab_focus()
 
+func _basic_fade() -> void:
+	#i have forced myself in here hello its me
+	_transitioning = true
+	await _fade_to(1.0)
+	await _fade_to(0.0)
+	_transitioning = false
 
 func _on_skip_pressed() -> void:
 	if _active_npc == null or _transitioning:
