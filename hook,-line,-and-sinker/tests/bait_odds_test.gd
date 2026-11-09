@@ -7,12 +7,15 @@ extends SceneTree
 const FishingManagerScript = preload("res://scripts/fishing_manager.gd")
 const FISH_A: FishData = preload("res://resources/fish/easy_test_fish.tres")
 const FISH_B: FishData = preload("res://resources/fish/hard_test_fish.tres")
+const SILAS: FishData = preload("res://resources/fish/test_silas.tres")
 const BAIT_A: BaitData = preload("res://resources/bait/bait_a.tres")
 const BAIT_B: BaitData = preload("res://resources/bait/bait_b.tres")
+const YELLOW: BaitData = preload("res://resources/bait/bait_yellow.tres")
 
 const DRAWS: int = 20000
 const EXPECTED_BASIC_EASY: float = 10.0 / (10.0 + 0.35)
 const EXPECTED_HARD_HARD: float = 6.0 / (1.0 + 6.0)
+const EXPECTED_YELLOW_SILAS: float = 5.0 / (1.0 + 0.65 + 5.0)
 const TOLERANCE: float = 0.02
 
 var _failures: int = 0
@@ -24,6 +27,22 @@ func _initialize() -> void:
 
 	_check_odds("Easy Fish Bait", pool, BAIT_A, FISH_A, FISH_B, EXPECTED_BASIC_EASY, rng)
 	_check_odds("Hard Fish Bait", pool, BAIT_B, FISH_B, FISH_A, EXPECTED_HARD_HARD, rng)
+
+	var silas_pool: Array[FishData] = [FISH_A, FISH_B, SILAS]
+	var yellow_odds: Dictionary[FishData, float] = FishingManagerScript.get_catch_odds(silas_pool, YELLOW)
+	var basic_odds: Dictionary[FishData, float] = FishingManagerScript.get_catch_odds(silas_pool, BAIT_A)
+	var hard_odds: Dictionary[FishData, float] = FishingManagerScript.get_catch_odds(silas_pool, BAIT_B)
+	_expect(absf(yellow_odds.get(SILAS, 0.0) - EXPECTED_YELLOW_SILAS) < 0.0001, "yellow bait gives Silas roughly 75 percent chance")
+	_expect(yellow_odds.get(SILAS, 0.0) > basic_odds.get(SILAS, 0.0), "yellow bait favors Silas over basic bait")
+	_expect(yellow_odds.get(SILAS, 0.0) > hard_odds.get(SILAS, 0.0), "yellow bait favors Silas over hard bait")
+	var yellow_counts := FishingManagerScript.simulate_catch_odds(silas_pool, YELLOW, DRAWS, rng)
+	_expect(absf(_share(yellow_counts, SILAS.fish_id) - EXPECTED_YELLOW_SILAS) < TOLERANCE, "seeded yellow bait catches Silas at the intended rate")
+
+	# Recruitment removes Silas from the catch pool, so this bait must
+	# still work on ordinary fish after his route starts.
+	var after_recruitment: Array[FishData] = [FISH_A, FISH_B]
+	var ordinary_odds: Dictionary[FishData, float] = FishingManagerScript.get_catch_odds(after_recruitment, YELLOW)
+	_expect(ordinary_odds.size() == 2 and not ordinary_odds.has(SILAS), "yellow bait works after Silas leaves the pond")
 
 	var no_bait: Dictionary = FishingManagerScript.simulate_catch_odds(pool, null, DRAWS, rng)
 	print("No bait: ", _format(no_bait))

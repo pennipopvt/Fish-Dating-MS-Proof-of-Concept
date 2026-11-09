@@ -2,19 +2,21 @@
 
 [ext_resource type="Script" uid="uid://co23u2dkxgpsq" path="res://resources/trade_data.gd" id="1_trade"]
 [ext_resource type="Script" uid="uid://dou1ei8c0alhj" path="res://resources/trade_requirement.gd" id="2_req"]
-[ext_resource type="Resource" uid="uid://dh5u57inonklf" path="res://resources/items/easy_test_fish_item.tres" id="3_easy"]
-[ext_resource type="Texture2D" uid="uid://by1jxw6gujp5d" path="res://sprites/items/spyglass.svg" id="4_icon"]
-[ext_resource type="Resource" path="res://resources/items/spyglass.tres" id="5_spyglass"]
+[ext_resource type="Resource" uid="uid://c18cl4fy3efxo" path="res://resources/items/hard_test_fish_item.tres" id="3_hard"]
+[ext_resource type="Texture2D" uid="uid://cjtdecme4tyeq" path="res://sprites/gifts/gift_spyglass.png" id="4_icon"]
+[ext_resource type="Resource" uid="uid://dq4sy5yms8tqq" path="res://resources/items/spyglass.tres" id="5_spyglass"]
 
-[sub_resource type="Resource" id="Resource_easy"]
+[sub_resource type="Resource" id="Resource_hard"]
 script = ExtResource("2_req")
-item = ExtResource("3_easy")
+item = ExtResource("3_hard")
+amount = 2
 
 [resource]
 script = ExtResource("1_trade")
 trade_id = &"spyglass"
 display_name = "Spyglass"
+description = "A spyglass for seeing faraway things."
 icon = ExtResource("4_icon")
-requirements = Array[ExtResource("2_req")]([SubResource("Resource_easy")])
+requirements = Array[ExtResource("2_req")]([SubResource("Resource_hard")])
 reward_item = ExtResource("5_spyglass")
 metadata/_custom_type_script = "uid://co23u2dkxgpsq"

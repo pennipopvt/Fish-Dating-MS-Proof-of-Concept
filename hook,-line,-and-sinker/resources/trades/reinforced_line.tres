@@ -1,23 +1,20 @@
-[gd_resource type="Resource" script_class="TradeData" format=3]
+[gd_resource type="Resource" script_class="TradeData" format=3 uid="uid://c8f8am1ryfnl4"]
 
-[ext_resource type="Script" path="res://resources/trade_data.gd" id="1"]
-[ext_resource type="Script" path="res://resources/trade_requirement.gd" id="2"]
-[ext_resource type="Resource" path="res://resources/items/hard_test_fish_item.tres" id="3"]
-[ext_resource type="Texture2D" path="res://sprites/upgrades/icon_upgrade_tension_1.png" id="4"]
+[ext_resource type="Script" uid="uid://co23u2dkxgpsq" path="res://resources/trade_data.gd" id="1"]
+[ext_resource type="Script" uid="uid://dou1ei8c0alhj" path="res://resources/trade_requirement.gd" id="2"]
+[ext_resource type="Resource" uid="uid://c18cl4fy3efxo" path="res://resources/items/hard_test_fish_item.tres" id="3"]
+[ext_resource type="Texture2D" uid="uid://dx6r6ffe73rw4" path="res://sprites/upgrades/icon_upgrade_tension_1.png" id="4"]
 
 [sub_resource type="Resource" id="cost"]
 script = ExtResource("2")
 item = ExtResource("3")
-amount = 1
 
 [resource]
 script = ExtResource("1")
 trade_id = &"reinforced_line"
 display_name = "Reinforced Line"
-description = "20% less tension from reeling and missed-parry dashes. Unlock by catching 3 fish in a row without losing one."
-one_time_purchase = true
+description = "Subtracts 0.5% tension per reel and 4% per missed-parry dash."
 icon = ExtResource("4")
 requirements = Array[ExtResource("2")]([SubResource("cost")])
 reward_method = &"shop_reward_reinforced_line"
-reward_amount = 1
 delivery_sprite = ExtResource("4")

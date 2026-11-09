@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="TradeData" format=3 uid="uid://ls24yhmheplp"]
+
+[ext_resource type="Script" uid="uid://co23u2dkxgpsq" path="res://resources/trade_data.gd" id="1_trade"]
+[ext_resource type="Script" uid="uid://dou1ei8c0alhj" path="res://resources/trade_requirement.gd" id="2_req"]
+[ext_resource type="Resource" uid="uid://dh5u57inonklf" path="res://resources/items/easy_test_fish_item.tres" id="3_easy"]
+[ext_resource type="Texture2D" uid="uid://b4r6wgqf0bam6" path="res://sprites/gifts/gift_statue.png" id="4_icon"]
+[ext_resource type="Resource" path="res://resources/items/statue.tres" id="5_gift"]
+
+[sub_resource type="Resource" id="Resource_easy"]
+script = ExtResource("2_req")
+item = ExtResource("3_easy")
+
+[resource]
+script = ExtResource("1_trade")
+trade_id = &"statue_gift"
+display_name = "Statue"
+description = "A small decorative statue made of wood."
+icon = ExtResource("4_icon")
+requirements = Array[ExtResource("2_req")]([SubResource("Resource_easy")])
+reward_item = ExtResource("5_gift")
