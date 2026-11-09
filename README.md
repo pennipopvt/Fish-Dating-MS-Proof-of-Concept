@@ -46,7 +46,7 @@ Debug builds only (not in exports):
 - **Flags:** edit flags and attraction.
 - **Fishing:** instant bite or catch, force a species, cast counts, unlock or equip bobbers, equip bait.
 
-"Reset ALL" wipes the challenge/bobber saves and reloads the world. The panel uses the shared `PixelUI` theme (`scripts/ui/pixel_ui.gd`).
+"Reset ALL" resets this session's progress and reloads the world. The panel uses the shared `PixelUI` theme (`scripts/ui/pixel_ui.gd`).
 
 ## What's implemented
 

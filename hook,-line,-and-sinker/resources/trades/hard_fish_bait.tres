@@ -1,0 +1,23 @@
+[gd_resource type="Resource" script_class="TradeData" format=3]
+
+[ext_resource type="Script" path="res://resources/trade_data.gd" id="1"]
+[ext_resource type="Script" path="res://resources/trade_requirement.gd" id="2"]
+[ext_resource type="Resource" path="res://resources/items/easy_test_fish_item.tres" id="3"]
+[ext_resource type="Texture2D" path="res://sprites/bait/bait_hard.png" id="4"]
+
+[sub_resource type="Resource" id="cost"]
+script = ExtResource("2")
+item = ExtResource("3")
+amount = 2
+
+[resource]
+script = ExtResource("1")
+trade_id = &"hard_fish_bait"
+display_name = "Hard Fish Bait"
+description = "Unlocks a second bait that makes hard fish much more likely to bite. Equip it at the tackle box."
+one_time_purchase = true
+icon = ExtResource("4")
+requirements = Array[ExtResource("2")]([SubResource("cost")])
+reward_method = &"shop_reward_unlock_hard_bait"
+reward_amount = 1
+delivery_sprite = ExtResource("4")

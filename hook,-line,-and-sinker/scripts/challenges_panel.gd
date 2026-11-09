@@ -25,17 +25,12 @@ var _summary_label: Label
 var _summary_bar: ProgressBar
 var _list: VBoxContainer
 var _greyscale := ShaderMaterial.new()
-var _row_style: StyleBoxTexture
-var _row_done_style: StyleBoxTexture
 
 
 func _ready() -> void:
 	var shader := Shader.new()
 	shader.code = GREYSCALE_SHADER
 	_greyscale.shader = shader
-
-	_row_style = PixelUI.box(PixelUI.ROW, PixelUI.ROW_EDGE, 3)
-	_row_done_style = PixelUI.box(PixelUI.ROW_DONE, PixelUI.CYAN, 3)
 
 	_build()
 	ChallengeManager.challenge_progressed.connect(_on_challenge_changed)
@@ -105,7 +100,6 @@ func _build() -> void:
 
 	var frame := PanelContainer.new()
 	frame.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	frame.add_theme_stylebox_override("panel", PixelUI.box(PixelUI.INSET, PixelUI.ROW_EDGE, 2))
 	add_child(frame)
 
 	var scroll := ScrollContainer.new()
@@ -123,7 +117,7 @@ func _make_row(challenge: ChallengeData) -> Control:
 	var secret := challenge.hidden and not done
 
 	var row := PanelContainer.new()
-	row.add_theme_stylebox_override("panel", _row_done_style if done else _row_style)
+	row.self_modulate = Color("def4e2") if done else Color.WHITE
 
 	var columns := HBoxContainer.new()
 	columns.add_theme_constant_override("separation", 5 * S)
@@ -154,7 +148,7 @@ func _make_row(challenge: ChallengeData) -> Control:
 
 	text.add_child(PixelUI.label(
 		"Hidden Challenge" if secret else challenge.display_name,
-		&"TitleLabel", PixelUI.TEXT if done else PixelUI.TEXT_DIM.lerp(PixelUI.TEXT, 0.5)
+		&"TitleLabel", Color("17363b") if done else Color("31575c")
 	))
 
 	var description := PixelUI.label(
@@ -181,7 +175,7 @@ func _make_row(challenge: ChallengeData) -> Control:
 	if not secret and challenge.reward_text != "":
 		var reward := PixelUI.label(
 			("Unlocked: " if done else "Reward: ") + challenge.reward_text,
-			&"", PixelUI.GOLD if done else PixelUI.TEXT_DIM
+			&"", Color("745600") if done else Color("45646a")
 		)
 		reward.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		text.add_child(reward)
@@ -201,7 +195,6 @@ func _make_row(challenge: ChallengeData) -> Control:
 # Steam-style footer: "+3 hidden challenges remaining".
 func _make_hidden_row(count: int) -> Control:
 	var row := PanelContainer.new()
-	row.add_theme_stylebox_override("panel", _row_style)
 
 	var columns := HBoxContainer.new()
 	columns.add_theme_constant_override("separation", 5 * S)
@@ -222,7 +215,7 @@ func _make_hidden_row(count: int) -> Control:
 
 	text.add_child(PixelUI.label(
 		"+%d hidden challenge%s remaining" % [count, "" if count == 1 else "s"],
-		&"TitleLabel", PixelUI.TEXT_DIM.lerp(PixelUI.TEXT, 0.5)
+		&"TitleLabel", Color("31575c")
 	))
 	var hint := PixelUI.label(
 		"Details for each challenge will be revealed once unlocked.", &"DimLabel"

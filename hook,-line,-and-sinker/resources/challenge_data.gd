@@ -3,16 +3,18 @@ extends Resource
 
 # One Steam-style challenge (achievement).
 # Exported fields are the definition you edit in the Inspector.
-# progress / completed / completed_at are runtime state owned and saved by ChallengeManager.
+# progress / completed / completed_at are session-only runtime state owned by ChallengeManager.
 
 enum RequirementType {
 	## Catch target_amount fish in a row. Losing any fish resets progress.
 	CONSECUTIVE_CATCHES,
 	## Catch target_amount fish in total. Losing a fish does not reset progress.
 	TOTAL_CATCHES,
+	## Land target_amount perfect parries consecutively (a close/miss resets it).
+	CONSECUTIVE_PERFECT_PARRIES,
 }
 
-## Stable save key. Don't rename after release or saved completion is lost.
+## Stable identifier for the challenge; no persistent save in this prototype.
 @export var challenge_id: StringName = &""
 @export var display_name: String = ""
 @export_multiline var description: String = ""
@@ -44,27 +46,22 @@ var completed: bool = false
 var completed_at: int = 0
 
 
-func counts_item(item: ItemData) -> bool:
-	if item == null:
+# Match fish by their stable species ID, not a storage item.
+# NPC fish also count as catches even though they have no stored ItemData.
+func counts_fish(fish: FishData) -> bool:
+	if fish == null:
 		return false
-
 	if counted_fish.is_empty():
 		return true
-
 	for counted in counted_fish:
-		if counted == null or counted.item_data == null:
-			continue
-		if counted.item_data == item:
+		if counted != null and counted.fish_id == fish.fish_id:
 			return true
-		if item.item_id != &"" and counted.item_data.item_id == item.item_id:
-			return true
-
 	return false
 
 
 # Returns true when this catch completes the challenge.
-func record_catch(item: ItemData) -> bool:
-	if completed or not counts_item(item):
+func record_catch(fish: FishData) -> bool:
+	if completed or requirement_type == RequirementType.CONSECUTIVE_PERFECT_PARRIES or not counts_fish(fish):
 		return false
 
 	progress = mini(progress + 1, target_amount)
@@ -81,6 +78,18 @@ func record_loss() -> bool:
 
 	progress = 0
 	return true
+
+
+# Returns true only when a perfect parry completes the challenge.
+# Other parry results reset progress, but do not mark completion.
+func record_parry(result: StringName) -> bool:
+	if completed or requirement_type != RequirementType.CONSECUTIVE_PERFECT_PARRIES:
+		return false
+	if result != &"perfect":
+		progress = 0
+		return false
+	progress = mini(progress + 1, target_amount)
+	return progress >= target_amount
 
 
 func get_progress_ratio() -> float:

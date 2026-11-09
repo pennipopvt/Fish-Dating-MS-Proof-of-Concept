@@ -5,27 +5,39 @@ signal fade_to()
 var listening: bool = false
 var available_homes: Array[Sprite2D] = []
 var npc: NPCInteractable = null
+# Remember the exact catch across exit_fishing(), which resets hooked_fish
+# before the recruitment dialogue finishes.
+var pending_fish: FishData = null
 var time_to_transfer: float = 0.8
 
 func _ready() -> void:
 	DialogueManager.conversation_finished.connect(check_for_recruitment)
 
-func engage_listen(transfer: NPCInteractable) -> void:
+func engage_listen(transfer: NPCInteractable, caught_fish: FishData = null) -> void:
 	# Only the initial conversation after catching this NPC may recruit them.
 	npc = transfer
+	pending_fish = caught_fish
 	listening = is_instance_valid(transfer)
 
 func check_for_recruitment(finished_npc: NPCData) -> void:
 	if not listening:
 		return
-	# Clear the pending listener even if the player doesn't recruit the NPC.
+	# Clear the pending listener even if the player declines recruitment.
 	listening = false
+	var caught_fish: FishData = pending_fish
+	pending_fish = null
 	if finished_npc == null or not is_instance_valid(npc) or npc.npc != finished_npc:
+		npc = null
 		return
 
 	var flags: Dictionary = NPCManager.get_npc_state(finished_npc.npc_id).get("flags", {})
 	if not flags.get(&"Recruited", false):
+		npc = null
 		return
+
+	# Remove the NPC from the catch pool only AFTER their recruitment
+	# flag is confirmed, never just because they were caught.
+	FishingManager.remove_recruited_catch(caught_fish)
 
 	if available_homes.is_empty():
 		push_warning("RecruitmentHandler: no available homes for " + finished_npc.display_name)

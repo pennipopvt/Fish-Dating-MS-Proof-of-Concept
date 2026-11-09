@@ -1,14 +1,17 @@
 [gd_resource type="Resource" script_class="BaitData" format=3 uid="uid://qdymy3v00i5x"]
 
 [ext_resource type="Script" uid="uid://ca82iknxm3fe8" path="res://resources/bait_data.gd" id="1_bait"]
-[ext_resource type="Texture2D" uid="uid://xa2q0j3us8qs" path="res://sprites/placeholders/bait_b.png" id="2_icon"]
+[ext_resource type="Texture2D" uid="uid://wi6la76xof3k" path="res://sprites/bait/bait_hard.png" id="2_icon"]
 
 [resource]
 script = ExtResource("1_bait")
 bait_id = &"bait_b"
-display_name = "Bait B"
+display_name = "Hard Fish Bait"
 icon = ExtResource("2_icon")
-description = "TODO: placeholder description. Attracts Placeholder Fish B more often."
+description = "Strong bait that attracts hard fish. Unlock permanently at the FISH CO. shop."
 catch_weights = Dictionary[StringName, float]({
-&"test_silas": 5.0
+&"easy_test_fish": 1.0,
+&"hard_test_fish": 6.0,
+&"test_silas": 0.5
 })
+default_weight = 0.5

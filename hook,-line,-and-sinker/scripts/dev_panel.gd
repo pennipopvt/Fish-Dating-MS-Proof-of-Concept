@@ -323,8 +323,12 @@ func _reset_bobbers() -> void:
 	BobberManager.unlocked_ids.clear()
 	BobberManager.unlocked_ids.append(BobberManager.DEFAULT_ID)
 	BobberManager.equipped_id = BobberManager.DEFAULT_ID
-	if FileAccess.file_exists(BobberManager.SAVE_PATH):
-		DirAccess.remove_absolute(ProjectSettings.globalize_path(BobberManager.SAVE_PATH))
+	# Bobbers are session-only now; older builds also kept a save file.
+	if "silas_reward_claimed" in BobberManager:
+		BobberManager.set("silas_reward_claimed", false)
+	var save_path: String = str(BobberManager.get("SAVE_PATH")) if "SAVE_PATH" in BobberManager else ""
+	if not save_path.is_empty() and FileAccess.file_exists(save_path):
+		DirAccess.remove_absolute(ProjectSettings.globalize_path(save_path))
 	BobberManager.collection_changed.emit()
 	BobberManager.equipped_changed.emit(BobberManager.get_equipped_bobber())
 

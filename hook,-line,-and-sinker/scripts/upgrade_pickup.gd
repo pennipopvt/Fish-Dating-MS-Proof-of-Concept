@@ -21,6 +21,7 @@ func interact(_player: Node2D) -> void:
 		return
 
 	FishingManager.call(trade.reward_method, trade.reward_amount)
+	ShopManager.mark_upgrade_delivered(trade)
 
 	var player := _player as Player
 	if player != null:

@@ -196,10 +196,13 @@ func play_ripple(animation: StringName) -> void:
 	if animation != current_ripple_animation:
 		current_ripple_animation = animation
 		ripple_tell.speed_scale = windup_playback_scale if animation == &"windup" else 1.0
+		# Show the authored frames without applying a tint.
+		ripple_tell.modulate = Color.WHITE
 		ripple_tell.play(animation)
 	ripple_tell.show()
 
 func set_telegraph(phase: int, amount: float) -> void:
+	tell_progress = amount
 	var entering_attack: bool = phase == 3 and current_telegraph_phase != 3
 	current_telegraph_phase = phase
 	if entering_attack:
@@ -207,7 +210,14 @@ func set_telegraph(phase: int, amount: float) -> void:
 	elif phase != 3:
 		attack_start_pending = false
 	update_ripple_position()
-	if current_ripple_animation == &"counter_success":
+	# A new warning must start the instant the miss dash ends, even if
+	# counter_fail still has a fraction of a second of animation left.
+	if phase == 5 and current_ripple_animation == &"counter_fail":
+		ripple_tell.stop()
+		current_ripple_animation = &""
+		counter_flash_time = 0.0
+	# Don't restart a close/miss/perfect flash while combat continues.
+	if current_ripple_animation in [&"counter_success", &"counter_close", &"counter_fail"]:
 		return
 	match phase:
 		0:
@@ -233,30 +243,42 @@ func set_telegraph(phase: int, amount: float) -> void:
 				play_ripple(&"attacking")
 		4:
 			play_ripple(&"stun")
+		5:
+			play_ripple(&"pre_windup")
 		_:
 			ripple_tell.hide()
 
 func _on_ripple_animation_finished() -> void:
 	# A counter flash should immediately hand control back to the active
 	# telegraph instead of holding its last frame.
-	if current_ripple_animation == &"counter_success":
+	if current_ripple_animation in [&"counter_success", &"counter_close", &"counter_fail"]:
 		counter_flash_time = 0.0
 		current_ripple_animation = &""
 		attack_start_pending = false
-		set_telegraph(current_telegraph_phase, 0.0)
+		set_telegraph(current_telegraph_phase, tell_progress)
 		return
 	# A one-shot splash marks attack onset; the sustained pull then loops.
 	if current_ripple_animation == &"start_attack" and current_telegraph_phase == 3 and counter_flash_time <= 0.0:
 		play_ripple(&"attacking")
 
-func flash_counter(success: bool) -> void:
-	# Only successful counters have a feedback animation.
-	# A miss lets windup / start_attack / attacking play uninterrupted.
-	if not success:
-		return
-	# Cancel start_attack immediately; do not queue or resume its remaining frames.
+# Named result hooks keep all feedback art editable in RippleTell's
+# SpriteFrames resource (fishing_controller.tscn).
+func flash_parry_result(result: StringName) -> void:
+	var animation: StringName
+	match result:
+		&"perfect": animation = &"counter_success"
+		&"close": animation = &"counter_close"
+		&"miss": animation = &"counter_fail"
+		_: return
+
 	attack_start_pending = false
 	counter_flash_time = 1.0
 	ripple_tell.stop()
 	current_ripple_animation = &""
-	play_ripple(&"counter_success")
+	play_ripple(animation)
+
+
+# Backwards-compatible name for other callers.
+func flash_counter(success: bool) -> void:
+	if success:
+		flash_parry_result(&"perfect")
