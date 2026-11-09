@@ -85,11 +85,12 @@ func _run() -> void:
 	_expect(fish.equipped_bait == HARD, "hard bait is equippable after delivery")
 	fish.shop_reward_stronger_reel(1)
 	fish.shop_reward_reinforced_line(1)
-	_expect(is_equal_approx(fish.reel_strength_multiplier, 1.25), "reel gets a 25 percent increase")
-	_expect(is_equal_approx(fish.tension_gain_multiplier, 0.8), "line reduces tension gains by 20 percent")
+	_expect(is_equal_approx(fish.reel_progress_bonus, 0.01), "reel adds 1 percentage point per scroll")
+	_expect(is_equal_approx(fish.reel_tension_reduction, 0.005), "line subtracts 0.5 percentage points per scroll")
+	_expect(is_equal_approx(fish.miss_tension_reduction, 0.04), "line subtracts 4 percentage points per missed dash")
 	fish.shop_reward_stronger_reel(1)
 	fish.shop_reward_reinforced_line(1)
-	_expect(is_equal_approx(fish.reel_strength_multiplier, 1.25) and is_equal_approx(fish.tension_gain_multiplier, 0.8), "upgrade methods cannot stack rewards")
+	_expect(is_equal_approx(fish.reel_progress_bonus, 0.01) and is_equal_approx(fish.reel_tension_reduction, 0.005) and is_equal_approx(fish.miss_tension_reduction, 0.04), "upgrade methods cannot stack rewards")
 
 	# A fresh manager represents a new game launch. All upgrades and bait
 	# choices must reset, even if the previous session owned everything.
@@ -104,8 +105,9 @@ func _run() -> void:
 	_expect(not fresh.get_unlocked_baits().has(YELLOW), "yellow bait is hidden again after relaunch")
 	_expect(not fresh.has_upgrade(&"stronger_reel"), "stronger reel must be re-earned on relaunch")
 	_expect(not fresh.has_upgrade(&"reinforced_line"), "reinforced line must be re-earned on relaunch")
-	_expect(is_equal_approx(fresh.reel_strength_multiplier, 1.0), "reel strength resets to normal")
-	_expect(is_equal_approx(fresh.tension_gain_multiplier, 1.0), "tension multiplier resets to normal")
+	_expect(is_zero_approx(fresh.reel_progress_bonus), "reel bonus resets to zero")
+	_expect(is_zero_approx(fresh.reel_tension_reduction), "reel tension reduction resets to zero")
+	_expect(is_zero_approx(fresh.miss_tension_reduction), "miss tension reduction resets to zero")
 	fish.free()
 	fresh.free()
 

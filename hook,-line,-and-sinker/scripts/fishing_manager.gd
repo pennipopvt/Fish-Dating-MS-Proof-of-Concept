@@ -29,8 +29,10 @@ const YELLOW_BAIT_UPGRADE_ID: StringName = &"yellow_bait"
 @export var equipped_bait: BaitData = null
 var unlocked_bait_ids: Array[StringName] = [BASIC_BAIT_ID]
 var owned_upgrade_ids: Array[StringName] = []
-var reel_strength_multiplier: float = 1.0
-var tension_gain_multiplier: float = 1.0
+# Flat equipment bonuses that apply after fish-specific combat calculations.
+var reel_progress_bonus: float = 0.0
+var reel_tension_reduction: float = 0.0
+var miss_tension_reduction: float = 0.0
 
 @export_category("Fishing Stats")
 @export var max_casts_per_session: int = 3
@@ -41,8 +43,9 @@ func _ready() -> void:
 	owned_upgrade_ids.clear()
 	unlocked_bait_ids.clear()
 	unlocked_bait_ids.append(BASIC_BAIT_ID)
-	reel_strength_multiplier = 1.0
-	tension_gain_multiplier = 1.0
+	reel_progress_bonus = 0.0
+	reel_tension_reduction = 0.0
+	miss_tension_reduction = 0.0
 	equipped_bait = _find_bait(BASIC_BAIT_ID)
 
 
@@ -96,7 +99,7 @@ func shop_reward_stronger_reel(amount: int) -> void:
 	if amount <= 0 or has_upgrade(STRONGER_REEL_ID):
 		return
 	owned_upgrade_ids.append(STRONGER_REEL_ID)
-	reel_strength_multiplier = 1.25
+	reel_progress_bonus = 0.01  # +1 percentage point per reel scroll
 	upgrades_changed.emit()
 
 
@@ -104,7 +107,8 @@ func shop_reward_reinforced_line(amount: int) -> void:
 	if amount <= 0 or has_upgrade(REINFORCED_LINE_ID):
 		return
 	owned_upgrade_ids.append(REINFORCED_LINE_ID)
-	tension_gain_multiplier = 0.8
+	reel_tension_reduction = 0.005  # -0.5 percentage points per reel scroll
+	miss_tension_reduction = 0.04  # -4 percentage points per missed dash
 	upgrades_changed.emit()
 
 
