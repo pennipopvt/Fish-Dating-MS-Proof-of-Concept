@@ -19,6 +19,14 @@ func get_icon() -> Texture2D:
 func interact(_player: Node2D) -> void:
 	if trade == null or trade.reward_method == &"":
 		return
+	# Discard stale world packages after a debug reset or a second pickup.
+	# A consumed/cancelled order must never silently re-apply an upgrade.
+	if trade.one_time_purchase and not ShopManager.is_upgrade_ordered(trade):
+		var stale_player := _player as Player
+		if stale_player != null:
+			stale_player.release_interactable(self)
+		queue_free()
+		return
 
 	FishingManager.call(trade.reward_method, trade.reward_amount)
 	ShopManager.mark_upgrade_delivered(trade)

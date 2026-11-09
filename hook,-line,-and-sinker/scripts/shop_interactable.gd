@@ -25,6 +25,13 @@ func _ready() -> void:
 	ShopManager.shop_opened.connect(_update_prompt)
 	ShopManager.shop_closed.connect(_update_prompt)
 	ShopManager.shop_closed.connect(_launch_drone)
+	# The autoload survives a world reload while the physical drone/packages
+	# do not. Restore outstanding upgrade deliveries without charging again.
+	if ShopManager.is_shop_open:
+		ShopManager.set_shop_open(false)
+	var recovered: Array[ItemPickup] = ShopManager.get_pending_upgrade_pickups()
+	if not recovered.is_empty():
+		deliver(recovered)
 
 
 func _on_body_entered(body: Node2D) -> void:
