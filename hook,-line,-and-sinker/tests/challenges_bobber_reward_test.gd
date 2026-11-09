@@ -39,6 +39,26 @@ func _run_tests() -> void:
 	_expect(streak.progress == 2, "an NPC catch advances the streak")
 	_expect(fish_manager.current_storage.size() == 1, "NPC catch adds no storage item")
 	_expect(fish_manager.catch_dex.has(SILAS_FISH), "NPC catch appears in catch history")
+
+	# Regression for the #39 merge, which changed ChallengeData's helper
+	# to ItemData and the manager's listener to a mismatched parameter.
+	var catch_challenge := ChallengeData.new()
+	catch_challenge.target_amount = 3
+	_expect(catch_challenge.counts_fish(EASY_FISH), "challenge recognizes a caught FishData")
+	_expect(catch_challenge.counts_fish(SILAS_FISH), "challenge recognizes NPC FishData too")
+	var restricted_challenge := ChallengeData.new()
+	var restricted: Array[FishData] = [EASY_FISH]
+	restricted_challenge.counted_fish = restricted
+	_expect(restricted_challenge.counts_fish(EASY_FISH), "restricted challenge accepts matching fish")
+	_expect(not restricted_challenge.counts_fish(SILAS_FISH), "restricted challenge rejects other fish")
+	var manager: Variant = preload("res://scripts/challenge_manager.gd").new()
+	var challenges: Array[ChallengeData] = [catch_challenge]
+	manager.challenges = challenges
+	manager._on_fish_caught(EASY_FISH)
+	_expect(catch_challenge.progress == 1, "catch listener advances challenge from FishData")
+	manager._on_fish_caught(SILAS_FISH)
+	_expect(catch_challenge.progress == 2, "NPC catch advances challenge without an item")
+	manager.free()
 	fish_manager.free()
 
 	# Bobbers have no save file now. Every launch starts with the default,
