@@ -4,8 +4,8 @@
 [ext_resource type="Script" uid="uid://dou1ei8c0alhj" path="res://resources/trade_requirement.gd" id="2_req"]
 [ext_resource type="Resource" uid="uid://dh5u57inonklf" path="res://resources/items/easy_test_fish_item.tres" id="3_easy"]
 [ext_resource type="Resource" uid="uid://c18cl4fy3efxo" path="res://resources/items/hard_test_fish_item.tres" id="4_hard"]
-[ext_resource type="Texture2D" uid="uid://dmjeqvu1hg50s" path="res://sprites/placeholders/gift_pearl_necklace.png" id="5_icon"]
-[ext_resource type="Resource" path="res://resources/items/pearl_necklace_item.tres" id="6_gift"]
+[ext_resource type="Texture2D" uid="uid://bq3l0lq2fhrwr" path="res://sprites/gifts/gift_necklace.png" id="5_icon"]
+[ext_resource type="Resource" uid="uid://ds1cu4d3pbtqa" path="res://resources/items/pearl_necklace_item.tres" id="6_gift"]
 
 [sub_resource type="Resource" id="Resource_easy"]
 script = ExtResource("2_req")
@@ -19,6 +19,7 @@ item = ExtResource("4_hard")
 script = ExtResource("1_trade")
 trade_id = &"pearl_necklace_gift"
 display_name = "Pearl Necklace"
+description = "A beautiful piece of jewelry."
 icon = ExtResource("5_icon")
 requirements = Array[ExtResource("2_req")]([SubResource("Resource_easy"), SubResource("Resource_hard")])
 reward_item = ExtResource("6_gift")

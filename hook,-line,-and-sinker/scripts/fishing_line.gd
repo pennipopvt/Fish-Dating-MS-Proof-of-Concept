@@ -7,6 +7,7 @@ extends Line2D
 ## Depth below water at zero reel progress, independent of horizontal reach.
 @export_range(1.0, 250.0, 1.0) var max_depth: float = 65.0
 @onready var fish: Sprite2D = $Fish
+var _default_fish_scale: Vector2 = Vector2.ONE
 var line_dist : float = 0
 var pos: Vector2
 
@@ -78,6 +79,7 @@ func set_tension(amount: float) -> void:
 
 
 func _ready() -> void:
+	_default_fish_scale = fish.scale
 	FishingManager.fish_hooked.connect(hook)
 	set_tension(0.0)
 	# Separate broad translucent line creates a visible glow without a shader.
@@ -119,7 +121,15 @@ func send(initial_progress: float = 0.0) -> void:
 func hook(item: FishData) -> void:
 	# The bite pulls the bobber under immediately; keep telegraphs clear.
 	bobber.hide()
+	if item == null or item.item_data == null:
+		fish.hide()
+		return
 	fish.texture = item.item_data.sprite
+	# Keep other fish at the editor-authored scale; custom fish art can
+	# specify a world-space width to avoid looking microscopic.
+	fish.scale = _default_fish_scale
+	if fish.texture != null and item.hooked_sprite_width > 0.0:
+		fish.scale = Vector2.ONE * (item.hooked_sprite_width / float(fish.texture.get_width()))
 	fish.show() # Let the scene's water layer determine visibility.
 
 func get_fish_global_position() -> Vector2:

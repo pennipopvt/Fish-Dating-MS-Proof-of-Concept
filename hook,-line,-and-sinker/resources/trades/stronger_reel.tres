@@ -1,23 +1,20 @@
-[gd_resource type="Resource" script_class="TradeData" format=3]
+[gd_resource type="Resource" script_class="TradeData" format=3 uid="uid://ddijjqgr3hnld"]
 
-[ext_resource type="Script" path="res://resources/trade_data.gd" id="1"]
-[ext_resource type="Script" path="res://resources/trade_requirement.gd" id="2"]
-[ext_resource type="Resource" path="res://resources/items/easy_test_fish_item.tres" id="3"]
-[ext_resource type="Texture2D" path="res://sprites/upgrades/icon_upgrade_strength_1.png" id="4"]
+[ext_resource type="Script" uid="uid://co23u2dkxgpsq" path="res://resources/trade_data.gd" id="1"]
+[ext_resource type="Script" uid="uid://dou1ei8c0alhj" path="res://resources/trade_requirement.gd" id="2"]
+[ext_resource type="Resource" uid="uid://dh5u57inonklf" path="res://resources/items/easy_test_fish_item.tres" id="3"]
+[ext_resource type="Texture2D" uid="uid://ktf22ar132ox" path="res://sprites/upgrades/icon_upgrade_strength_1.png" id="4"]
 
 [sub_resource type="Resource" id="cost"]
 script = ExtResource("2")
 item = ExtResource("3")
-amount = 1
 
 [resource]
 script = ExtResource("1")
 trade_id = &"stronger_reel"
 display_name = "Stronger Reel"
-description = "25% more reel progress per scroll. Unlock by landing 3 perfect parries in a row."
-one_time_purchase = true
+description = "Adds 1% reel progress per scroll."
 icon = ExtResource("4")
 requirements = Array[ExtResource("2")]([SubResource("cost")])
 reward_method = &"shop_reward_stronger_reel"
-reward_amount = 1
 delivery_sprite = ExtResource("4")
