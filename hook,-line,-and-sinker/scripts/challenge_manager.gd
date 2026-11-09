@@ -10,8 +10,8 @@ signal progress_reset
 
 const SAVE_PATH := "user://challenges.cfg"
 
-# Debug hotkeys (project Input Map). Ignored in release exports.
-const ACTION_RESET := &"debug_reset_challenges"          # F9
+# Debug hotkey (project Input Map). Ignored in release exports.
+# Resetting and completing challenges lives in the F9 DevPanel.
 const ACTION_TEST_POPUP := &"debug_test_challenge_popup"  # F10
 
 ## Order here is the order shown in the Challenges tab.
@@ -34,11 +34,7 @@ func _unhandled_input(event: InputEvent) -> void:
 	if not OS.is_debug_build():
 		return
 
-	if event.is_action_pressed(ACTION_RESET):
-		reset_all()
-		print("Challenges: progress reset")
-		get_viewport().set_input_as_handled()
-	elif event.is_action_pressed(ACTION_TEST_POPUP):
+	if event.is_action_pressed(ACTION_TEST_POPUP):
 		test_popup()
 		get_viewport().set_input_as_handled()
 
@@ -187,6 +183,15 @@ func _load() -> void:
 
 		if challenge.completed:
 			challenge.progress = challenge.target_amount
+
+
+# Debug helper (DevPanel): complete a challenge as if its requirement was met,
+# with the usual popup, unlocks and save.
+func debug_complete(challenge: ChallengeData) -> void:
+	if challenge == null or challenge.completed or not challenges.has(challenge):
+		return
+	_complete(challenge)
+	_save()
 
 
 # Debug helper: wipe all challenge progress and the save file.

@@ -25,6 +25,26 @@ people who might settle in your empty town.
 | Interact (talk / shop / bait box) | Space |
 | Close menu | Esc |
 
+Debug builds only (not in exports):
+
+| Action | Input |
+|---|---|
+| Dev panel | F9 |
+| End current dialogue | F5 |
+| Recruit Silas (skip his first talk) | F6 |
+| Preview challenge popup | F10 |
+
+**Dev panel (F9)** (`prefabs/dev_panel.tscn`, autoload `DevPanel`). Tabs:
+- **Info:** live state (NPC flags, next encounter, dialogue node, fishing, storage, upgrades, challenges, bobbers).
+- **Dialogue:** Silas story checkpoints, which set flags, spawn him and open the talk; or play any `dialogue/*.json`.
+- **Items:** put any item in your hands or storage.
+- **Progress:** complete or reset challenges, grant or reset upgrades, reset everything.
+- **Flags:** edit flags and attraction.
+- **Fishing:** instant bite or catch, force a species, cast counts.
+- **Cosmetics:** bobbers and bait.
+
+"Reset ALL" wipes the challenge/bobber saves and reloads the world.
+
 ## What's implemented
 
 - **Managers (autoloads):** `GameManager` (time of day, actions per day),
@@ -62,7 +82,7 @@ unlocked gear, corporate storage/delivery, fish-person recruitment, houses.
 hook,-line,-and-sinker/
   scenes/      main.tscn, dock, manager scenes
   prefabs/     player, world, dock, shop, test_npc, dialogue_ui, shop_menu,
-               interact_prompt, bait_box, bait_menu, fishing_rod
+               interact_prompt, bait_box, bait_menu, fishing_rod, dev_panel
   scripts/     managers, player, interactables, UI scripts
   resources/   Resource classes (*.gd) and data (*.tres in fish/, items/, npcs/,
                trades/, bait/)
