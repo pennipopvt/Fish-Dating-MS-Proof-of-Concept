@@ -44,6 +44,14 @@ people who might settle in your empty town.
   or malformed catch pool ends the cast instead of crashing.
 - **UI:** visual-novel style dialogue UI, shop menu, bait menu, interact prompt.
 - **Player** movement on the dock, plus interactables for NPCs and the shop.
+- **Fishing rod (visual only):** `prefabs/fishing_rod.tscn` on the player. When you
+  start fishing, the player faces the water and pulls out the rod. Every cast swings
+  the rod back and flicks it forward, and the equipped bait's icon flies out on the
+  end of the line along a parabola, lands where the bobber floats, and sinks along
+  the underwater line. The reel spins while you scroll,
+  and the line stays attached to the fish as it flies out of the water.
+  `fishing_rod.gd` only watches `FishingController`'s state; timings and angles are
+  exported on the FishingRod node.
 
 Not yet built (planned or exploratory): bait stock/shop, time/weather odds, fishing journal, challenge-
 unlocked gear, corporate storage/delivery, fish-person recruitment, houses.
@@ -54,7 +62,7 @@ unlocked gear, corporate storage/delivery, fish-person recruitment, houses.
 hook,-line,-and-sinker/
   scenes/      main.tscn, dock, manager scenes
   prefabs/     player, world, dock, shop, test_npc, dialogue_ui, shop_menu,
-               interact_prompt, bait_box, bait_menu
+               interact_prompt, bait_box, bait_menu, fishing_rod
   scripts/     managers, player, interactables, UI scripts
   resources/   Resource classes (*.gd) and data (*.tres in fish/, items/, npcs/,
                trades/, bait/)

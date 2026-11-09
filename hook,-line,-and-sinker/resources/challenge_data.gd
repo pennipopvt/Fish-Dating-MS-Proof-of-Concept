@@ -44,23 +44,27 @@ var completed: bool = false
 var completed_at: int = 0
 
 
-func counts_fish(fish: FishData) -> bool:
-	if fish == null:
+func counts_item(item: ItemData) -> bool:
+	if item == null:
 		return false
 
 	if counted_fish.is_empty():
 		return true
 
 	for counted in counted_fish:
-		if counted != null and counted.fish_id == fish.fish_id:
+		if counted == null or counted.item_data == null:
+			continue
+		if counted.item_data == item:
+			return true
+		if item.item_id != &"" and counted.item_data.item_id == item.item_id:
 			return true
 
 	return false
 
 
 # Returns true when this catch completes the challenge.
-func record_catch(fish: FishData) -> bool:
-	if completed or not counts_fish(fish):
+func record_catch(item: ItemData) -> bool:
+	if completed or not counts_item(item):
 		return false
 
 	progress = mini(progress + 1, target_amount)

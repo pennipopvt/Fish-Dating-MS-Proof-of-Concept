@@ -64,17 +64,18 @@ func test_popup() -> void:
 		_unlock_sfx.play()
 
 
-func _on_fish_caught(fish: FishData) -> void:
+# FishingManager.fish_caught emits the caught fish's ItemData (item.item_data).
+func _on_fish_caught(item: ItemData) -> void:
 	catch_streak += 1
 	streak_changed.emit(catch_streak)
 
 	var changed := false
 	for challenge in challenges:
-		if challenge == null or challenge.completed or not challenge.counts_fish(fish):
+		if challenge == null or challenge.completed or not challenge.counts_item(item):
 			continue
 
 		changed = true
-		if challenge.record_catch(fish):
+		if challenge.record_catch(item):
 			_complete(challenge)
 		else:
 			challenge_progressed.emit(challenge)
