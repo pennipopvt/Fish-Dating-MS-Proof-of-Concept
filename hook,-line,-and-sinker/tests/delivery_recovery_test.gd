@@ -16,15 +16,17 @@ func _initialize() -> void:
 
 
 func _run() -> void:
-	var shop: Node = SHOP_SCRIPT.new()
+	var shop: Variant = SHOP_SCRIPT.new()
 	var offers: Array[TradeData] = [REEL, LINE, GIFT]
 	shop.trades = offers
 
 	shop.pending_upgrade_ids = [&"stronger_reel", &"reinforced_line"]
 	var deliveries: Array[ItemPickup] = shop.get_pending_upgrade_pickups()
 	_expect(deliveries.size() == 2, "every pending upgrade is restored exactly once")
-	_expect(deliveries[0] is UpgradePickup and deliveries[0].trade == REEL, "reel package is reconstructed")
-	_expect(deliveries[1] is UpgradePickup and deliveries[1].trade == LINE, "line package is reconstructed")
+	var reel_package: UpgradePickup = deliveries[0] as UpgradePickup if deliveries.size() > 0 else null
+	var line_package: UpgradePickup = deliveries[1] as UpgradePickup if deliveries.size() > 1 else null
+	_expect(reel_package != null and reel_package.trade == REEL, "reel package is reconstructed")
+	_expect(line_package != null and line_package.trade == LINE, "line package is reconstructed")
 	for pickup in deliveries:
 		pickup.free()
 
