@@ -8,9 +8,10 @@
 [ext_resource type="Script" uid="uid://ca82iknxm3fe8" path="res://resources/bait_data.gd" id="6_baitd"]
 [ext_resource type="Resource" uid="uid://cghuy18lde1ur" path="res://resources/bait/bait_a.tres" id="7_baita"]
 [ext_resource type="Resource" uid="uid://qdymy3v00i5x" path="res://resources/bait/bait_b.tres" id="8_baitb"]
+[ext_resource type="Resource" path="res://resources/bait/bait_yellow.tres" id="9_bait_yellow"]
 
 [node name="FishingManager" type="Node2D" unique_id=586344140]
 script = ExtResource("1_ophlp")
 possible_catches = Array[ExtResource("2_v3w6v")]([ExtResource("3_ybfar"), ExtResource("4_55v6w"), ExtResource("5_ybfar")])
-available_baits = Array[ExtResource("6_baitd")]([ExtResource("7_baita"), ExtResource("8_baitb")])
+available_baits = Array[ExtResource("6_baitd")]([ExtResource("7_baita"), ExtResource("8_baitb"), ExtResource("9_bait_yellow")])
 equipped_bait = ExtResource("7_baita")
