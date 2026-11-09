@@ -14,9 +14,10 @@ scripts. For the current prototype, gameplay progression is **session-only**.
    `ChallengeManager`. Ordinary fish go into storage.
 5. Caught NPC fish become `NPCInteractable` scenes; initial dialogue is
    coordinated by `DialogueManager`, with flags held by `NPCManager`.
-6. `RecruitmentHandler` moves **accepted** NPCs into available houses and
-   removes their fish entry from future catches. **Declined** NPCs disappear
-   from the world and remain catchable.
+6. `RecruitmentHandler` removes accepted NPCs from future catches and places
+   them in **first-come, first-served** housing. If the houses are full, accepted
+   NPCs wait by the dock and are automatically moved into the next free house.
+   **Declined** NPCs disappear from the world and remain catchable.
 7. `ShopManager` validates trades, deducts items, records pending upgrades,
    and asks the scene's `ShopInteractable` to deliver pickups.
 8. Picking up an upgrade calls its `FishingManager.shop_reward_*` method;
@@ -32,7 +33,7 @@ scripts. For the current prototype, gameplay progression is **session-only**.
 | Challenge progression/unlocks | `ChallengeManager` | Listen for progress/complete signals |
 | NPC flags, attraction, encounter selection, gifts | `NPCManager` | Request flag/effect changes, avoid writing flags from UI |
 | Current conversation and dialogue graph | `DialogueManager` | Use request/start/end APIs |
-| Temporary NPC-to-house placement | `RecruitmentHandler` | Send caught actor + FishData to `engage_listen` |
+| NPC housing queue and temporary placement | `RecruitmentHandler` | Send caught actor + FishData to `engage_listen`; register vacated/new houses via `register_available_home` |
 | Bobber unlocks/equipment | `BobberManager` | Use unlock/equip methods |
 | Scene presentation, optional encounter transitions | `IllustrationSceneController` | Avoid owning long-lived NPC progression |
 | Modal input lock | `GameManager` | Add appropriate UI nodes to `modal_ui` |
@@ -44,6 +45,7 @@ scripts. For the current prototype, gameplay progression is **session-only**.
 - `ChallengeManager.challenge_progressed / challenge_completed`
 - `DialogueManager.conversation_started / conversation_finished / scene_requested`
 - `ShopManager.trade_completed / upgrade_state_changed / shop_opened / shop_closed`
+- `RecruitmentHandler.npc_waiting_for_home / npc_moved_into_home`
 - `BobberManager.collection_changed / equipped_changed`
 
 ### Known limitations and next refactor candidates
@@ -52,8 +54,13 @@ scripts. For the current prototype, gameplay progression is **session-only**.
   reloads during the same session. Gift item pickups are still not tracked
   as orders after being dropped; rebuilding their delivery history is a
   separate change.
-- An accepted NPC with no available house currently stays near the dock.
-  How to allocate housing when the village fills up needs a game-design choice.
+- Accepted NPCs wait near the dock when the village is full. New or
+  vacated houses must be registered with `RecruitmentHandler.register_available_home(home)`;
+  the queue is served automatically in arrival order. The world initially
+  registers its empty houses with `set_available_homes(homes)`.
+  **Only re-register a house after its prior resident has actually moved out.**
+  NPCs do not persist across application restarts; saving their houses/queue
+  is a future feature.
 - NPC state and cosmetics are currently intertwined through Silas-specific
   flags. A future NPC progression API can provide one owner for route rewards.
 - `FishingController` mixes combat with catch presentation. Extract the

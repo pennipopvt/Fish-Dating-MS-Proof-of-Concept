@@ -172,12 +172,11 @@ func _spawn_silas(in_house: bool) -> NPCInteractable:
 			sprite.play(&"default")
 	var on_dock: bool = silas.global_position.distance_to(controller.npc_landing_point.global_position) < 4.0
 	if in_house and on_dock:
-		if RecruitmentHandler.available_homes.is_empty():
-			_say("No free house left; Silas stays on the dock")
-		else:
-			RecruitmentHandler.npc = silas
-			RecruitmentHandler.house_recruit(silas.npc.house)
-			RecruitmentHandler.npc = null
+		RecruitmentHandler.npc = silas
+		RecruitmentHandler.house_recruit(silas.npc.house)
+		RecruitmentHandler.npc = null
+		if RecruitmentHandler.waiting_npcs.has(silas):
+			_say("No free house left; Silas is waiting by the dock")
 	return silas
 
 
@@ -330,8 +329,7 @@ func _reset_all() -> void:
 	_reset_upgrades()
 	ChallengeManager.reset_all()
 	_reset_bobbers()
-	RecruitmentHandler.listening = false
-	RecruitmentHandler.npc = null
+	RecruitmentHandler.reset_runtime_state()
 	_forced_fish = null
 	if _force_fish != null:
 		_force_fish.select(0)
@@ -441,7 +439,7 @@ func _info_world() -> String:
 		t += "No conversation\n"
 
 	t += _h("Recruitment")
-	t += "Listening: %s   Free houses: %d\n" % [_onoff(RecruitmentHandler.listening), RecruitmentHandler.available_homes.size()]
+	t += "Listening: %s   Free houses: %d   Waiting NPCs: %d\n" % [_onoff(RecruitmentHandler.listening), RecruitmentHandler.available_homes.size(), RecruitmentHandler.waiting_npcs.size()]
 	return t
 
 
