@@ -31,7 +31,6 @@ var _json_picker: OptionButton
 var _reset_all_button: Button
 
 var _refresh_time: float = 0.0
-var _defaults: Dictionary = {}
 var _fish_options: Array[FishData] = []
 var _forced_fish: FishData = null
 var _last_fishing_state: int = -1
@@ -46,7 +45,6 @@ func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	# While open, GameManager.is_modal_ui_open() pauses player actions.
 	add_to_group(&"modal_ui")
-	_capture_defaults()
 	_build_ui()
 	hide()
 
@@ -278,36 +276,20 @@ func _add_to_storage(item: ItemData, amount: int) -> void:
 
 # ---- Progress / upgrades ---------------------------------------------------
 
-const _UPGRADE_FIELDS := ["max_casts_per_session", "reel_strength_multiplier", "tension_gain_multiplier"]
-const _UPGRADE_LISTS := ["owned_upgrade_ids", "unlocked_bait_ids"]
+const _PROGRESS_FIELDS := [
+	"max_casts_per_session",
+	"reel_progress_bonus",
+	"reel_tension_reduction",
+	"miss_tension_reduction",
+	"owned_upgrade_ids",
+	"unlocked_bait_ids"
+]
 
-
-# Remember FishingManager's starting values so upgrades can be undone.
-# Fields that only exist on newer branches are captured when present.
-func _capture_defaults() -> void:
-	for field in _UPGRADE_FIELDS:
-		if field in FishingManager:
-			_defaults[field] = FishingManager.get(field)
-	for field in _UPGRADE_LISTS:
-		if field in FishingManager:
-			_defaults[field] = (FishingManager.get(field) as Array).duplicate()
-	_defaults["equipped_bait"] = FishingManager.equipped_bait
-
-
+# Upgrade state is owned by FishingManager; the panel never needs to know
+# which gameplay fields are modified by a trade.
 func _reset_upgrades() -> void:
-	for field in _UPGRADE_FIELDS:
-		if _defaults.has(field):
-			FishingManager.set(field, _defaults[field])
-	for field in _UPGRADE_LISTS:
-		if _defaults.has(field):
-			var list: Array = FishingManager.get(field)
-			list.clear()
-			list.append_array(_defaults[field])
-	if "pending_upgrade_ids" in ShopManager:
-		(ShopManager.get("pending_upgrade_ids") as Array).clear()
-	FishingManager.equip_bait(_defaults.get("equipped_bait") as BaitData)
-	if FishingManager.has_signal(&"upgrades_changed"):
-		FishingManager.emit_signal(&"upgrades_changed")
+	FishingManager.reset_session_upgrades()
+	ShopManager.pending_upgrade_ids.clear()
 	_say("Upgrades reset")
 
 
@@ -505,7 +487,7 @@ func _info_fishing() -> String:
 func _info_progress() -> String:
 	var t := ""
 	t += _h("Upgrades")
-	for field in _UPGRADE_FIELDS + _UPGRADE_LISTS:
+	for field in _PROGRESS_FIELDS:
 		if field in FishingManager:
 			t += "%s: %s\n" % [field, str(FishingManager.get(field))]
 	if "pending_upgrade_ids" in ShopManager:

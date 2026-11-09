@@ -50,8 +50,8 @@ func _run() -> void:
 	_expect(BAIT_TRADE.one_time_purchase and BAIT_TRADE.requirements[0].amount == 2, "hard bait costs two easy fish")
 	_expect(YELLOW_TRADE.one_time_purchase and YELLOW_TRADE.requirements[0].amount == 2 and YELLOW_TRADE.requirements[0].item.item_id == EASY_FISH.item_data.item_id, "yellow bait costs two easy fish only once")
 	_expect(fish.has_method(YELLOW_TRADE.reward_method), "yellow bait delivery calls a valid reward method")
-	_expect(REEL_TRADE.one_time_purchase and REEL_TRADE.requirements[0].amount == 1, "stronger reel costs one easy fish")
-	_expect(LINE_TRADE.one_time_purchase and LINE_TRADE.requirements[0].item.item_id == HARD_FISH.item_data.item_id, "reinforced line costs one hard fish")
+	_expect(REEL_TRADE.one_time_purchase and REEL_TRADE.requirements[0].amount == 1, "stronger reel is one-time and costs one easy fish")
+	_expect(LINE_TRADE.one_time_purchase and LINE_TRADE.requirements[0].item.item_id == HARD_FISH.item_data.item_id, "reinforced line is one-time and costs one hard fish")
 	_expect(PARRY_CHALLENGE.unlocks_trade(REEL_TRADE), "perfect parry challenge unlocks stronger reel")
 	_expect(CATCH_CHALLENGE.unlocks_trade(LINE_TRADE), "three-catch challenge unlocks reinforced line")
 
@@ -91,6 +91,16 @@ func _run() -> void:
 	fish.shop_reward_stronger_reel(1)
 	fish.shop_reward_reinforced_line(1)
 	_expect(is_equal_approx(fish.reel_progress_bonus, 0.01) and is_equal_approx(fish.reel_tension_reduction, 0.005) and is_equal_approx(fish.miss_tension_reduction, 0.04), "upgrade methods cannot stack rewards")
+
+	# The same reset API is used by the F9 developer panel. Verify that
+	# resetting ownership also removes every bonus and restores default bait.
+	fish.shop_reward_add_casts(2)
+	_expect(fish.max_casts_per_session == 5, "extra cast reward applies")
+	fish.reset_session_upgrades()
+	_expect(fish.max_casts_per_session == 3, "reset restores original cast limit")
+	_expect(fish.owned_upgrade_ids.is_empty(), "reset clears upgrade ownership")
+	_expect(fish.get_unlocked_baits().size() == 1 and fish.equipped_bait == BASIC, "reset restores basic bait")
+	_expect(is_zero_approx(fish.reel_progress_bonus) and is_zero_approx(fish.reel_tension_reduction) and is_zero_approx(fish.miss_tension_reduction), "reset removes all flat combat bonuses")
 
 	# A fresh manager represents a new game launch. All upgrades and bait
 	# choices must reset, even if the previous session owned everything.
