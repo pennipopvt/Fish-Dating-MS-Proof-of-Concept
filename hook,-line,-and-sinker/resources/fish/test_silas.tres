@@ -4,7 +4,7 @@
 [ext_resource type="Script" uid="uid://yvmtx3kcsond" path="res://resources/item_data.gd" id="1_w6cfk"]
 [ext_resource type="Script" uid="uid://cur8k0lqp6jxh" path="res://resources/fish_escape_state.gd" id="2_boabf"]
 [ext_resource type="PackedScene" uid="uid://bu27c1m43q585" path="res://prefabs/test_npc.tscn" id="2_g34ht"]
-[ext_resource type="Texture2D" path="res://sprites/fish/silas_eel.png" id="2_xg58l"]
+[ext_resource type="Texture2D" uid="uid://fur256i6ik5n" path="res://sprites/fish/silas_eel.png" id="2_xg58l"]
 
 [sub_resource type="Resource" id="Resource_nm365"]
 script = ExtResource("1_w6cfk")
@@ -24,7 +24,7 @@ metadata/_custom_type_script = "uid://cur8k0lqp6jxh"
 script = ExtResource("1_23k1o")
 fish_id = &"test_silas"
 item_data = SubResource("Resource_nm365")
-hooked_sprite_width = 18.0
 npc_data = ExtResource("2_g34ht")
+hooked_sprite_width = 18.0
 states = Array[ExtResource("2_boabf")]([SubResource("Resource_g34ht")])
 metadata/_custom_type_script = "uid://d2iidpvp5wrw7"
