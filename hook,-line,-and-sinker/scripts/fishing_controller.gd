@@ -354,12 +354,13 @@ func _reel_during_opening() -> void:
 	if hooked_fish == null:
 		return
 	play_fishing_sound(reel_sfx)
-	progress = clampf(progress + reel_gain * FishingManager.reel_strength_multiplier, 0.0, 1.0)
+	progress = clampf(progress + reel_gain + FishingManager.reel_progress_bonus, 0.0, 1.0)
 	if not free_reel:
-		# Each species determines how much tension it generates per reel.
-		# The existing attack multiplier applies while the fish is fighting.
+		# Fish/attack tension is calculated normally, then the flat line
+		# reduction is subtracted. Never let a bonus generate negative tension.
 		var multiplier: float = hooked_fish.attack_tension_multiplier if fish_esc_rate > 0.0 else 1.0
-		tension = clampf(tension + hooked_fish.reel_tension_gain * multiplier * FishingManager.tension_gain_multiplier, 0.0, 1.0)
+		var tension_gain: float = maxf(0.0, hooked_fish.reel_tension_gain * multiplier - FishingManager.reel_tension_reduction)
+		tension = clampf(tension + tension_gain, 0.0, 1.0)
 		fishing_line.set_tension(tension)
 		recovery_timer = recovery_delay
 
@@ -575,7 +576,8 @@ func _fail_parry() -> void:
 	var dash_target: float = clampf(progress - dash_speed * dash_duration, 0.0, 1.0)
 	# This fish's miss penalty builds over the dash, never upfront.
 	var starting_tension: float = tension
-	var ending_tension: float = clampf(starting_tension + hooked_fish.miss_tension_gain * hooked_fish.attack_tension_multiplier * FishingManager.tension_gain_multiplier, 0.0, 1.0)
+	var miss_tension: float = maxf(0.0, hooked_fish.miss_tension_gain * hooked_fish.attack_tension_multiplier - FishingManager.miss_tension_reduction)
+	var ending_tension: float = clampf(starting_tension + miss_tension, 0.0, 1.0)
 	attack_phase = AttackPhase.DASH
 	phase_time = dash_duration
 	recovery_timer = recovery_delay
