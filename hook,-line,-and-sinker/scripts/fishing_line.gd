@@ -162,7 +162,23 @@ func close() -> void:
 	hide()
 	fish.hide()
 
+## While waiting for a bite the line bends at the bobber and hangs almost straight
+## down. 0 = straight below the bobber, 1 = the old diagonal toward the fish spot.
+@export_range(0.0, 1.0, 0.05) var slack_drop_drift: float = 0.15
+
+# Bend the line at the bobber so the underwater part hangs nearly vertical.
+# The next update_line_dist() (the bite) straightens it again.
+func set_slack_drop() -> void:
+	var surface: Vector2 = bobber_water_position
+	var drop_end := Vector2(lerpf(surface.x, fish.position.x, slack_drop_drift), fish.position.y)
+	points = PackedVector2Array([get_point_position(0), surface, drop_end])
+	if stun_glow != null:
+		stun_glow.points = points
+
 func update_line_dist(dist_perc: float) -> void:
+	# Collapse a slack (bent) waiting line back to a straight rod-to-fish line.
+	while get_point_count() > 2:
+		remove_point(get_point_count() - 1)
 	#okey so this simple i think
 	#basically it just gonna take the progress of the fish encounter
 	#then subtract it from one, because u wanna be further from the max distance the more u reel

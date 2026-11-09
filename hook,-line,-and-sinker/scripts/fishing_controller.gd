@@ -97,11 +97,61 @@ var catch_end: Vector2
 var catch_start_rotation: float = 0.0
 var catch_peak: Vector2
 
+## Fishing camera: before the first cast the camera pans left and locks so the
+## player/dock sits this many pixels from the RIGHT edge of the screen, leaving
+## the water in view. It stays put during the session and pans back on exit.
+@export_range(0.0, 160.0, 1.0) var camera_dock_margin: float = 40.0
+@export_range(0.0, 2.0, 0.05) var camera_pan_duration: float = 0.5
+var _camera: Camera2D = null
+var _camera_rest_position: Vector2 = Vector2.ZERO
+var _camera_tween: Tween
+var _camera_panning: bool = false
+
+func _get_camera() -> Camera2D:
+	if _camera == null:
+		_camera = get_viewport().get_camera_2d()
+		if _camera != null:
+			_camera_rest_position = _camera.position
+	return _camera
+
+func _pan_camera(local_x: float) -> void:
+	if _camera_tween != null and _camera_tween.is_running():
+		_camera_tween.kill()
+	_camera_tween = create_tween().set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	_camera_tween.tween_property(_camera, "position:x", local_x, camera_pan_duration)
+
+func _lock_fishing_camera() -> void:
+	var camera := _get_camera()
+	if camera == null or camera_pan_duration <= 0.0:
+		if camera != null:
+			camera.position.x = _fishing_camera_local_x(camera)
+		return
+	_camera_panning = true
+	_pan_camera(_fishing_camera_local_x(camera))
+	await _camera_tween.finished
+	_camera_panning = false
+
+func _fishing_camera_local_x(camera: Camera2D) -> float:
+	# Visible half-width in world pixels (the window stretches with "expand").
+	var half_width: float = get_viewport().get_visible_rect().size.x * 0.5 / camera.zoom.x
+	var player_x: float = (get_parent() as Node2D).global_position.x
+	var target_global_x: float = player_x - (half_width - camera_dock_margin)
+	return camera.get_parent().to_local(Vector2(target_global_x, 0.0)).x
+
+func _release_fishing_camera() -> void:
+	var camera := _get_camera()
+	if camera == null:
+		return
+	_camera_panning = false
+	_pan_camera(_camera_rest_position.x)
+
 func begin_fishing() -> void:
-	if(current_state == Fish_State.NOT && delay_time == 0):
+	if(current_state == Fish_State.NOT && delay_time == 0 && not _camera_panning):
 		casts = 0
 		#set busy first so exit_fishing can clear it if the cast fails right away
 		get_parent().busy = true
+		# Lock the view onto the water first, then cast.
+		await _lock_fishing_camera()
 		cast_rod()
 	
 func cast_rod() -> void:
@@ -294,6 +344,7 @@ func exit_fishing() -> void:
 	casts = 0
 	delay_time = press_delay
 	print("finished fishing")
+	_release_fishing_camera()
 	get_parent().busy = false
 	
 func reset_values() -> void:

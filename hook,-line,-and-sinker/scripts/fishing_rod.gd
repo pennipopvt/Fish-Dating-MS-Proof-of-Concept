@@ -23,7 +23,7 @@ const FishState = FishingControllerScript.Fish_State
 @export_range(0.05, 1.0, 0.01) var settle_duration: float = 0.2
 @export_range(0.1, 2.0, 0.05) var cast_flight_duration: float = 0.5
 ## Time for the bait to sink from the bobber to the end of the line.
-@export_range(0.0, 2.0, 0.05) var bait_sink_duration: float = 0.4
+@export_range(0.0, 5.0, 0.05) var bait_sink_duration: float = 1.5
 @export_range(0.0, 0.5, 0.01) var put_away_duration: float = 0.1
 
 @export_group("Poses (degrees, positive = clockwise)")
@@ -205,6 +205,8 @@ func _update_flight(t: float) -> void:
 func _land_cast() -> void:
 	_end_flight()
 	if controller.current_state == FishState.WAITING:
+		# Hang the line nearly straight down from the bobber for the sink.
+		fishing_line.set_slack_drop()
 		fishing_line.show()
 		_sink_bait()
 
