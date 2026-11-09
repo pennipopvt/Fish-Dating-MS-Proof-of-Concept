@@ -1,9 +1,10 @@
-[gd_resource type="Resource" script_class="ChallengeData" format=3]
+[gd_resource type="Resource" script_class="ChallengeData" format=3 uid="uid://d1551ppro6ghr"]
 
-[ext_resource type="Script" path="res://resources/challenge_data.gd" id="1_chdat"]
-[ext_resource type="Texture2D" path="res://sprites/challenges/streak_3.png" id="2_icon"]
+[ext_resource type="Script" uid="uid://d4ml5hd15k357" path="res://resources/challenge_data.gd" id="1_chdat"]
+[ext_resource type="Script" uid="uid://d2iidpvp5wrw7" path="res://resources/fish_data.gd" id="1_khvi2"]
+[ext_resource type="Texture2D" uid="uid://c7xn0dd4rsb12" path="res://sprites/challenges/streak_3.png" id="2_icon"]
 [ext_resource type="Script" uid="uid://co23u2dkxgpsq" path="res://resources/trade_data.gd" id="3_trade"]
-[ext_resource type="Resource" path="res://resources/trades/pearl_necklace_gift.tres" id="4_gift"]
+[ext_resource type="Resource" uid="uid://0evhbp2tvs2g" path="res://resources/trades/pearl_necklace_gift.tres" id="4_gift"]
 [ext_resource type="Resource" path="res://resources/trades/reinforced_line.tres" id="5_line"]
 
 [resource]
@@ -12,7 +13,5 @@ challenge_id = &"hot_streak"
 display_name = "Hot Streak"
 description = "Catch 3 fish in a row without losing one."
 icon = ExtResource("2_icon")
-requirement_type = 0
-target_amount = 3
 unlocks_trades = Array[ExtResource("3_trade")]([ExtResource("4_gift"), ExtResource("5_line")])
 reward_text = "Reinforced Line and Pearl Necklace trades"
