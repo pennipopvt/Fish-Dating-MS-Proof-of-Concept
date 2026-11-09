@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="ChallengeData" format=3]
+
+[ext_resource type="Script" path="res://resources/challenge_data.gd" id="1"]
+[ext_resource type="Texture2D" path="res://sprites/upgrades/icon_upgrade_strength_1.png" id="2"]
+[ext_resource type="Script" path="res://resources/trade_data.gd" id="3"]
+[ext_resource type="Resource" path="res://resources/trades/stronger_reel.tres" id="4"]
+
+[resource]
+script = ExtResource("1")
+challenge_id = &"three_perfect_parries"
+display_name = "Perfect Timing"
+description = "Land 3 perfect parries in a row. Close parries and misses reset your streak."
+icon = ExtResource("2")
+requirement_type = 2
+target_amount = 3
+unlocks_trades = Array[ExtResource("3")]([ExtResource("4")])
+reward_text = "Stronger Reel upgrade trade"

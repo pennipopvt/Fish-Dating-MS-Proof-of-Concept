@@ -1,0 +1,126 @@
+[gd_resource type="Theme" format=3 uid="uid://bdrro20rs5qmt"]
+
+[ext_resource type="Texture2D" uid="uid://brw4yplkvah3x" path="res://sprites/ui/ui_background_3x.png" id="2_texture"]
+[ext_resource type="FontFile" uid="uid://ckttcdiajcuyc" path="res://fonts/pixel_operator(1)/PixelOperator8.ttf" id="3_small"]
+[ext_resource type="FontFile" uid="uid://b11vca7rpopnc" path="res://fonts/pixel_operator(1)/PixelOperator8-Bold.ttf" id="4_bold"]
+[ext_resource type="FontFile" uid="uid://du30i0cd1r06l" path="res://fonts/pixel_operator(1)/PixelOperator-Bold.ttf" id="5_header"]
+
+[sub_resource type="StyleBoxTexture" id="ButtonDisabled"]
+content_margin_left = 6.0
+content_margin_top = 6.0
+content_margin_right = 6.0
+content_margin_bottom = 6.0
+texture = ExtResource("2_texture")
+texture_margin_left = 12.0
+texture_margin_top = 12.0
+texture_margin_right = 12.0
+texture_margin_bottom = 12.0
+axis_stretch_horizontal = 1
+axis_stretch_vertical = 1
+modulate_color = Color(0.67, 0.72, 0.72, 0.8)
+
+[sub_resource type="StyleBoxEmpty" id="NoFocus"]
+
+[sub_resource type="StyleBoxTexture" id="ButtonHover"]
+content_margin_left = 6.0
+content_margin_top = 6.0
+content_margin_right = 6.0
+content_margin_bottom = 6.0
+texture = ExtResource("2_texture")
+texture_margin_left = 12.0
+texture_margin_top = 12.0
+texture_margin_right = 12.0
+texture_margin_bottom = 12.0
+axis_stretch_horizontal = 1
+axis_stretch_vertical = 1
+modulate_color = Color(0.87, 0.93, 1, 1)
+
+[sub_resource type="StyleBoxTexture" id="ButtonPressed"]
+content_margin_left = 6.0
+content_margin_top = 6.0
+content_margin_right = 6.0
+content_margin_bottom = 6.0
+texture = ExtResource("2_texture")
+texture_margin_left = 12.0
+texture_margin_top = 12.0
+texture_margin_right = 12.0
+texture_margin_bottom = 12.0
+axis_stretch_horizontal = 1
+axis_stretch_vertical = 1
+modulate_color = Color(0.74, 0.84, 0.99, 1)
+
+[sub_resource type="StyleBoxTexture" id="ButtonNormal"]
+content_margin_left = 6.0
+content_margin_top = 6.0
+content_margin_right = 6.0
+content_margin_bottom = 6.0
+texture = ExtResource("2_texture")
+texture_margin_left = 12.0
+texture_margin_top = 12.0
+texture_margin_right = 12.0
+texture_margin_bottom = 12.0
+axis_stretch_horizontal = 1
+axis_stretch_vertical = 1
+
+[sub_resource type="StyleBoxTexture" id="PanelInset"]
+content_margin_left = 9.0
+content_margin_top = 9.0
+content_margin_right = 9.0
+content_margin_bottom = 9.0
+texture = ExtResource("2_texture")
+texture_margin_left = 12.0
+texture_margin_top = 12.0
+texture_margin_right = 12.0
+texture_margin_bottom = 12.0
+axis_stretch_horizontal = 1
+axis_stretch_vertical = 1
+
+[sub_resource type="StyleBoxFlat" id="ProgressTrack"]
+bg_color = Color(0.75, 0.87, 0.85, 1)
+
+[sub_resource type="StyleBoxFlat" id="ProgressFill"]
+bg_color = Color(0.12, 0.38, 0.4, 1)
+
+[sub_resource type="StyleBoxLine" id="Divider"]
+color = Color(0.25, 0.48, 0.49, 1)
+thickness = 3
+vertical = true
+
+[resource]
+default_font = ExtResource("3_small")
+default_font_size = 24
+Button/colors/font_color = Color(0.09, 0.21, 0.24, 1)
+Button/colors/font_disabled_color = Color(0.24, 0.38, 0.39, 1)
+Button/colors/font_hover_color = Color(0.09, 0.21, 0.24, 1)
+Button/colors/font_hover_pressed_color = Color(0.09, 0.21, 0.24, 1)
+Button/colors/font_pressed_color = Color(0.09, 0.21, 0.24, 1)
+Button/styles/disabled = SubResource("ButtonDisabled")
+Button/styles/focus = SubResource("NoFocus")
+Button/styles/hover = SubResource("ButtonHover")
+Button/styles/hover_pressed = SubResource("ButtonPressed")
+Button/styles/normal = SubResource("ButtonNormal")
+Button/styles/pressed = SubResource("ButtonPressed")
+DimLabel/base_type = &"Label"
+DimLabel/colors/font_color = Color(0.25, 0.42, 0.44, 1)
+HeaderLabel/base_type = &"Label"
+HeaderLabel/colors/font_color = Color(0.06, 0.24, 0.25, 1)
+HeaderLabel/font_sizes/font_size = 48
+HeaderLabel/fonts/font = ExtResource("5_header")
+Label/colors/font_color = Color(0.09, 0.21, 0.24, 1)
+Panel/styles/panel = SubResource("PanelInset")
+PanelContainer/styles/panel = SubResource("PanelInset")
+ProgressBar/styles/background = SubResource("ProgressTrack")
+ProgressBar/styles/fill = SubResource("ProgressFill")
+TabBar/colors/font_hovered_color = Color(0.07, 0.2, 0.22, 1)
+TabBar/colors/font_selected_color = Color(0.07, 0.2, 0.22, 1)
+TabBar/colors/font_unselected_color = Color(0.22, 0.39, 0.4, 1)
+TabBar/constants/h_separation = 6
+TabBar/styles/tab_focus = SubResource("NoFocus")
+TabBar/styles/tab_hovered = SubResource("ButtonHover")
+TabBar/styles/tab_selected = SubResource("ButtonPressed")
+TabBar/styles/tab_unselected = SubResource("ButtonNormal")
+TitleLabel/base_type = &"Label"
+TitleLabel/colors/font_color = Color(0.09, 0.21, 0.24, 1)
+TitleLabel/fonts/font = ExtResource("4_bold")
+VSeparator/constants/separation = 12
+VSeparator/styles/separator = SubResource("Divider")

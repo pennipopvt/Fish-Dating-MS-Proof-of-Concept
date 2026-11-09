@@ -1,137 +1,394 @@
-[gd_scene format=3]
+[gd_scene format=3 uid="uid://dua3yfus0j5uq"]
 
-[ext_resource type="Script" path="res://scripts/shop_menu.gd" id="1_shopm"]
-[ext_resource type="Script" path="res://scripts/challenges_panel.gd" id="2_chpan"]
+[ext_resource type="Script" uid="uid://d3oyn3ofcf70q" path="res://scripts/shop_menu.gd" id="1_shopm"]
+[ext_resource type="Theme" uid="uid://bdrro20rs5qmt" path="res://resources/ui/terminal_theme.tres" id="2_theme"]
+[ext_resource type="StyleBox" path="res://resources/ui/terminal_border.tres" id="3_border"]
+[ext_resource type="Texture2D" uid="uid://dd18egqrlej6b" path="res://sprites/ui/icon_upgrade.png" id="4_upgrade_icon"]
+[ext_resource type="Texture2D" uid="uid://d0is4m3pcb3ai" path="res://sprites/ui/icon_gift.png" id="5_gift_icon"]
+[ext_resource type="Texture2D" uid="uid://dyks2bu2dla76" path="res://sprites/ui/icon_storage.png" id="6_storage_icon"]
+[ext_resource type="Texture2D" uid="uid://be2mehv3j2ohp" path="res://sprites/ui/icon_collection.png" id="7_collection_icon"]
+[ext_resource type="Texture2D" uid="uid://cy6m4p32euy7d" path="res://sprites/ui/icon_challenges.png" id="8_challenge_icon"]
+[ext_resource type="Texture2D" path="res://sprites/ui/ui_background_3x.png" id="9_boot_frame"]
 
-[sub_resource type="Theme" id="Theme_shopm"]
-default_font_size = 32
-
-[node name="ShopMenu" type="CanvasLayer"]
+[node name="ShopMenu" type="CanvasLayer" unique_id=21315034]
 process_mode = 3
 layer = 10
 script = ExtResource("1_shopm")
 
-[node name="Dim" type="ColorRect" parent="."]
+[node name="Dim" type="ColorRect" parent="." unique_id=1719338669]
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
 color = Color(0, 0, 0, 0.5)
 
-[node name="Panel" type="PanelContainer" parent="."]
+[node name="TerminalRoot" type="Control" parent="." unique_id=1319671202]
+layout_mode = 3
 anchors_preset = 8
 anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -561.0
-offset_top = -381.0
-offset_right = 561.0
-offset_bottom = 381.0
+offset_left = -840.0
+offset_top = -450.0
+offset_right = 840.0
+offset_bottom = 450.0
 grow_horizontal = 2
 grow_vertical = 2
-theme = SubResource("Theme_shopm")
+mouse_filter = 2
 
-[node name="Margin" type="MarginContainer" parent="Panel"]
+[node name="NavTabs" type="VBoxContainer" parent="TerminalRoot" unique_id=845387299]
+layout_mode = 0
+offset_left = 51.0
+offset_top = 12.0
+offset_right = 141.0
+offset_bottom = 612.0
+theme = ExtResource("2_theme")
+theme_override_constants/separation = 9
+
+[node name="UpgradesTab" type="Button" parent="TerminalRoot/NavTabs" unique_id=471544707]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(90, 216)
+clip_contents = true
 layout_mode = 2
-theme_override_constants/margin_left = 33
-theme_override_constants/margin_top = 24
-theme_override_constants/margin_right = 33
-theme_override_constants/margin_bottom = 24
+tooltip_text = "upgrades"
+toggle_mode = true
 
-[node name="Layout" type="VBoxContainer" parent="Panel/Margin"]
+[node name="Icon" type="TextureRect" parent="TerminalRoot/NavTabs/UpgradesTab" unique_id=2143776163]
+texture_filter = 1
+layout_mode = 0
+offset_left = 9.0
+offset_top = 9.0
+offset_right = 57.0
+offset_bottom = 57.0
+mouse_filter = 2
+texture = ExtResource("4_upgrade_icon")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="VerticalTitle" type="Label" parent="TerminalRoot/NavTabs/UpgradesTab" unique_id=1609800718]
+layout_mode = 0
+offset_left = 21.000015
+offset_top = 199.0
+offset_right = 237.00002
+offset_bottom = 232.0
+rotation = -1.5707964
+theme_type_variation = &"TitleLabel"
+theme_override_font_sizes/font_size = 27
+text = "UPGRADES"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="GiftsTab" type="Button" parent="TerminalRoot/NavTabs" unique_id=1320023177]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(90, 66)
+clip_contents = true
+layout_mode = 2
+tooltip_text = "gifts"
+toggle_mode = true
+
+[node name="Icon" type="TextureRect" parent="TerminalRoot/NavTabs/GiftsTab" unique_id=1339411846]
+texture_filter = 1
+layout_mode = 0
+offset_left = 9.0
+offset_top = 9.0
+offset_right = 57.0
+offset_bottom = 57.0
+mouse_filter = 2
+texture = ExtResource("5_gift_icon")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="VerticalTitle" type="Label" parent="TerminalRoot/NavTabs/GiftsTab" unique_id=1944682948]
+layout_mode = 0
+offset_left = 21.000015
+offset_top = 199.0
+offset_right = 201.00002
+offset_bottom = 232.0
+rotation = -1.5707964
+theme_type_variation = &"TitleLabel"
+theme_override_font_sizes/font_size = 27
+text = "GIFTS"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="StorageTab" type="Button" parent="TerminalRoot/NavTabs" unique_id=879580532]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(90, 66)
+clip_contents = true
+layout_mode = 2
+tooltip_text = "storage"
+toggle_mode = true
+
+[node name="Icon" type="TextureRect" parent="TerminalRoot/NavTabs/StorageTab" unique_id=1857474765]
+texture_filter = 1
+layout_mode = 0
+offset_left = 9.0
+offset_top = 9.0
+offset_right = 57.0
+offset_bottom = 57.0
+mouse_filter = 2
+texture = ExtResource("6_storage_icon")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="VerticalTitle" type="Label" parent="TerminalRoot/NavTabs/StorageTab" unique_id=483907256]
+layout_mode = 0
+offset_left = 21.000015
+offset_top = 199.0
+offset_right = 210.00002
+offset_bottom = 232.0
+rotation = -1.5707964
+theme_type_variation = &"TitleLabel"
+theme_override_font_sizes/font_size = 27
+text = "STORAGE"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="CollectionTab" type="Button" parent="TerminalRoot/NavTabs" unique_id=89272909]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(90, 66)
+clip_contents = true
+layout_mode = 2
+tooltip_text = "collection"
+toggle_mode = true
+
+[node name="Icon" type="TextureRect" parent="TerminalRoot/NavTabs/CollectionTab" unique_id=1557686522]
+texture_filter = 1
+layout_mode = 0
+offset_left = 9.0
+offset_top = 9.0
+offset_right = 57.0
+offset_bottom = 57.0
+mouse_filter = 2
+texture = ExtResource("7_collection_icon")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="VerticalTitle" type="Label" parent="TerminalRoot/NavTabs/CollectionTab" unique_id=1756251613]
+layout_mode = 0
+offset_left = 21.000015
+offset_top = 199.0
+offset_right = 284.0
+offset_bottom = 232.0
+rotation = -1.5707964
+theme_type_variation = &"TitleLabel"
+theme_override_font_sizes/font_size = 27
+text = "COLLECTION"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="ChallengesTab" type="Button" parent="TerminalRoot/NavTabs" unique_id=490205985]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(90, 66)
+clip_contents = true
+layout_mode = 2
+tooltip_text = "challenges"
+toggle_mode = true
+
+[node name="Icon" type="TextureRect" parent="TerminalRoot/NavTabs/ChallengesTab" unique_id=671309702]
+texture_filter = 1
+layout_mode = 0
+offset_left = 9.0
+offset_top = 9.0
+offset_right = 57.0
+offset_bottom = 57.0
+mouse_filter = 2
+texture = ExtResource("8_challenge_icon")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="VerticalTitle" type="Label" parent="TerminalRoot/NavTabs/ChallengesTab" unique_id=1520668699]
+layout_mode = 0
+offset_left = 21.000015
+offset_top = 199.0
+offset_right = 291.0
+offset_bottom = 232.0
+rotation = -1.5707964
+theme_type_variation = &"TitleLabel"
+theme_override_font_sizes/font_size = 27
+text = "CHALLENGES"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Panel" type="PanelContainer" parent="TerminalRoot" unique_id=1931615164]
+texture_filter = 1
+layout_mode = 0
+offset_left = 108.0
+offset_right = 1680.0
+offset_bottom = 900.0
+theme = ExtResource("2_theme")
+theme_override_styles/panel = ExtResource("3_border")
+
+
+[node name="OpeningFrame" type="NinePatchRect" parent="TerminalRoot"]
+visible = false
+layout_mode = 0
+offset_right = 36.0
+offset_bottom = 36.0
+mouse_filter = 2
+texture_filter = 1
+texture = ExtResource("9_boot_frame")
+patch_margin_left = 12
+patch_margin_top = 12
+patch_margin_right = 12
+patch_margin_bottom = 12
+axis_stretch_horizontal = 1
+axis_stretch_vertical = 1
+
+[node name="Margin" type="MarginContainer" parent="TerminalRoot/Panel" unique_id=1371121174]
+layout_mode = 2
+theme_override_constants/margin_left = 27
+theme_override_constants/margin_top = 22
+theme_override_constants/margin_right = 27
+theme_override_constants/margin_bottom = 22
+
+[node name="Layout" type="VBoxContainer" parent="TerminalRoot/Panel/Margin" unique_id=1809883411]
 layout_mode = 2
 theme_override_constants/separation = 15
 
-[node name="Title" type="Label" parent="Panel/Margin/Layout"]
+[node name="Header" type="HBoxContainer" parent="TerminalRoot/Panel/Margin/Layout" unique_id=920782343]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="Brand" type="Label" parent="TerminalRoot/Panel/Margin/Layout/Header" unique_id=679587213]
 layout_mode = 2
 theme_type_variation = &"HeaderLabel"
-text = "Terminal"
-horizontal_alignment = 1
+text = "FISH CO."
 
-[node name="Tabs" type="TabBar" parent="Panel/Margin/Layout"]
+[node name="HeaderSpacer" type="Control" parent="TerminalRoot/Panel/Margin/Layout/Header" unique_id=687156914]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="DeliveryPanel" type="PanelContainer" parent="TerminalRoot/Panel/Margin/Layout/Header" unique_id=1593184041]
+custom_minimum_size = Vector2(340, 60)
+layout_mode = 2
+size_flags_vertical = 4
+
+[node name="DeliveryStatus" type="Label" parent="TerminalRoot/Panel/Margin/Layout/Header/DeliveryPanel" unique_id=1694517789]
 unique_name_in_owner = true
 layout_mode = 2
+theme_type_variation = &"TitleLabel"
+text = "NO DELIVERIES"
+horizontal_alignment = 1
+vertical_alignment = 1
 
-[node name="Body" type="HBoxContainer" parent="Panel/Margin/Layout"]
-unique_name_in_owner = true
+[node name="HeaderRule" type="ColorRect" parent="TerminalRoot/Panel/Margin/Layout" unique_id=787384815]
+custom_minimum_size = Vector2(0, 3)
+layout_mode = 2
+mouse_filter = 2
+color = Color(0.18, 0.38, 0.4, 1)
+
+[node name="Body" type="HBoxContainer" parent="TerminalRoot/Panel/Margin/Layout" unique_id=1069947424]
 layout_mode = 2
 size_flags_vertical = 3
-theme_override_constants/separation = 24
+theme_override_constants/separation = 18
 
-[node name="TradeScroll" type="ScrollContainer" parent="Panel/Margin/Layout/Body"]
-custom_minimum_size = Vector2(408, 0)
+[node name="Left" type="VBoxContainer" parent="TerminalRoot/Panel/Margin/Layout/Body" unique_id=699681095]
+custom_minimum_size = Vector2(744, 0)
 layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 8
+
+[node name="PageTitle" type="Label" parent="TerminalRoot/Panel/Margin/Layout/Body/Left" unique_id=961692395]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"TitleLabel"
+theme_override_font_sizes/font_size = 30
+text = "UPGRADES"
+
+[node name="PageHint" type="Label" parent="TerminalRoot/Panel/Margin/Layout/Body/Left" unique_id=1515794383]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"DimLabel"
+text = "Permanent fishing improvements"
+
+[node name="GridScroll" type="ScrollContainer" parent="TerminalRoot/Panel/Margin/Layout/Body/Left" unique_id=1772307838]
+layout_mode = 2
+size_flags_vertical = 3
 horizontal_scroll_mode = 0
 
-[node name="TradeGrid" type="GridContainer" parent="Panel/Margin/Layout/Body/TradeScroll"]
+[node name="ItemGrid" type="GridContainer" parent="TerminalRoot/Panel/Margin/Layout/Body/Left/GridScroll" unique_id=1213167026]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_constants/h_separation = 12
 theme_override_constants/v_separation = 12
-columns = 3
+columns = 4
 
-[node name="Divider" type="VSeparator" parent="Panel/Margin/Layout/Body"]
+[node name="MiddleDivider" type="VSeparator" parent="TerminalRoot/Panel/Margin/Layout/Body" unique_id=1645277931]
 layout_mode = 2
 
-[node name="Details" type="VBoxContainer" parent="Panel/Margin/Layout/Body"]
+[node name="Details" type="VBoxContainer" parent="TerminalRoot/Panel/Margin/Layout/Body" unique_id=1503960181]
+custom_minimum_size = Vector2(500, 0)
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_constants/separation = 21
+theme_override_constants/separation = 12
 
-[node name="Header" type="HBoxContainer" parent="Panel/Margin/Layout/Body/Details"]
-layout_mode = 2
-theme_override_constants/separation = 15
-
-[node name="TradeIconFrame" type="PanelContainer" parent="Panel/Margin/Layout/Body/Details/Header"]
-unique_name_in_owner = true
+[node name="PreviewFrame" type="PanelContainer" parent="TerminalRoot/Panel/Margin/Layout/Body/Details" unique_id=839892416]
+custom_minimum_size = Vector2(0, 310)
 layout_mode = 2
 
-[node name="TradeIcon" type="TextureRect" parent="Panel/Margin/Layout/Body/Details/Header/TradeIconFrame"]
+[node name="PreviewIcon" type="TextureRect" parent="TerminalRoot/Panel/Margin/Layout/Body/Details/PreviewFrame" unique_id=394124013]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(72, 72)
+texture_filter = 1
+custom_minimum_size = Vector2(360, 280)
 layout_mode = 2
 expand_mode = 1
 stretch_mode = 5
 
-[node name="TradeName" type="Label" parent="Panel/Margin/Layout/Body/Details/Header"]
+[node name="ItemName" type="Label" parent="TerminalRoot/Panel/Margin/Layout/Body/Details" unique_id=918021033]
 unique_name_in_owner = true
 layout_mode = 2
-size_flags_horizontal = 3
 theme_type_variation = &"HeaderLabel"
+theme_override_font_sizes/font_size = 36
+text = "SELECT AN ITEM"
 autowrap_mode = 3
 
-[node name="ExchangeRow" type="HBoxContainer" parent="Panel/Margin/Layout/Body/Details"]
+[node name="DescriptionLabel" type="Label" parent="TerminalRoot/Panel/Margin/Layout/Body/Details" unique_id=893078425]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_constants/separation = 21
-alignment = 1
+autowrap_mode = 3
 
-[node name="Spacer" type="Control" parent="Panel/Margin/Layout/Body/Details"]
+[node name="Costs" type="VBoxContainer" parent="TerminalRoot/Panel/Margin/Layout/Body/Details" unique_id=1183258012]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 5
+
+[node name="DetailsSpacer" type="Control" parent="TerminalRoot/Panel/Margin/Layout/Body/Details" unique_id=134129193]
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="StatusLabel" type="Label" parent="Panel/Margin/Layout/Body/Details"]
+[node name="StatusLabel" type="Label" parent="TerminalRoot/Panel/Margin/Layout/Body/Details" unique_id=679110270]
 unique_name_in_owner = true
 layout_mode = 2
-horizontal_alignment = 1
+theme_type_variation = &"DimLabel"
 autowrap_mode = 3
 
-[node name="ConfirmButton" type="Button" parent="Panel/Margin/Layout/Body/Details"]
-unique_name_in_owner = true
-layout_mode = 2
-text = "Trade"
-
-[node name="ChallengesPanel" type="VBoxContainer" parent="Panel/Margin/Layout"]
+[node name="OrderButton" type="Button" parent="TerminalRoot/Panel/Margin/Layout/Body/Details" unique_id=164678316]
 unique_name_in_owner = true
 visible = false
+custom_minimum_size = Vector2(0, 52)
 layout_mode = 2
-size_flags_vertical = 3
-script = ExtResource("2_chpan")
+text = "ORDER"
 
-[node name="CloseButton" type="Button" parent="Panel/Margin/Layout"]
+[node name="Footer" type="HBoxContainer" parent="TerminalRoot/Panel/Margin/Layout" unique_id=290184164]
+layout_mode = 2
+theme_override_constants/separation = 18
+
+[node name="PageIndicator" type="Label" parent="TerminalRoot/Panel/Margin/Layout/Footer" unique_id=54116702]
 unique_name_in_owner = true
 layout_mode = 2
-size_flags_horizontal = 8
-text = "Close"
+theme_type_variation = &"DimLabel"
+text = "UPGRADES / 0 ENTRIES"
+
+[node name="FooterSpacer" type="Control" parent="TerminalRoot/Panel/Margin/Layout/Footer" unique_id=965330909]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="CloseButton" type="Button" parent="TerminalRoot/Panel/Margin/Layout/Footer" unique_id=1721751483]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(156, 52)
+layout_mode = 2
+text = "CLOSE"

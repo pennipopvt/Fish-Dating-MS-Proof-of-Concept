@@ -119,10 +119,12 @@ func _start_illustration() -> void:
 
 func _on_conversation_finished(npc: NPCData) -> void:
 	if _post_scene_npc != null and npc == _post_scene_npc:
+		# Finish the NPC's route first, then grant the gift. The bobber
+		# manager checks this flag before accepting Silas's unlock.
+		_mark_route_complete(npc)
 		if not _post_scene_reward_id.is_empty():
 			cosmetic_reward_requested.emit(npc, _post_scene_reward_id)
 		_post_scene_reward_id = ""
-		_mark_route_complete(npc)
 		_post_scene_npc = null
 		return
 	if _active_npc == null or not _scene_dialogue_started or _transitioning or npc != _active_npc:
@@ -157,9 +159,8 @@ func _finish_scene(completed: bool = false) -> void:
 	if not completed or finished_npc == null or finished_scene_id != "silas_house":
 		return
 	if post_path.is_empty():
-		if not reward_id.is_empty():
-			cosmetic_reward_requested.emit(finished_npc, reward_id)
-		_mark_route_complete(finished_npc)
+		# No gift dialogue means no reward was given; never auto-unlock.
+		push_warning("Silas reward dialogue is missing; bobber remains locked.")
 		return
 	# Whether the player watched or skipped the optional adult scene, Silas
 	# speaks automatically after the return fade. Complete the route afterward.
@@ -170,8 +171,8 @@ func _finish_scene(completed: bool = false) -> void:
 		push_warning("Post-scene dialogue could not start: " + post_path)
 		_post_scene_npc = null
 		_post_scene_reward_id = ""
-		# Do not strand route completion if dialogue data is temporarily missing.
-		_mark_route_complete(finished_npc)
+		# No reward is granted without completing the gift dialogue.
+		# Leave the route incomplete if the gift dialogue fails to start.
 
 
 # Grant the bobber only after Silas's post-scene gift dialogue finishes.

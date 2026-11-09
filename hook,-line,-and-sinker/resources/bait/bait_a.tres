@@ -1,15 +1,17 @@
 [gd_resource type="Resource" script_class="BaitData" format=3 uid="uid://cghuy18lde1ur"]
 
 [ext_resource type="Script" uid="uid://ca82iknxm3fe8" path="res://resources/bait_data.gd" id="1_bait"]
-[ext_resource type="Texture2D" uid="uid://fnu1bmy7m8q7" path="res://sprites/placeholders/bait_a.png" id="2_icon"]
+[ext_resource type="Texture2D" uid="uid://cbwish8rqyngf" path="res://sprites/bait/bait_easy.png" id="2_icon"]
 
 [resource]
 script = ExtResource("1_bait")
 bait_id = &"bait_a"
-display_name = "Bait A"
+display_name = "Easy Fish Bait"
 icon = ExtResource("2_icon")
-description = "TODO: placeholder description. Attracts Placeholder Fish A more often."
+description = "A gentle lure that attracts easy fish. Hard fish very rarely bite."
 catch_weights = Dictionary[StringName, float]({
-&"easy_test_fish": 3.0,
-&"hard_test_fish": 1.0
+&"easy_test_fish": 10.0,
+&"hard_test_fish": 0.35,
+&"test_silas": 0.30
 })
+default_weight = 0.3
