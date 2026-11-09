@@ -67,8 +67,8 @@ func test_popup() -> void:
 		_unlock_sfx.play()
 
 
-# FishingManager.fish_caught emits the caught fish's ItemData (item.item_data).
-func _on_fish_caught(item: ItemData) -> void:
+# FishingManager.fish_caught emits FishData for both normal and NPC catches.
+func _on_fish_caught(fish: FishData) -> void:
 	catch_streak += 1
 	streak_changed.emit(catch_streak)
 
