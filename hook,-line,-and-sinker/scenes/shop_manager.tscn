@@ -8,7 +8,8 @@
 [ext_resource type="Resource" uid="uid://b4eklxcwsk0ff" path="res://resources/trades/spyglass.tres" id="6_spyglass"]
 [ext_resource type="Resource" path="res://resources/trades/reinforced_line.tres" id="7_trade"]
 [ext_resource type="Resource" path="res://resources/trades/yellow_bait.tres" id="8_yellow"]
+[ext_resource type="Resource" path="res://resources/trades/statue_gift.tres" id="9_statue"]
 
 [node name="ShopManager" type="Node2D" unique_id=1244899988]
 script = ExtResource("1_gx78v")
-trades = Array[ExtResource("2_mv7ed")]([ExtResource("3_trade"), ExtResource("8_yellow"), ExtResource("4_trade"), ExtResource("7_trade"), ExtResource("5_gift"), ExtResource("6_spyglass")])
+trades = Array[ExtResource("2_mv7ed")]([ExtResource("3_trade"), ExtResource("8_yellow"), ExtResource("4_trade"), ExtResource("7_trade"), ExtResource("5_gift"), ExtResource("6_spyglass"), ExtResource("9_statue")])
