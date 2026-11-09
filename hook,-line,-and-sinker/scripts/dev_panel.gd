@@ -20,7 +20,8 @@ const PANEL_WIDTH := 1080.0
 var _panel: PanelContainer
 var _tabs: TabContainer
 var _status: Label
-var _info: RichTextLabel
+var _info_tabs: TabContainer
+var _info_labels: Dictionary = {}  # subtab name -> RichTextLabel
 var _progress_box: VBoxContainer
 var _flags_box: VBoxContainer
 var _flag_npc: OptionButton
@@ -397,7 +398,8 @@ func _instant_catch() -> void:
 func _refresh_current_tab() -> void:
 	match String(_tabs.get_current_tab_control().name):
 		"Info":
-			_info.text = _build_info()
+			var sub := String(_info_tabs.get_current_tab_control().name)
+			(_info_labels[sub] as RichTextLabel).text = _info_section(sub)
 		"Fishing":
 			_fishing_status.text = _fishing_summary()
 
@@ -412,7 +414,31 @@ func _onoff(value: bool) -> String:
 	return "[color=#%s]false[/color]" % PixelUI.RED.to_html(false)
 
 
+const INFO_SECTIONS := ["World", "NPCs", "Fishing", "Progress"]
+
+
+func _info_section(section: String) -> String:
+	match section:
+		"World":
+			return _info_world()
+		"NPCs":
+			return _info_npcs()
+		"Fishing":
+			return _info_fishing()
+		"Progress":
+			return _info_progress()
+	return ""
+
+
+# Every section at once (handy for logs and tests).
 func _build_info() -> String:
+	var t := ""
+	for section in INFO_SECTIONS:
+		t += _info_section(section)
+	return t
+
+
+func _info_world() -> String:
 	var t := ""
 	var player := _player()
 	t += _h("Game")
@@ -427,9 +453,14 @@ func _build_info() -> String:
 		t += "Active with %s  node [b]%s[/b]  line %d  awaiting choice %s\n" % [npc.display_name if npc != null else "?", str(DialogueManager.get("_node_id")), DialogueManager.line_index, _onoff(DialogueManager.is_awaiting_choice())]
 	else:
 		t += "No conversation\n"
-	t += "Recruitment listening: %s   Free houses: %d\n" % [_onoff(RecruitmentHandler.listening), RecruitmentHandler.available_homes.size()]
 
-	t += _h("NPCs")
+	t += _h("Recruitment")
+	t += "Listening: %s   Free houses: %d\n" % [_onoff(RecruitmentHandler.listening), RecruitmentHandler.available_homes.size()]
+	return t
+
+
+func _info_npcs() -> String:
+	var t := ""
 	var ids: Array = NPCManager.npc_states.keys()
 	if not ids.has(SILAS_ID):
 		ids.append(SILAS_ID)
@@ -437,22 +468,38 @@ func _build_info() -> String:
 		var state: Dictionary = NPCManager.npc_states.get(id, {"attraction": 0, "flags": {}})
 		var flags: Dictionary = state.get("flags", {})
 		var data: NPCData = _silas_data() if id == SILAS_ID else null
-		t += "[b]%s[/b]  attraction %d  in world %s\n" % [id, int(state.get("attraction", 0)), _onoff(id == SILAS_ID and _find_silas() != null)]
+		t += _h(String(id))
+		t += "Attraction %d   In world %s\n" % [int(state.get("attraction", 0)), _onoff(id == SILAS_ID and _find_silas() != null)]
+		if data != null:
+			t += "Next encounter: %s\n" % _peek_encounter(data)
 		if flags.is_empty():
-			t += "   flags: (none)\n"
+			t += "Flags: (none)\n"
 		for flag in flags:
 			t += "   %s = %s\n" % [flag, _onoff(bool(flags[flag]))]
-		if data != null:
-			t += "   next encounter: %s\n" % _peek_encounter(data)
+	return t
 
+
+func _info_fishing() -> String:
+	var t := ""
 	t += _h("Fishing")
 	t += _fishing_summary() + "\n"
-	t += "Storage (%d): %s\n" % [FishingManager.current_storage.size(), _count_items(FishingManager.current_storage)]
+	t += _h("Storage (%d)" % FishingManager.current_storage.size())
+	t += _count_items(FishingManager.current_storage) + "\n"
+	t += _h("Catch dex")
 	var dex: Array[String] = []
 	for fish in FishingManager.catch_dex:
 		dex.append("%s x%d" % [fish.fish_id, FishingManager.catch_lifetime.get(fish, 0)])
-	t += "Catch dex: %s\n" % (", ".join(dex) if not dex.is_empty() else "-")
+	t += (", ".join(dex) if not dex.is_empty() else "-") + "\n"
+	t += _h("Bobbers")
+	var unlocked: Array[String] = []
+	for id in BobberManager.unlocked_ids:
+		unlocked.append(String(id))
+	t += "Unlocked: %s\nEquipped: %s\n" % [", ".join(unlocked), BobberManager.equipped_id]
+	return t
 
+
+func _info_progress() -> String:
+	var t := ""
 	t += _h("Upgrades")
 	for field in _UPGRADE_FIELDS + _UPGRADE_LISTS:
 		if field in FishingManager:
@@ -464,12 +511,6 @@ func _build_info() -> String:
 	for c in ChallengeManager.challenges:
 		if c != null:
 			t += "%s  %d/%d  %s\n" % [c.display_name, c.progress, c.target_amount, ("[color=#%s]DONE[/color]" % PixelUI.GREEN.to_html(false)) if c.completed else ""]
-
-	t += _h("Bobbers")
-	var unlocked: Array[String] = []
-	for id in BobberManager.unlocked_ids:
-		unlocked.append(String(id))
-	t += "Unlocked: %s   Equipped: %s\n" % [", ".join(unlocked), BobberManager.equipped_id]
 	return t
 
 
@@ -557,7 +598,6 @@ func _build_ui() -> void:
 	_build_progress_tab()
 	_build_flags_tab()
 	_build_fishing_tab()
-	_build_cosmetics_tab()
 
 
 # The game's shared pixel theme (PixelUI), extended for the extra controls the
@@ -655,14 +695,21 @@ func _row(parent: Control) -> HBoxContainer:
 
 
 func _build_info_tab() -> void:
-	var scroll := ScrollContainer.new()
-	scroll.name = "Info"
-	_tabs.add_child(scroll)
-	_info = RichTextLabel.new()
-	_info.bbcode_enabled = true
-	_info.fit_content = true
-	_info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	scroll.add_child(_info)
+	_info_tabs = TabContainer.new()
+	_info_tabs.name = "Info"
+	_info_tabs.tab_changed.connect(func(_i: int) -> void: _refresh_time = 0.0)
+	_tabs.add_child(_info_tabs)
+	for section in INFO_SECTIONS:
+		var scroll := ScrollContainer.new()
+		scroll.name = section
+		scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+		_info_tabs.add_child(scroll)
+		var label := RichTextLabel.new()
+		label.bbcode_enabled = true
+		label.fit_content = true
+		label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		scroll.add_child(label)
+		_info_labels[section] = label
 
 
 func _build_dialogue_tab() -> void:
@@ -917,33 +964,43 @@ func _build_fishing_tab() -> void:
 			controller.set("casts", 0)
 			_say("Casts refilled"))
 
+	_add_bobber_and_bait(box)
 
-func _build_cosmetics_tab() -> void:
-	var box := _add_tab("Bobbers")
+
+func _add_bobber_and_bait(box: VBoxContainer) -> void:
 	_heading(box, "Bobbers")
-	_button(box, "Unlock all bobbers", func() -> void:
+	var manage := _row(box)
+	_button(manage, "Unlock all", func() -> void:
 		for bobber in BobberManager.bobbers:
 			if bobber != null:
 				BobberManager.unlock_bobber(bobber.bobber_id)
 		_say("All bobbers unlocked"))
-	_button(box, "Reset bobbers to default", func() -> void:
+	_button(manage, "Reset to default", func() -> void:
 		_reset_bobbers()
 		_say("Bobbers reset"))
+	var bobbers := _row(box)
+	var equip_label := Label.new()
+	equip_label.text = "Equip"
+	bobbers.add_child(equip_label)
 	for b in BobberManager.bobbers:
 		if b == null:
 			continue
 		var bobber: BobberData = b
-		_button(box, "Equip bobber: " + String(bobber.bobber_id), func() -> void:
+		_button(bobbers, String(bobber.bobber_id), func() -> void:
 			BobberManager.unlock_bobber(bobber.bobber_id)
 			BobberManager.equip_bobber(bobber.bobber_id)
 			_say("Equipped bobber " + String(bobber.bobber_id)))
 
 	_heading(box, "Bait")
+	var baits := _row(box)
+	var bait_label := Label.new()
+	bait_label.text = "Equip"
+	baits.add_child(bait_label)
 	for b in FishingManager.available_baits:
 		if b == null:
 			continue
 		var bait: BaitData = b
-		_button(box, "Equip bait: " + bait.display_name, func() -> void:
+		_button(baits, bait.display_name, func() -> void:
 			if "unlocked_bait_ids" in FishingManager:
 				var unlocked: Array = FishingManager.get("unlocked_bait_ids")
 				if not unlocked.has(bait.bait_id):

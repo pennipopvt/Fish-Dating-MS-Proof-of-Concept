@@ -35,13 +35,16 @@ Debug builds only (not in exports):
 | Preview challenge popup | F10 |
 
 **Dev panel (F9)** (`prefabs/dev_panel.tscn`, autoload `DevPanel`). Tabs:
-- **Info:** live state (NPC flags, next encounter, dialogue node, fishing, storage, upgrades, challenges, bobbers).
+- **Info:** live state in four subtabs.
+  - **World:** time, player, dialogue node, recruitment.
+  - **NPCs:** flags, attraction, next encounter.
+  - **Fishing:** cast state, storage, catch dex, bobbers.
+  - **Progress:** upgrades, challenges.
 - **Talk:** Silas story checkpoints, which set flags, spawn him and open the talk; or play any `dialogue/*.json`.
 - **Items:** put any item in your hands or storage.
 - **Progress:** complete or reset challenges, grant or reset upgrades, reset everything.
 - **Flags:** edit flags and attraction.
-- **Fishing:** instant bite or catch, force a species, cast counts.
-- **Bobbers:** bobbers and bait.
+- **Fishing:** instant bite or catch, force a species, cast counts, unlock or equip bobbers, equip bait.
 
 "Reset ALL" wipes the challenge/bobber saves and reloads the world. The panel uses the shared `PixelUI` theme (`scripts/ui/pixel_ui.gd`).
 
