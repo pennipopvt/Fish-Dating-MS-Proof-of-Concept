@@ -14,6 +14,7 @@ amount = 2
 script = ExtResource("1")
 trade_id = &"hard_fish_bait"
 display_name = "Hard Fish Bait"
+description = "A bright orange bait that makes aggressive fish more likely to bite."
 one_time_purchase = true
 icon = ExtResource("4")
 requirements = Array[ExtResource("2")]([SubResource("cost")])
