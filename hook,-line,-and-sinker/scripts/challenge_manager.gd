@@ -8,8 +8,8 @@ signal challenge_completed(challenge: ChallengeData)
 signal streak_changed(streak: int)
 signal progress_reset
 
-# Debug hotkeys (project Input Map). Ignored in release exports.
-const ACTION_RESET := &"debug_reset_challenges"          # F9
+# Debug hotkey (project Input Map). Ignored in release exports.
+# Resetting and completing challenges lives in the F9 DevPanel.
 const ACTION_TEST_POPUP := &"debug_test_challenge_popup"  # F10
 
 ## Order here is the order shown in the Challenges tab.
@@ -37,11 +37,7 @@ func _unhandled_input(event: InputEvent) -> void:
 	if not OS.is_debug_build():
 		return
 
-	if event.is_action_pressed(ACTION_RESET):
-		reset_all()
-		print("Challenges: progress reset")
-		get_viewport().set_input_as_handled()
-	elif event.is_action_pressed(ACTION_TEST_POPUP):
+	if event.is_action_pressed(ACTION_TEST_POPUP):
 		test_popup()
 		get_viewport().set_input_as_handled()
 
@@ -147,6 +143,14 @@ func get_total_count() -> int:
 		if challenge != null:
 			count += 1
 	return count
+
+
+# Debug helper (DevPanel): complete a challenge as if its requirement was met,
+# with the usual popup and trade unlocks.
+func debug_complete(challenge: ChallengeData) -> void:
+	if challenge == null or challenge.completed or not challenges.has(challenge):
+		return
+	_complete(challenge)
 
 
 # Debug helper: reset in-memory challenge progress for this play session.
