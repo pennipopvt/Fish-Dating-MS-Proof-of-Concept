@@ -15,8 +15,7 @@ const FISH_DIR := "res://resources/fish/"
 const DIALOGUE_DIR := "res://dialogue/"
 const FISHING_STATES := ["NOT", "WAITING", "FISHING", "CATCHING"]
 const REFRESH_INTERVAL := 0.25
-const FONT_SIZE := 18
-const PANEL_WIDTH := 720.0
+const PANEL_WIDTH := 1080.0
 
 var _panel: PanelContainer
 var _tabs: TabContainer
@@ -404,11 +403,13 @@ func _refresh_current_tab() -> void:
 
 
 func _h(title: String) -> String:
-	return "\n[color=#ffd479][b]%s[/b][/color]\n" % title
+	return "\n[color=#%s][b]%s[/b][/color]\n" % [PixelUI.GOLD.to_html(false), title]
 
 
 func _onoff(value: bool) -> String:
-	return "[color=#7dff8a]true[/color]" if value else "[color=#ff8080]false[/color]"
+	if value:
+		return "[color=#%s]true[/color]" % PixelUI.GREEN.to_html(false)
+	return "[color=#%s]false[/color]" % PixelUI.RED.to_html(false)
 
 
 func _build_info() -> String:
@@ -462,7 +463,7 @@ func _build_info() -> String:
 	t += _h("Challenges (%d/%d)  streak %d" % [ChallengeManager.get_completed_count(), ChallengeManager.get_total_count(), ChallengeManager.catch_streak])
 	for c in ChallengeManager.challenges:
 		if c != null:
-			t += "%s  %d/%d  %s\n" % [c.display_name, c.progress, c.target_amount, "[color=#7dff8a]DONE[/color]" if c.completed else ""]
+			t += "%s  %d/%d  %s\n" % [c.display_name, c.progress, c.target_amount, ("[color=#%s]DONE[/color]" % PixelUI.GREEN.to_html(false)) if c.completed else ""]
 
 	t += _h("Bobbers")
 	var unlocked: Array[String] = []
@@ -525,11 +526,8 @@ func _other_modal_open() -> bool:
 # ---- UI construction -----------------------------------------------------
 
 func _build_ui() -> void:
-	var theme := Theme.new()
-	theme.default_font_size = FONT_SIZE
-
 	_panel = PanelContainer.new()
-	_panel.theme = theme
+	_panel.theme = _build_theme()
 	_panel.anchor_left = 1.0
 	_panel.anchor_right = 1.0
 	_panel.anchor_bottom = 1.0
@@ -537,24 +535,15 @@ func _build_ui() -> void:
 	_panel.offset_right = -16.0
 	_panel.offset_top = 16.0
 	_panel.offset_bottom = -16.0
-	var style := StyleBoxFlat.new()
-	style.bg_color = Color(0.07, 0.08, 0.1, 0.94)
-	style.border_color = Color(1.0, 0.83, 0.47)
-	style.set_border_width_all(2)
-	style.set_content_margin_all(12)
-	_panel.add_theme_stylebox_override("panel", style)
 	add_child(_panel)
 
 	var root := VBoxContainer.new()
 	_panel.add_child(root)
-	var title := Label.new()
-	title.text = "DEV PANEL   [F9] close   [F5] end dialogue"
-	title.add_theme_color_override("font_color", Color(1.0, 0.83, 0.47))
-	root.add_child(title)
-	_status = Label.new()
-	_status.text = "Ready"
+	root.add_theme_constant_override("separation", 2 * PixelUI.SCALE)
+	root.add_child(PixelUI.label("DEV PANEL", &"HeaderLabel"))
+	root.add_child(PixelUI.label("[F9] close    [F5] end dialogue", &"DimLabel"))
+	_status = PixelUI.label("Ready", &"", PixelUI.CYAN)
 	_status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_status.add_theme_color_override("font_color", Color(0.6, 0.85, 1.0))
 	root.add_child(_status)
 
 	_tabs = TabContainer.new()
@@ -569,6 +558,53 @@ func _build_ui() -> void:
 	_build_flags_tab()
 	_build_fishing_tab()
 	_build_cosmetics_tab()
+
+
+# The game's shared pixel theme (PixelUI), extended for the extra controls the
+# panel uses. Duplicated so the shared theme itself is never modified.
+func _build_theme() -> Theme:
+	var t: Theme = PixelUI.get_theme().duplicate()
+	var field := PixelUI.box(PixelUI.INSET, PixelUI.ROW_EDGE, 2)
+	var field_focus := PixelUI.box(PixelUI.INSET, PixelUI.CYAN, 2)
+	t.set_stylebox("normal", "LineEdit", field)
+	t.set_stylebox("focus", "LineEdit", field_focus)
+	t.set_color("font_color", "LineEdit", PixelUI.TEXT)
+	t.set_color("font_placeholder_color", "LineEdit", PixelUI.TEXT_DIM)
+	t.set_color("caret_color", "LineEdit", PixelUI.CYAN)
+	# Popup lists of OptionButtons.
+	t.set_stylebox("panel", "PopupMenu", PixelUI.box(PixelUI.WINDOW, PixelUI.CYAN_DARK, 2))
+	t.set_stylebox("hover", "PopupMenu", PixelUI.box(PixelUI.TEAL_HOVER, PixelUI.CYAN, 1))
+	t.set_color("font_color", "PopupMenu", PixelUI.TEXT)
+	t.set_color("font_hover_color", "PopupMenu", PixelUI.TEXT)
+	# Checkboxes read as rows; the tick icon and green text show the state.
+	t.set_stylebox("normal", "CheckBox", PixelUI.box(PixelUI.ROW, PixelUI.ROW_EDGE, 2))
+	t.set_stylebox("hover", "CheckBox", PixelUI.box(PixelUI.TEAL_HOVER, PixelUI.CYAN, 2))
+	t.set_stylebox("pressed", "CheckBox", PixelUI.box(PixelUI.ROW_DONE, PixelUI.CYAN, 2))
+	t.set_stylebox("hover_pressed", "CheckBox", PixelUI.box(PixelUI.TEAL_HOVER, PixelUI.CYAN, 2))
+	t.set_color("font_pressed_color", "CheckBox", PixelUI.GREEN)
+	t.set_color("font_hover_pressed_color", "CheckBox", PixelUI.GREEN)
+	# Info text: [b] uses the bold pixel font.
+	t.set_font("normal_font", "RichTextLabel", PixelUI.FONT_SMALL)
+	t.set_font("bold_font", "RichTextLabel", PixelUI.FONT_SMALL_BOLD)
+	t.set_font_size("normal_font_size", "RichTextLabel", PixelUI.SMALL_SIZE)
+	t.set_font_size("bold_font_size", "RichTextLabel", PixelUI.SMALL_SIZE)
+	t.set_color("default_color", "RichTextLabel", PixelUI.TEXT)
+	# PixelOperator8 has no built-in leading; give wrapped lines room.
+	t.set_constant("line_separation", "RichTextLabel", 2 * PixelUI.SCALE)
+	t.set_constant("line_spacing", "Label", 2 * PixelUI.SCALE)
+	t.set_stylebox("panel", "TabContainer", PixelUI.box(PixelUI.INSET, PixelUI.ROW_EDGE, 3))
+	# Tighter tabs than the shared theme so all seven fit in one row.
+	t.set_stylebox("tab_selected", "TabContainer", PixelUI.box(PixelUI.TEAL, PixelUI.CYAN, 1))
+	t.set_stylebox("tab_hovered", "TabContainer", PixelUI.box(PixelUI.TEAL_HOVER, PixelUI.CYAN_DARK, 1))
+	t.set_stylebox("tab_unselected", "TabContainer", PixelUI.box(PixelUI.ROW, PixelUI.ROW_EDGE, 1))
+	t.set_stylebox("tab_focus", "TabContainer", PixelUI.box(Color(0, 0, 0, 0), PixelUI.CYAN, 1))
+	t.set_color("font_selected_color", "TabContainer", PixelUI.TEXT)
+	t.set_color("font_hovered_color", "TabContainer", PixelUI.TEXT)
+	t.set_color("font_unselected_color", "TabContainer", PixelUI.TEXT_DIM)
+	t.set_constant("side_margin", "TabContainer", 0)
+	t.set_constant("separation", "VBoxContainer", PixelUI.SCALE)
+	t.set_constant("separation", "HBoxContainer", 2 * PixelUI.SCALE)
+	return t
 
 
 func _on_tab_changed() -> void:
@@ -592,15 +628,20 @@ func _add_tab(tab_name: String) -> VBoxContainer:
 
 
 func _heading(parent: Control, text: String) -> void:
-	var label := Label.new()
-	label.text = text
-	label.add_theme_color_override("font_color", Color(1.0, 0.83, 0.47))
+	var label := PixelUI.label(text, &"TitleLabel", PixelUI.GOLD)
+	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	parent.add_child(label)
 
 
 func _button(parent: Control, text: String, action: Callable) -> Button:
 	var button := Button.new()
 	button.text = text
+	# Full-width buttons trim long labels instead of widening the panel;
+	# small buttons in rows keep their natural width.
+	if parent is VBoxContainer:
+		button.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+		button.clip_text = true
+		button.tooltip_text = text
 	button.focus_mode = Control.FOCUS_NONE
 	button.pressed.connect(action)
 	parent.add_child(button)
@@ -625,7 +666,7 @@ func _build_info_tab() -> void:
 
 
 func _build_dialogue_tab() -> void:
-	var box := _add_tab("Dialogue")
+	var box := _add_tab("Talk")
 	_heading(box, "Silas story checkpoints (sets flags, spawns Silas, opens the talk)")
 	var checkpoints := [
 		["Not caught (reset Silas + reload world)", "not_caught"],
@@ -674,7 +715,7 @@ func _build_items_tab() -> void:
 		var row := _row(box)
 		var icon := TextureRect.new()
 		icon.texture = item.sprite
-		icon.custom_minimum_size = Vector2(32, 32)
+		icon.custom_minimum_size = Vector2(16, 16) * PixelUI.SCALE
 		icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 		icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
@@ -724,7 +765,8 @@ func _rebuild_progress() -> void:
 		if trade == null or (trade.reward_method == &"" and trade.reward_item == null):
 			continue
 		var reward := String(trade.reward_method) if trade.reward_method != &"" else "item " + String(trade.reward_item.item_id)
-		_button(box, "Grant %s  (%s x%d)" % [trade.display_name, reward, trade.reward_amount], func() -> void: _grant_trade(trade))
+		var grant := _button(box, "Grant " + trade.display_name, func() -> void: _grant_trade(trade))
+		grant.tooltip_text = "%s x%d" % [reward, trade.reward_amount]
 	_button(box, "Reset upgrades", _reset_upgrades)
 
 	_heading(box, "Everything")
@@ -877,7 +919,7 @@ func _build_fishing_tab() -> void:
 
 
 func _build_cosmetics_tab() -> void:
-	var box := _add_tab("Cosmetics")
+	var box := _add_tab("Bobbers")
 	_heading(box, "Bobbers")
 	_button(box, "Unlock all bobbers", func() -> void:
 		for bobber in BobberManager.bobbers:
