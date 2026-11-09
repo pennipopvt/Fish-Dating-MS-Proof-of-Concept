@@ -7,6 +7,11 @@ extends Resource
 ##The scene for the fish's initial catch
 @export var npc_data: PackedScene = null
 
+@export_group("Visuals")
+## Optional on-line sprite width in world pixels. Zero preserves the scene's
+## existing sprite scale for other fish/resources.
+@export_range(0.0, 128.0, 1.0) var hooked_sprite_width: float = 0.0
+
 ## Legacy setting retained so existing fish resources still load. In the
 ## parry/dash combat system fish do not drift backward automatically.
 ## Per-attack FishEscapeState.escape_rate controls contested pull and dash speed.
