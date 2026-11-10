@@ -51,6 +51,9 @@ func _ready() -> void:
 	fade_layer.add_to_group(&"modal_ui")
 	DialogueManager.scene_requested.connect(_on_scene_requested)
 	DialogueManager.conversation_finished.connect(_on_conversation_finished)
+	
+	#im uh gonna FORCE myself in here
+	RecruitmentHandler.fade_to.connect(_basic_fade)
 	cosmetic_reward_requested.connect(_on_cosmetic_reward_requested)
 
 func _on_scene_requested(npc: NPCData, scene_id: String) -> void:

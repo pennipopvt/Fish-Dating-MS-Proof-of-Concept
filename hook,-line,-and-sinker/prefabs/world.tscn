@@ -15,10 +15,6 @@
 [ext_resource type="Texture2D" uid="uid://dvyql68s5tvo3" path="res://sprites/environment/tileset.png" id="10_6mti1"]
 [ext_resource type="Shader" uid="uid://r4rciq67coeg" path="res://shaders/water.gdshader" id="13_le6xu"]
 [ext_resource type="PackedScene" uid="uid://dmjnqvhgyo6yj" path="res://prefabs/bait_box.tscn" id="21_baitb"]
-[ext_resource type="PackedScene" uid="uid://86k4q6ioi03u" path="res://prefabs/silas_house.tscn" id="24_xfqyr"]
-[ext_resource type="Script" uid="uid://dmgixmvyo7qhq" path="res://scripts/item_pickup.gd" id="30_pickup"]
-[ext_resource type="Resource" path="res://resources/items/spyglass.tres" id="31_spyglass"]
-[ext_resource type="Resource" path="res://resources/items/lantern.tres" id="32_lantern"]
 [ext_resource type="PackedScene" path="res://prefabs/bobber_shelf.tscn" id="bobber_shelf"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_4284n"]
@@ -152,16 +148,6 @@ position = Vector2(148, 112)
 
 [node name="Shop" parent="." unique_id=1156017474 instance=ExtResource("3_07nuu")]
 position = Vector2(195, 96)
-
-[node name="TestSpyglass" type="Area2D" parent="." unique_id=1397236402]
-position = Vector2(225, 96)
-script = ExtResource("30_pickup")
-item = ExtResource("31_spyglass")
-
-[node name="TestLantern" type="Area2D" parent="." unique_id=56151606]
-position = Vector2(252, 96)
-script = ExtResource("30_pickup")
-item = ExtResource("32_lantern")
 
 [node name="BaitBox" parent="." unique_id=2141990703 instance=ExtResource("21_baitb")]
 z_index = 0
