@@ -1,9 +1,9 @@
-[gd_scene format=3]
+[gd_scene format=3 uid="uid://bnlcohv14rav3"]
 
-[ext_resource type="Script" path="res://scripts/challenge_manager.gd" id="1_chman"]
-[ext_resource type="Script" path="res://resources/challenge_data.gd" id="2_chdat"]
-[ext_resource type="Resource" path="res://resources/challenges/hot_streak.tres" id="3_hotst"]
-[ext_resource type="Script" path="res://scripts/challenge_toast.gd" id="4_toast"]
+[ext_resource type="Script" uid="uid://c6lb8f3uq3n08" path="res://scripts/challenge_manager.gd" id="1_chman"]
+[ext_resource type="Script" uid="uid://d4ml5hd15k357" path="res://resources/challenge_data.gd" id="2_chdat"]
+[ext_resource type="Resource" uid="uid://d1551ppro6ghr" path="res://resources/challenges/hot_streak.tres" id="3_hotst"]
+[ext_resource type="Script" uid="uid://doih2vo4co66s" path="res://scripts/challenge_toast.gd" id="4_toast"]
 [ext_resource type="Resource" path="res://resources/challenges/streak_5.tres" id="5_s5"]
 [ext_resource type="Resource" path="res://resources/challenges/streak_10.tres" id="6_s10"]
 [ext_resource type="Resource" path="res://resources/challenges/streak_15.tres" id="7_s15"]
@@ -11,13 +11,14 @@
 [ext_resource type="Resource" path="res://resources/challenges/streak_25.tres" id="9_s25"]
 [ext_resource type="Resource" path="res://resources/challenges/streak_50.tres" id="10_s50"]
 [ext_resource type="Resource" path="res://resources/challenges/streak_100.tres" id="11_s100"]
+[ext_resource type="Resource" path="res://resources/challenges/perfect_parry_streak.tres" id="12_parry"]
 
-[node name="ChallengeManager" type="Node"]
+[node name="ChallengeManager" type="Node" unique_id=277244540]
 process_mode = 3
 script = ExtResource("1_chman")
-challenges = Array[ExtResource("2_chdat")]([ExtResource("3_hotst"), ExtResource("5_s5"), ExtResource("6_s10"), ExtResource("7_s15"), ExtResource("8_s20"), ExtResource("9_s25"), ExtResource("10_s50"), ExtResource("11_s100")])
+challenges = Array[ExtResource("2_chdat")]([ExtResource("3_hotst"), ExtResource("12_parry"), ExtResource("5_s5"), ExtResource("6_s10"), ExtResource("7_s15"), ExtResource("8_s20"), ExtResource("9_s25"), ExtResource("10_s50"), ExtResource("11_s100")])
 
-[node name="ChallengeToast" type="Node" parent="."]
+[node name="ChallengeToast" type="Node" parent="." unique_id=2012014920]
 script = ExtResource("4_toast")
 
-[node name="UnlockSfx" type="AudioStreamPlayer" parent="."]
+[node name="UnlockSfx" type="AudioStreamPlayer" parent="." unique_id=1326577352]

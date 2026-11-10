@@ -1,17 +1,15 @@
 extends Node
 
-# Tracks challenge progress from fishing events, saves completion,
-# and tells the shop which trades are still locked behind a challenge.
+# Tracks challenge progress from fishing events for this play session,
+# and tells the shop which trades are locked behind an incomplete challenge.
 
 signal challenge_progressed(challenge: ChallengeData)
 signal challenge_completed(challenge: ChallengeData)
 signal streak_changed(streak: int)
 signal progress_reset
 
-const SAVE_PATH := "user://challenges.cfg"
-
-# Debug hotkeys (project Input Map). Ignored in release exports.
-const ACTION_RESET := &"debug_reset_challenges"          # F9
+# Debug hotkey (project Input Map). Ignored in release exports.
+# Resetting and completing challenges lives in the F9 DevPanel.
 const ACTION_TEST_POPUP := &"debug_test_challenge_popup"  # F10
 
 ## Order here is the order shown in the Challenges tab.
@@ -25,20 +23,21 @@ var catch_streak: int = 0
 
 
 func _ready() -> void:
-	_load()
+	# ChallengeData resources can be shared; explicitly clear any runtime
+	# state before listening. Progress is not loaded across launches.
+	for challenge in challenges:
+		if challenge != null:
+			_reset_state(challenge)
 	FishingManager.fish_caught.connect(_on_fish_caught)
 	FishingManager.fish_lost.connect(_on_fish_lost)
+	FishingManager.parry_resolved.connect(_on_parry_resolved)
 
 
 func _unhandled_input(event: InputEvent) -> void:
 	if not OS.is_debug_build():
 		return
 
-	if event.is_action_pressed(ACTION_RESET):
-		reset_all()
-		print("Challenges: progress reset")
-		get_viewport().set_input_as_handled()
-	elif event.is_action_pressed(ACTION_TEST_POPUP):
+	if event.is_action_pressed(ACTION_TEST_POPUP):
 		test_popup()
 		get_viewport().set_input_as_handled()
 
@@ -64,23 +63,19 @@ func test_popup() -> void:
 		_unlock_sfx.play()
 
 
+# FishingManager.fish_caught emits FishData for both normal and NPC catches.
 func _on_fish_caught(fish: FishData) -> void:
 	catch_streak += 1
 	streak_changed.emit(catch_streak)
 
-	var changed := false
 	for challenge in challenges:
-		if challenge == null or challenge.completed or not challenge.counts_fish(fish):
+		if challenge == null or challenge.completed or challenge.requirement_type == ChallengeData.RequirementType.CONSECUTIVE_PERFECT_PARRIES or not challenge.counts_fish(fish):
 			continue
 
-		changed = true
 		if challenge.record_catch(fish):
 			_complete(challenge)
 		else:
 			challenge_progressed.emit(challenge)
-
-	if changed:
-		_save()
 
 
 # Any lost fish (line snapped, fish escaped, or walking away mid-fight) ends the streak.
@@ -89,15 +84,23 @@ func _on_fish_lost(_fish: FishData) -> void:
 		catch_streak = 0
 		streak_changed.emit(catch_streak)
 
-	var changed := false
 	for challenge in challenges:
 		if challenge != null and challenge.record_loss():
-			changed = true
 			challenge_progressed.emit(challenge)
 
-	if changed:
-		_save()
 
+# Perfect-parry challenges advance on successful counters, not fish catches.
+# Catching a fish between parries preserves the streak. A close or miss
+# counter resets it, regardless of which fish was hooked.
+func _on_parry_resolved(result: StringName) -> void:
+	for challenge in challenges:
+		if challenge == null or challenge.completed or challenge.requirement_type != ChallengeData.RequirementType.CONSECUTIVE_PERFECT_PARRIES:
+			continue
+		var before: int = challenge.progress
+		if challenge.record_parry(result):
+			_complete(challenge)
+		elif challenge.progress != before:
+			challenge_progressed.emit(challenge)
 
 func _complete(challenge: ChallengeData) -> void:
 	challenge.progress = challenge.target_amount
@@ -142,62 +145,21 @@ func get_total_count() -> int:
 	return count
 
 
-# ---- Save / load ---------------------------------------------------------
-
-func _save() -> void:
-	var config := ConfigFile.new()
-
-	for challenge in challenges:
-		if challenge == null or challenge.challenge_id == &"":
-			continue
-
-		var section := String(challenge.challenge_id)
-		config.set_value(section, "progress", challenge.progress)
-		config.set_value(section, "completed", challenge.completed)
-		config.set_value(section, "completed_at", challenge.completed_at)
-
-	var error := config.save(SAVE_PATH)
-	if error != OK:
-		push_warning("Could not save challenges to %s (error %d)" % [SAVE_PATH, error])
-
-
-func _load() -> void:
-	for challenge in challenges:
-		if challenge != null:
-			_reset_state(challenge)
-
-	var config := ConfigFile.new()
-	if config.load(SAVE_PATH) != OK:
+# Debug helper (DevPanel): complete a challenge as if its requirement was met,
+# with the usual popup and trade unlocks.
+func debug_complete(challenge: ChallengeData) -> void:
+	if challenge == null or challenge.completed or not challenges.has(challenge):
 		return
-
-	for challenge in challenges:
-		if challenge == null or challenge.challenge_id == &"":
-			continue
-
-		var section := String(challenge.challenge_id)
-		if not config.has_section(section):
-			continue
-
-		challenge.completed = bool(config.get_value(section, "completed", false))
-		challenge.completed_at = int(config.get_value(section, "completed_at", 0))
-		challenge.progress = clampi(
-			int(config.get_value(section, "progress", 0)), 0, challenge.target_amount
-		)
-
-		if challenge.completed:
-			challenge.progress = challenge.target_amount
+	_complete(challenge)
 
 
-# Debug helper: wipe all challenge progress and the save file.
+# Debug helper: reset in-memory challenge progress for this play session.
 func reset_all() -> void:
 	catch_streak = 0
 	streak_changed.emit(catch_streak)
 	for challenge in challenges:
 		if challenge != null:
 			_reset_state(challenge)
-
-	if FileAccess.file_exists(SAVE_PATH):
-		DirAccess.remove_absolute(ProjectSettings.globalize_path(SAVE_PATH))
 
 	progress_reset.emit()
 

@@ -16,6 +16,7 @@
 [ext_resource type="Shader" uid="uid://r4rciq67coeg" path="res://shaders/water.gdshader" id="13_le6xu"]
 [ext_resource type="PackedScene" uid="uid://dmjnqvhgyo6yj" path="res://prefabs/bait_box.tscn" id="21_baitb"]
 [ext_resource type="PackedScene" path="res://prefabs/bobber_shelf.tscn" id="bobber_shelf"]
+[ext_resource type="PackedScene" uid="uid://86k4q6ioi03u" path="res://prefabs/silas_house.tscn" id="24_xfqyr"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_4284n"]
 shader = ExtResource("6_07nuu")
@@ -148,7 +149,6 @@ position = Vector2(148, 112)
 
 [node name="Shop" parent="." unique_id=1156017474 instance=ExtResource("3_07nuu")]
 position = Vector2(195, 96)
-
 [node name="BaitBox" parent="." unique_id=2141990703 instance=ExtResource("21_baitb")]
 z_index = 0
 position = Vector2(98, 104)

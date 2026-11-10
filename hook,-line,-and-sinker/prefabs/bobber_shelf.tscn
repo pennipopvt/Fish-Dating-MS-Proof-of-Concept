@@ -1,26 +1,21 @@
-[gd_scene format=3]
+[gd_scene format=3 uid="uid://djyruabio7o5k"]
 
-[ext_resource type="Script" path="res://scripts/bobber_shelf.gd" id="1"]
-[ext_resource type="PackedScene" path="res://prefabs/interact_prompt.tscn" id="2"]
+[ext_resource type="Script" uid="uid://dxudx0uttloe" path="res://scripts/bobber_shelf.gd" id="1"]
+[ext_resource type="PackedScene" uid="uid://d4fhg8uyom630" path="res://prefabs/interact_prompt.tscn" id="2"]
 
 [sub_resource type="RectangleShape2D" id="collision"]
 size = Vector2(32, 16)
 
-[sub_resource type="Theme" id="Theme_bobber"]
-default_font_size = 32
-
-[node name="BobberShelf" type="Area2D" node_paths=PackedStringArray("prompt")]
+[node name="BobberShelf" type="Area2D" unique_id=1620766224 node_paths=PackedStringArray("prompt")]
 z_index = 1
 script = ExtResource("1")
 prompt = NodePath("InteractPrompt")
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1310158401]
 position = Vector2(0, -8)
 shape = SubResource("collision")
 
-[node name="Display" type="Node2D" parent="."]
+[node name="Display" type="Node2D" parent="." unique_id=290052208]
 
-[node name="InteractPrompt" parent="." instance=ExtResource("2")]
+[node name="InteractPrompt" parent="." unique_id=1696952170 instance=ExtResource("2")]
 position = Vector2(0, -27)
-z_index = 10
-

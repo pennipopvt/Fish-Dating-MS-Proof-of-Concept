@@ -1,0 +1,30 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/fishing_rod.gd" id="1_rod"]
+[ext_resource type="Texture2D" uid="uid://cruamkpjn34wb" path="res://sprites/items/fishingRod.png" id="2_rod"]
+
+[node name="FishingRod" type="Node2D"]
+z_index = 3
+script = ExtResource("1_rod")
+
+[node name="Pivot" type="Node2D" parent="."]
+
+[node name="Sprite" type="Sprite2D" parent="Pivot"]
+texture_filter = 1
+scale = Vector2(-1, 1)
+texture = ExtResource("2_rod")
+offset = Vector2(10, -8)
+hframes = 4
+
+[node name="Tip" type="Marker2D" parent="Pivot"]
+position = Vector2(-18, -18)
+
+[node name="CastLine" type="Line2D" parent="."]
+visible = false
+width = 1.0
+default_color = Color(1, 1, 1, 1)
+antialiased = false
+
+[node name="Bait" type="Sprite2D" parent="."]
+visible = false
+texture_filter = 1

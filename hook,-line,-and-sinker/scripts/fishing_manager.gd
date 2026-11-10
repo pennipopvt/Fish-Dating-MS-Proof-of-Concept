@@ -5,6 +5,17 @@ signal fish_hooked(item: FishData)
 signal fish_caught(item: FishData)
 signal fish_lost(item: FishData)
 signal bait_changed(bait: BaitData)
+signal parry_resolved(result: StringName)
+signal upgrades_changed
+
+# Upgrade ownership, unlocks and equipped bait are session-only for now.
+const HARD_BAIT_ID: StringName = &"bait_b"
+const YELLOW_BAIT_ID: StringName = &"bait_yellow"
+const BASIC_BAIT_ID: StringName = &"bait_a"
+const STRONGER_REEL_ID: StringName = &"stronger_reel"
+const REINFORCED_LINE_ID: StringName = &"reinforced_line"
+const HARD_BAIT_UPGRADE_ID: StringName = &"hard_fish_bait"
+const YELLOW_BAIT_UPGRADE_ID: StringName = &"yellow_bait"
 
 @export var possible_catches: Array[FishData] = []
 @export var current_storage: Array[ItemData] = []
@@ -16,9 +27,90 @@ signal bait_changed(bait: BaitData)
 @export var available_baits: Array[BaitData] = []
 # Applies to the next cast. A fish that's already decided is never swapped.
 @export var equipped_bait: BaitData = null
+var unlocked_bait_ids: Array[StringName] = [BASIC_BAIT_ID]
+var owned_upgrade_ids: Array[StringName] = []
+# Flat equipment bonuses that apply after fish-specific combat calculations.
+var reel_progress_bonus: float = 0.0
+var reel_tension_reduction: float = 0.0
+var miss_tension_reduction: float = 0.0
 
 @export_category("Fishing Stats")
 @export var max_casts_per_session: int = 3
+
+func _ready() -> void:
+	# A fresh launch starts with no purchases or bonus bait unlocked.
+	# The fishing manager is an autoload and keeps these during this run.
+	owned_upgrade_ids.clear()
+	unlocked_bait_ids.clear()
+	unlocked_bait_ids.append(BASIC_BAIT_ID)
+	reel_progress_bonus = 0.0
+	reel_tension_reduction = 0.0
+	miss_tension_reduction = 0.0
+	equipped_bait = _find_bait(BASIC_BAIT_ID)
+
+
+func _find_bait(id: StringName) -> BaitData:
+	for bait in available_baits:
+		if bait != null and bait.bait_id == id:
+			return bait
+	return null
+
+
+func get_unlocked_baits() -> Array[BaitData]:
+	var unlocked: Array[BaitData] = []
+	for bait in available_baits:
+		if bait != null and unlocked_bait_ids.has(bait.bait_id):
+			unlocked.append(bait)
+	return unlocked
+
+
+func has_upgrade(id: StringName) -> bool:
+	return owned_upgrade_ids.has(id)
+
+
+# Upgrade packages are applied when picked up from the drone's delivery.
+# Idempotent so taking a package twice cannot stack the effect.
+func shop_reward_unlock_hard_bait(amount: int) -> void:
+	if amount <= 0 or has_upgrade(HARD_BAIT_UPGRADE_ID):
+		return
+	if _find_bait(HARD_BAIT_ID) == null:
+		return
+	owned_upgrade_ids.append(HARD_BAIT_UPGRADE_ID)
+	if not unlocked_bait_ids.has(HARD_BAIT_ID):
+		unlocked_bait_ids.append(HARD_BAIT_ID)
+	bait_changed.emit(equipped_bait)
+	upgrades_changed.emit()
+
+
+# Unlocks the Silas-favoring bait after its shop delivery is collected.
+func shop_reward_unlock_yellow_bait(amount: int) -> void:
+	if amount <= 0 or has_upgrade(YELLOW_BAIT_UPGRADE_ID):
+		return
+	if _find_bait(YELLOW_BAIT_ID) == null:
+		return
+	owned_upgrade_ids.append(YELLOW_BAIT_UPGRADE_ID)
+	if not unlocked_bait_ids.has(YELLOW_BAIT_ID):
+		unlocked_bait_ids.append(YELLOW_BAIT_ID)
+	bait_changed.emit(equipped_bait)
+	upgrades_changed.emit()
+
+
+func shop_reward_stronger_reel(amount: int) -> void:
+	if amount <= 0 or has_upgrade(STRONGER_REEL_ID):
+		return
+	owned_upgrade_ids.append(STRONGER_REEL_ID)
+	reel_progress_bonus = 0.01  # +1 percentage point per reel scroll
+	upgrades_changed.emit()
+
+
+func shop_reward_reinforced_line(amount: int) -> void:
+	if amount <= 0 or has_upgrade(REINFORCED_LINE_ID):
+		return
+	owned_upgrade_ids.append(REINFORCED_LINE_ID)
+	reel_tension_reduction = 0.005  # -0.5 percentage points per reel scroll
+	miss_tension_reduction = 0.04  # -4 percentage points per missed dash
+	upgrades_changed.emit()
+
 
 func shop_reward_add_casts(amount: int) -> void:
 	if amount <= 0:
@@ -27,11 +119,26 @@ func shop_reward_add_casts(amount: int) -> void:
 	max_casts_per_session += amount
 
 func equip_bait(bait: BaitData) -> void:
+	if bait == null or not available_baits.has(bait) or not unlocked_bait_ids.has(bait.bait_id):
+		return
 	if bait == equipped_bait:
 		return
 
 	equipped_bait = bait
 	bait_changed.emit(bait)
+
+# Remove a recruited NPC from the pool, including duplicate entries or
+# multiple FishData resources using the same NPC scene. Ordinary fish and
+# NPCs whose recruitment was declined remain available.
+func remove_recruited_catch(recruited_fish: FishData) -> void:
+	if recruited_fish == null or recruited_fish.npc_data == null:
+		return
+	for index in range(possible_catches.size() - 1, -1, -1):
+		var candidate: FishData = possible_catches[index]
+		if candidate != null and candidate.npc_data != null:
+			if candidate == recruited_fish or candidate.npc_data == recruited_fish.npc_data:
+				possible_catches.remove_at(index)
+
 
 # Get a random fish from the current pool, weighted by the equipped bait.
 # Returns null if the pool has no catchable fish.
@@ -96,10 +203,14 @@ static func simulate_catch_odds(pool: Array[FishData], bait: BaitData, draws: in
 func hook_fish(item: FishData) -> void:
 	fish_hooked.emit(item)
 
-# Call when the player has successfully caught the fish
-func catch_fish(item: FishData) -> void:
-	current_storage.append(item.item_data)
-	
+# Called for any successful catch, including NPC fish. NPC catches count
+# toward challenges/dex, but they do not become an item in storage.
+func catch_fish(item: FishData, store_item: bool = true) -> void:
+	if item == null:
+		return
+	if store_item and item.item_data != null:
+		current_storage.append(item.item_data)
+
 	if(!catch_dex.has(item)):
 		catch_dex.append(item)
 	
@@ -111,7 +222,9 @@ func catch_fish(item: FishData) -> void:
 	#print("CATCH DEX", catch_dex)
 	#print("LIFETIME CATCHES", catch_lifetime)
 	
-	fish_caught.emit(item.item_data)
+	# ChallengeManager listens for FishData, not ItemData.
+	# Emitting item_data here silently broke typed catch notifications.
+	fish_caught.emit(item)
 
 # Call when the player has failed to catch the fish
 func lose_fish(item: FishData) -> void:

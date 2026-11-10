@@ -25,6 +25,29 @@ people who might settle in your empty town.
 | Interact (talk / shop / bait box) | Space |
 | Close menu | Esc |
 
+Debug builds only (not in exports):
+
+| Action | Input |
+|---|---|
+| Dev panel | F9 |
+| End current dialogue | F5 |
+| Recruit Silas (skip his first talk) | F6 |
+| Preview challenge popup | F10 |
+
+**Dev panel (F9)** (`prefabs/dev_panel.tscn`, autoload `DevPanel`). Tabs:
+- **Info:** live state in four subtabs.
+  - **World:** time, player, dialogue node, recruitment.
+  - **NPCs:** flags, attraction, next encounter.
+  - **Fishing:** cast state, storage, catch dex, bobbers.
+  - **Progress:** upgrades, challenges.
+- **Talk:** Silas story checkpoints, which set flags, spawn him and open the talk; or play any `dialogue/*.json`.
+- **Items:** put any item in your hands or storage.
+- **Progress:** complete or reset challenges, grant or reset upgrades, reset everything.
+- **Flags:** edit flags and attraction.
+- **Fishing:** instant bite or catch, force a species, cast counts, unlock or equip bobbers, equip bait.
+
+"Reset ALL" resets this session's progress and reloads the world. The panel uses the shared `PixelUI` theme (`scripts/ui/pixel_ui.gd`).
+
 ## What's implemented
 
 - **Managers (autoloads):** `GameManager` (time of day, actions per day),
@@ -44,6 +67,14 @@ people who might settle in your empty town.
   or malformed catch pool ends the cast instead of crashing.
 - **UI:** visual-novel style dialogue UI, shop menu, bait menu, interact prompt.
 - **Player** movement on the dock, plus interactables for NPCs and the shop.
+- **Fishing rod (visual only):** `prefabs/fishing_rod.tscn` on the player. When you
+  start fishing, the player faces the water and pulls out the rod. Every cast swings
+  the rod back and flicks it forward, and the equipped bait's icon flies out on the
+  end of the line along a parabola, lands where the bobber floats, and sinks along
+  the underwater line. The reel spins while you scroll,
+  and the line stays attached to the fish as it flies out of the water.
+  `fishing_rod.gd` only watches `FishingController`'s state; timings and angles are
+  exported on the FishingRod node.
 
 Not yet built (planned or exploratory): bait stock/shop, time/weather odds, fishing journal, challenge-
 unlocked gear, corporate storage/delivery, fish-person recruitment, houses.
@@ -54,7 +85,7 @@ unlocked gear, corporate storage/delivery, fish-person recruitment, houses.
 hook,-line,-and-sinker/
   scenes/      main.tscn, dock, manager scenes
   prefabs/     player, world, dock, shop, test_npc, dialogue_ui, shop_menu,
-               interact_prompt, bait_box, bait_menu
+               interact_prompt, bait_box, bait_menu, fishing_rod, dev_panel
   scripts/     managers, player, interactables, UI scripts
   resources/   Resource classes (*.gd) and data (*.tres in fish/, items/, npcs/,
                trades/, bait/)

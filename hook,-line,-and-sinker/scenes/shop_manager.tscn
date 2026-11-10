@@ -2,11 +2,14 @@
 
 [ext_resource type="Script" uid="uid://bttgyqilvibcr" path="res://scripts/shop_manager.gd" id="1_gx78v"]
 [ext_resource type="Script" uid="uid://co23u2dkxgpsq" path="res://resources/trade_data.gd" id="2_mv7ed"]
-[ext_resource type="Resource" uid="uid://buqljrpn82v13" path="res://resources/trades/increase_casts.tres" id="3_trade"]
-[ext_resource type="Resource" uid="uid://ctivbidkyhwng" path="res://resources/trades/cast_bundle.tres" id="4_trade"]
-[ext_resource type="Resource" path="res://resources/trades/pearl_necklace_gift.tres" id="5_gift"]
-[ext_resource type="Resource" path="res://resources/trades/spyglass.tres" id="6_spyglass"]
+[ext_resource type="Resource" uid="uid://damqlgslvm28u" path="res://resources/trades/hard_fish_bait.tres" id="3_trade"]
+[ext_resource type="Resource" uid="uid://ddijjqgr3hnld" path="res://resources/trades/stronger_reel.tres" id="4_trade"]
+[ext_resource type="Resource" uid="uid://0evhbp2tvs2g" path="res://resources/trades/pearl_necklace_gift.tres" id="5_gift"]
+[ext_resource type="Resource" uid="uid://b4eklxcwsk0ff" path="res://resources/trades/spyglass.tres" id="6_spyglass"]
+[ext_resource type="Resource" uid="uid://c8f8am1ryfnl4" path="res://resources/trades/reinforced_line.tres" id="7_trade"]
+[ext_resource type="Resource" uid="uid://c4s2dsvtcvk5i" path="res://resources/trades/yellow_bait.tres" id="8_yellow"]
+[ext_resource type="Resource" uid="uid://ls24yhmheplp" path="res://resources/trades/statue_gift.tres" id="9_statue"]
 
 [node name="ShopManager" type="Node2D" unique_id=1244899988]
 script = ExtResource("1_gx78v")
-trades = Array[ExtResource("2_mv7ed")]([ExtResource("3_trade"), ExtResource("4_trade"), ExtResource("5_gift"), ExtResource("6_spyglass")])
+trades = Array[ExtResource("2_mv7ed")]([ExtResource("3_trade"), ExtResource("8_yellow"), ExtResource("4_trade"), ExtResource("7_trade"), ExtResource("5_gift"), ExtResource("6_spyglass"), ExtResource("9_statue")])
