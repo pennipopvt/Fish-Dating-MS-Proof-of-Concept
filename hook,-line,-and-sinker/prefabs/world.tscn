@@ -7,7 +7,6 @@
 [ext_resource type="Script" uid="uid://c4y6oxceqx56r" path="res://scripts/available_home_info.gd" id="2_n7i1a"]
 [ext_resource type="PackedScene" uid="uid://dkva15le6ficd" path="res://prefabs/shop.tscn" id="3_07nuu"]
 [ext_resource type="Texture2D" uid="uid://c00uarqfug6h2" path="res://sprites/environment/sun.png" id="3_vbln7"]
-[ext_resource type="PackedScene" uid="uid://bu27c1m43q585" path="res://prefabs/test_npc.tscn" id="4_5f5nf"]
 [ext_resource type="Script" uid="uid://cure67x3a0766" path="res://scripts/clouds.gd" id="4_k40i2"]
 [ext_resource type="Texture2D" uid="uid://iyvfqqmpkdkg" path="res://sprites/environment/small_cloud.png" id="5_le6xu"]
 [ext_resource type="Shader" uid="uid://b41ap31uwit61" path="res://shaders/sky_gradient.gdshader" id="6_07nuu"]
@@ -15,17 +14,12 @@
 [ext_resource type="Texture2D" uid="uid://papjvjxenamb" path="res://sprites/environment/long_cloud.png" id="7_sxw1y"]
 [ext_resource type="Texture2D" uid="uid://dvyql68s5tvo3" path="res://sprites/environment/tileset.png" id="10_6mti1"]
 [ext_resource type="Shader" uid="uid://r4rciq67coeg" path="res://shaders/water.gdshader" id="13_le6xu"]
-[ext_resource type="Texture2D" uid="uid://5vh3iowi78ql" path="res://sprites/environment/small_ripple_1.png" id="16_deaom"]
-[ext_resource type="Texture2D" uid="uid://pn5ltvo8an8" path="res://sprites/environment/small_ripple_2.png" id="17_6mti1"]
-[ext_resource type="Texture2D" uid="uid://dcjlwla0wfld2" path="res://sprites/environment/medium_ripple_a.png" id="18_bpfb4"]
-[ext_resource type="Texture2D" uid="uid://b1yjy4cpk8663" path="res://sprites/environment/small_ripple_3.png" id="18_gi6id"]
-[ext_resource type="Texture2D" uid="uid://xb7algatkug2" path="res://sprites/environment/medium_ripple_b.png" id="19_b1m2q"]
-[ext_resource type="Texture2D" uid="uid://dxh258uk7ryb2" path="res://sprites/environment/medium_ripple_c.png" id="20_8bx52"]
 [ext_resource type="PackedScene" uid="uid://dmjnqvhgyo6yj" path="res://prefabs/bait_box.tscn" id="21_baitb"]
 [ext_resource type="PackedScene" uid="uid://86k4q6ioi03u" path="res://prefabs/silas_house.tscn" id="24_xfqyr"]
 [ext_resource type="Script" uid="uid://dmgixmvyo7qhq" path="res://scripts/item_pickup.gd" id="30_pickup"]
 [ext_resource type="Resource" path="res://resources/items/spyglass.tres" id="31_spyglass"]
 [ext_resource type="Resource" path="res://resources/items/lantern.tres" id="32_lantern"]
+[ext_resource type="PackedScene" path="res://prefabs/bobber_shelf.tscn" id="bobber_shelf"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_4284n"]
 shader = ExtResource("6_07nuu")
@@ -52,6 +46,20 @@ texture = ExtResource("10_6mti1")
 3:1/0 = 0
 4:1/0 = 0
 5:1/0 = 0
+0:6/0 = 0
+1:6/0 = 0
+2:7/0 = 0
+3:7/0 = 0
+4:7/0 = 0
+5:7/0 = 0
+6:7/0 = 0
+6:6/0 = 0
+5:6/0 = 0
+4:6/0 = 0
+3:6/0 = 0
+2:6/0 = 0
+0:7/0 = 0
+1:7/0 = 0
 
 [sub_resource type="TileSet" id="TileSet_yd4fr"]
 sources/0 = SubResource("TileSetAtlasSource_gi6id")
@@ -137,14 +145,13 @@ position = Vector2(445, 96)
 offset = Vector2(0, -16)
 
 [node name="Dock" parent="." unique_id=501821169 instance=ExtResource("1_4284n")]
-position = Vector2(62, 101)
+position = Vector2(46, 101)
+
+[node name="BobberShelf" parent="." unique_id=1600055831 instance=ExtResource("bobber_shelf")]
+position = Vector2(148, 112)
 
 [node name="Shop" parent="." unique_id=1156017474 instance=ExtResource("3_07nuu")]
-position = Vector2(166, 96)
-
-[node name="TestNPC" parent="." unique_id=2033605866 instance=ExtResource("4_5f5nf")]
-visible = false
-position = Vector2(342, 96)
+position = Vector2(195, 96)
 
 [node name="TestSpyglass" type="Area2D" parent="." unique_id=1397236402]
 position = Vector2(225, 96)
@@ -157,10 +164,11 @@ script = ExtResource("30_pickup")
 item = ExtResource("32_lantern")
 
 [node name="BaitBox" parent="." unique_id=2141990703 instance=ExtResource("21_baitb")]
-position = Vector2(93, 106)
+z_index = 0
+position = Vector2(98, 104)
 
 [node name="Ground" type="TileMapLayer" parent="." unique_id=97856843]
-tile_map_data = PackedByteArray("AAADAAgAAAAAAAEAAAAEAAgAAAABAAEAAAAFAAgAAAACAAEAAAAGAAgAAAADAAEAAAAHAAgAAAAEAAEAAAAIAAgAAAAFAAEAAAAJAAgAAAAEAAEAAAAKAAgAAAAFAAEAAAALAAgAAAAEAAEAAAAMAAgAAAAFAAEAAAANAAgAAAAEAAEAAAAOAAgAAAAFAAEAAAAPAAgAAAAEAAEAAAAQAAgAAAAFAAEAAAARAAgAAAAEAAEAAAASAAgAAAAFAAEAAAATAAgAAAAEAAEAAAAUAAgAAAAFAAEAAAAVAAgAAAAEAAEAAAAWAAgAAAAFAAEAAAADAAcAAAAAAAAAAAAEAAcAAAABAAAAAAAFAAcAAAACAAAAAAAGAAcAAAADAAAAAAAHAAcAAAAEAAAAAAAIAAcAAAAFAAAAAAAJAAcAAAAEAAAAAAAKAAcAAAAFAAAAAAALAAcAAAAEAAAAAAAMAAcAAAAFAAAAAAANAAcAAAAEAAAAAAAOAAcAAAAFAAAAAAAPAAcAAAAEAAAAAAAQAAcAAAAFAAAAAAARAAcAAAAEAAAAAAASAAcAAAAFAAAAAAATAAcAAAAEAAAAAAAUAAcAAAAFAAAAAAAVAAcAAAAEAAAAAAAWAAcAAAAFAAAAAAA=")
+tile_map_data = PackedByteArray("AAAFAAgAAAACAAEAAAAGAAgAAAADAAcAAAAHAAgAAAAEAAcAAAAIAAgAAAAFAAcAAAAJAAgAAAAFAAcAAAAKAAgAAAAFAAcAAAALAAgAAAAFAAcAAAAMAAgAAAAFAAcAAAANAAgAAAAFAAcAAAAOAAgAAAAFAAcAAAAPAAgAAAAFAAcAAAAQAAgAAAAFAAcAAAARAAgAAAAFAAcAAAASAAgAAAAFAAcAAAATAAgAAAAFAAcAAAAUAAgAAAAFAAcAAAAVAAgAAAAFAAcAAAAWAAgAAAAFAAcAAAAFAAcAAAAGAAYAAAAGAAcAAAADAAYAAAAHAAcAAAAEAAYAAAAIAAcAAAAFAAYAAAAJAAcAAAAFAAYAAAAKAAcAAAAFAAYAAAALAAcAAAAFAAYAAAAMAAcAAAAFAAYAAAANAAcAAAAFAAYAAAAOAAcAAAAFAAYAAAAPAAcAAAAFAAYAAAAQAAcAAAAFAAYAAAARAAcAAAAFAAYAAAASAAcAAAAFAAYAAAATAAcAAAAFAAYAAAAUAAcAAAAFAAYAAAAVAAcAAAAFAAYAAAAWAAcAAAAFAAYAAAABAAgAAAAAAAEAAAADAAcAAAAGAAYAAAADAAgAAAABAAEAAAAEAAcAAAACAAYAAAAEAAgAAAACAAcAAAACAAcAAAAAAAYAAAACAAgAAAAAAAcAAAAXAAcAAAAFAAYAAAAXAAgAAAAFAAcAAAAYAAcAAAAFAAYAAAAYAAgAAAAFAAcAAAAZAAcAAAAFAAYAAAAZAAgAAAAFAAcAAAAaAAcAAAAFAAYAAAAaAAgAAAAFAAcAAAAbAAcAAAAFAAYAAAAbAAgAAAAFAAcAAAA=")
 tile_set = SubResource("TileSet_yd4fr")
 
 [node name="Water" type="ColorRect" parent="." unique_id=1286032416]
@@ -170,30 +178,3 @@ offset_left = -237.0
 offset_top = 140.0
 offset_right = 720.0
 offset_bottom = 320.0
-
-[node name="WaterRipples" type="Node2D" parent="." unique_id=1092900859]
-position = Vector2(0, 140)
-
-[node name="SmallRipple1" type="Sprite2D" parent="WaterRipples" unique_id=849523420]
-position = Vector2(153, 160)
-texture = ExtResource("16_deaom")
-
-[node name="SmallRipple2" type="Sprite2D" parent="WaterRipples" unique_id=1769156171]
-position = Vector2(211, 164)
-texture = ExtResource("17_6mti1")
-
-[node name="SmallRipple3" type="Sprite2D" parent="WaterRipples" unique_id=1719849810]
-position = Vector2(128, 168)
-texture = ExtResource("18_gi6id")
-
-[node name="MediumRippleA" type="Sprite2D" parent="WaterRipples" unique_id=2071502662]
-position = Vector2(78, 159)
-texture = ExtResource("18_bpfb4")
-
-[node name="MediumRippleB" type="Sprite2D" parent="WaterRipples" unique_id=471688593]
-position = Vector2(162, 177)
-texture = ExtResource("19_b1m2q")
-
-[node name="MediumRippleC" type="Sprite2D" parent="WaterRipples" unique_id=609796024]
-position = Vector2(230, 163)
-texture = ExtResource("20_8bx52")

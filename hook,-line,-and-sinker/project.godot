@@ -21,7 +21,7 @@ NPCManager="*uid://dcaonps1u75l4"
 DialogueManager="*uid://c0kgfo2cpvho8"
 FishingManager="*uid://da6f5mcynky0y"
 ShopManager="*uid://o4toft746f7g"
-RecruitmentHandler="*uid://1gjuorwy1m0v"
+BobberManager="*res://scripts/bobber_manager.gd"
 
 [display]
 

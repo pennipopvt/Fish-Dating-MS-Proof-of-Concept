@@ -75,6 +75,7 @@ func play_fishing_sound(player: AudioStreamPlayer) -> void:
 @onready var catch_landing_point: Marker2D = $CatchLandingPoint
 @onready var npc_landing_point: Marker2D = $NpcLandingPoint
 @onready var catch_fish_visual: Sprite2D = $CatchFishVisual
+@onready var npc_poof: AnimatedSprite2D = $NpcPoof
 @export_range(0.1, 2.0, 0.05) var catch_flight_duration: float = 0.65
 @export_range(0.0, 0.5, 0.01) var catch_peak_hang: float = 0.08
 @export_range(0.0, 150.0, 1.0) var catch_arc_height: float = 75.0
@@ -233,7 +234,10 @@ func _on_catch_landed() -> void:
 	catch_fish_visual.z_index = -1
 
 func _finish_catch_animation() -> void:
-	catch_fish_visual.hide()
+	# Keep the caught fish visible for poof frame 1. It becomes the NPC
+	# faceplant precisely when the poof advances to frame 2.
+	if hooked_fish == null or hooked_fish.npc_data == null:
+		catch_fish_visual.hide()
 	catch_fish_visual.z_index = 12
 	catch_fish_visual.rotation = 0.0
 	
@@ -275,6 +279,8 @@ func reset_values() -> void:
 	if catch_tween != null and catch_tween.is_running():
 		catch_tween.kill()
 	catch_fish_visual.hide()
+	npc_poof.stop()
+	npc_poof.hide()
 	progress = 0
 	bite_time = 0
 	fishing_progress.value = 0
@@ -446,26 +452,29 @@ func attempt_counter() -> bool:
 	return true
 
 func create_npc(npc: PackedScene) -> void:
-	
-	#i am not sure if you want the npc to persist after being caught, so... it does for now
-	var scene = npc.instantiate()
-	#surely the most efficient way to do this right?
-	var world = get_parent().get_parent()
-	#i was thinking that we can have aW broad npc scene, and here we would replace
+	# The fish remains at the NPC landing spot on poof frame 1.
+	npc_poof.position = npc_landing_point.position
+	npc_poof.show()
+	npc_poof.play(&"poof")
+
+	# Wait for the start of the second frame before swapping the fish for
+	# Ethan's existing faceplant ("on_caught") NPC sprite.
+	await npc_poof.frame_changed
+	var scene := npc.instantiate() as NPCInteractable
+	var world: Node = get_parent().get_parent()
 	world.add_child(scene)
 	scene.global_position = npc_landing_point.global_position
 	scene.z_index = 12
-	#should fishing auto-stop after an npc fish is caught? like mark it to
-	#not fishing state?
 	var sprite: AnimatedSprite2D = scene.get_node("Sprite")
-	#maybe play a silly sound here, and the puff cloud
-	sprite.play("on_caught")
-	get_parent().animator.play("idle_r")
-	
+	sprite.play(&"on_caught")
+	catch_fish_visual.hide()
+	get_parent().animator.play(&"idle_r")
+
+	# Let the full poof finish, then retain Ethan's faceplant beat
+	# before restoring the NPC idle and starting dialogue.
+	await npc_poof.animation_finished
+	npc_poof.hide()
 	await get_tree().create_timer(npc_catch_pose_length).timeout
-	
-	sprite.play("default")
-	#manually triggering the interact, and exiting fishing
+	sprite.play(&"default")
 	exit_fishing()
 	scene.interact(get_parent())
-	RecruitmentHandler.engage_listen(scene)

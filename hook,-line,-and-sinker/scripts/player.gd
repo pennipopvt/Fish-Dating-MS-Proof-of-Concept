@@ -4,7 +4,6 @@ extends CharacterBody2D
 const SPEED = 100.0
 const ACC = 2000.0
 
-
 signal held_item_changed(item: ItemData)
 var held_item: ItemData = null
 var held_item_visual: Sprite2D
@@ -67,16 +66,16 @@ func _physics_process(delta: float) -> void:
 	if direction:
 		velocity.x = move_toward(velocity.x, direction * SPEED, ACC * delta)
 		if sign(direction) < 0:
-			animator.play("walk_l")
+			animator.play("walk_carry_l" if held_item != null else "walk_l")
 		else:
-			animator.play("walk_r")
+			animator.play("walk_carry_r" if held_item != null else "walk_r")
 		last_direction = direction
 	else:
 		velocity.x = move_toward(velocity.x, 0, ACC * delta)
 		if sign(last_direction) < 0:
-			animator.play("idle_l")
+			animator.play("idle_carry_l" if held_item != null else "idle_l")
 		else:
-			animator.play("idle_r")
+			animator.play("idle_carry_r" if held_item != null else "idle_r")
 
 	move_and_slide()
 
