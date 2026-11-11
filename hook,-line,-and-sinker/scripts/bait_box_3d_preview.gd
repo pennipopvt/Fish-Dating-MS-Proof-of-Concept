@@ -3,7 +3,7 @@ extends Node
 # EXPERIMENT preview for BaitBox3DView (jerry-baitboxtest). Run this scene (F6):
 # the game world with the player at the bait box, the bait menu's 50% dim, and
 # the 3D box playing its open animation.
-#   R  replay (close, then open)    P  switch pixel size 3x / 6x
+#   R  replay    P  switch pixel size 3x / 6x    O  outlines + palette on/off
 # Uses a separate save file so previewing never changes the real clock save.
 
 const MAIN_SCENE: PackedScene = preload("res://scenes/main.tscn")
@@ -29,6 +29,9 @@ func _ready() -> void:
 	for arg in OS.get_cmdline_user_args():
 		if arg.begins_with("--pixel="):
 			_view.pixel_scale = int(arg.get_slice("=", 1))
+		elif arg == "--no-post":
+			_view.use_outline = false
+			_view.use_palette = false
 	_view.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_view.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	layer.add_child(_view)
@@ -51,3 +54,6 @@ func _unhandled_input(event: InputEvent) -> void:
 			_view.play_open()
 		KEY_P:
 			_view.pixel_scale = 6 if _view.pixel_scale == 3 else 3
+		KEY_O:
+			_view.use_outline = not _view.use_outline
+			_view.use_palette = _view.use_outline
