@@ -21,6 +21,14 @@ var _tiles: Dictionary = {}
 var _button_group := ButtonGroup.new()
 
 
+func _ready() -> void:
+	FishingManager.storage_changed.connect(_on_storage_changed)
+
+
+func _on_storage_changed() -> void:
+	if is_visible_in_tree():
+		refresh()
+
 
 # Recount every time this tab opens. Trades and catches modify this same array.
 func refresh() -> void:

@@ -1,7 +1,7 @@
 class_name UpgradePickup
 extends ItemPickup
 
-# A drone-delivered package for a FishingManager upgrade trade (e.g. extra
+# A drone-delivered package for an upgrade trade (e.g. extra
 # casts). The upgrade applies when the player picks it up; the package shows
 # overhead for a moment and doesn't take the player's hands.
 
@@ -28,8 +28,7 @@ func interact(_player: Node2D) -> void:
 		queue_free()
 		return
 
-	FishingManager.call(trade.reward_method, trade.reward_amount)
-	ShopManager.mark_upgrade_delivered(trade)
+	ShopManager.collect_upgrade(trade)
 
 	var player := _player as Player
 	if player != null:

@@ -7,6 +7,8 @@ signal fish_lost(item: FishData)
 signal bait_changed(bait: BaitData)
 signal parry_resolved(result: StringName)
 signal upgrades_changed
+# Any add/remove in current_storage (catches, trades, deliveries).
+signal storage_changed
 
 # Upgrade ownership, unlocks and equipped bait are session-only for now.
 const HARD_BAIT_ID: StringName = &"bait_b"
@@ -207,6 +209,45 @@ static func simulate_catch_odds(pool: Array[FishData], bait: BaitData, draws: in
 		counts[key] = counts.get(key, 0) + 1
 	return counts
 
+# ---- Storage -------------------------------------------------------------
+# Change current_storage through these so storage_changed fires.
+
+func add_to_storage(item: ItemData, amount: int = 1) -> void:
+	if item == null or amount <= 0:
+		return
+	for i in amount:
+		current_storage.append(item)
+	storage_changed.emit()
+
+
+# How many of an item the player has in storage.
+func count_in_storage(item_id: StringName) -> int:
+	var count := 0
+	for item in current_storage:
+		if item != null and item.item_id == item_id:
+			count += 1
+	return count
+
+
+# Removes amount items with this id. Removes nothing and returns false if
+# there aren't enough.
+func remove_from_storage(item_id: StringName, amount: int = 1) -> bool:
+	if amount <= 0 or count_in_storage(item_id) < amount:
+		return false
+	# Oldest first.
+	var left := amount
+	var i := 0
+	while left > 0 and i < current_storage.size():
+		var item: ItemData = current_storage[i]
+		if item != null and item.item_id == item_id:
+			current_storage.remove_at(i)
+			left -= 1
+		else:
+			i += 1
+	storage_changed.emit()
+	return true
+
+
 # Call when a fish has been hooked and the player must start reeling
 func hook_fish(item: FishData) -> void:
 	fish_hooked.emit(item)
@@ -217,7 +258,7 @@ func catch_fish(item: FishData, store_item: bool = true) -> void:
 	if item == null:
 		return
 	if store_item and item.item_data != null:
-		current_storage.append(item.item_data)
+		add_to_storage(item.item_data)
 
 	if(!catch_dex.has(item)):
 		catch_dex.append(item)

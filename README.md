@@ -73,8 +73,28 @@ Debug builds only (not in exports):
   end of the line along a parabola, lands where the bobber floats, and sinks along
   the underwater line. The reel spins while you scroll,
   and the line stays attached to the fish as it flies out of the water.
-  `fishing_rod.gd` only watches `FishingController`'s state; timings and angles are
-  exported on the FishingRod node.
+  `fishing_rod.gd` only listens to `FishingController.state_changed`; timings and
+  angles are exported on the FishingRod node.
+
+### How systems connect (signals)
+
+Managers emit signals; other systems and UI connect to them in `_ready`. A manager
+never drives another system's nodes directly. Reading a manager's state for display
+(`ShopManager.can_trade`, `ChallengeManager.is_trade_locked`) is still a plain call.
+
+| Signal | Emitted by | Listened to by |
+|---|---|---|
+| `fish_caught` / `fish_lost` / `parry_resolved` | `FishingManager` | `ChallengeManager` (progress), shop menu (collection) |
+| `storage_changed` | `FishingManager` (`add_to_storage`, `remove_from_storage`, catches) | shop menu, storage panel |
+| `challenge_completed` / `challenge_preview_requested` | `ChallengeManager` | `ChallengeToast` (notice above the terminal and unlock sound) |
+| `challenge_progressed` / `progress_reset` | `ChallengeManager` | shop menu, challenges panel |
+| `delivery_requested(pickups)` | `ShopManager.make_trade` | the shop terminal (`ShopInteractable`), which sends the drone |
+| `upgrade_state_changed` | `ShopManager.collect_upgrade` (upgrade package picked up) | shop menu |
+| `state_changed(from, to)` | `FishingController` | `FishingRod` (deferred) |
+
+Change storage only through `FishingManager.add_to_storage` / `remove_from_storage`,
+so listeners hear about it. With no terminal in the scene (nobody listening to
+`delivery_requested`), trade rewards apply right away.
 
 Not yet built (planned or exploratory): bait stock/shop, time/weather odds, fishing journal, challenge-
 unlocked gear, corporate storage/delivery, fish-person recruitment, houses.

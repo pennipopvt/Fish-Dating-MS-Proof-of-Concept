@@ -1,6 +1,11 @@
 class_name ShopInteractable
 extends Interactable
 
+# The world terminal. Opens the shop, receives ShopManager.delivery_requested
+# and flies the rewards in by drone. ChallengeToast finds it by TERMINAL_GROUP.
+
+const TERMINAL_GROUP := &"shop_terminal"
+
 @export var prompt: InteractPrompt
 
 @export_group("Delivery")
@@ -21,7 +26,7 @@ var _pending: Array[ItemPickup] = []  # bought while the menu is open
 
 func _ready() -> void:
 	super()
-	ShopManager.delivery_point = self
+	add_to_group(TERMINAL_GROUP)
 	ShopManager.shop_opened.connect(_update_prompt)
 	ShopManager.shop_closed.connect(_update_prompt)
 	ShopManager.shop_closed.connect(_launch_drone)
@@ -61,7 +66,7 @@ func _update_prompt() -> void:
 		prompt.pop_out()
 
 
-# Called by ShopManager after a trade: a drone flies the pickups (items or
+# On ShopManager.delivery_requested after a trade: a drone flies the pickups (items or
 # upgrade packages) in and drops them next to the terminal. Items bought while the
 # shop menu is open wait until it closes so the player sees the drone, and
 # arrive together on one drone.
@@ -87,9 +92,16 @@ func _launch_drone() -> void:
 	drone.deliver(pickups, positions)
 
 
+# Listen only while in the tree, so ShopManager.has_delivery_point() is false
+# (rewards apply instantly) whenever no terminal is loaded.
+func _enter_tree() -> void:
+	if not ShopManager.delivery_requested.is_connected(deliver):
+		ShopManager.delivery_requested.connect(deliver)
+
+
 func _exit_tree() -> void:
-	if ShopManager.delivery_point == self:
-		ShopManager.delivery_point = null
+	if ShopManager.delivery_requested.is_connected(deliver):
+		ShopManager.delivery_requested.disconnect(deliver)
 	for pickup in _pending:
 		pickup.free()
 	_pending.clear()
