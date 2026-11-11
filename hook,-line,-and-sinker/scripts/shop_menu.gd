@@ -502,6 +502,8 @@ func _show_trade_details(trade: TradeData) -> void:
 		_status.text = "LOCKED: %s" % ("Complete a hidden challenge" if locking.hidden else locking.display_name)
 	elif _order_button.disabled:
 		_status.text = "Not enough items to trade."
+		if ShopManager.upgrades_today >= ShopManager.max_daily_upgrades:
+			_status.text = "Maximum daily upgrades reached."
 
 
 # Use the real ItemData sprite and the count from the existing inventory.
