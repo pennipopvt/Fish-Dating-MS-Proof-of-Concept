@@ -273,7 +273,14 @@ func _give_to_hands(item: ItemData) -> void:
 func _add_to_storage(item: ItemData, amount: int) -> void:
 	for i in range(amount):
 		FishingManager.current_storage.append(item)
+	_storage_changed()
 	_say("Added %d x %s to storage" % [amount, item.item_id])
+
+
+# Direct storage edits bypass FishingManager's API, so announce them.
+func _storage_changed() -> void:
+	if FishingManager.has_signal(&"storage_changed"):
+		FishingManager.emit_signal(&"storage_changed")
 
 
 # ---- Progress / upgrades ---------------------------------------------------
@@ -343,6 +350,7 @@ func _reset_all() -> void:
 		DialogueManager.end_conversation()
 	NPCManager.npc_states.clear()
 	FishingManager.current_storage.clear()
+	_storage_changed()
 	FishingManager.catch_dex.clear()
 	FishingManager.catch_lifetime.clear()
 	_reset_upgrades()
@@ -758,6 +766,7 @@ func _build_items_tab() -> void:
 			_say("Hands emptied"))
 	_button(top, "Clear storage", func() -> void:
 		FishingManager.current_storage.clear()
+		_storage_changed()
 		_say("Storage cleared"))
 	for path in _list_resources(ITEMS_DIR):
 		var item := load(path) as ItemData

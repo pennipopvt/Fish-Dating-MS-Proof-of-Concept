@@ -2,11 +2,15 @@ extends Node
 
 # Tracks challenge progress from fishing events for this play session,
 # and tells the shop which trades are locked behind an incomplete challenge.
+# Input: listens to FishingManager's fish_caught / fish_lost / parry_resolved.
+# Output: only emits signals. UI (ChallengeToast, panels, shop) listens to them.
 
 signal challenge_progressed(challenge: ChallengeData)
 signal challenge_completed(challenge: ChallengeData)
 signal streak_changed(streak: int)
 signal progress_reset
+# Debug: show the unlock popup for a challenge without completing it.
+signal challenge_preview_requested(challenge: ChallengeData)
 
 # Debug hotkey (project Input Map). Ignored in release exports.
 # Resetting and completing challenges lives in the F9 DevPanel.
@@ -17,9 +21,6 @@ const ACTION_TEST_POPUP := &"debug_test_challenge_popup"  # F10
 
 ## Fish caught in a row without losing one (any species).
 var catch_streak: int = 0
-
-@onready var _toast: ChallengeToast = $ChallengeToast
-@onready var _unlock_sfx: AudioStreamPlayer = $UnlockSfx
 
 
 func _ready() -> void:
@@ -55,12 +56,8 @@ func test_popup() -> void:
 			preview = challenge
 			break
 
-	if preview == null:
-		return
-
-	_toast.show_challenge(preview)
-	if _unlock_sfx.stream != null:
-		_unlock_sfx.play()
+	if preview != null:
+		challenge_preview_requested.emit(preview)
 
 
 # FishingManager.fish_caught emits FishData for both normal and NPC catches.
@@ -109,10 +106,6 @@ func _complete(challenge: ChallengeData) -> void:
 
 	print("Challenge completed: ", challenge.challenge_id)
 	challenge_completed.emit(challenge)
-	_toast.show_challenge(challenge)
-
-	if _unlock_sfx.stream != null:
-		_unlock_sfx.play()
 
 
 # ---- Queries -------------------------------------------------------------
