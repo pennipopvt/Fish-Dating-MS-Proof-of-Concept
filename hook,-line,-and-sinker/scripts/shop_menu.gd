@@ -9,7 +9,7 @@ enum Page { UPGRADES, GIFTS, STORAGE, COLLECTION, CHALLENGES }
 
 const SLOT_SIZE := Vector2(168, 168) # 56 x 56 art pixels at 3x
 const MIN_SLOTS := 12                 # Four columns, three visible rows
-const LOCKED_TINT := Color(0.72, 0.75, 0.75, 0.82)
+const LOCKED_TINT := Color(0.533, 0.57, 0.57, 0.82)
 const DARK_TEXT := Color("17363b")
 const DIM_TEXT := Color("45646a")
 const WARNING_TEXT := Color("984b24")

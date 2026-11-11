@@ -143,6 +143,7 @@ func make_trade(trade: TradeData) -> bool:
 
 func add_to_queue(trade: TradeData) -> void:
 	var new_entry = {"item" : trade, "day" : GameManager.get_day() + trade.delivery_time}
+	print("Added ", new_entry["item"], " to delivery queue. Should be here on day ", new_entry["day"])
 	delivery_queue.append(new_entry)
 
 func _make_pickups(trades: Array[TradeData]) -> Array[ItemPickup]:
@@ -173,6 +174,13 @@ func _apply_rewards(trade: TradeData) -> void:
 
 # Trades rewarded by an incomplete challenge are locked.
 func is_trade_locked(trade: TradeData) -> bool:
+	
+	if(trade.one_time_purchase and upgrades_today >= max_daily_upgrades):
+		return true
+	
+	if(is_upgrade_owned(trade)):
+		return true
+	
 	return ChallengeManager.is_trade_locked(trade)
 
 
