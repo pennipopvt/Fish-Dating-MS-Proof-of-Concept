@@ -75,13 +75,12 @@ const LID_OPEN_DEG := 180.0
 const TRAY_OPEN_DEG := 120.0
 const LATCH_OPEN_DEG := 150.0
 
-# Camera framing: front (closed) and top-down (open).
+# Camera framing: front (closed) and a top-down close-up on the open tray.
 const FRONT_PITCH_DEG := -10.0
 const FRONT_TARGET := Vector3(0, 0.75, 0)
 const FRONT_SIZE := 2.5
 const TOP_PITCH_DEG := -90.0
-const TOP_TARGET := Vector3(0, HB, -0.8)
-const TOP_SIZE := 3.7
+const TOP_SIZE := 2.1   # ortho height; frames the tray and its arms
 const CAMERA_DISTANCE := 10.0
 
 var progress: float = 0.0:
@@ -145,7 +144,9 @@ func _apply_progress() -> void:
 	_set_tray_angle(deg_to_rad(TRAY_OPEN_DEG * tray_t))
 
 	var pitch: float = deg_to_rad(lerpf(FRONT_PITCH_DEG, TOP_PITCH_DEG, cam_t))
-	var target: Vector3 = FRONT_TARGET.lerp(TOP_TARGET, cam_t)
+	# Follow the tray's live position so the close-up ends centered on it.
+	var tray_top: Vector3 = _tray.position + Vector3(0, HT, 0)
+	var target: Vector3 = FRONT_TARGET.lerp(tray_top, cam_t)
 	_camera.basis = Basis.from_euler(Vector3(pitch, 0, 0))
 	_camera.position = target + _camera.basis.z * CAMERA_DISTANCE
 	_camera.size = lerpf(FRONT_SIZE, TOP_SIZE, cam_t)
