@@ -3,7 +3,7 @@ extends Node
 # EXPERIMENT preview for BaitBox3DView (jerry-baitboxtest). Run this scene (F6):
 # the game world with the player at the bait box, the bait menu's 50% dim, and
 # the 3D box playing its open animation.
-#   R  replay    P  switch pixel size 3x / 6x    O  outlines + palette on/off
+#   R  replay    P  switch pixel size 6x (world, default) / 3x    O  outlines + palette on/off
 # Uses a separate save file so previewing never changes the real clock save.
 
 const MAIN_SCENE: PackedScene = preload("res://scenes/main.tscn")

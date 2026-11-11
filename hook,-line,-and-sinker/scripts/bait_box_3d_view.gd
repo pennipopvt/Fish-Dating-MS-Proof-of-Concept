@@ -12,8 +12,10 @@ extends Control
 signal open_finished
 signal close_finished
 
-## Screen pixels per rendered pixel. 3 = the UI grid (640x360), 6 = world pixels.
-@export_range(1, 8) var pixel_scale: int = 3:
+## Screen pixels per rendered pixel. Default 6 = the game world's pixel size
+## (main.tscn's world SubViewportContainer uses stretch_shrink 6), so the box
+## is pixel-perfect with the world. 3 = the finer UI grid.
+@export_range(1, 8) var pixel_scale: int = WORLD_PIXEL_SCALE:
 	set(value):
 		pixel_scale = value
 		if _container != null:
@@ -51,6 +53,7 @@ const PALETTE: Array[String] = [
 	"284120", "37552c", "5e8a4c", "76aa62", "9cc982",
 	"3e413c", "525551", "7d7d7d", "8e8e8e", "a6a6a6", "cecece",
 ]
+const WORLD_PIXEL_SCALE := 6
 const POST_SHADER: Shader = preload("res://shaders/pixel_post.gdshader")
 
 # Dimensions in meters-ish. X = width, Y = up, Z = toward the front.
@@ -100,6 +103,7 @@ var _tween: Tween
 
 
 func _ready() -> void:
+	resized.connect(_check_pixel_grid)
 	_build_noise()
 	_build_viewport()
 	_build_lights()
@@ -145,8 +149,20 @@ func _apply_progress() -> void:
 	var tray_top: Vector3 = _tray.position + Vector3(0, HT, 0)
 	var target: Vector3 = FRONT_TARGET.lerp(tray_top, cam_t)
 	_camera.basis = Basis.from_euler(Vector3(pitch, 0, 0))
-	_camera.position = target + _camera.basis.z * CAMERA_DISTANCE
 	_camera.size = lerpf(FRONT_SIZE, TOP_SIZE, cam_t)
+	_camera.position = _snap_to_pixels(target + _camera.basis.z * CAMERA_DISTANCE)
+
+
+# Pixel-perfect: move the camera only in whole render pixels (along its own
+# right/up axes), so shapes don't slide by fractions of a pixel and shimmer.
+func _snap_to_pixels(position_: Vector3) -> Vector3:
+	var height: float = maxf(float(_viewport.size.y), 1.0)
+	var pixel: float = _camera.size / height  # world units per render pixel
+	var basis := _camera.basis
+	var right: float = snappedf(position_.dot(basis.x), pixel)
+	var up: float = snappedf(position_.dot(basis.y), pixel)
+	var depth: float = position_.dot(basis.z)
+	return basis.x * right + basis.y * up + basis.z * depth
 
 
 # Parallelogram linkage: every arm turns by the same angle, so the tray only
@@ -162,6 +178,15 @@ func _set_tray_angle(angle: float) -> void:
 		tip_sum += tip
 	var tip_mid: Vector3 = tip_sum / float(_arms.size())
 	_tray.position = Vector3(0, tip_mid.y, tip_mid.z) + _tray_offset
+
+
+# The render only lines up with the screen's pixel grid when this control's
+# size is an exact multiple of pixel_scale.
+func _check_pixel_grid() -> void:
+	var w: int = roundi(size.x)
+	var h: int = roundi(size.y)
+	if w % pixel_scale != 0 or h % pixel_scale != 0:
+		push_warning("BaitBox3DView: size %dx%d isn't a multiple of pixel_scale %d; pixels won't be even." % [w, h, pixel_scale])
 
 
 # ---- Scene setup ---------------------------------------------------------
@@ -399,7 +424,10 @@ func _material(color: Color, noisy: bool = true) -> StandardMaterial3D:
 	if noisy:
 		material.albedo_texture = _noise
 		material.uv1_triplanar = true
-		material.uv1_scale = Vector3(1.5, 1.5, 1.5)
+		# Big, unfiltered texels (several render pixels each), so the noise
+		# never makes sub-pixel speckles.
+		material.uv1_scale = Vector3(0.3, 0.3, 0.3)
+		material.texture_filter = BaseMaterial3D.TEXTURE_FILTER_NEAREST
 	material.roughness = 1.0
 	# Banded (toon) shading reads better as pixel art than smooth gradients.
 	material.diffuse_mode = BaseMaterial3D.DIFFUSE_TOON
