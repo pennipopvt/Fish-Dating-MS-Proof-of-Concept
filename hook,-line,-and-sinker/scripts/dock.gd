@@ -1,6 +1,9 @@
 extends Interactable
 
 #hello!
+func spends_time() -> bool:
+	return true
+
 func interact(_player: Node2D) -> void:
 	var fisher := _player as Player
 	

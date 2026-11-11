@@ -40,7 +40,7 @@ Debug builds only (not in exports):
   - **NPCs:** flags, attraction, next encounter.
   - **Fishing:** cast state, storage, catch dex, bobbers.
   - **Progress:** upgrades, challenges.
-- **Talk:** Silas story checkpoints, which set flags, spawn him and open the talk; or play any `dialogue/*.json`.
+- **Talk:** Silas story checkpoints, which set flags, spawn him and open the talk; or play any `dialogue/*.json`. Day clock: spend 1 action, or rest to the next morning.
 - **Items:** put any item in your hands or storage.
 - **Progress:** complete or reset challenges, grant or reset upgrades, reset everything.
 - **Flags:** edit flags and attraction.
@@ -50,7 +50,7 @@ Debug builds only (not in exports):
 
 ## What's implemented
 
-- **Managers (autoloads):** `GameManager` (time of day, actions per day),
+- **Managers (autoloads):** `GameManager` (day clock, see below),
   `FishingManager` (catch pool, storage, casts per session), `NPCManager`
   (attraction and flags per NPC, picks dialogue by flag rules), `DialogueManager`,
   `ShopManager` (trades fish from storage for `FishingManager` upgrades).
@@ -65,6 +65,17 @@ Debug builds only (not in exports):
   bait's description and chance per fish on the right. Bait A / B, their icons
   and the bait box sprite are placeholders. An empty
   or malformed catch pool ends the cast instead of crashing.
+- **Day clock (no display yet):** `GameManager` tracks `day` and `time_of_day`
+  (morning, afternoon, night). Each period has 3 actions (`ACTIONS_PER_PERIOD`).
+  A finished cast (caught or lost) and a finished NPC conversation each cost 1
+  action. Menus (shop, bait, bobbers) cost nothing. Spending a period's last action
+  moves to the next period. When night's actions are spent, fishing and starting a
+  talk are blocked (the current fishing session stops recasting) until the player
+  rests: `GameManager.rest()` starts the next day's morning and can be called at any
+  time. There is no rest spot in the world yet; use the dev panel. Other activities
+  (for example a future NPC hangout) can cost time with `GameManager.spend_actions(n)`.
+  Interactables that cost time return `true` from `spends_time()`. The recruitment
+  talk right after catching an NPC fish always happens, even at the end of night.
 - **UI:** visual-novel style dialogue UI, shop menu, bait menu, interact prompt.
 - **Player** movement on the dock, plus interactables for NPCs and the shop.
 - **Fishing rod (visual only):** `prefabs/fishing_rod.tscn` on the player. When you
@@ -91,6 +102,8 @@ never drives another system's nodes directly. Reading a manager's state for disp
 | `delivery_requested(pickups)` | `ShopManager.make_trade` | the shop terminal (`ShopInteractable`), which sends the drone |
 | `upgrade_state_changed` | `ShopManager.collect_upgrade` (upgrade package picked up) | shop menu |
 | `state_changed(from, to)` | `FishingController` | `FishingRod` (deferred) |
+| `fish_caught` / `fish_lost`, `conversation_finished` | `FishingManager`, `DialogueManager` | `GameManager` (spends 1 action) |
+| `time_changed(day, time)` / `day_started(day)` / `actions_changed(remaining)` / `actions_exhausted` | `GameManager` | nothing yet (for a future clock display, daily delivery, and so on) |
 
 Change storage only through `FishingManager.add_to_storage` / `remove_from_storage`,
 so listeners hear about it. With no terminal in the scene (nobody listening to

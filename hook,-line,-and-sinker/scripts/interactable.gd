@@ -19,6 +19,11 @@ func _on_body_exited(body: Node2D) -> void:
 		if player.current_interactable == self:
 			player.current_interactable = null
 
+# True for interactions that spend game time (fishing, talking). The player
+# can't start them once night's actions are spent (GameManager.can_act()).
+func spends_time() -> bool:
+	return false
+
 func interact(_player: Node2D) -> void:
 	#should be overwritten with inheritance
 	print("ERROR: Interact not overwritten")

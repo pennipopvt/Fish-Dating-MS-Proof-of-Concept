@@ -356,6 +356,8 @@ func _reset_all() -> void:
 	_reset_upgrades()
 	ChallengeManager.reset_all()
 	_reset_bobbers()
+	if GameManager.has_method("reset_clock"):
+		GameManager.call("reset_clock")
 	RecruitmentHandler.listening = false
 	RecruitmentHandler.npc = null
 	_forced_fish = null
@@ -454,7 +456,7 @@ func _info_world() -> String:
 	var t := ""
 	var player := _player()
 	t += _h("Game")
-	t += "Time of day: %s   Actions: %d\n" % [GameManager.Times.keys()[GameManager.time_of_day], GameManager.player_actions]
+	t += "Day %s  %s   Actions left: %d%s\n" % [str(GameManager.get("day")), GameManager.Times.keys()[GameManager.time_of_day], GameManager.player_actions, "  (rest only)" if GameManager.player_actions == 0 else ""]
 	t += "Modal UI open (besides this): %s\n" % _onoff(_other_modal_open())
 	if player != null:
 		t += "Player: pos %s  busy %s  holding %s\n" % [player.global_position.round(), _onoff(player.busy), String(player.held_item.item_id) if player.held_item != null else "-"]
@@ -754,6 +756,18 @@ func _build_dialogue_tab() -> void:
 
 	_heading(box, "Conversation")
 	_button(box, "End current dialogue (F5)", skip_dialogue)
+
+	# Day clock. Fields go through call/get so a branch without them still compiles.
+	_heading(box, "Day clock")
+	var clock := _row(box)
+	_button(clock, "Spend 1 action", func() -> void:
+		if GameManager.has_method("spend_actions"):
+			GameManager.call("spend_actions", 1)
+			_say("Day %s %s, %d actions left" % [str(GameManager.get("day")), GameManager.Times.keys()[GameManager.time_of_day], GameManager.player_actions]))
+	_button(clock, "Rest (next morning)", func() -> void:
+		if GameManager.has_method("rest"):
+			GameManager.call("rest")
+			_say("Rested: day %s morning" % str(GameManager.get("day"))))
 
 
 func _build_items_tab() -> void:

@@ -124,6 +124,9 @@ func interact() -> void:
 	if best != null:
 		current_interactable = best
 	if is_instance_valid(current_interactable):
+		if current_interactable.spends_time() and not GameManager.can_act():
+			print("Too late for that. Rest until morning.")
+			return
 		current_interactable.interact(self)
 	elif held_item != null:
 		# Space drops the item when there is nothing nearby to interact with.
