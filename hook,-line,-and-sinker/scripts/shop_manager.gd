@@ -1,11 +1,18 @@
 
 extends Node
 
+# Trades: takes fish out of FishingManager storage and hands out rewards.
+# Talks outward only through signals: the terminal (ShopInteractable) listens
+# to delivery_requested and drops the pickups; menus listen to the rest.
+
 signal trade_completed(trade: TradeData)
 signal upgrade_state_changed(trade: TradeData)
 signal shop_requested
 signal shop_opened
 signal shop_closed
+# A trade's rewards should be delivered into the world (drone at the terminal).
+# With no listener, rewards apply immediately instead.
+signal delivery_requested(pickups: Array[ItemPickup])
 
 var is_shop_open: bool = false
 
@@ -28,9 +35,10 @@ var pending_upgrade_ids: Array[StringName] = []
 
 var money: int = 0
 
-## Where rewards get delivered (the world terminal). Set by ShopInteractable.
-## If none is in the scene, rewards apply immediately instead.
-var delivery_point: ShopInteractable = null
+
+# True when something in the world delivers rewards (the terminal is loaded).
+func has_delivery_point() -> bool:
+	return delivery_requested.has_connections()
 
 
 func is_upgrade_owned(trade: TradeData) -> bool:
@@ -41,12 +49,16 @@ func is_upgrade_ordered(trade: TradeData) -> bool:
 	return trade != null and trade.one_time_purchase and pending_upgrade_ids.has(trade.trade_id)
 
 
-# Called when the player actually takes the delivered upgrade package.
-func mark_upgrade_delivered(trade: TradeData) -> void:
-	if trade == null or not trade.one_time_purchase:
+# Called when the player picks up a delivered upgrade package (or right away
+# with no terminal). Applies the FishingManager shop_reward_* method.
+func collect_upgrade(trade: TradeData) -> void:
+	if trade == null:
 		return
-	pending_upgrade_ids.erase(trade.trade_id)
-	upgrade_state_changed.emit(trade)
+	if trade.reward_method != &"" and FishingManager.has_method(trade.reward_method):
+		FishingManager.call(trade.reward_method, trade.reward_amount)
+	if trade.one_time_purchase:
+		pending_upgrade_ids.erase(trade.trade_id)
+		upgrade_state_changed.emit(trade)
 
 
 func can_trade(trade: TradeData) -> bool:
@@ -99,22 +111,16 @@ func make_trade(trade: TradeData) -> bool:
 	var needed := get_required_counts(trade)
 
 	for item_id in needed:
-		for i in range(needed[item_id]):
-			var index := _find_item(
-				FishingManager.current_storage,
-				item_id
-			)
-
-			FishingManager.current_storage.remove_at(index)
+		FishingManager.remove_from_storage(item_id, needed[item_id])
 
 	if trade.one_time_purchase:
 		pending_upgrade_ids.append(trade.trade_id)
 
-	if is_instance_valid(delivery_point):
+	if has_delivery_point():
 		# A drone drops everything next to the terminal. Items stay on the
 		# ground until carried off by hand; upgrades arrive as a package that
 		# applies when picked up.
-		delivery_point.deliver(_make_pickups(trade))
+		delivery_requested.emit(_make_pickups(trade))
 	else:
 		_apply_rewards(trade)
 
@@ -141,14 +147,10 @@ func _make_pickups(trade: TradeData) -> Array[ItemPickup]:
 
 # No terminal in the scene (e.g. tests): apply rewards immediately.
 func _apply_rewards(trade: TradeData) -> void:
-	if trade.reward_method != &"":
-		FishingManager.call(trade.reward_method, trade.reward_amount)
-	if trade.one_time_purchase:
-		mark_upgrade_delivered(trade)
+	collect_upgrade(trade)
 
 	if trade.reward_item != null:
-		for i in range(trade.reward_item_amount):
-			FishingManager.current_storage.append(trade.reward_item)
+		FishingManager.add_to_storage(trade.reward_item, trade.reward_item_amount)
 
 
 # Trades rewarded by an incomplete challenge are locked.
@@ -170,22 +172,4 @@ func get_required_counts(trade: TradeData) -> Dictionary:
 
 # How many of an item the player has in storage.
 func count_item(item_id: StringName) -> int:
-	var count := 0
-
-	for item in FishingManager.current_storage:
-		if item != null and item.item_id == item_id:
-			count += 1
-
-	return count
-
-
-func _find_item(
-	items: Array[ItemData],
-	item_id: StringName
-) -> int:
-	for i in range(items.size()):
-		if items[i] != null:
-			if items[i].item_id == item_id:
-				return i
-
-	return -1
+	return FishingManager.count_in_storage(item_id)

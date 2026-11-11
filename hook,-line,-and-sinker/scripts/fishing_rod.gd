@@ -1,8 +1,8 @@
 class_name FishingRod
 extends Node2D
 
-# Visual fishing rod held by the player. Purely cosmetic: it watches the
-# FishingController's state from outside and never changes the fishing rules.
+# Visual fishing rod held by the player. Purely cosmetic: it listens to the
+# FishingController's state_changed signal and never changes the fishing rules.
 #  - whips out when fishing starts, flicks back and forward on every cast
 #  - throws the equipped bait on the end of the line along a parabola to where
 #    the controller's bobber floats, then sinks it along the underwater line
@@ -23,7 +23,7 @@ const FishState = FishingControllerScript.Fish_State
 @export_range(0.05, 1.0, 0.01) var settle_duration: float = 0.2
 @export_range(0.1, 2.0, 0.05) var cast_flight_duration: float = 0.5
 ## Time for the bait to sink from the bobber to the end of the line.
-@export_range(0.0, 2.0, 0.05) var bait_sink_duration: float = 0.4
+@export_range(0.0, 5.0, 0.05) var bait_sink_duration: float = 1.5
 @export_range(0.0, 0.5, 0.01) var put_away_duration: float = 0.1
 
 @export_group("Poses (degrees, positive = clockwise)")
@@ -58,7 +58,6 @@ var controller: FishingControllerScript
 var fishing_line: Line2D
 var player: Player
 
-var _last_state: int = FishState.NOT
 var _rod_tween: Tween
 var _flight_tween: Tween
 var _flying: bool = false
@@ -94,6 +93,9 @@ func _ready() -> void:
 
 	FishingManager.bait_changed.connect(_on_bait_changed)
 	_on_bait_changed(FishingManager.equipped_bait)
+	# Deferred: the controller sets bite_time, the line and the catch path
+	# right AFTER changing state; react once that function has finished.
+	controller.state_changed.connect(_on_state_changed, CONNECT_DEFERRED)
 
 	_hide_all()
 	_attach_line_to_tip.call_deferred()
@@ -106,11 +108,6 @@ func _attach_line_to_tip() -> void:
 
 
 func _process(delta: float) -> void:
-	var state: int = controller.current_state
-	if state != _last_state:
-		_on_state_changed(_last_state, state)
-		_last_state = state
-
 	_update_reel(delta)
 
 
@@ -205,6 +202,8 @@ func _update_flight(t: float) -> void:
 func _land_cast() -> void:
 	_end_flight()
 	if controller.current_state == FishState.WAITING:
+		# Hang the line nearly straight down from the bobber for the sink.
+		fishing_line.set_slack_drop()
 		fishing_line.show()
 		_sink_bait()
 

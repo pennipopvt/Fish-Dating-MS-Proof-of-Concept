@@ -82,7 +82,8 @@ func _ready() -> void:
 	ChallengeManager.challenge_progressed.connect(_on_challenge_changed)
 	ChallengeManager.challenge_completed.connect(_on_challenge_changed)
 	ChallengeManager.progress_reset.connect(_on_challenge_reset)
-	FishingManager.fish_caught.connect(_on_inventory_changed)
+	FishingManager.storage_changed.connect(_on_inventory_changed)
+	FishingManager.fish_caught.connect(_on_inventory_changed)  # collection/dex, incl. NPC catches
 	_refresh_page()
 	_update_nav_tabs(false)
 
@@ -596,7 +597,7 @@ func _on_upgrade_state_changed(_trade: TradeData) -> void:
 func _on_trade_completed(trade: TradeData) -> void:
 	if not visible:
 		return
-	var delivered_later := is_instance_valid(ShopManager.delivery_point)
+	var delivered_later := ShopManager.has_delivery_point()
 	_delivery_status.text = "DELIVERY ORDERED" if delivered_later else "ORDER COMPLETE"
 	_last_order_message = "ORDER PLACED: %s" % trade.display_name
 	_refresh_page()
@@ -612,6 +613,6 @@ func _on_challenge_reset() -> void:
 		_refresh_page()
 
 
-func _on_inventory_changed(_fish: Variant) -> void:
+func _on_inventory_changed(_fish: Variant = null) -> void:
 	if visible and (_page == Page.STORAGE or _page == Page.COLLECTION):
 		_refresh_page()
