@@ -130,6 +130,20 @@ func play_open() -> void:
 	_play_to(1.0, open_finished)
 
 
+# Jump to a pose without animating (used to export frames).
+# drop_t: 0..1 through the drop-in; open_t: 0..1 through the opening.
+func set_pose(drop_t: float, open_t: float) -> void:
+	if _tween != null:
+		_tween.kill()
+	_apply_drop(drop_t)
+	progress = open_t
+
+
+# The low-res render with a transparent background (one pixel per art pixel).
+func capture_image() -> Image:
+	return _viewport.get_texture().get_image()
+
+
 # Back to the start: closed, and above the view again if drop_in is on.
 func reset() -> void:
 	if _tween != null:
