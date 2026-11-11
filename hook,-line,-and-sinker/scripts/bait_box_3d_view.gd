@@ -137,7 +137,7 @@ func _apply_progress() -> void:
 	var latch_t: float = smoothstep(0.0, 0.12, progress)
 	var lid_t: float = smoothstep(0.12, 0.6, progress)
 	var tray_t: float = smoothstep(0.35, 0.8, progress)
-	var cam_t: float = smoothstep(0.5, 0.95, progress)
+	var cam_t: float = smoothstep(0.12, 0.95, progress)  # starts with the lid
 
 	for latch in _latches:
 		latch.rotation.x = deg_to_rad(LATCH_OPEN_DEG * latch_t)
