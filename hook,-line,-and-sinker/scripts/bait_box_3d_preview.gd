@@ -50,7 +50,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 	match (event as InputEventKey).keycode:
 		KEY_R:
-			_view.progress = 0.0
+			_view.reset()
 			_view.play_open()
 		KEY_P:
 			_view.pixel_scale = 6 if _view.pixel_scale == 3 else 3

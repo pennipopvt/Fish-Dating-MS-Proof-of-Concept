@@ -3,7 +3,8 @@ extends Control
 
 # EXPERIMENT (jerry-baitboxtest): a low-poly 3D tackle box, rendered at a low
 # resolution and scaled up with nearest filtering so it reads as pixel art.
-# Plays a short animation: front view, closed -> latches flip, lid opens, the
+# Plays a short animation: the closed box drops in and rocks to a stop, then
+# (front view) the latch flips, the lid opens, the
 # single cantilever tray swings up and back -> camera tilts to a top-down view.
 # Built from box/cylinder primitives in code; colors come from tackle_box.png.
 # A post-process pass (shaders/pixel_post.gdshader) adds outlines and snaps
@@ -21,6 +22,9 @@ signal close_finished
 		if _container != null:
 			_container.stretch_shrink = value
 @export var open_duration: float = 2.4
+## Drop in from above and rock to a stop before opening (first open only).
+@export var drop_in: bool = true
+@export var drop_duration: float = 1.0
 @export var use_outline: bool = true:
 	set(value):
 		use_outline = value
@@ -74,6 +78,8 @@ const HINGE_X := 0.95
 const LID_OPEN_DEG := 180.0
 const TRAY_OPEN_DEG := 120.0
 const LATCH_OPEN_DEG := 150.0
+const DROP_HEIGHT := 3.5       # starts above the top of the view
+const DROP_TILT_DEG := 7.0     # lands on the left corner first
 
 # Camera framing: front (closed) and a top-down close-up on the open tray.
 const FRONT_PITCH_DEG := -10.0
@@ -100,6 +106,8 @@ var _arms: Array[Node3D] = []
 var _arm_pivots: Array[Vector3] = []  # base-side pivot of each arm
 var _tray_offset := Vector3.ZERO      # from the arm tips' midpoint to the tray origin
 var _tween: Tween
+var _box_root: Node3D       # every box part; the drop moves and tilts this
+var _dropped: bool = false
 
 
 func _ready() -> void:
@@ -107,14 +115,28 @@ func _ready() -> void:
 	_build_noise()
 	_build_viewport()
 	_build_lights()
+	_box_root = Node3D.new()
+	_box_root.name = "Box"
+	_viewport.add_child(_box_root)
 	_build_base()
 	_build_lid()
 	_build_tray_and_arms()
 	_apply_progress()
+	_apply_drop(0.0 if drop_in else 1.0)
+	_dropped = not drop_in
 
 
 func play_open() -> void:
 	_play_to(1.0, open_finished)
+
+
+# Back to the start: closed, and above the view again if drop_in is on.
+func reset() -> void:
+	if _tween != null:
+		_tween.kill()
+	progress = 0.0
+	_dropped = not drop_in
+	_apply_drop(0.0 if drop_in else 1.0)
 
 
 func play_close() -> void:
@@ -125,6 +147,9 @@ func _play_to(target: float, done: Signal) -> void:
 	if _tween != null:
 		_tween.kill()
 	_tween = create_tween()
+	if target > progress and not _dropped:
+		_tween.tween_method(_apply_drop, 0.0, 1.0, drop_duration)
+		_tween.tween_callback(func() -> void: _dropped = true)
 	_tween.tween_property(self, "progress", target, open_duration * absf(target - progress))
 	_tween.tween_callback(done.emit)
 
@@ -163,6 +188,36 @@ func _snap_to_pixels(position_: Vector3) -> Vector3:
 	var up: float = snappedf(position_.dot(basis.y), pixel)
 	var depth: float = position_.dot(basis.z)
 	return basis.x * right + basis.y * up + basis.z * depth
+
+
+# Drop-in, t = 0..1: fall tilted, land on the left corner, rock over to the
+# right with a small hop, wobble back once, settle. The box rolls around its
+# bottom center and is lifted so its lowest corner sits on the ground line.
+func _apply_drop(t: float) -> void:
+	if _box_root == null:
+		return
+	var roll: float
+	var hop: float = 0.0
+	var fall: float = 0.0
+	if t < 0.35:  # falling, speeding up
+		var k: float = t / 0.35
+		fall = (1.0 - k * k) * DROP_HEIGHT
+		roll = DROP_TILT_DEG
+	elif t < 0.6:  # left corner hits; rock over to the right with a hop
+		var k: float = (t - 0.35) / 0.25
+		roll = lerpf(DROP_TILT_DEG, -4.0, sin(k * PI * 0.5))
+		hop = sin(k * PI) * 0.12
+	elif t < 0.8:  # rock back a little
+		var k: float = (t - 0.6) / 0.2
+		roll = lerpf(-4.0, 1.5, smoothstep(0.0, 1.0, k))
+		hop = sin(k * PI) * 0.03
+	else:  # settle
+		var k: float = (t - 0.8) / 0.2
+		roll = lerpf(1.5, 0.0, smoothstep(0.0, 1.0, k))
+	var roll_rad: float = deg_to_rad(roll)
+	var corner_lift: float = (W * 0.5 + 0.02) * sin(absf(roll_rad))
+	_box_root.rotation.z = roll_rad
+	_box_root.position.y = fall + hop + corner_lift
 
 
 # Parallelogram linkage: every arm turns by the same angle, so the tray only
@@ -285,7 +340,7 @@ func _build_lights() -> void:
 func _build_base() -> void:
 	var base := Node3D.new()
 	base.name = "Base"
-	_viewport.add_child(base)
+	_box_root.add_child(base)
 	var body := _material(body_color)
 	var trim := _material(body_trim_color)
 	var metal := _material(metal_color)
@@ -328,7 +383,7 @@ func _build_lid() -> void:
 	_lid_hinge = Node3D.new()
 	_lid_hinge.name = "LidHinge"
 	_lid_hinge.position = Vector3(0, HB, -DB * 0.5)
-	_viewport.add_child(_lid_hinge)
+	_box_root.add_child(_lid_hinge)
 	var lid := _material(lid_color)
 	var lid_trim := _material(lid_trim_color)
 	var metal := _material(metal_color)
@@ -358,7 +413,7 @@ func _build_lid() -> void:
 func _build_tray_and_arms() -> void:
 	_tray = Node3D.new()
 	_tray.name = "Tray"
-	_viewport.add_child(_tray)
+	_box_root.add_child(_tray)
 	var tray := _material(tray_color, false)
 	var inner := _material(tray_inner_color, false)
 	# Tray origin = center of its bottom.
@@ -395,10 +450,10 @@ func _build_tray_and_arms() -> void:
 			var pivot := back_pivot + Vector3(side * arm_x, 0, j * ARM_SPACING)
 			_arm_pivots.append(pivot)
 			var arm := Node3D.new()
-			_viewport.add_child(arm)
+			_box_root.add_child(arm)
 			_bevel_box(arm, Vector3(0.06, 0.08, ARM_LENGTH + 0.1), Vector3.ZERO, metal, 0.02)
 			_arms.append(arm)
-			_cylinder_x(_viewport, 0.04, 0.12, pivot + Vector3(side * 0.02, 0, 0), pin)  # pin at the base end
+			_cylinder_x(_box_root, 0.04, 0.12, pivot + Vector3(side * 0.02, 0, 0), pin)  # pin at the base end
 
 	# Closed: tray sits in the base, top flush with the rim.
 	var closed_tray := Vector3(0, HB - HT, -DB * 0.5 + T + DT * 0.5)  # T: the base's back wall
