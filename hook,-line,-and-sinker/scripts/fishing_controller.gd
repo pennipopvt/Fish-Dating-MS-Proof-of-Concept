@@ -8,7 +8,15 @@ enum Fish_State
 	CATCHING
 }
 
-var current_state: Fish_State = Fish_State.NOT
+# Emits state_changed on every change, so visuals (FishingRod) can listen
+# instead of polling.
+var current_state: Fish_State = Fish_State.NOT:
+	set(value):
+		if value == current_state:
+			return
+		var previous: Fish_State = current_state
+		current_state = value
+		state_changed.emit(previous, value)
 var hooked_fish: FishData = null
 
 var casts: int = 0
@@ -29,6 +37,7 @@ enum AttackPhase { PRE_WINDUP, WINDUP, ATTACK, DASH, STUN }
 # Animation hooks: connect these to player/ripple effects without changing combat rules.
 signal parry_resolved(result: StringName)  # &"miss", &"close", &"perfect"
 signal reel_window_changed(is_open: bool, is_free: bool)
+signal state_changed(from: Fish_State, to: Fish_State)
 var attack_phase: AttackPhase = AttackPhase.PRE_WINDUP
 var active_attack: FishEscapeState = null
 var phase_time: float = 0.0

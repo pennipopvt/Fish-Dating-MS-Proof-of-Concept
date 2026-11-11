@@ -1,8 +1,8 @@
 class_name FishingRod
 extends Node2D
 
-# Visual fishing rod held by the player. Purely cosmetic: it watches the
-# FishingController's state from outside and never changes the fishing rules.
+# Visual fishing rod held by the player. Purely cosmetic: it listens to the
+# FishingController's state_changed signal and never changes the fishing rules.
 #  - whips out when fishing starts, flicks back and forward on every cast
 #  - throws the equipped bait on the end of the line along a parabola to where
 #    the controller's bobber floats, then sinks it along the underwater line
@@ -58,7 +58,6 @@ var controller: FishingControllerScript
 var fishing_line: Line2D
 var player: Player
 
-var _last_state: int = FishState.NOT
 var _rod_tween: Tween
 var _flight_tween: Tween
 var _flying: bool = false
@@ -94,6 +93,9 @@ func _ready() -> void:
 
 	FishingManager.bait_changed.connect(_on_bait_changed)
 	_on_bait_changed(FishingManager.equipped_bait)
+	# Deferred: the controller sets bite_time, the line and the catch path
+	# right AFTER changing state; react once that function has finished.
+	controller.state_changed.connect(_on_state_changed, CONNECT_DEFERRED)
 
 	_hide_all()
 	_attach_line_to_tip.call_deferred()
@@ -106,11 +108,6 @@ func _attach_line_to_tip() -> void:
 
 
 func _process(delta: float) -> void:
-	var state: int = controller.current_state
-	if state != _last_state:
-		_on_state_changed(_last_state, state)
-		_last_state = state
-
 	_update_reel(delta)
 
 
