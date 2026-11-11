@@ -80,6 +80,8 @@ const TRAY_OPEN_DEG := 120.0
 const LATCH_OPEN_DEG := 150.0
 const DROP_HEIGHT := 3.5       # starts above the top of the view
 const DROP_TILT_DEG := 7.0     # lands on the left corner first
+const LID_RATTLE_DEG := 25.0   # how far the loose lid pops up on impact
+const LID_RATTLE_BOUNCES := 3
 
 # Camera framing: front (closed) and a top-down close-up on the open tray.
 const FRONT_PITCH_DEG := -10.0
@@ -108,6 +110,8 @@ var _tray_offset := Vector3.ZERO      # from the arm tips' midpoint to the tray 
 var _tween: Tween
 var _box_root: Node3D       # every box part; the drop moves and tilts this
 var _dropped: bool = false
+var _lid_open_deg: float = 0.0    # from the opening animation
+var _lid_rattle_deg: float = 0.0  # from the drop (loose-lid bounce)
 
 
 func _ready() -> void:
@@ -180,7 +184,8 @@ func _apply_progress() -> void:
 
 	for latch in _latches:
 		latch.rotation.x = deg_to_rad(LATCH_OPEN_DEG * latch_t)
-	_lid_hinge.rotation.x = -deg_to_rad(LID_OPEN_DEG * lid_t)
+	_lid_open_deg = LID_OPEN_DEG * lid_t
+	_update_lid()
 	_set_tray_angle(deg_to_rad(TRAY_OPEN_DEG * tray_t))
 
 	var pitch: float = deg_to_rad(lerpf(FRONT_PITCH_DEG, TOP_PITCH_DEG, cam_t))
@@ -228,10 +233,23 @@ func _apply_drop(t: float) -> void:
 	else:  # settle
 		var k: float = (t - 0.8) / 0.2
 		roll = lerpf(1.5, 0.0, smoothstep(0.0, 1.0, k))
+	# Loose lid: pops up on impact and clatters shut, LID_RATTLE_BOUNCES
+	# times, each bounce smaller (|sin| hits 0 = the lid slaps shut).
+	_lid_rattle_deg = 0.0
+	if t >= 0.35:
+		var k: float = (t - 0.35) / 0.65
+		_lid_rattle_deg = LID_RATTLE_DEG * pow(1.0 - k, 1.6) * absf(sin(k * PI * LID_RATTLE_BOUNCES))
+	_update_lid()
+
 	var roll_rad: float = deg_to_rad(roll)
 	var corner_lift: float = (W * 0.5 + 0.02) * sin(absf(roll_rad))
 	_box_root.rotation.z = roll_rad
 	_box_root.position.y = fall + hop + corner_lift
+
+
+func _update_lid() -> void:
+	if _lid_hinge != null:
+		_lid_hinge.rotation.x = -deg_to_rad(_lid_open_deg + _lid_rattle_deg)
 
 
 # Parallelogram linkage: every arm turns by the same angle, so the tray only
