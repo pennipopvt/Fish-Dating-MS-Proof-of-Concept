@@ -41,18 +41,15 @@ signal close_finished
 @export var metal_color := Color("525551")
 @export var tray_color := Color("76aa62")
 @export var tray_inner_color := Color("5e8a4c")
-@export var rust_color := Color("c66141")
-@export var rust_light_color := Color("d7785a")
 @export var scuff_color := Color("cecece")
 
-# Palette the post-process snaps to: tackle_box.png's 10 colors, plus an
-# outline ink, two in-between shades (tray shadow, deep metal) and a
-# highlight green so the lit tray doesn't snap to grey.
+# Palette the post-process snaps to: tackle_box.png's greens and greys (its
+# orange rust is not used), plus an outline ink, two in-between shades (tray
+# shadow, deep metal) and a highlight green so the lit tray doesn't snap to grey.
 const PALETTE: Array[String] = [
 	"1c2318",
 	"284120", "37552c", "5e8a4c", "76aa62", "9cc982",
 	"3e413c", "525551", "7d7d7d", "8e8e8e", "a6a6a6", "cecece",
-	"c66141", "d7785a",
 ]
 const POST_SHADER: Shader = preload("res://shaders/pixel_post.gdshader")
 
@@ -70,7 +67,6 @@ const TW := 0.025        # tray wall thickness (thin, molded plastic)
 const DIVIDER := 0.02
 const ARM_LENGTH := 0.5
 const ARM_SPACING := 0.38
-const LATCH_X := 1.0
 const HINGE_X := 0.95
 const LID_OPEN_DEG := 180.0
 const TRAY_OPEN_DEG := 120.0
@@ -281,25 +277,21 @@ func _build_base() -> void:
 	for side in [-1.0, 1.0]:
 		_bevel_box(base, Vector3(W + 0.04, 0.08, 0.06), Vector3(0, HB - 0.05, side * (DB * 0.5 + 0.01)), lip, 0.02)
 		_bevel_box(base, Vector3(0.06, 0.08, DB + 0.04), Vector3(side * (W * 0.5 + 0.01), HB - 0.05, 0), lip, 0.02)
-	# Front latches: a plate on the base and a clasp that flips forward.
-	for side in [-1.0, 1.0]:
-		_bevel_box(base, Vector3(0.26, 0.2, 0.04), Vector3(side * LATCH_X, HB - 0.22, DB * 0.5 + 0.03), metal, 0.02)
-		var latch := Node3D.new()
-		latch.position = Vector3(side * LATCH_X, HB - 0.2, DB * 0.5 + 0.06)
-		base.add_child(latch)
-		_bevel_box(latch, Vector3(0.18, 0.3, 0.03), Vector3(0, 0.15, 0.0), metal, 0.015)
-		_latches.append(latch)
+	# Center latch: a plate on the base and a clasp with a thumb knob that
+	# hooks over the lid's catch, then flips forward to open.
+	_bevel_box(base, Vector3(0.36, 0.22, 0.04), Vector3(0, HB - 0.23, DB * 0.5 + 0.03), metal, 0.02)
+	var latch := Node3D.new()
+	latch.position = Vector3(0, HB - 0.2, DB * 0.5 + 0.06)
+	base.add_child(latch)
+	_bevel_box(latch, Vector3(0.26, 0.32, 0.03), Vector3(0, 0.16, 0.0), metal, 0.015)
+	var knob := _cylinder_x(latch, 0.08, 0.07, Vector3(0, 0.13, 0.05), _material(body_lip_color, false))
+	knob.rotation = Vector3(PI * 0.5, 0, 0)  # axis toward the front
+	_latches.append(latch)
 	# Hinge barrels and leaves at the back.
 	for side in [-1.0, 1.0]:
 		_cylinder_x(base, 0.055, 0.36, Vector3(side * HINGE_X, HB, -DB * 0.5 - 0.03), metal)
 		_box(base, Vector3(0.36, 0.14, 0.02), Vector3(side * HINGE_X, HB - 0.08, -DB * 0.5 - 0.01), metal)
-	# Wear: rust where the sprite has its orange marks, and a few scuffs.
-	var rust := _material(rust_color)
-	var rust_light := _material(rust_light_color)
-	_box(base, Vector3(0.16, 0.2, 0.012), Vector3(-LATCH_X - 0.04, HB - 0.42, DB * 0.5 + 0.006), rust)
-	_box(base, Vector3(0.08, 0.1, 0.014), Vector3(-LATCH_X + 0.02, HB - 0.38, DB * 0.5 + 0.007), rust_light)
-	_box(base, Vector3(0.06, 0.16, 0.012), Vector3(-LATCH_X - 0.1, HB - 0.58, DB * 0.5 + 0.006), rust)
-	_box(base, Vector3(0.1, 0.06, 0.012), Vector3(1.3, 0.3, DB * 0.5 + 0.006), rust)
+	# Wear: a few scuffs.
 	var scuff := _material(scuff_color)
 	_box(base, Vector3(0.5, 0.025, 0.012), Vector3(0.35, 0.2, DB * 0.5 + 0.006), scuff)
 	_box(base, Vector3(0.012, 0.25, 0.2), Vector3(W * 0.5 + 0.006, 0.45, 0.4), scuff)
@@ -330,12 +322,11 @@ func _build_lid() -> void:
 		_bevel_box(_lid_hinge, Vector3(0.12, 0.24, 0.14), Vector3(side * 0.5, HL + 0.15, DB * 0.5), metal, 0.03)
 	_bevel_box(_lid_hinge, Vector3(1.12, 0.08, 0.12), Vector3(0, HL + 0.27, DB * 0.5), metal, 0.03)
 	_cylinder_x(_lid_hinge, 0.075, 0.6, Vector3(0, HL + 0.27, DB * 0.5), lid_trim)
-	# Catches the latches hook onto, and the lid's hinge leaves.
+	# The catch the center latch hooks onto, and the lid's hinge leaves.
+	_bevel_box(_lid_hinge, Vector3(0.3, 0.07, 0.05), Vector3(0, 0.12, DB + 0.025), metal, 0.015)
 	for side in [-1.0, 1.0]:
-		_box(_lid_hinge, Vector3(0.22, 0.06, 0.04), Vector3(side * LATCH_X, 0.12, DB + 0.02), metal)
 		_box(_lid_hinge, Vector3(0.36, 0.14, 0.02), Vector3(side * HINGE_X, 0.08, -0.01), metal)
 	# Wear on the lid.
-	_box(_lid_hinge, Vector3(0.12, 0.1, 0.012), Vector3(-1.35, HL - 0.15, DB + 0.006), _material(rust_color))
 	_box(_lid_hinge, Vector3(0.3, 0.012, 0.03), Vector3(1.1, HL + 0.066, DB - 0.3), _material(scuff_color))
 
 
