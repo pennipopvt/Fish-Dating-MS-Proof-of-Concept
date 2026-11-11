@@ -3,6 +3,7 @@ extends CanvasLayer
 # Debug-only developer panel (autoload "DevPanel"). Removed in release builds.
 #   F9  open / close the panel
 #   F5  end the current conversation immediately (no further effects)
+#   F3  show / hide the clock overlay (day, period, actions left) while playing
 # Everything here goes through the managers' public functions or writes their
 # runtime state from outside; no gameplay script depends on this panel.
 
@@ -36,6 +37,10 @@ var _fish_options: Array[FishData] = []
 var _forced_fish: FishData = null
 var _last_fishing_state: int = -1
 var _reset_armed: bool = false
+# Clock overlay: its own CanvasLayer on the root, so it stays up while this
+# panel is closed and doesn't block play (not in the modal_ui group).
+var _clock_layer: CanvasLayer
+var _clock_label: Label
 
 
 func _ready() -> void:
@@ -48,6 +53,7 @@ func _ready() -> void:
 	add_to_group(&"modal_ui")
 	_capture_defaults()
 	_build_ui()
+	_build_clock_overlay()
 	hide()
 
 
@@ -59,6 +65,9 @@ func _input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 	elif event.is_action_pressed(&"debug_skip_dialogue"):
 		skip_dialogue()
+		get_viewport().set_input_as_handled()
+	elif event.is_action_pressed(&"debug_clock_overlay"):
+		toggle_clock_overlay()
 		get_viewport().set_input_as_handled()
 
 
@@ -86,6 +95,56 @@ func skip_dialogue() -> void:
 	if DialogueManager.is_active:
 		DialogueManager.end_conversation()
 		_say("Dialogue ended (F5)")
+
+
+func toggle_clock_overlay() -> void:
+	if _clock_layer == null:
+		return
+	_clock_layer.visible = not _clock_layer.visible
+	_update_clock_overlay()
+
+
+# ---- Clock overlay (F3) --------------------------------------------------
+
+func _build_clock_overlay() -> void:
+	_clock_layer = CanvasLayer.new()
+	_clock_layer.name = "DevClockOverlay"
+	_clock_layer.layer = 127
+	_clock_layer.process_mode = Node.PROCESS_MODE_ALWAYS
+	_clock_layer.visible = false
+	var box := PanelContainer.new()
+	box.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	box.add_theme_stylebox_override("panel", PixelUI.box(PixelUI.WINDOW, PixelUI.CYAN_DARK, 3))
+	box.position = Vector2(8, 8) * PixelUI.SCALE
+	_clock_layer.add_child(box)
+	_clock_label = Label.new()
+	_clock_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_clock_label.add_theme_font_override("font", PixelUI.FONT_SMALL)
+	_clock_label.add_theme_font_size_override("font_size", PixelUI.SMALL_SIZE)
+	_clock_label.add_theme_color_override("font_color", PixelUI.TEXT)
+	box.add_child(_clock_label)
+	get_tree().root.add_child.call_deferred(_clock_layer)
+	# Updates from GameManager's signals; checked so a branch without them still runs.
+	if GameManager.has_signal(&"time_changed"):
+		GameManager.connect(&"time_changed", func(_day: int, _time: int) -> void: _update_clock_overlay())
+	if GameManager.has_signal(&"actions_changed"):
+		GameManager.connect(&"actions_changed", func(_left: int) -> void: _update_clock_overlay())
+	_update_clock_overlay()
+
+
+func _update_clock_overlay() -> void:
+	if _clock_label == null or not _clock_layer.visible:
+		return
+	var actions: int = GameManager.player_actions
+	var per_period: Variant = GameManager.get_script().get_script_constant_map().get("ACTIONS_PER_PERIOD")
+	_clock_label.text = "Day %s   %s
+Actions left: %d%s%s" % [
+		str(GameManager.get("day")),
+		String(GameManager.Times.keys()[GameManager.time_of_day]).capitalize(),
+		actions,
+		"/%d" % per_period if per_period is int else "",
+		"  (rest only)" if actions == 0 else "",
+	]
 
 
 # ---- Lookups -------------------------------------------------------------
@@ -356,6 +415,8 @@ func _reset_all() -> void:
 	_reset_upgrades()
 	ChallengeManager.reset_all()
 	_reset_bobbers()
+	if GameManager.has_method("reset_clock"):
+		GameManager.call("reset_clock")
 	RecruitmentHandler.listening = false
 	RecruitmentHandler.npc = null
 	_forced_fish = null
@@ -454,7 +515,7 @@ func _info_world() -> String:
 	var t := ""
 	var player := _player()
 	t += _h("Game")
-	t += "Time of day: %s   Actions: %d\n" % [GameManager.Times.keys()[GameManager.time_of_day], GameManager.player_actions]
+	t += "Day %s  %s   Actions left: %d%s\n" % [str(GameManager.get("day")), GameManager.Times.keys()[GameManager.time_of_day], GameManager.player_actions, "  (rest only)" if GameManager.player_actions == 0 else ""]
 	t += "Modal UI open (besides this): %s\n" % _onoff(_other_modal_open())
 	if player != null:
 		t += "Player: pos %s  busy %s  holding %s\n" % [player.global_position.round(), _onoff(player.busy), String(player.held_item.item_id) if player.held_item != null else "-"]
@@ -754,6 +815,18 @@ func _build_dialogue_tab() -> void:
 
 	_heading(box, "Conversation")
 	_button(box, "End current dialogue (F5)", skip_dialogue)
+
+	# Day clock. Fields go through call/get so a branch without them still compiles.
+	_heading(box, "Day clock")
+	var clock := _row(box)
+	_button(clock, "Spend 1 action", func() -> void:
+		if GameManager.has_method("spend_actions"):
+			GameManager.call("spend_actions", 1)
+			_say("Day %s %s, %d actions left" % [str(GameManager.get("day")), GameManager.Times.keys()[GameManager.time_of_day], GameManager.player_actions]))
+	_button(clock, "Rest / bed (next period)", func() -> void:
+		if GameManager.has_method("rest"):
+			GameManager.call("rest")
+			_say("Rested: day %s %s" % [str(GameManager.get("day")), GameManager.Times.keys()[GameManager.time_of_day]]))
 
 
 func _build_items_tab() -> void:
