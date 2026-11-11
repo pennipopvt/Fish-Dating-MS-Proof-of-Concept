@@ -30,6 +30,7 @@ Debug builds only (not in exports):
 | Action | Input |
 |---|---|
 | Dev panel | F9 |
+| Clock overlay (day, period, actions left; play continues) | F3 |
 | End current dialogue | F5 |
 | Recruit Silas (skip his first talk) | F6 |
 | Preview challenge popup | F10 |
@@ -45,6 +46,8 @@ Debug builds only (not in exports):
 - **Progress:** complete or reset challenges, grant or reset upgrades, reset everything.
 - **Flags:** edit flags and attraction.
 - **Fishing:** instant bite or catch, force a species, cast counts, unlock or equip bobbers, equip bait.
+
+**F3** toggles a small clock overlay in the top-left (its own CanvasLayer, so it stays up while the panel is closed and doesn't pause play).
 
 "Reset ALL" resets this session's progress and reloads the world. The panel uses the shared `PixelUI` theme (`scripts/ui/pixel_ui.gd`).
 
