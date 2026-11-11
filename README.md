@@ -40,7 +40,7 @@ Debug builds only (not in exports):
   - **NPCs:** flags, attraction, next encounter.
   - **Fishing:** cast state, storage, catch dex, bobbers.
   - **Progress:** upgrades, challenges.
-- **Talk:** Silas story checkpoints, which set flags, spawn him and open the talk; or play any `dialogue/*.json`. Day clock: spend 1 action, or rest to the next morning.
+- **Talk:** Silas story checkpoints, which set flags, spawn him and open the talk; or play any `dialogue/*.json`. Day clock: spend 1 action, or rest (same as the bed).
 - **Items:** put any item in your hands or storage.
 - **Progress:** complete or reset challenges, grant or reset upgrades, reset everything.
 - **Flags:** edit flags and attraction.
@@ -71,8 +71,17 @@ Debug builds only (not in exports):
   action. Menus (shop, bait, bobbers) cost nothing. Spending a period's last action
   moves to the next period. When night's actions are spent, fishing and starting a
   talk are blocked (the current fishing session stops recasting) until the player
-  rests: `GameManager.rest()` starts the next day's morning and can be called at any
-  time. There is no rest spot in the world yet; use the dev panel. Other activities
+  rests. **Bed** (`prefabs/bed.tscn`, a blank placeholder box right of the houses):
+  `GameManager.rest()` skips to the next period with fresh actions (night → next
+  day's morning). It's free and works any time, with no real-time timer.
+  **Reading the clock:** shop/delivery rules, fish availability and NPC availability
+  should call `GameManager.get_day()`, `get_period()`, `is_period(GameManager.Times.NIGHT)`,
+  `get_period_name()`, `get_actions_left()`, or listen to `time_changed`. Values are
+  already updated when signals fire. There's no event scheduler.
+  **Saving:** the clock (day, period, actions left) is written to `user://save.cfg`
+  (section `clock`) on every change and loaded on start, so a new run continues
+  where the last one stopped. `get_save_data()` / `load_save_data()` are there for a
+  future game-wide save. Dev panel "Reset ALL" puts it back to day 1 morning. Other activities
   (for example a future NPC hangout) can cost time with `GameManager.spend_actions(n)`.
   Interactables that cost time return `true` from `spends_time()`. The recruitment
   talk right after catching an NPC fish always happens, even at the end of night.
@@ -137,6 +146,14 @@ godot --headless --path . -s res://tests/bait_odds_test.gd
 ```
 
 Exits with code 1 if a check fails.
+
+Day clock check (period advancement, night block, bed, rollover, listeners reading
+the new values, save round trip). It uses autoloads, so it runs as a scene and
+writes only to `user://day_clock_test.cfg`:
+
+```
+godot --headless --path . res://tests/day_clock_test.tscn
+```
 
 ## Workflow
 

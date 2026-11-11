@@ -764,10 +764,10 @@ func _build_dialogue_tab() -> void:
 		if GameManager.has_method("spend_actions"):
 			GameManager.call("spend_actions", 1)
 			_say("Day %s %s, %d actions left" % [str(GameManager.get("day")), GameManager.Times.keys()[GameManager.time_of_day], GameManager.player_actions]))
-	_button(clock, "Rest (next morning)", func() -> void:
+	_button(clock, "Rest / bed (next period)", func() -> void:
 		if GameManager.has_method("rest"):
 			GameManager.call("rest")
-			_say("Rested: day %s morning" % str(GameManager.get("day"))))
+			_say("Rested: day %s %s" % [str(GameManager.get("day")), GameManager.Times.keys()[GameManager.time_of_day]]))
 
 
 func _build_items_tab() -> void:
