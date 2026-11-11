@@ -66,7 +66,8 @@ const BEVEL := 0.05     # corner bevel on outer shapes
 const WT := 3.0         # tray width
 const DT := 1.3         # tray depth (front-back; up-down in the top view)
 const HT := 0.3         # tray height
-const DIVIDER := 0.05
+const TW := 0.025        # tray wall thickness (thin, molded plastic)
+const DIVIDER := 0.02
 const ARM_LENGTH := 0.5
 const ARM_SPACING := 0.38
 const LATCH_X := 1.0
@@ -347,17 +348,17 @@ func _build_tray_and_arms() -> void:
 	# Tray origin = center of its bottom.
 	_box(_tray, Vector3(WT, T, DT), Vector3(0, T * 0.5, 0), inner)
 	for side in [-1.0, 1.0]:
-		_box(_tray, Vector3(WT, HT, T), Vector3(0, HT * 0.5, side * (DT * 0.5 - T * 0.5)), tray)
-		_box(_tray, Vector3(T, HT, DT - 2.0 * T), Vector3(side * (WT * 0.5 - T * 0.5), HT * 0.5, 0), tray)
-		# Thick rim that sticks out a little.
-		_bevel_box(_tray, Vector3(WT + 0.06, 0.08, T + 0.06), Vector3(0, HT - 0.04, side * (DT * 0.5 - T * 0.5)), tray, 0.02)
-		_bevel_box(_tray, Vector3(T + 0.06, 0.08, DT + 0.06), Vector3(side * (WT * 0.5 - T * 0.5), HT - 0.04, 0), tray, 0.02)
+		_box(_tray, Vector3(WT, HT, TW), Vector3(0, HT * 0.5, side * (DT * 0.5 - TW * 0.5)), tray)
+		_box(_tray, Vector3(TW, HT, DT - 2.0 * TW), Vector3(side * (WT * 0.5 - TW * 0.5), HT * 0.5, 0), tray)
+		# Slim rim lip that sticks out a little.
+		_box(_tray, Vector3(WT + 0.03, 0.04, TW + 0.03), Vector3(0, HT - 0.02, side * (DT * 0.5 - TW * 0.5)), tray)
+		_box(_tray, Vector3(TW + 0.03, 0.04, DT + 0.03), Vector3(side * (WT * 0.5 - TW * 0.5), HT - 0.02, 0), tray)
 	# Slanted fillets where the floor meets the front and back walls, so the
 	# compartment bottoms read as rounded.
-	var inner_width: float = WT - 2.0 * T
-	var inner_depth: float = DT - 2.0 * T
+	var inner_width: float = WT - 2.0 * TW
+	var inner_depth: float = DT - 2.0 * TW
 	for side in [-1.0, 1.0]:
-		var fillet := _box(_tray, Vector3(inner_width, 0.09, 0.09), Vector3(0, T, side * (inner_depth * 0.5)), inner)
+		var fillet := _box(_tray, Vector3(inner_width, 0.06, 0.06), Vector3(0, T, side * (inner_depth * 0.5)), inner)
 		fillet.rotation.x = deg_to_rad(45)
 	# 6 compartments: 5 thin tall ones, then a square one on the right.
 	var square: float = inner_depth
@@ -384,7 +385,7 @@ func _build_tray_and_arms() -> void:
 			_cylinder_x(_viewport, 0.04, 0.12, pivot + Vector3(side * 0.02, 0, 0), pin)  # pin at the base end
 
 	# Closed: tray sits in the base, top flush with the rim.
-	var closed_tray := Vector3(0, HB - HT, -DB * 0.5 + T + DT * 0.5)
+	var closed_tray := Vector3(0, HB - HT, -DB * 0.5 + T + DT * 0.5)  # T: the base's back wall
 	var closed_tip_mid := back_pivot + Vector3(0, 0, ARM_SPACING * 0.5 + ARM_LENGTH)
 	_tray_offset = closed_tray - Vector3(0, closed_tip_mid.y, closed_tip_mid.z)
 	# Brackets from the tray sides out to the arm tips, with pins (fixed in tray space).
