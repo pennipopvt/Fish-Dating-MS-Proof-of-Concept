@@ -14,7 +14,14 @@ signal shop_closed
 # With no listener, rewards apply immediately instead.
 signal delivery_requested(pickups: Array[ItemPickup])
 
+var delivery_queue: Array[Dictionary] = []
+var upgrades_today: int = 0
+@export var max_daily_upgrades: int = 1
+
 var is_shop_open: bool = false
+
+func _ready() -> void:
+	GameManager.day_started.connect(on_day_start)
 
 func request_shop() -> void:
 	if not is_shop_open:
@@ -87,7 +94,10 @@ func can_trade(trade: TradeData) -> bool:
 		return false
 	if is_upgrade_owned(trade) or is_upgrade_ordered(trade):
 		return false
-
+	
+	if trade.one_time_purchase and upgrades_today >= max_daily_upgrades:
+		return false
+	
 	if trade.requirements.is_empty():
 		return false
 
@@ -130,7 +140,10 @@ func make_trade(trade: TradeData) -> bool:
 
 	# Consume the required fish.
 	var needed := get_required_counts(trade)
-
+	
+	if trade.one_time_purchase: 
+		upgrades_today += 1
+	
 	for item_id in needed:
 		FishingManager.remove_from_storage(item_id, needed[item_id])
 
@@ -141,27 +154,33 @@ func make_trade(trade: TradeData) -> bool:
 		# A drone drops everything next to the terminal. Items stay on the
 		# ground until carried off by hand; upgrades arrive as a package that
 		# applies when picked up.
-		delivery_requested.emit(_make_pickups(trade))
+		#delivery_requested.emit(_make_pickups(trade))
+		add_to_queue(trade)
 	else:
 		_apply_rewards(trade)
 
 	trade_completed.emit(trade)
 	return true
 
+func add_to_queue(trade: TradeData) -> void:
+	var new_entry = {"item" : trade, "day" : GameManager.get_day() + trade.delivery_time}
+	print("Added ", new_entry["item"], " to delivery queue. Should be here on day ", new_entry["day"])
+	delivery_queue.append(new_entry)
 
-func _make_pickups(trade: TradeData) -> Array[ItemPickup]:
+func _make_pickups(trades: Array[TradeData]) -> Array[ItemPickup]:
 	var pickups: Array[ItemPickup] = []
 
-	if trade.reward_method != &"":
-		var package := UpgradePickup.new()
-		package.trade = trade
-		pickups.append(package)
+	for trade in trades:
+		if trade.reward_method != &"":
+			var package := UpgradePickup.new()
+			package.trade = trade
+			pickups.append(package)
 
-	if trade.reward_item != null:
-		for i in range(trade.reward_item_amount):
-			var pickup := ItemPickup.new()
-			pickup.item = trade.reward_item
-			pickups.append(pickup)
+		if trade.reward_item != null:
+			for i in range(trade.reward_item_amount):
+				var pickup := ItemPickup.new()
+				pickup.item = trade.reward_item
+				pickups.append(pickup)
 
 	return pickups
 
@@ -176,6 +195,13 @@ func _apply_rewards(trade: TradeData) -> void:
 
 # Trades rewarded by an incomplete challenge are locked.
 func is_trade_locked(trade: TradeData) -> bool:
+	
+	if(trade.one_time_purchase and upgrades_today >= max_daily_upgrades):
+		return true
+	
+	if(is_upgrade_owned(trade)):
+		return true
+	
 	return ChallengeManager.is_trade_locked(trade)
 
 
@@ -194,3 +220,24 @@ func get_required_counts(trade: TradeData) -> Dictionary:
 # How many of an item the player has in storage.
 func count_item(item_id: StringName) -> int:
 	return FishingManager.count_in_storage(item_id)
+
+func on_day_start(day: int) -> void:
+	upgrades_today = 0
+	var delivery_pickups: Array[ItemPickup] = []
+	var delivery_list: Array[TradeData] = []
+	
+	# add deliveries to be queued at start of day
+	for i in range(delivery_queue.size() - 1, -1, -1):
+		if(delivery_queue[i] == null):
+			delivery_queue.remove_at(i)
+			continue
+		var delivery = delivery_queue[i]
+		if(day >= delivery["day"]):
+			delivery_list.append(delivery["item"])
+			delivery_queue.remove_at(i)
+	
+	if not delivery_list.is_empty():
+		delivery_pickups = _make_pickups(delivery_list)
+			
+	if not delivery_pickups.is_empty():
+		delivery_requested.emit(delivery_pickups)

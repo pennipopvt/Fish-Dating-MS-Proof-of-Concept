@@ -164,7 +164,8 @@ func begin_fishing() -> void:
 		cast_rod()
 	
 func cast_rod() -> void:
-	if(casts >= FishingManager.max_casts_per_session):
+	# Out of actions for the night: stop recasting (GameManager day clock).
+	if(casts >= FishingManager.max_casts_per_session or not GameManager.can_act()):
 		exit_fishing()
 		return
 	casts += 1

@@ -14,6 +14,7 @@ script = ExtResource("1_trade")
 trade_id = &"cast_bundle"
 display_name = "Cast Bundle"
 icon = ExtResource("4_icon")
+delivery_time = 1
 requirements = Array[ExtResource("2_req")]([SubResource("Resource_fish3")])
 reward_method = &"shop_reward_add_casts"
 reward_amount = 3

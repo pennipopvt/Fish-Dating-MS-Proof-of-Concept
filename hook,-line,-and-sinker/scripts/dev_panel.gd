@@ -3,6 +3,7 @@ extends CanvasLayer
 # Debug-only developer panel (autoload "DevPanel"). Removed in release builds.
 #   F9  open / close the panel
 #   F5  end the current conversation immediately (no further effects)
+#   F3  show / hide the clock overlay (day, period, actions left) while playing
 # Everything here goes through the managers' public functions or writes their
 # runtime state from outside; no gameplay script depends on this panel.
 
@@ -31,10 +32,15 @@ var _json_picker: OptionButton
 var _reset_all_button: Button
 
 var _refresh_time: float = 0.0
+var _defaults: Dictionary = {}
 var _fish_options: Array[FishData] = []
 var _forced_fish: FishData = null
 var _last_fishing_state: int = -1
 var _reset_armed: bool = false
+# Clock overlay: its own CanvasLayer on the root, so it stays up while this
+# panel is closed and doesn't block play (not in the modal_ui group).
+var _clock_layer: CanvasLayer
+var _clock_label: Label
 
 
 func _ready() -> void:
@@ -45,7 +51,9 @@ func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	# While open, GameManager.is_modal_ui_open() pauses player actions.
 	add_to_group(&"modal_ui")
+	_capture_defaults()
 	_build_ui()
+	_build_clock_overlay()
 	hide()
 
 
@@ -57,6 +65,9 @@ func _input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 	elif event.is_action_pressed(&"debug_skip_dialogue"):
 		skip_dialogue()
+		get_viewport().set_input_as_handled()
+	elif event.is_action_pressed(&"debug_clock_overlay"):
+		toggle_clock_overlay()
 		get_viewport().set_input_as_handled()
 
 
@@ -84,6 +95,56 @@ func skip_dialogue() -> void:
 	if DialogueManager.is_active:
 		DialogueManager.end_conversation()
 		_say("Dialogue ended (F5)")
+
+
+func toggle_clock_overlay() -> void:
+	if _clock_layer == null:
+		return
+	_clock_layer.visible = not _clock_layer.visible
+	_update_clock_overlay()
+
+
+# ---- Clock overlay (F3) --------------------------------------------------
+
+func _build_clock_overlay() -> void:
+	_clock_layer = CanvasLayer.new()
+	_clock_layer.name = "DevClockOverlay"
+	_clock_layer.layer = 127
+	_clock_layer.process_mode = Node.PROCESS_MODE_ALWAYS
+	_clock_layer.visible = false
+	var box := PanelContainer.new()
+	box.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	box.add_theme_stylebox_override("panel", PixelUI.box(PixelUI.WINDOW, PixelUI.CYAN_DARK, 3))
+	box.position = Vector2(8, 8) * PixelUI.SCALE
+	_clock_layer.add_child(box)
+	_clock_label = Label.new()
+	_clock_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_clock_label.add_theme_font_override("font", PixelUI.FONT_SMALL)
+	_clock_label.add_theme_font_size_override("font_size", PixelUI.SMALL_SIZE)
+	_clock_label.add_theme_color_override("font_color", PixelUI.TEXT)
+	box.add_child(_clock_label)
+	get_tree().root.add_child.call_deferred(_clock_layer)
+	# Updates from GameManager's signals; checked so a branch without them still runs.
+	if GameManager.has_signal(&"time_changed"):
+		GameManager.connect(&"time_changed", func(_day: int, _time: int) -> void: _update_clock_overlay())
+	if GameManager.has_signal(&"actions_changed"):
+		GameManager.connect(&"actions_changed", func(_left: int) -> void: _update_clock_overlay())
+	_update_clock_overlay()
+
+
+func _update_clock_overlay() -> void:
+	if _clock_label == null or not _clock_layer.visible:
+		return
+	var actions: int = GameManager.player_actions
+	var per_period: Variant = GameManager.get_script().get_script_constant_map().get("ACTIONS_PER_PERIOD")
+	_clock_label.text = "Day %s   %s
+Actions left: %d%s%s" % [
+		str(GameManager.get("day")),
+		String(GameManager.Times.keys()[GameManager.time_of_day]).capitalize(),
+		actions,
+		"/%d" % per_period if per_period is int else "",
+		"  (rest only)" if actions == 0 else "",
+	]
 
 
 # ---- Lookups -------------------------------------------------------------
@@ -172,11 +233,12 @@ func _spawn_silas(in_house: bool) -> NPCInteractable:
 			sprite.play(&"default")
 	var on_dock: bool = silas.global_position.distance_to(controller.npc_landing_point.global_position) < 4.0
 	if in_house and on_dock:
-		RecruitmentHandler.npc = silas
-		RecruitmentHandler.house_recruit(silas.npc.house)
-		RecruitmentHandler.npc = null
-		if RecruitmentHandler.waiting_npcs.has(silas):
-			_say("No free house left; Silas is waiting by the dock")
+		if RecruitmentHandler.available_homes.is_empty():
+			_say("No free house left; Silas stays on the dock")
+		else:
+			RecruitmentHandler.npc = silas
+			RecruitmentHandler.house_recruit(silas.npc.house)
+			RecruitmentHandler.npc = null
 	return silas
 
 
@@ -282,20 +344,36 @@ func _storage_changed() -> void:
 
 # ---- Progress / upgrades ---------------------------------------------------
 
-const _PROGRESS_FIELDS := [
-	"max_casts_per_session",
-	"reel_progress_bonus",
-	"reel_tension_reduction",
-	"miss_tension_reduction",
-	"owned_upgrade_ids",
-	"unlocked_bait_ids"
-]
+const _UPGRADE_FIELDS := ["max_casts_per_session", "reel_strength_multiplier", "tension_gain_multiplier"]
+const _UPGRADE_LISTS := ["owned_upgrade_ids", "unlocked_bait_ids"]
 
-# Upgrade state is owned by FishingManager; the panel never needs to know
-# which gameplay fields are modified by a trade.
+
+# Remember FishingManager's starting values so upgrades can be undone.
+# Fields that only exist on newer branches are captured when present.
+func _capture_defaults() -> void:
+	for field in _UPGRADE_FIELDS:
+		if field in FishingManager:
+			_defaults[field] = FishingManager.get(field)
+	for field in _UPGRADE_LISTS:
+		if field in FishingManager:
+			_defaults[field] = (FishingManager.get(field) as Array).duplicate()
+	_defaults["equipped_bait"] = FishingManager.equipped_bait
+
+
 func _reset_upgrades() -> void:
-	FishingManager.reset_session_upgrades()
-	ShopManager.pending_upgrade_ids.clear()
+	for field in _UPGRADE_FIELDS:
+		if _defaults.has(field):
+			FishingManager.set(field, _defaults[field])
+	for field in _UPGRADE_LISTS:
+		if _defaults.has(field):
+			var list: Array = FishingManager.get(field)
+			list.clear()
+			list.append_array(_defaults[field])
+	if "pending_upgrade_ids" in ShopManager:
+		(ShopManager.get("pending_upgrade_ids") as Array).clear()
+	FishingManager.equip_bait(_defaults.get("equipped_bait") as BaitData)
+	if FishingManager.has_signal(&"upgrades_changed"):
+		FishingManager.emit_signal(&"upgrades_changed")
 	_say("Upgrades reset")
 
 
@@ -337,7 +415,10 @@ func _reset_all() -> void:
 	_reset_upgrades()
 	ChallengeManager.reset_all()
 	_reset_bobbers()
-	RecruitmentHandler.reset_runtime_state()
+	if GameManager.has_method("reset_clock"):
+		GameManager.call("reset_clock")
+	RecruitmentHandler.listening = false
+	RecruitmentHandler.npc = null
 	_forced_fish = null
 	if _force_fish != null:
 		_force_fish.select(0)
@@ -434,7 +515,7 @@ func _info_world() -> String:
 	var t := ""
 	var player := _player()
 	t += _h("Game")
-	t += "Time of day: %s   Actions: %d\n" % [GameManager.Times.keys()[GameManager.time_of_day], GameManager.player_actions]
+	t += "Day %s  %s   Actions left: %d%s\n" % [str(GameManager.get("day")), GameManager.Times.keys()[GameManager.time_of_day], GameManager.player_actions, "  (rest only)" if GameManager.player_actions == 0 else ""]
 	t += "Modal UI open (besides this): %s\n" % _onoff(_other_modal_open())
 	if player != null:
 		t += "Player: pos %s  busy %s  holding %s\n" % [player.global_position.round(), _onoff(player.busy), String(player.held_item.item_id) if player.held_item != null else "-"]
@@ -447,7 +528,7 @@ func _info_world() -> String:
 		t += "No conversation\n"
 
 	t += _h("Recruitment")
-	t += "Listening: %s   Free houses: %d   Waiting NPCs: %d\n" % [_onoff(RecruitmentHandler.listening), RecruitmentHandler.available_homes.size(), RecruitmentHandler.waiting_npcs.size()]
+	t += "Listening: %s   Free houses: %d\n" % [_onoff(RecruitmentHandler.listening), RecruitmentHandler.available_homes.size()]
 	return t
 
 
@@ -493,7 +574,7 @@ func _info_fishing() -> String:
 func _info_progress() -> String:
 	var t := ""
 	t += _h("Upgrades")
-	for field in _PROGRESS_FIELDS:
+	for field in _UPGRADE_FIELDS + _UPGRADE_LISTS:
 		if field in FishingManager:
 			t += "%s: %s\n" % [field, str(FishingManager.get(field))]
 	if "pending_upgrade_ids" in ShopManager:
@@ -734,6 +815,18 @@ func _build_dialogue_tab() -> void:
 
 	_heading(box, "Conversation")
 	_button(box, "End current dialogue (F5)", skip_dialogue)
+
+	# Day clock. Fields go through call/get so a branch without them still compiles.
+	_heading(box, "Day clock")
+	var clock := _row(box)
+	_button(clock, "Spend 1 action", func() -> void:
+		if GameManager.has_method("spend_actions"):
+			GameManager.call("spend_actions", 1)
+			_say("Day %s %s, %d actions left" % [str(GameManager.get("day")), GameManager.Times.keys()[GameManager.time_of_day], GameManager.player_actions]))
+	_button(clock, "Rest / bed (next period)", func() -> void:
+		if GameManager.has_method("rest"):
+			GameManager.call("rest")
+			_say("Rested: day %s %s" % [str(GameManager.get("day")), GameManager.Times.keys()[GameManager.time_of_day]]))
 
 
 func _build_items_tab() -> void:

@@ -27,6 +27,12 @@ func _on_body_exited(body: Node2D) -> void:
 		_update_prompt()
 
 
+# Called directly (not through the player) for the post-catch recruitment
+# talk, so that talk still happens when the catch used night's last action.
+func spends_time() -> bool:
+	return true
+
+
 func interact(_player: Node2D) -> void:
 	if npc == null:
 		push_warning("NPCInteractable needs npc assigned.")
