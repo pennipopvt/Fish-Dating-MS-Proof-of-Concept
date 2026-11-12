@@ -35,7 +35,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 1
-color = Color(0.16, 0.2, 0.25, 1)
+color = Color(0, 0, 0, 1)
 
 [node name="PlaceholderImage" type="TextureRect" parent="Background"]
 layout_mode = 1
@@ -63,6 +63,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 theme_override_font_sizes/font_size = 32
+visible = false
 text = "Illustration placeholder"
 horizontal_alignment = 1
 vertical_alignment = 2
@@ -115,7 +116,7 @@ theme_override_font_sizes/font_size = 32
 theme_override_styles/normal = SubResource("StyleBoxFlat_show")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_show_pressed")
 theme_override_styles/hover = SubResource("StyleBoxFlat_show_hover")
-text = "Let me see the porn"
+text = "Continue (black screen)"
 
 [node name="FadeLayer" type="CanvasLayer" parent="." unique_id=794095072]
 layer = 20
