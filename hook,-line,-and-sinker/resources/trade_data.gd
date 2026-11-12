@@ -8,6 +8,7 @@ extends Resource
 ## If true, this upgrade can only be ordered once, including while awaiting delivery.
 @export var one_time_purchase: bool = false
 @export var icon: Texture2D
+@export var delivery_time: int
 
 @export_group("Requirements")
 @export var requirements: Array[TradeRequirement] = []

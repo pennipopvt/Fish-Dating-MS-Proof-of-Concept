@@ -9,7 +9,8 @@ enum Page { UPGRADES, GIFTS, STORAGE, COLLECTION, CHALLENGES }
 
 const SLOT_SIZE := Vector2(168, 168) # 56 x 56 art pixels at 3x
 const MIN_SLOTS := 12                 # Four columns, three visible rows
-const LOCKED_TINT := Color(0.72, 0.75, 0.75, 0.82)
+const LOCKED_TINT := Color(0.533, 0.57, 0.57, 0.82)
+const UNAFFORD_TINT := Color(0.564, 0.099, 0.107, 0.82)
 const DARK_TEXT := Color("17363b")
 const DIM_TEXT := Color("45646a")
 const WARNING_TEXT := Color("984b24")
@@ -489,6 +490,7 @@ func _show_trade_details(trade: TradeData) -> void:
 		], DIM_TEXT)
 
 	_order_button.show()
+	_order_button.self_modulate = Color.WHITE
 	_order_button.text = "ORDER"
 	var locking: ChallengeData = ChallengeManager.get_locking_challenge(trade)
 	_order_button.disabled = locking != null or not ShopManager.can_trade(trade)
@@ -500,8 +502,12 @@ func _show_trade_details(trade: TradeData) -> void:
 		_order_button.text = "ORDERED"
 	elif locking != null:
 		_status.text = "LOCKED: %s" % ("Complete a hidden challenge" if locking.hidden else locking.display_name)
+		_order_button.self_modulate = UNAFFORD_TINT
 	elif _order_button.disabled:
 		_status.text = "Not enough items to trade."
+		if ShopManager.upgrades_today >= ShopManager.max_daily_upgrades:
+			_status.text = "Maximum daily upgrades reached."
+		_order_button.self_modulate = UNAFFORD_TINT
 
 
 # Use the real ItemData sprite and the count from the existing inventory.
