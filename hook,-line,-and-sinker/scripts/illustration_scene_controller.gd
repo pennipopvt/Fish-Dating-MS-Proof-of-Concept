@@ -122,9 +122,11 @@ func _start_illustration() -> void:
 	overworld_music.volume_db = _music_normal_volume_db
 	_music_stopped_for_scene = true
 	warning_screen.hide()
-	placeholder_label.text = str(_pending_scene_data.get("title", "Illustration")) + "\n[Temporary art - replace after dialogue playtest]"
-	placeholder_image.texture = _active_npc.portrait
-	placeholder_image.visible = _active_npc.portrait != null
+	# Both Silas and Barracuda share this stage. Until scene artwork is ready,
+	# show only a solid black backdrop behind the existing dialogue UI.
+	background.color = Color.BLACK
+	placeholder_label.hide()
+	placeholder_image.hide()
 	background.show()
 	dialogue_ui.set_illustration_mode(true)
 	await _fade_to(0.0)
