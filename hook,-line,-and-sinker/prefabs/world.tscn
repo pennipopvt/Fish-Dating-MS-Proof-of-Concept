@@ -10,6 +10,9 @@
 [ext_resource type="Script" uid="uid://cure67x3a0766" path="res://scripts/clouds.gd" id="4_k40i2"]
 [ext_resource type="Texture2D" uid="uid://iyvfqqmpkdkg" path="res://sprites/environment/small_cloud.png" id="5_le6xu"]
 [ext_resource type="Shader" uid="uid://b41ap31uwit61" path="res://shaders/sky_gradient.gdshader" id="6_07nuu"]
+[ext_resource type="Script" path="res://scripts/world_day_night.gd" id="world_day_night"]
+[ext_resource type="Shader" path="res://shaders/night_stars.gdshader" id="night_stars"]
+[ext_resource type="Shader" path="res://shaders/moon.gdshader" id="moon_shader"]
 [ext_resource type="Texture2D" uid="uid://culbi4w4j2vi2" path="res://sprites/environment/medium_cloud.png" id="6_q76tg"]
 [ext_resource type="Texture2D" uid="uid://papjvjxenamb" path="res://sprites/environment/long_cloud.png" id="7_sxw1y"]
 [ext_resource type="Texture2D" uid="uid://dvyql68s5tvo3" path="res://sprites/environment/tileset.png" id="10_6mti1"]
@@ -29,6 +32,23 @@ shader = ExtResource("2_5hu44")
 shader_parameter/glow_color = Color(1, 0.68, 0.24, 1)
 shader_parameter/intensity = 0.65
 shader_parameter/falloff = 3.0
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_night_stars"]
+shader = ExtResource("night_stars")
+shader_parameter/visibility = 0.0
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_moon"]
+shader = ExtResource("moon_shader")
+shader_parameter/visibility = 0.0
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_moon_glow"]
+shader = ExtResource("2_5hu44")
+shader_parameter/glow_color = Color(0.62, 0.75, 1, 1)
+shader_parameter/intensity = 0.0
+shader_parameter/falloff = 4.0
+
+[sub_resource type="CanvasItemMaterial" id="CanvasItemMaterial_sun"]
+light_mode = 1
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_gi6id"]
 texture = ExtResource("10_6mti1")
@@ -76,6 +96,10 @@ shader_parameter/highlight_speed = 0.5
 shader_parameter/waterline_y = 140.0
 
 [node name="World" type="Node2D" unique_id=1151991614]
+script = ExtResource("world_day_night")
+
+[node name="DayNightTint" type="CanvasModulate" parent="."]
+color = Color(1, 1, 1, 1)
 
 [node name="Player" parent="." unique_id=462811088 instance=ExtResource("2_m1sej")]
 position = Vector2(160, 112)
@@ -100,6 +124,12 @@ offset_bottom = 180.0
 grow_horizontal = 2
 grow_vertical = 2
 
+[node name="NightStars" type="ColorRect" parent="Player/Camera2D/Sky"]
+material = SubResource("ShaderMaterial_night_stars")
+offset_right = 320.0
+offset_bottom = 180.0
+mouse_filter = 2
+
 [node name="SunGlow" type="ColorRect" parent="Player/Camera2D/Sky" unique_id=1434741238]
 material = SubResource("ShaderMaterial_yd4fr")
 offset_left = 15.0
@@ -109,8 +139,21 @@ offset_bottom = 98.0
 mouse_filter = 2
 
 [node name="Sun" type="Sprite2D" parent="Player/Camera2D/Sky" unique_id=1314223609]
+material = SubResource("CanvasItemMaterial_sun")
 position = Vector2(95, 18)
 texture = ExtResource("3_vbln7")
+
+[node name="MoonGlow" type="ColorRect" parent="Player/Camera2D/Sky"]
+material = SubResource("ShaderMaterial_moon_glow")
+offset_right = 96.0
+offset_bottom = 96.0
+mouse_filter = 2
+
+[node name="Moon" type="ColorRect" parent="Player/Camera2D/Sky"]
+material = SubResource("ShaderMaterial_moon")
+offset_right = 24.0
+offset_bottom = 24.0
+mouse_filter = 2
 
 [node name="Clouds" type="Node2D" parent="Player/Camera2D/Sky" unique_id=1290658735]
 script = ExtResource("4_k40i2")
