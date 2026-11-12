@@ -1,0 +1,69 @@
+{
+  "entry": "return",
+  "nodes": {
+    "return": {
+      "lines": [
+        "[The barracuda transforms again, looking much less surprised this time.]",
+        "You again. I wondered if we'd meet like this.",
+        "So. Changed your mind about keeping me around?"
+      ],
+      "choices": [
+        {
+          "text": "Stay this time?",
+          "next": "recruited",
+          "effects": {
+            "set_flags": [
+              "Recruited"
+            ]
+          }
+        },
+        {
+          "text": "What's it like back underwater?",
+          "next": "underwater"
+        },
+        {
+          "text": "You can head back if you'd rather.",
+          "next": "released"
+        }
+      ]
+    },
+    "underwater": {
+      "lines": [
+        "Fast. Quiet. No one asks me how I'm doing.",
+        "...Still, it wasn't exactly interesting."
+      ],
+      "next": "return_menu"
+    },
+    "return_menu": {
+      "lines": [],
+      "choices": [
+        {
+          "text": "Then stay up here.",
+          "next": "recruited",
+          "effects": {
+            "set_flags": [
+              "Recruited"
+            ]
+          }
+        },
+        {
+          "text": "Maybe another time.",
+          "next": "released"
+        }
+      ]
+    },
+    "recruited": {
+      "lines": [
+        "You sure?",
+        "All right. I'll stay.",
+        "Guess you finally caught something worth keeping."
+      ]
+    },
+    "released": {
+      "lines": [
+        "Your call.",
+        "I'll be around. Somewhere."
+      ]
+    }
+  }
+}

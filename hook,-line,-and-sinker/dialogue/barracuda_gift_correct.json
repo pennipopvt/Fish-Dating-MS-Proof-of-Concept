@@ -1,0 +1,36 @@
+{
+  "entry": "ask",
+  "nodes": {
+    "ask": {
+      "lines": [
+        "Hey. What's that you've got?"
+      ],
+      "choices": [
+        {
+          "text": "It's for you.",
+          "next": "accepted",
+          "effects": {
+            "give_held_item": true
+          }
+        },
+        {
+          "text": "I'm just carrying it.",
+          "next": "declined"
+        }
+      ]
+    },
+    "accepted": {
+      "lines": [
+        "Sunglasses? For me?",
+        "[He puts them on and looks toward the water.]",
+        "...Okay. That's pretty good.",
+        "I owe you one, Penni."
+      ]
+    },
+    "declined": {
+      "lines": [
+        "Then quit waving them in front of me."
+      ]
+    }
+  }
+}

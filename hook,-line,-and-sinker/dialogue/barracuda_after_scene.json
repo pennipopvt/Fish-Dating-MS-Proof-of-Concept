@@ -1,0 +1,34 @@
+{
+  "entry": "after",
+  "nodes": {
+    "after": {
+      "lines": [
+        "Hey, Penni.",
+        "Last night was... really good.",
+        "I know I joke around a lot, but I meant that."
+      ],
+      "choices": [
+        {
+          "text": "I had a good time too.",
+          "next": "warm"
+        },
+        {
+          "text": "So you're getting soft on me?",
+          "next": "tease"
+        }
+      ]
+    },
+    "warm": {
+      "lines": [
+        "Glad we're on the same page.",
+        "I'd like to do it again sometime."
+      ]
+    },
+    "tease": {
+      "lines": [
+        "Don't push it.",
+        "...But yeah. Maybe a little."
+      ]
+    }
+  }
+}

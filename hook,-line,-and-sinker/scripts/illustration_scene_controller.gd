@@ -8,7 +8,17 @@ const SCENES := {
 		"dialogue": "res://dialogue/garden_eel_house_scene.json",
 		# Post-scene dialogue runs in the overworld, after fading back in.
 		"post_dialogue": "res://dialogue/garden_eel_after_scene.json",
-		"reward_item": "silas"
+		"reward_item": "silas",
+		"npc_id": "test_npc",
+		"route_complete_flag": "silas_route_complete"
+	},
+	"barracuda_house": {
+		"title": "Barracuda's House (placeholder)",
+		"dialogue": "res://dialogue/barracuda_house_scene.json",
+		"post_dialogue": "res://dialogue/barracuda_after_scene.json",
+		"reward_item": "",
+		"npc_id": "barracuda",
+		"route_complete_flag": "barracuda_route_complete"
 	}
 }
 const FADE_DURATION := 0.75
@@ -22,6 +32,7 @@ signal cosmetic_reward_requested(npc: NPCData, reward_id: String)
 @onready var skip_button: Button = $WarningScreen/Center/Choices/SkipButton
 @onready var show_button: Button = $WarningScreen/Center/Choices/ShowButton
 @onready var placeholder_label: Label = $Background/PlaceholderLabel
+@onready var placeholder_image: TextureRect = $Background/PlaceholderImage
 @onready var fade_layer: CanvasLayer = $FadeLayer
 @onready var fade_rect: ColorRect = $FadeLayer/Fade
 @onready var dialogue_ui: DialogueUI = get_parent().get_node("CanvasLayer/DialogueUI")
@@ -34,12 +45,14 @@ var _transitioning := false
 var _scene_dialogue_started := false
 var _post_scene_npc: NPCData = null
 var _post_scene_reward_id: String = ""
+var _post_scene_route_flag: StringName = &""
 var _music_stopped_for_scene := false
 var _music_normal_volume_db: float = 0.0
 
 func _ready() -> void:
 	_music_normal_volume_db = overworld_music.volume_db
 	background.hide()
+	placeholder_image.hide()
 	warning_screen.hide()
 	fade_layer.hide()
 	fade_rect.color = Color.BLACK
@@ -58,6 +71,10 @@ func _ready() -> void:
 
 func _on_scene_requested(npc: NPCData, scene_id: String) -> void:
 	if _active_npc != null or not SCENES.has(scene_id) or npc == null:
+		return
+	# Keep scene IDs scoped to their NPC so one route cannot accidentally
+	# request another character's post-scene dialogue or reward.
+	if str(SCENES[scene_id].get("npc_id", "")) != str(npc.npc_id):
 		return
 	_active_npc = npc
 	_active_scene_id = scene_id
@@ -105,7 +122,9 @@ func _start_illustration() -> void:
 	overworld_music.volume_db = _music_normal_volume_db
 	_music_stopped_for_scene = true
 	warning_screen.hide()
-	placeholder_label.text = str(_pending_scene_data.get("title", "Illustration")) + "\n[Placeholder illustration]"
+	placeholder_label.text = str(_pending_scene_data.get("title", "Illustration")) + "\n[Temporary art - replace after dialogue playtest]"
+	placeholder_image.texture = _active_npc.portrait
+	placeholder_image.visible = _active_npc.portrait != null
 	background.show()
 	dialogue_ui.set_illustration_mode(true)
 	await _fade_to(0.0)
@@ -121,7 +140,8 @@ func _on_conversation_finished(npc: NPCData) -> void:
 	if _post_scene_npc != null and npc == _post_scene_npc:
 		# Finish the NPC's route first, then grant the gift. The bobber
 		# manager checks this flag before accepting Silas's unlock.
-		_mark_route_complete(npc)
+		_mark_route_complete(npc, _post_scene_route_flag)
+		_post_scene_route_flag = &""
 		if not _post_scene_reward_id.is_empty():
 			cosmetic_reward_requested.emit(npc, _post_scene_reward_id)
 		_post_scene_reward_id = ""
@@ -140,9 +160,11 @@ func _finish_scene(completed: bool = false) -> void:
 	var finished_scene_id := _active_scene_id
 	var post_path := str(_pending_scene_data.get("post_dialogue", ""))
 	var reward_id := str(_pending_scene_data.get("reward_item", ""))
+	var route_flag := StringName(str(_pending_scene_data.get("route_complete_flag", "")))
 	await _fade_to(1.0)
 	# At full black, restore the overworld and normal portrait layout.
 	background.hide()
+	placeholder_image.hide()
 	warning_screen.hide()
 	dialogue_ui.set_illustration_mode(false)
 	_active_npc = null
@@ -156,21 +178,22 @@ func _finish_scene(completed: bool = false) -> void:
 		_music_stopped_for_scene = false
 	await _fade_to(0.0)
 	_transitioning = false
-	if not completed or finished_npc == null or finished_scene_id != "silas_house":
+	if not completed or finished_npc == null or not SCENES.has(finished_scene_id):
 		return
 	if post_path.is_empty():
-		# No gift dialogue means no reward was given; never auto-unlock.
-		push_warning("Silas reward dialogue is missing; bobber remains locked.")
+		push_warning("Post-scene dialogue missing for " + finished_scene_id)
 		return
-	# Whether the player watched or skipped the optional adult scene, Silas
-	# speaks automatically after the return fade. Complete the route afterward.
+	# Whether watched or skipped, return to the overworld for the NPC's
+	# post-scene dialogue. Finish only after those lines are read.
 	_post_scene_npc = finished_npc
 	_post_scene_reward_id = reward_id
+	_post_scene_route_flag = route_flag
 	DialogueManager.request_conversation(finished_npc, post_path)
 	if not DialogueManager.is_active:
 		push_warning("Post-scene dialogue could not start: " + post_path)
 		_post_scene_npc = null
 		_post_scene_reward_id = ""
+		_post_scene_route_flag = &""
 		# No reward is granted without completing the gift dialogue.
 		# Leave the route incomplete if the gift dialogue fails to start.
 
@@ -182,9 +205,11 @@ func _on_cosmetic_reward_requested(npc: NPCData, reward_id: String) -> void:
 	BobberManager.unlock_bobber(StringName(reward_id))
 
 
-func _mark_route_complete(npc: NPCData) -> void:
+func _mark_route_complete(npc: NPCData, flag_name: StringName) -> void:
+	if flag_name == &"":
+		return
 	var flags: Dictionary = NPCManager.get_npc_state(npc.npc_id)["flags"]
-	flags[&"silas_route_complete"] = true
+	flags[flag_name] = true
 
 func _fade_to(alpha: float) -> void:
 	fade_layer.show()

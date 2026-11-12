@@ -1,0 +1,44 @@
+{
+  "entry": "ask",
+  "nodes": {
+    "ask": {
+      "lines": [
+        "You brought me something?"
+      ],
+      "choices": [
+        {
+          "text": "Yeah, it's yours.",
+          "next": "accepted",
+          "effects": {
+            "give_held_item": true,
+            "set_flags": [
+              "barracuda_gift_attempted"
+            ]
+          }
+        },
+        {
+          "text": "Actually, never mind.",
+          "next": "declined"
+        }
+      ]
+    },
+    "accepted": {
+      "lines": [
+        "Huh. Thanks.",
+        "Not really my style, but I appreciate it.",
+        "I guess I'd pick something that helps with the sun and still looks good."
+      ],
+      "effects": {
+        "set_flags": [
+          "barracuda_sun_hint",
+          "barracuda_style_hint"
+        ]
+      }
+    },
+    "declined": {
+      "lines": [
+        "You changed your mind fast."
+      ]
+    }
+  }
+}

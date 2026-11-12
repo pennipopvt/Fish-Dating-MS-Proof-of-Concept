@@ -12,6 +12,7 @@ description = "A gentle lure that attracts easy fish. Hard fish very rarely bite
 catch_weights = Dictionary[StringName, float]({
 &"easy_test_fish": 10.0,
 &"hard_test_fish": 0.35,
-&"test_silas": 0.3
+&"test_silas": 0.3,
+&"barracuda": 0.12
 })
 default_weight = 0.3

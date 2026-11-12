@@ -1,0 +1,42 @@
+{
+  "entry": "invite",
+  "nodes": {
+    "invite": {
+      "lines": [
+        "Hey, Penni. Got a second?",
+        "These glasses are growing on me.",
+        "I was thinking we could spend some time together. Somewhere private."
+      ],
+      "choices": [
+        {
+          "text": "I'd like that.",
+          "next": "accepted",
+          "effects": {
+            "set_flags": [
+              "barracuda_invitation_accepted"
+            ]
+          }
+        },
+        {
+          "text": "Maybe another time.",
+          "next": "later"
+        }
+      ]
+    },
+    "accepted": {
+      "lines": [
+        "Good.",
+        "Come on, then. I know a place."
+      ],
+      "effects": {
+        "request_scene": "barracuda_house"
+      }
+    },
+    "later": {
+      "lines": [
+        "No rush.",
+        "Offer still stands."
+      ]
+    }
+  }
+}

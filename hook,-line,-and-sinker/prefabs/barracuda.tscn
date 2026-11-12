@@ -1,0 +1,39 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/npc_interactable.gd" id="1_script"]
+[ext_resource type="Resource" path="res://resources/npcs/barracuda.tres" id="2_npc"]
+[ext_resource type="PackedScene" path="res://prefabs/interact_prompt.tscn" id="3_prompt"]
+[ext_resource type="Texture2D" path="res://sprites/characters/barracuda_actor.svg" id="4_sprite"]
+
+[sub_resource type="RectangleShape2D" id="ActorShape"]
+size = Vector2(22, 28)
+
+[sub_resource type="SpriteFrames" id="ActorFrames"]
+animations = [{
+"frames": [{"duration": 1.0, "texture": ExtResource("4_sprite")}],
+"loop": true,
+"name": &"default",
+"speed": 3.0
+}, {
+"frames": [{"duration": 1.0, "texture": ExtResource("4_sprite")}],
+"loop": false,
+"name": &"on_caught",
+"speed": 5.0
+}]
+
+[node name="Barracuda" type="Area2D" node_paths=PackedStringArray("prompt")]
+z_index = -1
+script = ExtResource("1_script")
+npc = ExtResource("2_npc")
+prompt = NodePath("InteractPrompt")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("ActorShape")
+
+[node name="InteractPrompt" parent="." instance=ExtResource("3_prompt")]
+position = Vector2(0, -18)
+
+[node name="Sprite" type="AnimatedSprite2D" parent="."]
+sprite_frames = SubResource("ActorFrames")
+animation = &"default"
+autoplay = "default"

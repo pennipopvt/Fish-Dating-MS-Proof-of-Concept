@@ -1,0 +1,41 @@
+{
+  "entry": "opening",
+  "nodes": {
+    "opening": {
+      "lines": [
+        "[Placeholder scene: Barracuda closes the door and takes off his sunglasses.]",
+        "You know, I'm usually the one catching people off guard.",
+        "But tonight? I think I like where this is going."
+      ],
+      "choices": [
+        {
+          "text": "Come a little closer.",
+          "next": "closer"
+        },
+        {
+          "text": "We can take our time.",
+          "next": "slow"
+        }
+      ]
+    },
+    "closer": {
+      "lines": [
+        "[He smiles and reaches for your hand.]",
+        "Good. I was hoping you'd say that."
+      ],
+      "next": "ending"
+    },
+    "slow": {
+      "lines": [
+        "Yeah. No need to rush.",
+        "[He squeezes your hand.]"
+      ],
+      "next": "ending"
+    },
+    "ending": {
+      "lines": [
+        "[The rest of the evening fades to black. Placeholder art and dialogue will be replaced later.]"
+      ]
+    }
+  }
+}

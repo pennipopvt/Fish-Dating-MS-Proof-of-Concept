@@ -12,6 +12,7 @@ description = "Strong bait that attracts hard fish. Unlock permanently at the FI
 catch_weights = Dictionary[StringName, float]({
 &"easy_test_fish": 1.0,
 &"hard_test_fish": 6.0,
-&"test_silas": 0.5
+&"test_silas": 0.5,
+&"barracuda": 3.5
 })
 default_weight = 0.5

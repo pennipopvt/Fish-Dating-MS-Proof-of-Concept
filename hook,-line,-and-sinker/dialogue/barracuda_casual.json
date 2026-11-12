@@ -1,0 +1,132 @@
+{
+  "entry": "greeting",
+  "nodes": {
+    "greeting": {
+      "lines": [
+        "Hey, Penni. Looking for me?"
+      ],
+      "choices": [
+        {
+          "text": "What do you do for fun?",
+          "next": "speed"
+        },
+        {
+          "text": "How do you like it up here?",
+          "next": "sunlight"
+        },
+        {
+          "text": "What kind of things do you like?",
+          "next": "style"
+        },
+        {
+          "text": "Can you remind me what you said?",
+          "next": "reminder"
+        },
+        {
+          "text": "I'll see you later.",
+          "next": "goodbye"
+        }
+      ]
+    },
+    "speed": {
+      "lines": [
+        "I like moving. Fast.",
+        "Hard to explain it to someone with two perfectly good legs.",
+        "Standing around and looking cool is my second favorite thing."
+      ],
+      "choices": [
+        {
+          "text": "That sounds exhausting.",
+          "next": "speed_tease"
+        },
+        {
+          "text": "I bet you're good at it.",
+          "next": "speed_flirt"
+        }
+      ]
+    },
+    "speed_tease": {
+      "lines": [
+        "You're not wrong.",
+        "But somebody has to keep things interesting."
+      ]
+    },
+    "speed_flirt": {
+      "lines": [
+        "I am.",
+        "Maybe I'll show you sometime."
+      ]
+    },
+    "sunlight": {
+      "lines": [
+        "It's brighter out here than I expected.",
+        "The sun in my eyes is the worst part. I keep squinting whenever I look across the water.",
+        "Still, I wouldn't trade the view."
+      ],
+      "effects": {
+        "set_flags": [
+          "barracuda_sun_hint"
+        ]
+      }
+    },
+    "style": {
+      "lines": [
+        "Something sharp. Something that actually suits me.",
+        "I'm not about to walk around in just anything.",
+        "I've seen people wearing dark lenses against the glare. Now those have potential."
+      ],
+      "effects": {
+        "set_flags": [
+          "barracuda_style_hint"
+        ]
+      }
+    },
+    "reminder": {
+      "lines": [
+        "Which part?"
+      ],
+      "choices": [
+        {
+          "text": "You mentioned the sun bothering you?",
+          "next": "sun_reminder",
+          "required_flags": [
+            "barracuda_sun_hint"
+          ]
+        },
+        {
+          "text": "You mentioned something about your style?",
+          "next": "style_reminder",
+          "required_flags": [
+            "barracuda_style_hint"
+          ]
+        },
+        {
+          "text": "Never mind.",
+          "next": "never_mind"
+        }
+      ]
+    },
+    "sun_reminder": {
+      "lines": [
+        "The glare. It's a pain.",
+        "If I could see out here without squinting, that'd help."
+      ]
+    },
+    "style_reminder": {
+      "lines": [
+        "I said I wanted something with an edge.",
+        "Maybe those dark glasses people wear would suit me."
+      ]
+    },
+    "never_mind": {
+      "lines": [
+        "Suit yourself."
+      ]
+    },
+    "goodbye": {
+      "lines": [
+        "Catch you later. Preferably not with the hook."
+      ]
+    }
+  }
+}

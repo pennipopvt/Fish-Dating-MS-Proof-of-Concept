@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="48" height="32" viewBox="0 0 48 32">
+<!-- Placeholder gift icon; easy to replace with a pixel-art PNG later. -->
+<path d="M3 10L9 8L24 11L39 8L45 10" stroke="#d7e1ef" stroke-width="3" fill="none"/>
+<path d="M7 13L22 14L21 25L11 25Z" fill="#181d2f" stroke="#b5c7cf" stroke-width="2"/>
+<path d="M26 14L41 13L37 25L27 25Z" fill="#181d2f" stroke="#b5c7cf" stroke-width="2"/>
+<path d="M22 15Q24 13 26 15" stroke="#dce9f4" stroke-width="2" fill="none"/>
+<path d="M11 16L16 15L11 21Z" fill="#5a89ad"/>
+<path d="M30 16L35 15L30 21Z" fill="#5a89ad"/>
+</svg>

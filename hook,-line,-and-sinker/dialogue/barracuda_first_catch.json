@@ -1,0 +1,112 @@
+{
+  "entry": "arrival",
+  "nodes": {
+    "arrival": {
+      "lines": [
+        "[A barracuda lands on the dock in a burst of spray. A moment later, someone is lying where the fish was.]",
+        "...Huh. That was a lot slower than I expected.",
+        "You're the one holding the rod, right?"
+      ],
+      "effects": {
+        "set_flags": [
+          "barracuda_met"
+        ]
+      },
+      "next": "introduction"
+    },
+    "introduction": {
+      "lines": [],
+      "choices": [
+        {
+          "text": "Are you okay?",
+          "next": "okay"
+        },
+        {
+          "text": "You're taking this pretty well.",
+          "next": "composed"
+        },
+        {
+          "text": "Who are you?",
+          "next": "name"
+        }
+      ]
+    },
+    "okay": {
+      "lines": [
+        "I will be once I get used to these legs.",
+        "[He tests his balance, then looks back at you.]"
+      ],
+      "next": "introduction"
+    },
+    "composed": {
+      "lines": [
+        "Would panicking help?",
+        "Besides, I still have a few questions for you."
+      ],
+      "next": "introduction"
+    },
+    "name": {
+      "lines": [
+        "Barracuda. That ought to tell you enough for now.",
+        "And you are?"
+      ],
+      "choices": [
+        {
+          "text": "Penni.",
+          "next": "named"
+        },
+        {
+          "text": "Just the person who caught you.",
+          "next": "unnamed"
+        }
+      ]
+    },
+    "named": {
+      "lines": [
+        "Penni. Got it.",
+        "...You seem harmless enough."
+      ],
+      "next": "decision"
+    },
+    "unnamed": {
+      "lines": [
+        "Very mysterious.",
+        "All right, I'll call you Penni anyway."
+      ],
+      "next": "decision"
+    },
+    "decision": {
+      "lines": [
+        "So what happens now? I can go right back in, or I could see what this place is about."
+      ],
+      "choices": [
+        {
+          "text": "You could stay here, if you want.",
+          "next": "recruited",
+          "effects": {
+            "set_flags": [
+              "Recruited"
+            ]
+          }
+        },
+        {
+          "text": "I think you should go back for now.",
+          "next": "released"
+        }
+      ]
+    },
+    "recruited": {
+      "lines": [
+        "Really?",
+        "Fine. I'll give this place a chance.",
+        "Don't make me regret it."
+      ]
+    },
+    "released": {
+      "lines": [
+        "Fair enough.",
+        "Maybe you'll hook me again. Try to keep up next time."
+      ]
+    }
+  }
+}

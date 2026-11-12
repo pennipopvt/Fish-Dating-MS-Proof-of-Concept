@@ -1,0 +1,51 @@
+[gd_resource type="Resource" script_class="FishData" format=3]
+
+[ext_resource type="Script" path="res://resources/fish_data.gd" id="1_fish"]
+[ext_resource type="Script" path="res://resources/item_data.gd" id="2_item"]
+[ext_resource type="Script" path="res://resources/fish_escape_state.gd" id="3_attack"]
+[ext_resource type="PackedScene" path="res://prefabs/barracuda.tscn" id="4_npc"]
+[ext_resource type="Texture2D" path="res://sprites/fish/barracuda_placeholder.png" id="5_sprite"]
+
+[sub_resource type="Resource" id="FishItem"]
+script = ExtResource("2_item")
+item_id = &"barracuda"
+sprite = ExtResource("5_sprite")
+
+[sub_resource type="Resource" id="QuickStrike"]
+script = ExtResource("3_attack")
+state_name = "Quick Strike"
+escape_rate = 0.28
+state_length = 0.4
+state_probability = 0.65
+windup_duration = 0.22
+pre_windup_duration = 0.13
+counter_window = 0.11
+close_early_window = 0.07
+close_late_window = 0.1
+stun_duration = 1.2
+
+[sub_resource type="Resource" id="Feint"]
+script = ExtResource("3_attack")
+state_name = "Feint"
+escape_rate = 0.21
+state_length = 0.52
+state_probability = 0.35
+windup_duration = 0.28
+pre_windup_duration = 0.12
+counter_window = 0.12
+close_early_window = 0.08
+close_late_window = 0.11
+stun_duration = 1.1
+
+[resource]
+script = ExtResource("1_fish")
+fish_id = &"barracuda"
+item_data = SubResource("FishItem")
+npc_data = ExtResource("4_npc")
+hooked_sprite_width = 30.0
+reel_tension_gain = 0.019
+miss_tension_gain = 0.14
+attack_tension_multiplier = 1.25
+miss_dash_duration = 0.18
+miss_dash_speed_multiplier = 4.0
+states = Array[ExtResource("3_attack")]([SubResource("QuickStrike"), SubResource("Feint")])
