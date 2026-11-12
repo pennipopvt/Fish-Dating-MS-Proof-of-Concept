@@ -5,9 +5,6 @@ extends Node2D
 # The world stays camera-relative, so fishing camera pans do not move the sky.
 @export_range(0.0, 4.0, 0.1) var transition_seconds: float = 1.6
 
-const SUN_GLOW_ORIGIN := Vector2(95.0, 18.0)
-const MOON_HALF_SIZE := Vector2(12.0, 12.0)
-const MOON_GLOW_HALF_SIZE := Vector2(48.0, 48.0)
 const AFTERNOON_START: float = 1.0 / 3.0
 const SUNSET_START: float = 5.0 / 9.0
 const NIGHT_START: float = 2.0 / 3.0
@@ -90,9 +87,12 @@ func _refresh_target() -> void:
     # Going to bed at night starts a NEW day: bring the invisible sun straight
     # back to the sunrise position before fading it in. Don't fly it backwards
     # across the entire sky during the night -> morning color transition.
-    if previous_target >= NIGHT_START and progress < AFTERNOON_START:
+    var day_rollover := previous_target >= NIGHT_START and progress < AFTERNOON_START
+    if day_rollover:
         _sun.position = state["sun_position"]
         _sun_glow.position = state["sun_glow_position"]
+    # At dawn, let the old moon fade at the western horizon. Reposition it
+    # in the east only AFTER it has disappeared, ready for the next night.
 
     _transition = create_tween().set_parallel(true).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
     _transition.tween_property(_sky_mat, "shader_parameter/top_color", state["top"], transition_seconds)
@@ -105,10 +105,18 @@ func _refresh_target() -> void:
     _transition.tween_property(_sun_glow, "position", state["sun_glow_position"], transition_seconds)
     _transition.tween_property(_sun_glow_mat, "shader_parameter/intensity", state["sun_glow"], transition_seconds)
     _transition.tween_property(_stars_mat, "shader_parameter/visibility", state["stars"], transition_seconds)
-    _transition.tween_property(_moon, "position", state["moon_position"], transition_seconds)
-    _transition.tween_property(_moon_glow, "position", state["moon_glow_position"], transition_seconds)
+    if not day_rollover:
+        _transition.tween_property(_moon, "position", state["moon_position"], transition_seconds)
+        _transition.tween_property(_moon_glow, "position", state["moon_glow_position"], transition_seconds)
     _transition.tween_property(_moon_mat, "shader_parameter/visibility", state["moon_visible"], transition_seconds)
     _transition.tween_property(_moon_glow_mat, "shader_parameter/intensity", state["moon_glow"], transition_seconds)
+    if day_rollover:
+        _transition.chain().tween_callback(_reset_moon_to.bind(state))
+
+
+func _reset_moon_to(state: Dictionary) -> void:
+    _moon.position = state["moon_position"]
+    _moon_glow.position = state["moon_glow_position"]
 
 
 func _apply_immediately(state: Dictionary) -> void:
@@ -145,9 +153,11 @@ func _visual_state(progress: float) -> Dictionary:
     var sun_visible := 1.0 - smoothstep(SUNSET_START, NIGHT_START, progress)
 
     var night_fraction := clampf((progress - NIGHT_START) / (1.0 - NIGHT_START), 0.0, 1.0)
+    # A full moon rises in the east at about sunset, follows the same
+    # east-to-west arc as the sun, and sets around sunrise.
     var moon_center := Vector2(
-        lerpf(282.0, 155.0, night_fraction),
-        40.0 - 19.0 * sin(night_fraction * PI * 0.7)
+        lerpf(36.0, 285.0, night_fraction),
+        70.0 - 57.0 * sin(night_fraction * PI)
     )
     var moon_visible := smoothstep(0.60, NIGHT_START, progress)
     var stars_visible := smoothstep(SUNSET_START, NIGHT_START + 0.02, progress)
@@ -159,11 +169,13 @@ func _visual_state(progress: float) -> Dictionary:
         "water": water,
         "water_highlight": water_highlight,
         "sun_position": sun_position,
-        "sun_glow_position": sun_position - SUN_GLOW_ORIGIN,
+        # ColorRect.position is its TOP-LEFT corner; Sprite2D.position is
+        # its CENTER. Use half the rectangle size so glow tracks sun exactly.
+        "sun_glow_position": sun_position - _sun_glow.size * 0.5,
         "sun_visible": sun_visible,
         "sun_glow": 0.65 * sun_visible,
-        "moon_position": moon_center - MOON_HALF_SIZE,
-        "moon_glow_position": moon_center - MOON_GLOW_HALF_SIZE,
+        "moon_position": moon_center - _moon.size * 0.5,
+        "moon_glow_position": moon_center - _moon_glow.size * 0.5,
         "moon_visible": moon_visible,
         "moon_glow": 0.20 * moon_visible,
         "stars": stars_visible
