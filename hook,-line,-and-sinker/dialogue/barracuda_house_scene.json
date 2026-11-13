@@ -1,40 +1,60 @@
 {
-  "entry": "opening",
+  "entry": "scene",
   "nodes": {
-    "opening": {
+    "scene": {
       "lines": [
-        "[Placeholder scene: Barracuda closes the door and takes off his sunglasses.]",
-        "You know, I'm usually the one catching people off guard.",
-        "But tonight? I think I like where this is going."
-      ],
-      "choices": [
         {
-          "text": "Come a little closer.",
-          "next": "closer"
+          "speaker": "npc",
+          "text": "Hah..."
         },
         {
-          "text": "We can take our time.",
-          "next": "slow"
+          "speaker": "npc",
+          "text": "Quit looking at me like that..."
+        },
+        {
+          "speaker": "player",
+          "text": "[PLACEHOLDER: Penni's joke — replace this line later]"
+        },
+        {
+          "speaker": "npc",
+          "text": "Tch... you're really gonna tease me right now?"
+        },
+        {
+          "speaker": "player",
+          "text": "Hehe, just a little. C'mon, it was funny!"
+        },
+        {
+          "speaker": "npc",
+          "text": "Yeah, real funny..."
+        },
+        {
+          "speaker": "npc",
+          "text": "You're lucky I like you."
+        },
+        {
+          "speaker": "player",
+          "text": "Mmm~ you do like me."
+        },
+        {
+          "speaker": "npc",
+          "text": "...Yeah, whatever."
+        },
+        {
+          "speaker": "npc",
+          "text": "Don't make me say it again."
+        },
+        {
+          "speaker": "player",
+          "text": "I like you too."
+        },
+        {
+          "speaker": "npc",
+          "text": "..."
+        },
+        {
+          "speaker": "npc",
+          "text": "Thanks, I guess."
         }
-      ]
-    },
-    "closer": {
-      "lines": [
-        "[He smiles and reaches for your hand.]",
-        "Good. I was hoping you'd say that."
-      ],
-      "next": "ending"
-    },
-    "slow": {
-      "lines": [
-        "Yeah. No need to rush.",
-        "[He squeezes your hand.]"
-      ],
-      "next": "ending"
-    },
-    "ending": {
-      "lines": [
-        "[The rest of the evening fades to black. Placeholder art and dialogue will be replaced later.]"
       ]
     }
   }
