@@ -6,7 +6,7 @@
 [ext_resource type="Script" uid="uid://bh6g5wfjnt8fm" path="res://resources/encounter_rule_data.gd" id="3_w20er"]
 [ext_resource type="Texture2D" uid="uid://raysrsoqufps" path="res://sprites/characters/garden_eel_portrait.png" id="4_a4wu8"]
 [ext_resource type="Texture2D" uid="uid://bv41gk34hgl5s" path="res://sprites/placeholders/placeholderhousegood.png" id="5_816r6"]
-[ext_resource type="Resource" path="res://resources/items/spyglass.tres" id="5_spyglass"]
+[ext_resource type="Resource" uid="uid://dq4sy5yms8tqq" path="res://resources/items/spyglass.tres" id="5_spyglass"]
 
 [sub_resource type="Resource" id="Resource_hvwbg"]
 script = ExtResource("3_w20er")

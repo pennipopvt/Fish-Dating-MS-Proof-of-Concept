@@ -33,7 +33,7 @@ func _run_test() -> void:
 	# normal transfer path without a missing-home warning.
 	var temporary_home: Sprite2D = Sprite2D.new()
 	get_root().add_child(temporary_home)
-	RecruitmentHandler.available_homes.append(temporary_home)
+	RecruitmentHandler.register_available_home(temporary_home)
 
 	var npc_id: StringName = actor.npc.npc_id
 	var had_npc_state: bool = NPCManager.npc_states.has(npc_id)
@@ -41,22 +41,68 @@ func _run_test() -> void:
 	var flags: Dictionary = NPCManager.get_npc_state(npc_id)["flags"]
 	flags.erase(&"Recruited")
 
-	# Simply catching and talking to an NPC must not remove them.
+	# Declining keeps the fish catchable, but despawns the temporary actor.
 	RecruitmentHandler.engage_listen(actor, SILAS)
 	DialogueManager.conversation_finished.emit(actor.npc)
 	_expect(FishingManager.possible_catches.size() == 4, "declining recruitment keeps NPC in catch pool")
 	_expect(FishingManager.get_bait_odds(null).has(SILAS), "unrecruited NPC still appears in bait odds")
+	_expect(actor.is_queued_for_deletion(), "declined NPC is removed from world to avoid duplicates")
+	_expect(not RecruitmentHandler.listening and RecruitmentHandler.pending_fish == null, "declined recruitment clears its listener")
 
-	# Successful recruitment removes all entries for this scene, even if
-	# multiple variants or duplicate entries are in the pool.
+	# A newly caught instance can now be recruited normally.
+	var recruited_actor: NPCInteractable = NPC_SCENE.instantiate() as NPCInteractable
+	get_root().add_child(recruited_actor)
 	flags[&"Recruited"] = true
-	RecruitmentHandler.engage_listen(actor, SILAS)
-	DialogueManager.conversation_finished.emit(actor.npc)
+	RecruitmentHandler.engage_listen(recruited_actor, SILAS)
+	DialogueManager.conversation_finished.emit(recruited_actor.npc)
 	_expect(FishingManager.possible_catches.size() == 1, "recruitment removes every matching NPC entry")
 	_expect(FishingManager.possible_catches[0] == NORMAL_FISH, "normal fish remains catchable")
 	_expect(not FishingManager.get_bait_odds(null).has(SILAS), "recruited NPC disappears from bait odds")
 	_expect(not FishingManager.get_bait_odds(null).has(same_npc), "all NPC variants disappear from odds")
 	_expect(FishingManager.get_random_catch() == NORMAL_FISH, "only remaining normal fish can be hooked")
+	await get_tree().create_timer(RecruitmentHandler.time_to_transfer + 0.1).timeout
+	_expect(recruited_actor.global_position.is_equal_approx(temporary_home.global_position), "recruited NPC is moved to the reserved home")
+	_expect(not RecruitmentHandler.available_homes.has(temporary_home), "occupied home is no longer available")
+
+	# Fill the queue when both initial houses are used. They should remain
+	# interactive by the dock, and the accepted fish must remain out of the pool.
+	var dock := Node2D.new()
+	dock.name = "Dock"
+	dock.global_position = Vector2(40.0, 92.0)
+	get_root().add_child(dock)
+	var homeless_actor: NPCInteractable = NPC_SCENE.instantiate() as NPCInteractable
+	get_root().add_child(homeless_actor)
+	RecruitmentHandler.engage_listen(homeless_actor, SILAS)
+	DialogueManager.conversation_finished.emit(homeless_actor.npc)
+	_expect(not homeless_actor.is_queued_for_deletion(), "accepted NPC stays in world when houses are full")
+	_expect(RecruitmentHandler.waiting_npcs.size() == 1 and RecruitmentHandler.waiting_npcs[0] == homeless_actor, "first accepted NPC joins waiting queue")
+	_expect(homeless_actor.global_position.distance_to(dock.global_position) < 50.0, "waiting NPC is positioned near dock")
+	_expect(RecruitmentHandler.npc == null and not RecruitmentHandler.listening, "no-home path clears pending listener")
+
+	var second_waiter: NPCInteractable = NPC_SCENE.instantiate() as NPCInteractable
+	get_root().add_child(second_waiter)
+	RecruitmentHandler.engage_listen(second_waiter, SILAS)
+	DialogueManager.conversation_finished.emit(second_waiter.npc)
+	_expect(RecruitmentHandler.waiting_npcs.size() == 2, "multiple accepted NPCs queue without overwriting one another")
+	_expect(not second_waiter.global_position.is_equal_approx(homeless_actor.global_position), "queued NPCs have separate dock positions")
+
+	# Simulate a newly constructed house: it should go to the first waiter.
+	var new_home := Sprite2D.new()
+	new_home.global_position = Vector2(500.0, 100.0)
+	get_root().add_child(new_home)
+	RecruitmentHandler.register_available_home(new_home)
+	_expect(RecruitmentHandler.waiting_npcs.size() == 1 and RecruitmentHandler.waiting_npcs[0] == second_waiter, "the first waiter is served first")
+	await get_tree().create_timer(RecruitmentHandler.time_to_transfer + 0.1).timeout
+	_expect(homeless_actor.global_position.is_equal_approx(new_home.global_position), "first waiter automatically moves into new house")
+	_expect(second_waiter.global_position.distance_to(dock.global_position) < 60.0, "second NPC keeps waiting by dock")
+
+	# Simulate the original house being vacated. The next waiter moves in.
+	recruited_actor.global_position = Vector2(-40.0, 0.0)
+	RecruitmentHandler.register_available_home(temporary_home)
+	await get_tree().create_timer(RecruitmentHandler.time_to_transfer + 0.1).timeout
+	_expect(second_waiter.global_position.is_equal_approx(temporary_home.global_position), "next waiter automatically moves into vacated house")
+	_expect(RecruitmentHandler.waiting_npcs.is_empty(), "queue drains after houses become available")
+	_expect(not RecruitmentHandler.available_homes.has(new_home), "occupied house is never left in available pool")
 
 	# An ordinary non-NPC fish must never be deleted by this API.
 	FishingManager.remove_recruited_catch(NORMAL_FISH)
@@ -69,8 +115,14 @@ func _run_test() -> void:
 	else:
 		NPCManager.npc_states.erase(npc_id)
 	RecruitmentHandler.available_homes.erase(temporary_home)
+	RecruitmentHandler.reset_runtime_state()
 	temporary_home.queue_free()
+	new_home.queue_free()
+	dock.queue_free()
 	actor.queue_free()
+	recruited_actor.queue_free()
+	homeless_actor.queue_free()
+	second_waiter.queue_free()
 
 	print("FAILED: %d" % failures if failures > 0 else "All recruitment pool tests passed")
 	quit(1 if failures > 0 else 0)

@@ -1,0 +1,43 @@
+{
+  "entry": "offer",
+  "nodes": {
+    "offer": {
+      "lines": [
+        {
+          "speaker": "player",
+          "text": "Well, it's getting a little cold, and I realized I had this extra scarf if you want it."
+        }
+      ],
+      "choices": [
+        {
+          "text": "Here, take it.",
+          "next": "accept",
+          "effects": {
+            "give_held_item": true
+          }
+        },
+        {
+          "text": "Actually, never mind.",
+          "next": "decline"
+        }
+      ]
+    },
+    "accept": {
+      "lines": [
+        "I don't want your trash...",
+        "...",
+        "But I guess I'll take it so you feel better about yourself.",
+        {
+          "speaker": "player",
+          "text": "Aww, you're welcome!"
+        },
+        "Shut up."
+      ]
+    },
+    "decline": {
+      "lines": [
+        "Suit yourself."
+      ]
+    }
+  }
+}

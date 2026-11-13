@@ -1,0 +1,28 @@
+[gd_resource type="Resource" script_class="TradeData" format=3]
+
+[ext_resource type="Script" path="res://resources/trade_data.gd" id="1_trade"]
+[ext_resource type="Script" path="res://resources/trade_requirement.gd" id="2_req"]
+[ext_resource type="Resource" path="res://resources/items/easy_test_fish_item.tres" id="3_easy"]
+[ext_resource type="Resource" path="res://resources/items/hard_test_fish_item.tres" id="4_hard"]
+[ext_resource type="Texture2D" path="res://sprites/gifts/barracuda_sunglasses.svg" id="5_icon"]
+[ext_resource type="Resource" path="res://resources/items/barracuda_sunglasses.tres" id="6_gift"]
+
+[sub_resource type="Resource" id="EasyCost"]
+script = ExtResource("2_req")
+item = ExtResource("3_easy")
+amount = 1
+
+[sub_resource type="Resource" id="HardCost"]
+script = ExtResource("2_req")
+item = ExtResource("4_hard")
+amount = 1
+
+[resource]
+script = ExtResource("1_trade")
+trade_id = &"barracuda_sunglasses"
+display_name = "Sunglasses (placeholder)"
+description = "A sleek pair of sunglasses for Barracuda. Gift choice is provisional. 1 day delivery."
+icon = ExtResource("5_icon")
+delivery_time = 1
+requirements = Array[ExtResource("2_req")]([SubResource("EasyCost"), SubResource("HardCost")])
+reward_item = ExtResource("6_gift")

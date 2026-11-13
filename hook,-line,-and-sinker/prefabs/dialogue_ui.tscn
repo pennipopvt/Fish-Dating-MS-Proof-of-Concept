@@ -4,7 +4,7 @@
 [ext_resource type="Texture2D" uid="uid://b4koaria87fbv" path="res://sprites/placeholders/portrait.svg" id="2_portrait"]
 [ext_resource type="Texture2D" uid="uid://ca1xd1qpk4ajr" path="res://sprites/placeholders/portrait_player.svg" id="3_player"]
 [ext_resource type="Texture2D" uid="uid://vu47883rgrp5" path="res://sprites/characters/penni/penni_portrait.png" id="4_ln1m7"]
-[ext_resource type="Texture2D" uid="uid://raysrsoqufps" path="res://sprites/characters/garden_eel_portrait.png" id="5_mmh5p"]
+[ext_resource type="Texture2D" uid="uid://cv7xybodbo8pe" path="res://sprites/characters/barracuda.png" id="5_ln1m7"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_choice_focus"]
 draw_center = false
@@ -81,10 +81,10 @@ unique_name_in_owner = true
 anchors_preset = -1
 anchor_top = 1.0
 anchor_bottom = 1.0
-offset_left = -194.0
-offset_top = -972.0
-offset_right = 1175.0
-offset_bottom = 567.0
+offset_left = -173.0
+offset_top = -955.0
+offset_right = 1196.0
+offset_bottom = 584.0
 grow_vertical = 0
 mouse_filter = 2
 texture = ExtResource("4_ln1m7")
@@ -98,14 +98,14 @@ anchor_left = 1.0
 anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = -840.0
-offset_top = -990.0
-offset_right = 9.0
-offset_bottom = 500.0
+offset_left = -811.0
+offset_top = -1075.0
+offset_right = 38.0
+offset_bottom = 415.0
 grow_horizontal = 0
 grow_vertical = 0
 mouse_filter = 2
-texture = ExtResource("5_mmh5p")
+texture = ExtResource("5_ln1m7")
 expand_mode = 1
 stretch_mode = 5
 
