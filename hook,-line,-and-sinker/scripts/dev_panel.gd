@@ -11,6 +11,7 @@ const SILAS_ID: StringName = &"test_npc"
 const SILAS_NPC_PATH := "res://resources/npcs/test_npc.tres"
 const SILAS_FISH_PATH := "res://resources/fish/test_silas.tres"
 const SPYGLASS_PATH := "res://resources/items/spyglass.tres"
+const ASK_OUT_PATH := "res://dialogue/silas_ask_out.json"
 const ITEMS_DIR := "res://resources/items/"
 const FISH_DIR := "res://resources/fish/"
 const DIALOGUE_DIR := "res://dialogue/"
@@ -307,6 +308,49 @@ func _checkpoint(id: String) -> void:
 			_say("Silas route complete; Silas bobber unlocked")
 
 
+# ---- Dates ---------------------------------------------------------------
+
+func _ask_silas_out() -> void:
+	NPCManager.get_npc_state(SILAS_ID)["flags"][&"Recruited"] = true
+	var silas := _spawn_silas(true)
+	if silas == null:
+		return
+	hide()
+	if DialogueManager.is_active:
+		DialogueManager.end_conversation()
+	await get_tree().process_frame
+	await get_tree().process_frame
+	DialogueManager.request_conversation(silas.npc, ASK_OUT_PATH)
+	_say("Asking Silas out" if DialogueManager.is_active else "Could not start the ask-out talk")
+
+
+# accept: what saying yes does (start now with clock jump, or book).
+# Otherwise starts the date right away, ignoring its timing.
+func _date_action(date: DateData, accept: bool) -> void:
+	NPCManager.get_npc_state(SILAS_ID)["flags"][&"Recruited"] = true
+	_spawn_silas(true)
+	hide()
+	if DialogueManager.is_active:
+		DialogueManager.end_conversation()
+	await get_tree().process_frame
+	await get_tree().process_frame
+	if accept:
+		DateManager.accept(date)
+	else:
+		DateManager.start_date(date)
+	_say("%s: %s" % [date.display_name, ("booked for " + DateManager.describe_booking(date)) if DateManager.is_booked(date) else "started"])
+
+
+func _reset_dates() -> void:
+	for date: DateData in DateManager.dates.values():
+		DateManager.cancel_booking(date)
+		if date.npc != null:
+			var flags: Dictionary = NPCManager.get_npc_state(date.npc.npc_id)["flags"]
+			flags.erase(date.get_completed_flag())
+			flags.erase(date.get_missed_flag())
+	_say("Date bookings and done/missed flags cleared")
+
+
 func _play_json(path: String) -> void:
 	hide()
 	if DialogueManager.is_active:
@@ -526,6 +570,18 @@ func _info_world() -> String:
 		t += "Active with %s  node [b]%s[/b]  line %d  awaiting choice %s\n" % [npc.display_name if npc != null else "?", str(DialogueManager.get("_node_id")), DialogueManager.line_index, _onoff(DialogueManager.is_awaiting_choice())]
 	else:
 		t += "No conversation\n"
+
+	t += _h("Dates")
+	if DateManager.is_active():
+		t += "A date is running
+"
+	if DateManager.bookings.is_empty():
+		t += "No bookings
+"
+	for id in DateManager.bookings:
+		var booked := DateManager.get_date(id)
+		t += "%s: %s at %s
+" % [booked.display_name, DateManager.describe_booking(booked), booked.location_id]
 
 	t += _h("Recruitment")
 	t += "Listening: %s   Free houses: %d\n" % [_onoff(RecruitmentHandler.listening), RecruitmentHandler.available_homes.size()]
@@ -800,6 +856,15 @@ func _build_dialogue_tab() -> void:
 	for entry in checkpoints:
 		var id: String = entry[1]
 		_button(box, entry[0], func() -> void: _checkpoint(id))
+
+	_heading(box, "Dates with Silas (ask-out is dev-only for now)")
+	_button(box, "Ask Silas out (sets Recruited, spawns Silas, opens the ask-out talk)", _ask_silas_out)
+	for date: DateData in DateManager.get_dates_for(SILAS_ID):
+		var date_row := _row(box)
+		date_row.add_child(PixelUI.label(date.display_name, &"DimLabel"))
+		_button(date_row, "Accept (as if yes)", func() -> void: _date_action(date, true))
+		_button(date_row, "Start here now", func() -> void: _date_action(date, false))
+	_button(box, "Clear date bookings + done/missed flags", _reset_dates)
 
 	_heading(box, "Play any dialogue JSON as Silas (flags untouched)")
 	var row := _row(box)

@@ -1,0 +1,45 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/date_location.gd" id="1_loc"]
+[ext_resource type="PackedScene" uid="uid://d4fhg8uyom630" path="res://prefabs/interact_prompt.tscn" id="2_prompt"]
+[ext_resource type="FontFile" path="res://fonts/pixel_operator(1)/PixelOperator8.ttf" id="3_font"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_ship"]
+size = Vector2(56, 30)
+
+[node name="Ship" type="Area2D" node_paths=PackedStringArray("prompt")]
+z_index = 1
+script = ExtResource("1_loc")
+location_id = &"ship"
+prompt = NodePath("InteractPrompt")
+
+[node name="PlaceholderHull" type="Polygon2D" parent="."]
+color = Color(0.55, 0.35, 0.2, 1)
+polygon = PackedVector2Array(-30, -10, 30, -10, 0, 12)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(0, -24)
+shape = SubResource("RectangleShape2D_ship")
+
+[node name="PlayerSpot" type="Marker2D" parent="."]
+position = Vector2(-10, -10)
+
+[node name="NpcSpot" type="Marker2D" parent="."]
+position = Vector2(12, -26)
+
+[node name="InteractPrompt" parent="." instance=ExtResource("2_prompt")]
+position = Vector2(0, -48)
+
+[node name="Sign" type="Label" parent="."]
+visible = false
+offset_left = -50.0
+offset_top = -80.0
+offset_right = 50.0
+offset_bottom = -60.0
+theme_override_colors/font_color = Color(1, 0.95, 0.75, 1)
+theme_override_colors/font_outline_color = Color(0.08, 0.08, 0.12, 1)
+theme_override_constants/outline_size = 3
+theme_override_fonts/font = ExtResource("3_font")
+theme_override_font_sizes/font_size = 8
+horizontal_alignment = 1
+vertical_alignment = 2

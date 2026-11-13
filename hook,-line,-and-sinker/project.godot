@@ -24,6 +24,7 @@ ShopManager="*uid://o4toft746f7g"
 RecruitmentHandler="*uid://1gjuorwy1m0v"
 ChallengeManager="*res://scenes/challenge_manager.tscn"
 BobberManager="*res://scripts/bobber_manager.gd"
+DateManager="*res://scripts/date_manager.gd"
 DevPanel="*res://prefabs/dev_panel.tscn"
 
 [display]

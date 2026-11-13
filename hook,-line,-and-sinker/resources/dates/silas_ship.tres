@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="DateData" format=3]
+
+[ext_resource type="Script" path="res://resources/date_data.gd" id="1_date"]
+[ext_resource type="Resource" uid="uid://cpv5vnhg17vg8" path="res://resources/npcs/test_npc.tres" id="2_npc"]
+
+[resource]
+script = ExtResource("1_date")
+date_id = &"silas_ship"
+display_name = "Boat date with Silas"
+npc = ExtResource("2_npc")
+location_id = &"ship"
+dialogue_json = "res://dialogue/silas_date_ship.json"
+periods = 4
+when = 1
+required_flags = Array[StringName]([&"Recruited"])
+attraction_change = 1

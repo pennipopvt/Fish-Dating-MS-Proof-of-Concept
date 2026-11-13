@@ -37,11 +37,11 @@ Debug builds only (not in exports):
 
 **Dev panel (F9)** (`prefabs/dev_panel.tscn`, autoload `DevPanel`). Tabs:
 - **Info:** live state in four subtabs.
-  - **World:** time, player, dialogue node, recruitment.
+  - **World:** time, player, dialogue node, date bookings, recruitment.
   - **NPCs:** flags, attraction, next encounter.
   - **Fishing:** cast state, storage, catch dex, bobbers.
   - **Progress:** upgrades, challenges.
-- **Talk:** Silas story checkpoints, which set flags, spawn him and open the talk; or play any `dialogue/*.json`. Day clock: spend 1 action, or rest (same as the bed).
+- **Talk:** Silas story checkpoints, which set flags, spawn him and open the talk; or play any `dialogue/*.json`. **Dates:** "Ask Silas out" opens the ask-out talk (the only way to trigger it for now); per date, "Accept" does what saying yes does and "Start here now" runs the date right away; plus a reset for bookings and done/missed flags. Day clock: spend 1 action, or rest (same as the bed).
 - **Items:** put any item in your hands or storage.
 - **Progress:** complete or reset challenges, grant or reset upgrades, reset everything.
 - **Flags:** edit flags and attraction.
@@ -88,6 +88,29 @@ Debug builds only (not in exports):
   (for example a future NPC hangout) can cost time with `GameManager.spend_actions(n)`.
   Interactables that cost time return `true` from `spends_time()`. The recruitment
   talk right after catching an NPC fish always happens, even at the end of night.
+- **Dates (prototype, Silas only):** `DateManager` autoload + `DateData` resources
+  in `resources/dates/` (one `.tres` per date, loaded automatically). Each date sets
+  its NPC, place (`location_id`), dialogue JSON, **periods** it can happen in (none
+  ticked = any time), and **when**: `NOW` starts right after the NPC says yes
+  (with `jump_clock` on, the clock skips forward to the next allowed period, like
+  resting; off, the date can only be asked for during an allowed period) or
+  `SCHEDULED` books the next allowed period (`days_ahead` pushes it to later days),
+  and Penni has to show up at the place during that period and interact with it.
+  A missed booking sets `date_missed_<id>`. Requirements: `required_flags`,
+  `forbidden_flags`, optional min attraction, `repeatable`. Result: sets
+  `date_done_<id>` (or `completed_flag`), `flags_to_set`, `attraction_change`, and
+  `extra_action_cost` on top of the 1 action every talk costs.
+  **Asking out:** `dialogue/silas_ask_out.json` (dev panel only for now). Each choice
+  is shown only when the flag `date_ok_<id>` is on (DateManager sets these when any
+  conversation starts) and requests the scene `date:<id>`. When no date is available,
+  the talk follows its `next` to a "not now" line.
+  **The date:** fade out, Penni and the NPC move to the place's `PlayerSpot` /
+  `NpcSpot`, the date JSON plays, then fade back and both return. Places are
+  `DateLocation` interactables (`prefabs/beach.tscn`, a yellow triangle right of the
+  bed; `prefabs/ship.tscn`, an upside-down triangle on the water past the beach);
+  a booked place shows a sign with the date and time. Current data: beach =
+  NOW, afternoon only (jumps the clock); ship = SCHEDULED, night. All lines are
+  TODO placeholders. Bookings and flags live in memory only.
 - **UI:** visual-novel style dialogue UI, shop menu, bait menu, interact prompt.
 - **Player** movement on the dock, plus interactables for NPCs and the shop.
 - **Fishing rod (visual only):** `prefabs/fishing_rod.tscn` on the player. When you
@@ -115,7 +138,9 @@ never drives another system's nodes directly. Reading a manager's state for disp
 | `upgrade_state_changed` | `ShopManager.collect_upgrade` (upgrade package picked up) | shop menu |
 | `state_changed(from, to)` | `FishingController` | `FishingRod` (deferred) |
 | `fish_caught` / `fish_lost`, `conversation_finished` | `FishingManager`, `DialogueManager` | `GameManager` (spends 1 action) |
-| `time_changed(day, time)` / `day_started(day)` / `actions_changed(remaining)` / `actions_exhausted` | `GameManager` | nothing yet (for a future clock display, daily delivery, and so on) |
+| `time_changed(day, time)` / `day_started(day)` / `actions_changed(remaining)` / `actions_exhausted` | `GameManager` | `DateManager` (expires missed bookings), `DateLocation` signs |
+| `scene_requested(npc, "date:<id>")` | `DialogueManager` (JSON effect `request_scene`) | `DateManager` (starts or books the date) |
+| `date_booked` / `date_started` / `date_finished` / `date_missed` / `bookings_changed` | `DateManager` | `DateLocation` (`bookings_changed`); the rest are for future UI |
 
 Change storage only through `FishingManager.add_to_storage` / `remove_from_storage`,
 so listeners hear about it. With no terminal in the scene (nobody listening to
@@ -130,10 +155,11 @@ unlocked gear, corporate storage/delivery, fish-person recruitment, houses.
 hook,-line,-and-sinker/
   scenes/      main.tscn, dock, manager scenes
   prefabs/     player, world, dock, shop, test_npc, dialogue_ui, shop_menu,
-               interact_prompt, bait_box, bait_menu, fishing_rod, dev_panel
+               interact_prompt, bait_box, bait_menu, fishing_rod, dev_panel,
+               beach, ship (date places)
   scripts/     managers, player, interactables, UI scripts
   resources/   Resource classes (*.gd) and data (*.tres in fish/, items/, npcs/,
-               trades/, bait/)
+               trades/, bait/, dates/)
   sprites/     placeholders/ — temporary art (fish_a/b.png tinted fish,
                bait_a/b.png bait icons, bait_box.png)
   tests/       headless debug tests (see below)
