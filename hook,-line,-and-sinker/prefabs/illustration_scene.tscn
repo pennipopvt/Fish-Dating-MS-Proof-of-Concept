@@ -35,7 +35,25 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 1
-color = Color(0.16, 0.2, 0.25, 1)
+color = Color(0, 0, 0, 1)
+
+[node name="PlaceholderImage" type="TextureRect" parent="Background"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -176.0
+offset_top = -300.0
+offset_right = 176.0
+offset_bottom = 52.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 5
+visible = false
 
 [node name="PlaceholderLabel" type="Label" parent="Background" unique_id=2043233632]
 layout_mode = 1
@@ -44,10 +62,11 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_font_sizes/font_size = 52
+theme_override_font_sizes/font_size = 32
+visible = false
 text = "Illustration placeholder"
 horizontal_alignment = 1
-vertical_alignment = 1
+vertical_alignment = 2
 
 [node name="WarningScreen" type="ColorRect" parent="." unique_id=2002475697]
 visible = false
@@ -97,7 +116,7 @@ theme_override_font_sizes/font_size = 32
 theme_override_styles/normal = SubResource("StyleBoxFlat_show")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_show_pressed")
 theme_override_styles/hover = SubResource("StyleBoxFlat_show_hover")
-text = "Let me see the porn"
+text = "Continue (black screen)"
 
 [node name="FadeLayer" type="CanvasLayer" parent="." unique_id=794095072]
 layer = 20

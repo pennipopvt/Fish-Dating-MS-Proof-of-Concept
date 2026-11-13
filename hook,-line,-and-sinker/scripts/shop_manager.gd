@@ -68,6 +68,27 @@ func collect_upgrade(trade: TradeData) -> void:
 		upgrade_state_changed.emit(trade)
 
 
+# The manager owns purchase state; the world only owns physical pickups.
+# Rebuild uncollected one-time upgrade packages when a world scene reloads.
+# Item gifts are not reconstructed here (their delivery history is not tracked).
+func get_pending_upgrade_pickups() -> Array[ItemPickup]:
+	var pickups: Array[ItemPickup] = []
+	var seen: Array[StringName] = []
+	for id in pending_upgrade_ids:
+		if seen.has(id) or FishingManager.has_upgrade(id):
+			continue
+		seen.append(id)
+		for trade in trades:
+			if trade == null or not trade.one_time_purchase or trade.trade_id != id:
+				continue
+			if trade.reward_method != &"":
+				var package := UpgradePickup.new()
+				package.trade = trade
+				pickups.append(package)
+			break
+	return pickups
+
+
 func can_trade(trade: TradeData) -> bool:
 	if trade == null or not trades.has(trade):
 		return false

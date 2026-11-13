@@ -1,0 +1,44 @@
+[gd_resource type="Resource" script_class="NPCData" format=3 uid="uid://ly4h7n7wbqqi"]
+
+[ext_resource type="Script" uid="uid://vn5y8742mwkg" path="res://resources/npc_flag_data.gd" id="1_ic437"]
+[ext_resource type="Script" uid="uid://cus4an4jfkhwc" path="res://resources/npc_data.gd" id="1_npc"]
+[ext_resource type="Script" uid="uid://bh6g5wfjnt8fm" path="res://resources/encounter_rule_data.gd" id="2_rule"]
+[ext_resource type="Script" uid="uid://ejskb8h4mfwk" path="res://resources/npc_dialogue_rule_data.gd" id="3_kuwgt"]
+[ext_resource type="Texture2D" uid="uid://bv41gk34hgl5s" path="res://sprites/placeholders/placeholderhousegood.png" id="4_house"]
+[ext_resource type="Resource" path="res://resources/items/barracuda_scarf.tres" id="5_gift"]
+[ext_resource type="Texture2D" uid="uid://cv7xybodbo8pe" path="res://sprites/characters/barracuda.png" id="6_2m545"]
+
+[sub_resource type="Resource" id="Rule_invitation"]
+script = ExtResource("2_rule")
+json_path = "res://dialogue/barracuda_invitation.json"
+required_flags = Array[StringName]([&"Recruited", &"barracuda_scarf_complete"])
+forbidden_flags = Array[StringName]([&"barracuda_invitation_accepted"])
+
+[sub_resource type="Resource" id="Rule_casual"]
+script = ExtResource("2_rule")
+json_path = "res://dialogue/barracuda_casual.json"
+required_flags = Array[StringName]([&"Recruited"])
+
+[sub_resource type="Resource" id="Rule_retry"]
+script = ExtResource("2_rule")
+json_path = "res://dialogue/barracuda_second_catch.json"
+required_flags = Array[StringName]([&"barracuda_met"])
+forbidden_flags = Array[StringName]([&"Recruited"])
+
+[sub_resource type="Resource" id="Rule_first"]
+script = ExtResource("2_rule")
+json_path = "res://dialogue/barracuda_first_catch.json"
+forbidden_flags = Array[StringName]([&"Recruited"])
+
+[resource]
+script = ExtResource("1_npc")
+npc_id = &"barracuda"
+display_name = "Barracuda"
+portrait = ExtResource("6_2m545")
+house = ExtResource("4_house")
+encounter_rules = Array[ExtResource("2_rule")]([SubResource("Rule_invitation"), SubResource("Rule_casual"), SubResource("Rule_retry"), SubResource("Rule_first")])
+desired_gift = ExtResource("5_gift")
+correct_gift_json = "res://dialogue/barracuda_gift_correct.json"
+incorrect_gift_json_pool = Array[String](["res://dialogue/barracuda_gift_wrong.json"])
+gift_completed_flag = &"barracuda_scarf_complete"
+dialogue_json_path = "res://dialogue/barracuda_first_catch.json"

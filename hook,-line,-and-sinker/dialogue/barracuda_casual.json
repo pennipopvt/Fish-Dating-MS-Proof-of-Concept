@@ -1,0 +1,67 @@
+{
+  "entry": "greeting",
+  "nodes": {
+    "greeting": {
+      "lines": [
+        "Hey."
+      ],
+      "choices": [
+        {
+          "text": "How are you liking it up here?",
+          "next": "land"
+        },
+        {
+          "text": "So why'd you get yourself caught?",
+          "next": "caught"
+        },
+        {
+          "text": "See you later!",
+          "next": "goodbye"
+        }
+      ]
+    },
+    "land": {
+      "lines": [
+        "It's alright.",
+        "I don't know how you can stand being out here all day."
+      ],
+      "next": "wind_question"
+    },
+    "wind_question": {
+      "lines": [
+        {
+          "speaker": "player",
+          "text": "What do you mean?"
+        },
+        "You're just sitting around with the wind blowing on you.",
+        "Doesn't seem very comfortable."
+      ],
+      "effects": {
+        "set_flags": [
+          "barracuda_wind_hint"
+        ]
+      }
+    },
+    "caught": {
+      "lines": [
+        "Tch. Guess I was just off that day."
+      ],
+      "next": "caught_tease"
+    },
+    "caught_tease": {
+      "lines": [
+        {
+          "speaker": "player",
+          "text": "Can't believe you got caught by ME! HAHA!"
+        },
+        "Yeah, yeah. Laugh it up.",
+        "It's not happening again."
+      ]
+    },
+    "goodbye": {
+      "lines": [
+        "Later."
+      ]
+    }
+  }
+}

@@ -38,17 +38,25 @@ var miss_tension_reduction: float = 0.0
 
 @export_category("Fishing Stats")
 @export var max_casts_per_session: int = 3
+var _starting_max_casts_per_session: int = 3
 
 func _ready() -> void:
-	# A fresh launch starts with no purchases or bonus bait unlocked.
-	# The fishing manager is an autoload and keeps these during this run.
+	_starting_max_casts_per_session = max_casts_per_session
+	reset_session_upgrades()
+
+# One canonical reset for session-only equipment/bait. Dev tools call this
+# instead of duplicating upgrade field names and accidentally leaving bonuses.
+func reset_session_upgrades() -> void:
 	owned_upgrade_ids.clear()
 	unlocked_bait_ids.clear()
 	unlocked_bait_ids.append(BASIC_BAIT_ID)
 	reel_progress_bonus = 0.0
 	reel_tension_reduction = 0.0
 	miss_tension_reduction = 0.0
+	max_casts_per_session = _starting_max_casts_per_session
 	equipped_bait = _find_bait(BASIC_BAIT_ID)
+	bait_changed.emit(equipped_bait)
+	upgrades_changed.emit()
 
 
 func _find_bait(id: StringName) -> BaitData:

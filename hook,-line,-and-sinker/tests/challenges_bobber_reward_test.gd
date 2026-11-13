@@ -90,6 +90,29 @@ func _run_tests() -> void:
 		_expect(not fresh.equip_bobber(&"silas"), "relaunch cannot equip Silas")
 		fresh.free()
 
+	# Barracuda's Knife starts locked, is earned from his post-scene
+	# dialogue, and has a half-length opening stun with no parry event.
+	var barracuda_id: StringName = &"barracuda"
+	var had_barracuda_state := NPCManager.npc_states.has(barracuda_id)
+	var prior_barracuda_state: Dictionary = NPCManager.get_npc_state(barracuda_id).duplicate(true)
+	var barracuda_flags: Dictionary = NPCManager.get_npc_state(barracuda_id)["flags"]
+	barracuda_flags.erase(&"barracuda_route_complete")
+	var knife: BobberData = bobber_manager.get_bobber(&"barracuda")
+	_expect(knife != null, "Barracuda's Knife bobber is registered")
+	if knife != null:
+		_expect(is_equal_approx(knife.opening_stun_fraction, 0.5), "Knife stuns for half the selected fish's stun time")
+		_expect(not bobber_manager.unlock_bobber(&"barracuda"), "Knife cannot unlock before Barracuda route completes")
+		barracuda_flags[&"barracuda_route_complete"] = true
+		_expect(bobber_manager.unlock_bobber(&"barracuda"), "Knife unlocks when Barracuda route completes")
+		_expect(bobber_manager.equip_bobber(&"barracuda"), "Knife can be equipped after reward")
+		_expect(bobber_manager.get_equipped_bobber() == knife, "Equipped bobber uses Knife ability")
+		barracuda_flags.erase(&"barracuda_route_complete")
+		_expect(bobber_manager.get_equipped_bobber() != knife, "An unearned Knife cannot remain active")
+	if had_barracuda_state:
+		NPCManager.npc_states[barracuda_id] = prior_barracuda_state
+	else:
+		NPCManager.npc_states.erase(barracuda_id)
+
 	if had_npc_state:
 		NPCManager.npc_states[npc_id] = original_state
 	else:

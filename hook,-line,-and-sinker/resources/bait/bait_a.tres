@@ -10,6 +10,7 @@ display_name = "Easy Fish Bait"
 icon = ExtResource("2_icon")
 description = "A gentle lure that attracts easy fish. Hard fish very rarely bite."
 catch_weights = Dictionary[StringName, float]({
+&"barracuda": 0.12,
 &"easy_test_fish": 10.0,
 &"hard_test_fish": 0.35,
 &"test_silas": 0.3
