@@ -37,8 +37,7 @@ var _date_day: int = 0
 var _date_period: int = 0
 # [[Node2D, Vector2 global position], ...] to put back after the date.
 var _restore: Array = []
-var _fade_layer: CanvasLayer
-var _fade: ColorRect
+var _fade: ScreenFade
 
 
 func _ready() -> void:
@@ -325,24 +324,9 @@ func _on_scene_requested(_npc: NPCData, scene_id: String) -> void:
 # --- Fade ---
 
 func _build_fade() -> void:
-	_fade_layer = CanvasLayer.new()
-	_fade_layer.layer = 20
-	_fade_layer.hide()
-	# Blocks player input while the screen is dark (GameManager.is_modal_ui_open).
-	_fade_layer.add_to_group(&"modal_ui")
-	add_child(_fade_layer)
-	_fade = ColorRect.new()
-	_fade.color = Color.BLACK
-	_fade.modulate.a = 0.0
-	_fade.mouse_filter = Control.MOUSE_FILTER_STOP
-	_fade.set_anchors_preset(Control.PRESET_FULL_RECT)
-	_fade_layer.add_child(_fade)
+	_fade = ScreenFade.new()
+	add_child(_fade)
 
 
 func _fade_to(alpha: float) -> void:
-	_fade_layer.show()
-	var tween := create_tween()
-	tween.tween_property(_fade, "modulate:a", alpha, FADE_DURATION)
-	await tween.finished
-	if alpha <= 0.0:
-		_fade_layer.hide()
+	await _fade.fade_to(alpha, FADE_DURATION)

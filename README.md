@@ -77,6 +77,8 @@ Debug builds only (not in exports):
   rests. **Bed** (`prefabs/bed.tscn`, a blank placeholder box right of the houses):
   `GameManager.rest()` skips to the next period with fresh actions (night → next
   day's morning). It's free and works any time, with no real-time timer.
+  Sleeping through the night fades the screen to black and back in (`ScreenFade`,
+  `scripts/screen_fade.gd`, also used by dates); resting during the day is instant.
   **Reading the clock:** shop/delivery rules, fish availability and NPC availability
   should call `GameManager.get_day()`, `get_period()`, `is_period(GameManager.Times.NIGHT)`,
   `get_period_name()`, `get_actions_left()`, or listen to `time_changed`. Values are
