@@ -16,7 +16,6 @@ trade_id = &"yellow_bait"
 display_name = "Yellow Bait"
 description = "A bright yellow bait that makes bottom-dwelling fish more likely to bite. 1 day delivery."
 one_time_purchase = true
-upgrade = true
 icon = ExtResource("4")
 delivery_time = 1
 requirements = Array[ExtResource("2")]([SubResource("cost")])

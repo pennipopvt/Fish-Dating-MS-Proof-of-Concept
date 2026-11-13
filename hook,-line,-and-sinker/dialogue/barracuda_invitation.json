@@ -1,45 +1,45 @@
 {
   "entry": "intro",
   "nodes": {
-    "intro": {
-      "lines": [
-        "Hey. You busy?",
-        {
-          "speaker": "player",
-          "text": "Why? You wanna spend time with me?"
-        },
-        "Tch. Don't make it weird.",
+	"intro": {
+	  "lines": [
+		"Hey. You busy?",
+		{
+		  "speaker": "player",
+		  "text": "Why? You wanna spend time with me?"
+		},
+		"Tch. Don't make it weird.",
         "I just figured you might wanna come over."
-      ],
-      "choices": [
-        {
-          "text": "I'd love to come over!",
-          "next": "accept",
-          "effects": {
-            "set_flags": [
+	  ],
+	  "choices": [
+		{
+		  "text": "I'd love to come over!",
+		  "next": "accept",
+		  "effects": {
+			"set_flags": [
               "barracuda_invitation_accepted"
-            ]
-          }
-        },
-        {
-          "text": "Maybe another time.",
-          "next": "decline"
-        }
-      ]
-    },
-    "accept": {
-      "lines": [
-        "...Cool.",
+			]
+		  }
+		},
+		{
+		  "text": "Maybe another time.",
+		  "next": "decline"
+		}
+	  ]
+	},
+	"accept": {
+	  "lines": [
+		"...Cool.",
         "Well, come on then."
-      ],
-      "effects": {
-        "request_scene": "barracuda_house"
-      }
-    },
-    "decline": {
-      "lines": [
+	  ],
+	  "effects": {
+		"request_scene": "barracuda_house"
+	  }
+	},
+	"decline": {
+	  "lines": [
         "...Sure. Another time, then."
-      ]
-    }
+	  ]
+	}
   }
 }

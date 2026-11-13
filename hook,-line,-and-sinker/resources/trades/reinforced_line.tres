@@ -14,7 +14,6 @@ script = ExtResource("1")
 trade_id = &"reinforced_line"
 display_name = "Reinforced Line"
 description = "Subtracts 0.5% tension per reel and 4% per missed-parry dash. 1 day delivery."
-upgrade = true
 icon = ExtResource("4")
 delivery_time = 1
 requirements = Array[ExtResource("2")]([SubResource("cost")])

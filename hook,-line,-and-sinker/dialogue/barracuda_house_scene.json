@@ -1,61 +1,61 @@
 {
   "entry": "scene",
   "nodes": {
-    "scene": {
-      "lines": [
-        {
-          "speaker": "npc",
-          "text": "Hah..."
-        },
-        {
-          "speaker": "npc",
-          "text": "Quit looking at me like that..."
-        },
-        {
-          "speaker": "player",
-          "text": "[PLACEHOLDER: Penni's joke — replace this line later]"
-        },
-        {
-          "speaker": "npc",
-          "text": "Tch... you're really gonna tease me right now?"
-        },
-        {
-          "speaker": "player",
-          "text": "Hehe, just a little. C'mon, it was funny!"
-        },
-        {
-          "speaker": "npc",
-          "text": "Yeah, real funny..."
-        },
-        {
-          "speaker": "npc",
-          "text": "You're lucky I like you."
-        },
-        {
-          "speaker": "player",
-          "text": "Mmm~ you do like me."
-        },
-        {
-          "speaker": "npc",
-          "text": "...Yeah, whatever."
-        },
-        {
-          "speaker": "npc",
-          "text": "Don't make me say it again."
-        },
-        {
-          "speaker": "player",
-          "text": "I like you too."
-        },
-        {
-          "speaker": "npc",
-          "text": "..."
-        },
-        {
-          "speaker": "npc",
-          "text": "Thanks, I guess."
-        }
-      ]
-    }
+	"scene": {
+	  "lines": [
+		{
+		  "speaker": "npc",
+		  "text": "Hah..."
+		},
+		{
+		  "speaker": "npc",
+		  "text": "Quit looking at me like that..."
+		},
+		{
+		  "speaker": "player",
+		  "text": "Is it- AH~ in yet?"
+		},
+		{
+		  "speaker": "npc",
+		  "text": "Tch... you're really gonna tease me right now?"
+		},
+		{
+		  "speaker": "player",
+		  "text": "Hehe, just a little. C'mon, it was funny!"
+		},
+		{
+		  "speaker": "npc",
+		  "text": "Yeah, real funny..."
+		},
+		{
+		  "speaker": "npc",
+		  "text": "You're lucky I like you."
+		},
+		{
+		  "speaker": "player",
+		  "text": "Mmm~ you do like me."
+		},
+		{
+		  "speaker": "npc",
+		  "text": "...Yeah, whatever."
+		},
+		{
+		  "speaker": "npc",
+		  "text": "Don't make me say it again."
+		},
+		{
+		  "speaker": "player",
+		  "text": "I like you too."
+		},
+		{
+		  "speaker": "npc",
+		  "text": "..."
+		},
+		{
+		  "speaker": "npc",
+		  "text": "Thanks, I guess."
+		}
+	  ]
+	}
   }
 }

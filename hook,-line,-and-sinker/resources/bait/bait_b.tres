@@ -10,9 +10,9 @@ display_name = "Hard Fish Bait"
 icon = ExtResource("2_icon")
 description = "Strong bait that attracts hard fish. Unlock permanently at the FISH CO. shop."
 catch_weights = Dictionary[StringName, float]({
+&"barracuda": 3.5,
 &"easy_test_fish": 1.0,
 &"hard_test_fish": 6.0,
-&"test_silas": 0.5,
-&"barracuda": 3.5
+&"test_silas": 0.5
 })
 default_weight = 0.5

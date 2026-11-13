@@ -1,7 +1,7 @@
-[gd_resource type="Resource" script_class="BaitData" format=3]
+[gd_resource type="Resource" script_class="BaitData" format=3 uid="uid://dbvo303pbddg7"]
 
-[ext_resource type="Script" path="res://resources/bait_data.gd" id="1"]
-[ext_resource type="Texture2D" path="res://sprites/bait/bait_yellow.png" id="2"]
+[ext_resource type="Script" uid="uid://ca82iknxm3fe8" path="res://resources/bait_data.gd" id="1"]
+[ext_resource type="Texture2D" uid="uid://1g6ui7cwwh5x" path="res://sprites/bait/bait_yellow.png" id="2"]
 
 [resource]
 script = ExtResource("1")
@@ -10,9 +10,9 @@ display_name = "Yellow Bait"
 icon = ExtResource("2")
 description = "A bright lure that Silas is especially curious about. Greatly increases the chance of hooking him while he's still in the pond."
 catch_weights = Dictionary[StringName, float]({
+&"barracuda": 0.2,
 &"easy_test_fish": 1.0,
 &"hard_test_fish": 0.65,
-&"test_silas": 5.0,
-&"barracuda": 0.2
+&"test_silas": 5.0
 })
 default_weight = 0.6
