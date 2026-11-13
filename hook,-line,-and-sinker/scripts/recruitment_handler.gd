@@ -53,13 +53,35 @@ func check_for_recruitment(finished_npc: NPCData) -> void:
 
 	var flags: Dictionary = NPCManager.get_npc_state(finished_npc.npc_id).get("flags", {})
 	if not flags.get(&"Recruited", false):
-		# Declined NPCs disappear from the world but stay in the catch pool.
-		caught_actor.queue_free()
+		# Declined NPCs remain in the catch pool for another chance.
+		# Barracuda visibly hops back into the water on either failed path.
+		if finished_npc.npc_id == &"barracuda":
+			_barracuda_return_to_water(caught_actor)
+		else:
+			caught_actor.queue_free()
 		return
 
 	# Acceptance is permanent for this session, even before a house exists.
 	FishingManager.remove_recruited_catch(caught_fish)
 	_enqueue_accepted_actor(caught_actor)
+
+
+
+# Barracuda's exit uses the existing world waterline rather than a new
+# animation asset. He hops away from the dock and sinks off-screen, then
+# despawns. Future catches still use the special return encounter.
+func _barracuda_return_to_water(actor: NPCInteractable) -> void:
+	if not _actor_valid(actor):
+		return
+	var start: Vector2 = actor.global_position
+	var water := actor.get_parent().get_node_or_null("Water") as ColorRect
+	var water_y: float = water.global_position.y if water != null else start.y + 40.0
+	var landing := Vector2(start.x - 20.0, maxf(water_y + 18.0, start.y + 38.0))
+	var jump := Vector2(start.x - 11.0, start.y - 13.0)
+	var tween := actor.create_tween()
+	tween.tween_property(actor, "global_position", jump, 0.16).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	tween.tween_property(actor, "global_position", landing, 0.28).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	tween.tween_callback(actor.queue_free)
 
 
 # Called by AvailableHomeInfo whenever the world sets up its empty houses.
