@@ -49,7 +49,16 @@ func _run() -> void:
     var actor := NPC_SCENE.instantiate() as NPCInteractable
     get_root().add_child(actor)
     _expect(actor != null and actor.npc == NPC, "NPC placeholder instantiates with Barracuda NPCData")
-    _expect((actor.get_node("Sprite") as AnimatedSprite2D).sprite_frames.has_animation(&"on_caught"), "NPC has the required catch pose animation")
+    var actor_sprite := actor.get_node("Sprite") as AnimatedSprite2D
+    var frames := actor_sprite.sprite_frames
+    _expect(frames.has_animation(&"on_caught"), "NPC has the required catch pose animation")
+    _expect(frames.get_frame_count(&"default") == 2, "Barracuda idle uses both 32x32 frames of the 64x32 sheet")
+    var frame_one := frames.get_frame_texture(&"default", 0) as AtlasTexture
+    var frame_two := frames.get_frame_texture(&"default", 1) as AtlasTexture
+    _expect(frame_one != null and frame_one.region == Rect2(0, 0, 32, 32), "First idle frame covers the left half")
+    _expect(frame_two != null and frame_two.region == Rect2(32, 0, 32, 32), "Second idle frame covers the right half")
+    _expect(frames.get_frame_texture(&"on_caught", 0).get_size() == Vector2(32, 32), "Caught pose is one frame, not the whole spritesheet")
+    _expect(actor_sprite.flip_h, "Barracuda defaults to facing left toward Penni at his landing spot")
     actor.queue_free()
 
     var shop := SHOP_SCENE.instantiate()

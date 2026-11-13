@@ -8,15 +8,32 @@
 [sub_resource type="RectangleShape2D" id="ActorShape"]
 size = Vector2(22, 28)
 
+[sub_resource type="AtlasTexture" id="BarracudaIdle1"]
+atlas = ExtResource("4_sprite")
+region = Rect2(0, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="BarracudaIdle2"]
+atlas = ExtResource("4_sprite")
+region = Rect2(32, 0, 32, 32)
+
 [sub_resource type="SpriteFrames" id="ActorFrames"]
 animations = [{
-"frames": [{"duration": 1.0, "texture": ExtResource("4_sprite")}],
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("BarracudaIdle1")
+}, {
+"duration": 1.0,
+"texture": SubResource("BarracudaIdle2")
+}],
 "loop": true,
 "name": &"default",
 "speed": 3.0
 }, {
-"frames": [{"duration": 1.0, "texture": ExtResource("4_sprite")}],
-"loop": false,
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("BarracudaIdle1")
+}],
+"loop": true,
 "name": &"on_caught",
 "speed": 5.0
 }]
@@ -35,5 +52,6 @@ position = Vector2(0, -18)
 
 [node name="Sprite" type="AnimatedSprite2D" parent="."]
 sprite_frames = SubResource("ActorFrames")
-animation = &"default"
+animation = &"on_caught"
 autoplay = "default"
+flip_h = true

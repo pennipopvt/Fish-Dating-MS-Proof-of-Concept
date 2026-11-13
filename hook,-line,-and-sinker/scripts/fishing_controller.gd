@@ -778,6 +778,11 @@ func create_npc(npc: PackedScene) -> void:
 	scene.global_position = npc_landing_point.global_position
 	scene.z_index = 12
 	var sprite: AnimatedSprite2D = scene.get_node("Sprite")
+	# Barracuda's frames are drawn facing right. Like Silas, he lands
+	# to Penni's right and should turn left toward her. Derive the flip
+	# from their positions so it also works if the spawn side changes.
+	if scene.npc != null and scene.npc.npc_id == &"barracuda":
+		sprite.flip_h = scene.global_position.x > (get_parent() as Node2D).global_position.x
 	sprite.play(&"on_caught")
 	catch_fish_visual.hide()
 	get_parent().animator.play(&"idle_r")
