@@ -98,8 +98,9 @@ Debug builds only (not in exports):
   and Penni has to show up at the place during that period and interact with it.
   A missed booking sets `date_missed_<id>`. Requirements: `required_flags`,
   `forbidden_flags`, optional min attraction, `repeatable`. Result: sets
-  `date_done_<id>` (or `completed_flag`), `flags_to_set`, `attraction_change`, and
-  `extra_action_cost` on top of the 1 action every talk costs.
+  `date_done_<id>` (or `completed_flag`), `flags_to_set`, `attraction_change`. A finished date uses up the rest of
+  that period's actions, so the clock moves to the next period (after a night
+  date: no actions left, rest at the bed for morning).
   **Asking out:** `dialogue/silas_ask_out.json` (dev panel only for now). Each choice
   is shown only when the flag `date_ok_<id>` is on (DateManager sets these when any
   conversation starts) and requests the scene `date:<id>`. When no date is available,

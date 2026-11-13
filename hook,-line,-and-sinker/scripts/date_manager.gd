@@ -8,7 +8,9 @@ extends Node
 # interacts with its DateLocation during the booked period, and is missed
 # once that period passes.
 # A date: fade out, move Penni and the NPC to the location's spots, play the
-# date JSON, then fade back and put everyone where they were.
+# date JSON, then fade back and put everyone where they were. A finished date
+# uses up the rest of the period's actions, so the clock moves to the next
+# period (at night: no actions left, rest only, like any other night).
 # Bookings and flags live in memory only, like the rest of NPC state.
 
 signal date_booked(date: DateData, day: int, period: int)
@@ -30,6 +32,9 @@ var bookings: Dictionary = {}
 
 var _active: DateData = null
 var _in_dialogue: bool = false
+# Day/period the date took place in (after any clock jump).
+var _date_day: int = 0
+var _date_period: int = 0
 # [[Node2D, Vector2 global position], ...] to put back after the date.
 var _restore: Array = []
 var _fade_layer: CanvasLayer
@@ -219,6 +224,8 @@ func start_date(date: DateData) -> void:
 	if date.when == DateData.When.NOW and date.jump_clock:
 		_jump_to_allowed_period(date)
 	cancel_booking(date)
+	_date_day = GameManager.get_day()
+	_date_period = GameManager.get_period()
 	_restore.clear()
 	var player := get_tree().get_first_node_in_group(&"player") as Node2D
 	_move(player, location.get_player_spot())
@@ -255,12 +262,18 @@ func _finish(completed: bool) -> void:
 		for flag in date.flags_to_set:
 			flags[flag] = true
 		state["attraction"] = int(state.get("attraction", 0)) + date.attraction_change
-		if date.extra_action_cost > 0:
-			GameManager.spend_actions(date.extra_action_cost)
+		_use_up_period()
 	_active = null
 	await _fade_to(0.0)
 	if completed and date != null:
 		date_finished.emit(date)
+
+
+# The date talk already spent 1 action; if that was the period's last, the
+# clock has moved on by itself, so don't skip a second period.
+func _use_up_period() -> void:
+	if GameManager.get_day() == _date_day and GameManager.get_period() == _date_period:
+		GameManager.spend_actions(GameManager.get_actions_left())
 
 
 func _move(node: Node2D, spot: Vector2) -> void:

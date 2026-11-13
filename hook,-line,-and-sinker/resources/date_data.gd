@@ -42,8 +42,6 @@ enum When {
 @export var completed_flag: StringName
 @export var flags_to_set: Array[StringName] = []
 @export var attraction_change: int = 0
-# Actions spent on top of the 1 every finished conversation already costs.
-@export var extra_action_cost: int = 0
 
 
 func get_completed_flag() -> StringName:
