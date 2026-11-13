@@ -3,109 +3,100 @@
   "nodes": {
     "arrival": {
       "lines": [
-        "[A barracuda lands on the dock in a burst of spray. A moment later, someone is lying where the fish was.]",
-        "...Huh. That was a lot slower than I expected.",
-        "You're the one holding the rod, right?"
+        "Seriously?",
+        "YOU caught me?",
+        "What even are you?"
       ],
       "effects": {
         "set_flags": [
           "barracuda_met"
         ]
       },
-      "next": "introduction"
+      "next": "human"
     },
-    "introduction": {
-      "lines": [],
-      "choices": [
+    "human": {
+      "lines": [
         {
-          "text": "Are you okay?",
-          "next": "okay"
+          "speaker": "player",
+          "text": "I'm a human! You're a human too now, I think."
         },
-        {
-          "text": "You're taking this pretty well.",
-          "next": "composed"
-        },
-        {
-          "text": "Who are you?",
-          "next": "name"
-        }
-      ]
-    },
-    "okay": {
-      "lines": [
-        "I will be once I get used to these legs.",
-        "[He tests his balance, then looks back at you.]"
-      ],
-      "next": "introduction"
-    },
-    "composed": {
-      "lines": [
-        "Would panicking help?",
-        "Besides, I still have a few questions for you."
-      ],
-      "next": "introduction"
-    },
-    "name": {
-      "lines": [
-        "Barracuda. That ought to tell you enough for now.",
-        "And you are?"
-      ],
-      "choices": [
-        {
-          "text": "Penni.",
-          "next": "named"
-        },
-        {
-          "text": "Just the person who caught you.",
-          "next": "unnamed"
-        }
-      ]
-    },
-    "named": {
-      "lines": [
-        "Penni. Got it.",
-        "...You seem harmless enough."
-      ],
-      "next": "decision"
-    },
-    "unnamed": {
-      "lines": [
-        "Very mysterious.",
-        "All right, I'll call you Penni anyway."
+        "Ugh, what happened to me?",
+        "I'm getting out of here."
       ],
       "next": "decision"
     },
     "decision": {
-      "lines": [
-        "So what happens now? I can go right back in, or I could see what this place is about."
-      ],
+      "lines": [],
       "choices": [
         {
-          "text": "You could stay here, if you want.",
-          "next": "recruited",
-          "effects": {
-            "set_flags": [
-              "Recruited"
-            ]
-          }
+          "text": "Is that how you usually treat pretty girls?",
+          "next": "flirt_reply"
         },
         {
-          "text": "I think you should go back for now.",
-          "next": "released"
+          "text": "Wait! It's actually really nice here!",
+          "next": "island"
+        },
+        {
+          "text": "Okay, bye!",
+          "next": "bye"
         }
       ]
     },
-    "recruited": {
+    "flirt_reply": {
       "lines": [
-        "Really?",
-        "Fine. I'll give this place a chance.",
-        "Don't make me regret it."
+        "Are you supposed to be a pretty girl or something?"
+      ],
+      "next": "retort"
+    },
+    "retort": {
+      "lines": [
+        {
+          "speaker": "player",
+          "text": "You tell me."
+        },
+        "...Tch.",
+        "You're pretty full of yourself, huh?"
+      ],
+      "next": "penni_confident"
+    },
+    "penni_confident": {
+      "lines": [
+        {
+          "speaker": "player",
+          "text": "Well, you're still here, so something must be working."
+        },
+        "Don't flatter yourself.",
+        "I just haven't decided where I'm going yet.",
+        "...",
+        "I'll stick around for a bit, so you better make it worth it."
+      ],
+      "effects": {
+        "set_flags": [
+          "Recruited"
+        ]
+      }
+    },
+    "island": {
+      "lines": [
+        "Nice?",
+        "It's a tiny island in the middle of nowhere."
+      ],
+      "next": "island_answer"
+    },
+    "island_answer": {
+      "lines": [
+        {
+          "speaker": "player",
+          "text": "Well, the views are pretty!"
+        },
+        "Yeah, okay.",
+        "Don't try to catch me again."
       ]
     },
-    "released": {
+    "bye": {
       "lines": [
-        "Fair enough.",
-        "Maybe you'll hook me again. Try to keep up next time."
+        "...Seriously?",
+        "Whatever."
       ]
     }
   }

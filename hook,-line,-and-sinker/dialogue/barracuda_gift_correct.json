@@ -1,35 +1,42 @@
 {
-  "entry": "ask",
+  "entry": "offer",
   "nodes": {
-    "ask": {
+    "offer": {
       "lines": [
-        "Hey. What's that you've got?"
+        {
+          "speaker": "player",
+          "text": "Well, it's getting a little cold, and I realized I had this extra scarf if you want it."
+        }
       ],
       "choices": [
         {
-          "text": "It's for you.",
-          "next": "accepted",
+          "text": "Here, take it.",
+          "next": "accept",
           "effects": {
             "give_held_item": true
           }
         },
         {
-          "text": "I'm just carrying it.",
-          "next": "declined"
+          "text": "Actually, never mind.",
+          "next": "decline"
         }
       ]
     },
-    "accepted": {
+    "accept": {
       "lines": [
-        "Sunglasses? For me?",
-        "[He puts them on and looks toward the water.]",
-        "...Okay. That's pretty good.",
-        "I owe you one, Penni."
+        "I don't want your trash...",
+        "...",
+        "But I guess I'll take it so you feel better about yourself.",
+        {
+          "speaker": "player",
+          "text": "Aww, you're welcome!"
+        },
+        "Shut up."
       ]
     },
-    "declined": {
+    "decline": {
       "lines": [
-        "Then quit waving them in front of me."
+        "Suit yourself."
       ]
     }
   }

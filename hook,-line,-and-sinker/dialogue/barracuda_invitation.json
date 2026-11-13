@@ -1,16 +1,20 @@
 {
-  "entry": "invite",
+  "entry": "intro",
   "nodes": {
-    "invite": {
+    "intro": {
       "lines": [
-        "Hey, Penni. Got a second?",
-        "These glasses are growing on me.",
-        "I was thinking we could spend some time together. Somewhere private."
+        "Hey. You busy?",
+        {
+          "speaker": "player",
+          "text": "Why? You wanna spend time with me?"
+        },
+        "Tch. Don't make it weird.",
+        "I just figured you might wanna come over."
       ],
       "choices": [
         {
-          "text": "I'd like that.",
-          "next": "accepted",
+          "text": "I'd love to come over!",
+          "next": "accept",
           "effects": {
             "set_flags": [
               "barracuda_invitation_accepted"
@@ -19,23 +23,22 @@
         },
         {
           "text": "Maybe another time.",
-          "next": "later"
+          "next": "decline"
         }
       ]
     },
-    "accepted": {
+    "accept": {
       "lines": [
-        "Good.",
-        "Come on, then. I know a place."
+        "...Cool.",
+        "Well, come on then."
       ],
       "effects": {
         "request_scene": "barracuda_house"
       }
     },
-    "later": {
+    "decline": {
       "lines": [
-        "No rush.",
-        "Offer still stands."
+        "...Sure. Another time, then."
       ]
     }
   }

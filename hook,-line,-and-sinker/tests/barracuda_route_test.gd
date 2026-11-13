@@ -10,9 +10,9 @@ extends SceneTree
 const FISH: FishData = preload("res://resources/fish/barracuda.tres")
 const NPC: NPCData = preload("res://resources/npcs/barracuda.tres")
 const NPC_SCENE: PackedScene = preload("res://prefabs/barracuda.tscn")
-const GIFT: ItemData = preload("res://resources/items/barracuda_sunglasses.tres")
+const GIFT: ItemData = preload("res://resources/items/barracuda_scarf.tres")
 const WRONG_GIFT: ItemData = preload("res://resources/items/spyglass.tres")
-const TRADE: TradeData = preload("res://resources/trades/barracuda_sunglasses.tres")
+const TRADE: TradeData = preload("res://resources/trades/barracuda_scarf.tres")
 const SHOP_SCENE: PackedScene = preload("res://scenes/shop_manager.tscn")
 
 const GRAPHS := [
@@ -54,13 +54,21 @@ func _run() -> void:
 
     var shop := SHOP_SCENE.instantiate()
     var trades: Array = shop.get("trades")
-    _expect(trades.has(TRADE), "Sunglasses appear in the existing gift shop")
-    _expect(TRADE.reward_item == GIFT and TRADE.icon == GIFT.sprite, "Sunglasses are an item with an icon")
-    _expect(NPC.desired_gift == GIFT, "Barracuda's configured correct gift is sunglasses")
+    _expect(trades.has(TRADE), "Scarf appear in the existing gift shop")
+    _expect(TRADE.reward_item == GIFT and TRADE.icon == GIFT.sprite, "Scarf are an item with an icon")
+    _expect(NPC.desired_gift == GIFT, "Barracuda's configured correct gift is scarf")
     shop.free()
 
     for path in GRAPHS:
         _expect(not DialogueJsonLoader.read_graph(path).is_empty(), "Valid dialogue graph: " + path)
+
+    var first_graph: Dictionary = DialogueJsonLoader.read_graph("res://dialogue/barracuda_first_catch.json")
+    _expect(first_graph["nodes"]["decision"]["choices"].size() == 3, "Three first-catch choices")
+    _expect(first_graph["nodes"]["flirt_reply"].has("lines"), "Flirting path is present")
+    _expect(first_graph["nodes"]["penni_confident"].get("effects", {}).get("set_flags", []).has("Recruited"), "Only winning path recruits")
+    var retry_graph: Dictionary = DialogueJsonLoader.read_graph("res://dialogue/barracuda_second_catch.json")
+    _expect(retry_graph["nodes"]["decision"]["choices"].size() == 3, "Second catch repeats recruitment choices")
+    _expect(NPC.gift_completed_flag == &"barracuda_scarf_complete", "Scarf has own gift completion flag")
 
     _expect(NPCManager.get_encounter_json_path(NPC).ends_with("barracuda_first_catch.json"), "First catch uses first meeting")
     var flags: Dictionary = NPCManager.get_npc_state(NPC.npc_id)["flags"]
@@ -70,7 +78,7 @@ func _run() -> void:
     _expect(NPCManager.get_encounter_json_path(NPC).ends_with("barracuda_casual.json"), "Recruited NPC uses casual hints")
     _expect(NPCManager.get_gift_encounter_path(NPC, GIFT).ends_with("barracuda_gift_correct.json"), "Correct gift routes to acceptance dialogue")
     _expect(NPCManager.get_gift_encounter_path(NPC, WRONG_GIFT).ends_with("barracuda_gift_wrong.json"), "Wrong gift routes to hint dialogue")
-    flags[&"barracuda_sunglasses_complete"] = true
+    flags[&"barracuda_scarf_complete"] = true
     _expect(NPCManager.get_encounter_json_path(NPC).ends_with("barracuda_invitation.json"), "Correct gift unlocks invitation")
     _expect(NPCManager.get_gift_encounter_path(NPC, GIFT).is_empty(), "Completed gift cannot be consumed twice")
     flags[&"barracuda_invitation_accepted"] = true

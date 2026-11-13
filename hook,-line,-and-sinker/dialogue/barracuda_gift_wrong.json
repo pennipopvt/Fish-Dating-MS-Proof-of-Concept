@@ -1,14 +1,14 @@
 {
-  "entry": "ask",
+  "entry": "offer",
   "nodes": {
-    "ask": {
+    "offer": {
       "lines": [
-        "You brought me something?"
+        "What's that?"
       ],
       "choices": [
         {
-          "text": "Yeah, it's yours.",
-          "next": "accepted",
+          "text": "It's for you.",
+          "next": "accept",
           "effects": {
             "give_held_item": true,
             "set_flags": [
@@ -17,27 +17,20 @@
           }
         },
         {
-          "text": "Actually, never mind.",
-          "next": "declined"
+          "text": "Never mind.",
+          "next": "decline"
         }
       ]
     },
-    "accepted": {
+    "accept": {
       "lines": [
-        "Huh. Thanks.",
-        "Not really my style, but I appreciate it.",
-        "I guess I'd pick something that helps with the sun and still looks good."
-      ],
-      "effects": {
-        "set_flags": [
-          "barracuda_sun_hint",
-          "barracuda_style_hint"
-        ]
-      }
+        "...Huh.",
+        "Didn't ask for it, but I guess I'll take it."
+      ]
     },
-    "declined": {
+    "decline": {
       "lines": [
-        "You changed your mind fast."
+        "Whatever."
       ]
     }
   }

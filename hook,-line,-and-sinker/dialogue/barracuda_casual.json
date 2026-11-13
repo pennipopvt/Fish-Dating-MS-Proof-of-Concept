@@ -3,129 +3,64 @@
   "nodes": {
     "greeting": {
       "lines": [
-        "Hey, Penni. Looking for me?"
+        "Hey."
       ],
       "choices": [
         {
-          "text": "What do you do for fun?",
-          "next": "speed"
+          "text": "How are you liking it up here?",
+          "next": "land"
         },
         {
-          "text": "How do you like it up here?",
-          "next": "sunlight"
+          "text": "So why'd you get yourself caught?",
+          "next": "caught"
         },
         {
-          "text": "What kind of things do you like?",
-          "next": "style"
-        },
-        {
-          "text": "Can you remind me what you said?",
-          "next": "reminder"
-        },
-        {
-          "text": "I'll see you later.",
+          "text": "See you later!",
           "next": "goodbye"
         }
       ]
     },
-    "speed": {
+    "land": {
       "lines": [
-        "I like moving. Fast.",
-        "Hard to explain it to someone with two perfectly good legs.",
-        "Standing around and looking cool is my second favorite thing."
+        "It's alright.",
+        "I don't know how you can stand being out here all day."
       ],
-      "choices": [
+      "next": "wind_question"
+    },
+    "wind_question": {
+      "lines": [
         {
-          "text": "That sounds exhausting.",
-          "next": "speed_tease"
+          "speaker": "player",
+          "text": "What do you mean?"
         },
-        {
-          "text": "I bet you're good at it.",
-          "next": "speed_flirt"
-        }
-      ]
-    },
-    "speed_tease": {
-      "lines": [
-        "You're not wrong.",
-        "But somebody has to keep things interesting."
-      ]
-    },
-    "speed_flirt": {
-      "lines": [
-        "I am.",
-        "Maybe I'll show you sometime."
-      ]
-    },
-    "sunlight": {
-      "lines": [
-        "It's brighter out here than I expected.",
-        "The sun in my eyes is the worst part. I keep squinting whenever I look across the water.",
-        "Still, I wouldn't trade the view."
+        "You're just sitting around with the wind blowing on you.",
+        "Doesn't seem very comfortable."
       ],
       "effects": {
         "set_flags": [
-          "barracuda_sun_hint"
+          "barracuda_wind_hint"
         ]
       }
     },
-    "style": {
+    "caught": {
       "lines": [
-        "Something sharp. Something that actually suits me.",
-        "I'm not about to walk around in just anything.",
-        "I've seen people wearing dark lenses against the glare. Now those have potential."
+        "Tch. Guess I was just off that day."
       ],
-      "effects": {
-        "set_flags": [
-          "barracuda_style_hint"
-        ]
-      }
+      "next": "caught_tease"
     },
-    "reminder": {
+    "caught_tease": {
       "lines": [
-        "Which part?"
-      ],
-      "choices": [
         {
-          "text": "You mentioned the sun bothering you?",
-          "next": "sun_reminder",
-          "required_flags": [
-            "barracuda_sun_hint"
-          ]
+          "speaker": "player",
+          "text": "Can't believe you got caught by ME! HAHA!"
         },
-        {
-          "text": "You mentioned something about your style?",
-          "next": "style_reminder",
-          "required_flags": [
-            "barracuda_style_hint"
-          ]
-        },
-        {
-          "text": "Never mind.",
-          "next": "never_mind"
-        }
-      ]
-    },
-    "sun_reminder": {
-      "lines": [
-        "The glare. It's a pain.",
-        "If I could see out here without squinting, that'd help."
-      ]
-    },
-    "style_reminder": {
-      "lines": [
-        "I said I wanted something with an edge.",
-        "Maybe those dark glasses people wear would suit me."
-      ]
-    },
-    "never_mind": {
-      "lines": [
-        "Suit yourself."
+        "Yeah, yeah. Laugh it up.",
+        "It's not happening again."
       ]
     },
     "goodbye": {
       "lines": [
-        "Catch you later. Preferably not with the hook."
+        "Later."
       ]
     }
   }

@@ -1,68 +1,109 @@
 {
-  "entry": "return",
+  "entry": "arrival",
   "nodes": {
-    "return": {
+    "arrival": {
       "lines": [
-        "[The barracuda transforms again, looking much less surprised this time.]",
-        "You again. I wondered if we'd meet like this.",
-        "So. Changed your mind about keeping me around?"
+        "You've gotta be kidding me.",
+        "You AGAIN?"
       ],
       "choices": [
         {
-          "text": "Stay this time?",
-          "next": "recruited",
-          "effects": {
-            "set_flags": [
-              "Recruited"
-            ]
-          }
+          "text": "Hah, it's like you wanted to get caught.",
+          "next": "tease"
         },
         {
-          "text": "What's it like back underwater?",
-          "next": "underwater"
-        },
-        {
-          "text": "You can head back if you'd rather.",
-          "next": "released"
+          "text": "Sorry! I didn't know it was you!",
+          "next": "apology"
         }
       ]
     },
-    "underwater": {
+    "tease": {
       "lines": [
-        "Fast. Quiet. No one asks me how I'm doing.",
-        "...Still, it wasn't exactly interesting."
+        "Don't get the wrong idea.",
+        "I didn't come back for you.",
+        "I'm getting out of here."
       ],
-      "next": "return_menu"
+      "next": "decision"
     },
-    "return_menu": {
+    "apology": {
+      "lines": [
+        "Whatever. Just don't make a habit of it.",
+        "I'm getting out of here."
+      ],
+      "next": "decision"
+    },
+    "decision": {
       "lines": [],
       "choices": [
         {
-          "text": "Then stay up here.",
-          "next": "recruited",
-          "effects": {
-            "set_flags": [
-              "Recruited"
-            ]
-          }
+          "text": "Is that how you usually treat pretty girls?",
+          "next": "flirt_reply"
         },
         {
-          "text": "Maybe another time.",
-          "next": "released"
+          "text": "Wait! It's actually really nice here!",
+          "next": "island"
+        },
+        {
+          "text": "Okay, bye!",
+          "next": "bye"
         }
       ]
     },
-    "recruited": {
+    "flirt_reply": {
       "lines": [
-        "You sure?",
-        "All right. I'll stay.",
-        "Guess you finally caught something worth keeping."
+        "Are you supposed to be a pretty girl or something?"
+      ],
+      "next": "retort"
+    },
+    "retort": {
+      "lines": [
+        {
+          "speaker": "player",
+          "text": "You tell me."
+        },
+        "...Tch.",
+        "You're pretty full of yourself, huh?"
+      ],
+      "next": "penni_confident"
+    },
+    "penni_confident": {
+      "lines": [
+        {
+          "speaker": "player",
+          "text": "Well, you're still here, so something must be working."
+        },
+        "Don't flatter yourself.",
+        "I just haven't decided where I'm going yet.",
+        "...",
+        "I'll stick around for a bit, so you better make it worth it."
+      ],
+      "effects": {
+        "set_flags": [
+          "Recruited"
+        ]
+      }
+    },
+    "island": {
+      "lines": [
+        "Nice?",
+        "It's a tiny island in the middle of nowhere."
+      ],
+      "next": "island_answer"
+    },
+    "island_answer": {
+      "lines": [
+        {
+          "speaker": "player",
+          "text": "Well, the views are pretty!"
+        },
+        "Yeah, okay.",
+        "Don't try to catch me again."
       ]
     },
-    "released": {
+    "bye": {
       "lines": [
-        "Your call.",
-        "I'll be around. Somewhere."
+        "...Seriously?",
+        "Whatever."
       ]
     }
   }
