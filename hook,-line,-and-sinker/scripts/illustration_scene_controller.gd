@@ -16,7 +16,7 @@ const SCENES := {
 		"title": "Barracuda's House (placeholder)",
 		"dialogue": "res://dialogue/barracuda_house_scene.json",
 		"post_dialogue": "res://dialogue/barracuda_after_scene.json",
-		"reward_item": "",
+		"reward_item": "barracuda",
 		"npc_id": "barracuda",
 		"route_complete_flag": "barracuda_route_complete"
 	}
@@ -200,9 +200,13 @@ func _finish_scene(completed: bool = false) -> void:
 		# Leave the route incomplete if the gift dialogue fails to start.
 
 
-# Grant the bobber only after Silas's post-scene gift dialogue finishes.
+# Each reward is scoped to its own NPC, and each bobber manager verifies
+# that NPC's completed-route flag before unlocking it.
 func _on_cosmetic_reward_requested(npc: NPCData, reward_id: String) -> void:
-	if npc == null or npc.npc_id != &"test_npc":
+	if npc == null:
+		return
+	var bobber := BobberManager.get_bobber(StringName(reward_id))
+	if bobber == null or bobber.source_npc_id != npc.npc_id:
 		return
 	BobberManager.unlock_bobber(StringName(reward_id))
 

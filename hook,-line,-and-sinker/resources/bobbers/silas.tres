@@ -9,3 +9,5 @@ bobber_id = &"silas"
 display_name = "Silas's Spyglass"
 sprite = ExtResource("2")
 source_npc_id = &"test_npc"
+identifies_fish = true
+ability_description = "Spyglass: reveals the fish's identity when it bites."
