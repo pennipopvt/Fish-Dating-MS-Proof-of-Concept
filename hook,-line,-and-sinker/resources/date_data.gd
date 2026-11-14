@@ -13,8 +13,14 @@ enum When {
 @export var date_id: StringName
 @export var display_name: String = ""
 @export var npc: NPCData
-# Matches DateLocation.location_id on a place in the world (e.g. beach, ship).
+# Matches DateLocation.location_id on a place in the world (e.g. beach). The
+# date happens there, and a SCHEDULED date is started there.
 @export var location_id: StringName
+# Optional: the date happens here instead. Spawned under the world at
+# venue_position for the date and removed afterwards (e.g. the ship out at
+# sea). Needs PlayerSpot and NpcSpot Marker2D children.
+@export var venue_scene: PackedScene
+@export var venue_position: Vector2 = Vector2.ZERO
 @export_file("*.json") var dialogue_json: String = ""
 
 @export_group("Timing")

@@ -109,13 +109,18 @@ Debug builds only (not in exports):
   the talk follows its `next` to a "not now" line.
   **The date:** fade out, Penni and the NPC move to the place's `PlayerSpot` /
   `NpcSpot`, the date JSON plays, then fade back and both return. Places are
-  `DateLocation` interactables (`prefabs/beach.tscn`, a yellow triangle right of the
-  bed; `prefabs/ship.tscn`, an upside-down triangle on the water past the beach);
-  a booked place shows a sign with the date and time. Current data: beach =
-  NOW, afternoon only (jumps the clock); ship = SCHEDULED, night. All lines are
+  `DateLocation` interactables (`prefabs/beach.tscn`, a yellow triangle at the
+  island's right end); a booked place shows a sign with the date and time. A date
+  can instead happen at a `venue_scene` spawned just for it at `venue_position` and
+  removed afterwards: `prefabs/ship.tscn`, an upside-down triangle out at sea
+  (x=2400, no island in view). Current data: beach = NOW, afternoon only (jumps
+  the clock); ship = SCHEDULED, night, meet at the beach, date on the ship. All lines are
   TODO placeholders. Bookings and flags live in memory only.
 - **UI:** visual-novel style dialogue UI, shop menu, bait menu, interact prompt.
 - **Player** movement on the dock, plus interactables for NPCs and the shop.
+- **Island:** the ground tiles are the original land (cells 7-33) mirrored to the
+  right (flipped tiles, cells 34-60), so the island runs to x=976, where the beach
+  starts. The water rect reaches x=2800 for the ship.
 - **Fishing rod (visual only):** `prefabs/fishing_rod.tscn` on the player. When you
   start fishing, the player faces the water and pulls out the rod. Every cast swings
   the rod back and flicks it forward, and the equipped bait's icon flies out on the

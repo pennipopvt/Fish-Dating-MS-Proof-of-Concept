@@ -2,13 +2,16 @@
 
 [ext_resource type="Script" path="res://resources/date_data.gd" id="1_date"]
 [ext_resource type="Resource" uid="uid://cpv5vnhg17vg8" path="res://resources/npcs/test_npc.tres" id="2_npc"]
+[ext_resource type="PackedScene" path="res://prefabs/ship.tscn" id="3_ship"]
 
 [resource]
 script = ExtResource("1_date")
 date_id = &"silas_ship"
 display_name = "Boat date with Silas"
 npc = ExtResource("2_npc")
-location_id = &"ship"
+location_id = &"beach"
+venue_scene = ExtResource("3_ship")
+venue_position = Vector2(2400, 140)
 dialogue_json = "res://dialogue/silas_date_ship.json"
 periods = 4
 when = 1

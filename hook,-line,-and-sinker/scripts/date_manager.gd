@@ -7,7 +7,8 @@ extends Node
 # allowed period if needed) or books it; a booked date starts when Penni
 # interacts with its DateLocation during the booked period, and is missed
 # once that period passes.
-# A date: fade out, move Penni and the NPC to the location's spots, play the
+# A date: fade out, move Penni and the NPC to the location's spots (or to a
+# venue spawned just for the date, like the ship out at sea), play the
 # date JSON, then fade back and put everyone where they were. A finished date
 # uses up the rest of the period's actions, so the clock moves to the next
 # period (at night: no actions left, rest only, like any other night).
@@ -35,6 +36,8 @@ var _in_dialogue: bool = false
 # Day/period the date took place in (after any clock jump).
 var _date_day: int = 0
 var _date_period: int = 0
+# The date's spawned venue (DateData.venue_scene), removed after the date.
+var _venue: Node2D = null
 # [[Node2D, Vector2 global position], ...] to put back after the date.
 var _restore: Array = []
 var _fade: ScreenFade
@@ -214,8 +217,11 @@ func start_date(date: DateData) -> void:
 	if _active != null or date == null or date.npc == null:
 		return
 	var location := _find_location(date.location_id)
-	if location == null:
+	if date.venue_scene == null and location == null:
 		push_warning("No DateLocation '%s' in the world for date %s" % [date.location_id, date.date_id])
+		return
+	var player := get_tree().get_first_node_in_group(&"player") as Node2D
+	if player == null:
 		return
 	_active = date
 	date_started.emit(date)
@@ -226,9 +232,14 @@ func start_date(date: DateData) -> void:
 	_date_day = GameManager.get_day()
 	_date_period = GameManager.get_period()
 	_restore.clear()
-	var player := get_tree().get_first_node_in_group(&"player") as Node2D
-	_move(player, location.get_player_spot())
-	_move(_find_actor(date.npc.npc_id), location.get_npc_spot())
+	var venue: Node2D = location
+	if date.venue_scene != null:
+		_venue = date.venue_scene.instantiate() as Node2D
+		player.get_parent().add_child(_venue)
+		_venue.global_position = date.venue_position
+		venue = _venue
+	_move(player, _spot(venue, &"PlayerSpot"))
+	_move(_find_actor(date.npc.npc_id), _spot(venue, &"NpcSpot"))
 	await _fade_to(0.0)
 	_in_dialogue = true
 	DialogueManager.request_conversation(date.npc, date.dialogue_json)
@@ -254,6 +265,9 @@ func _finish(completed: bool) -> void:
 		if is_instance_valid(node):
 			node.global_position = entry[1]
 	_restore.clear()
+	if is_instance_valid(_venue):
+		_venue.queue_free()
+	_venue = null
 	if completed and date != null:
 		var state: Dictionary = NPCManager.get_npc_state(date.npc.npc_id)
 		var flags: Dictionary = state["flags"]
@@ -273,6 +287,11 @@ func _finish(completed: bool) -> void:
 func _use_up_period() -> void:
 	if GameManager.get_day() == _date_day and GameManager.get_period() == _date_period:
 		GameManager.spend_actions(GameManager.get_actions_left())
+
+
+func _spot(venue: Node2D, marker: StringName) -> Vector2:
+	var node := venue.get_node_or_null(NodePath(marker)) as Node2D
+	return node.global_position if node != null else venue.global_position
 
 
 func _move(node: Node2D, spot: Vector2) -> void:

@@ -14,27 +14,27 @@ prompt = NodePath("InteractPrompt")
 
 [node name="PlaceholderSand" type="Polygon2D" parent="."]
 color = Color(0.95, 0.82, 0.35, 1)
-polygon = PackedVector2Array(0, 0, 110, 28, 0, 28)
+polygon = PackedVector2Array(0, -14, 110, 28, 0, 28)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 position = Vector2(40, -8)
 shape = SubResource("RectangleShape2D_beach")
 
 [node name="PlayerSpot" type="Marker2D" parent="."]
-position = Vector2(28, 7)
+position = Vector2(28, -3)
 
 [node name="NpcSpot" type="Marker2D" parent="."]
-position = Vector2(50, -3)
+position = Vector2(50, -11)
 
 [node name="InteractPrompt" parent="." instance=ExtResource("2_prompt")]
-position = Vector2(40, -30)
+position = Vector2(40, -40)
 
 [node name="Sign" type="Label" parent="."]
 visible = false
 offset_left = -10.0
-offset_top = -60.0
+offset_top = -72.0
 offset_right = 90.0
-offset_bottom = -40.0
+offset_bottom = -52.0
 theme_override_colors/font_color = Color(1, 0.95, 0.75, 1)
 theme_override_colors/font_outline_color = Color(0.08, 0.08, 0.12, 1)
 theme_override_constants/outline_size = 3
