@@ -41,7 +41,8 @@ Debug builds only (not in exports):
   - **NPCs:** flags, attraction, next encounter.
   - **Fishing:** cast state, storage, catch dex, bobbers.
   - **Upgrades & Challenges:** upgrades, challenges.
-- **Story, Dates & Clock:** Silas story checkpoints, which set flags, spawn him and open the talk; or play any `dialogue/*.json`. **Dates:** "Ask Silas out" opens the ask-out talk (the only way to trigger it for now); per date, "Accept" does what saying yes does and "Start now" runs the date right away; plus a reset for bookings and done/missed flags. Day clock: spend 1 action, or rest (same as the bed).
+- **Story:** Silas story checkpoints, which set flags, spawn him and open the talk; play any `dialogue/*.json`; end the current dialogue.
+- **Dates & Clock:** "Ask Silas out" opens the ask-out talk (the only way to trigger it for now); per date, "Accept" does what saying yes does and "Start now" runs the date right away; a reset for bookings and done/missed flags. Day clock: spend 1 action, or rest (same as the bed).
 - **Give Items:** put any item in your hands or storage.
 - **Upgrades & Challenges:** complete or reset challenges, grant or reset upgrades, reset everything.
 - **NPC Flags:** edit flags and attraction.

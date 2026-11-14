@@ -724,6 +724,7 @@ func _build_ui() -> void:
 
 	_build_info_tab()
 	_build_dialogue_tab()
+	_build_dates_tab()
 	_build_items_tab()
 	_build_progress_tab()
 	_build_flags_tab()
@@ -784,7 +785,8 @@ func _build_theme() -> Theme:
 # Shown tab titles. Code matches tabs by node name (the keys), so rename here only.
 const TAB_TITLES := {
 	"Info": "Game State",
-	"Talk": "Story, Dates & Clock",
+	"Talk": "Story",
+	"Dates": "Dates & Clock",
 	"Items": "Give Items",
 	"Progress": "Upgrades & Challenges",
 	"Flags": "NPC Flags",
@@ -886,15 +888,6 @@ func _build_dialogue_tab() -> void:
 		var id: String = entry[1]
 		_button(box, entry[0], func() -> void: _checkpoint(id))
 
-	_heading(box, "Dates with Silas (ask-out is dev-only for now)")
-	_button(box, "Ask Silas out (sets Recruited, spawns Silas, opens the ask-out talk)", _ask_silas_out)
-	for date: DateData in DateManager.get_dates_for(SILAS_ID):
-		var date_row := _row(box)
-		date_row.add_child(PixelUI.label(date.display_name, &"DimLabel"))
-		_button(date_row, "Accept", func() -> void: _date_action(date, true)).tooltip_text = "Same as picking this date in the ask-out talk (starts now or books it)"
-		_button(date_row, "Start now", func() -> void: _date_action(date, false)).tooltip_text = "Run the date right away, ignoring its time rules"
-	_button(box, "Clear date bookings + done/missed flags", _reset_dates)
-
 	_heading(box, "Play any dialogue JSON as Silas (flags untouched)")
 	var row := _row(box)
 	_json_picker = OptionButton.new()
@@ -909,6 +902,18 @@ func _build_dialogue_tab() -> void:
 
 	_heading(box, "Conversation")
 	_button(box, "End current dialogue (F5)", skip_dialogue)
+
+
+func _build_dates_tab() -> void:
+	var box := _add_tab("Dates")
+	_heading(box, "Dates with Silas (ask-out is dev-only for now)")
+	_button(box, "Ask Silas out (sets Recruited, spawns Silas, opens the ask-out talk)", _ask_silas_out)
+	for date: DateData in DateManager.get_dates_for(SILAS_ID):
+		var date_row := _row(box)
+		date_row.add_child(PixelUI.label(date.display_name, &"DimLabel"))
+		_button(date_row, "Accept", func() -> void: _date_action(date, true)).tooltip_text = "Same as picking this date in the ask-out talk (starts now or books it)"
+		_button(date_row, "Start now", func() -> void: _date_action(date, false)).tooltip_text = "Run the date right away, ignoring its time rules"
+	_button(box, "Clear date bookings + done/missed flags", _reset_dates)
 
 	# Day clock. Fields go through call/get so a branch without them still compiles.
 	_heading(box, "Day clock")
