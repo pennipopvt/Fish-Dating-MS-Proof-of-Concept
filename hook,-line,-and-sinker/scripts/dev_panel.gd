@@ -11,12 +11,15 @@ const SILAS_ID: StringName = &"test_npc"
 const SILAS_NPC_PATH := "res://resources/npcs/test_npc.tres"
 const SILAS_FISH_PATH := "res://resources/fish/test_silas.tres"
 const SPYGLASS_PATH := "res://resources/items/spyglass.tres"
+const ASK_OUT_PATH := "res://dialogue/silas_ask_out.json"
+const AFFECTION_TEST_PATH := "res://dialogue/silas_affection_test.json"
 const ITEMS_DIR := "res://resources/items/"
 const FISH_DIR := "res://resources/fish/"
 const DIALOGUE_DIR := "res://dialogue/"
 const FISHING_STATES := ["NOT", "WAITING", "FISHING", "CATCHING"]
 const REFRESH_INTERVAL := 0.25
-const PANEL_WIDTH := 1080.0
+# Share of the screen the panel covers, from the right edge.
+const PANEL_SCREEN_SHARE := 0.8
 
 var _panel: PanelContainer
 var _tabs: TabContainer
@@ -307,6 +310,76 @@ func _checkpoint(id: String) -> void:
 			_say("Silas route complete; Silas bobber unlocked")
 
 
+# ---- Dates ---------------------------------------------------------------
+
+func _ask_silas_out() -> void:
+	_talk_recruited_silas(ASK_OUT_PATH, "ask-out")
+
+
+# Marks Silas recruited, makes sure he's in the world, then plays a JSON as him.
+func _talk_recruited_silas(path: String, label: String) -> void:
+	NPCManager.get_npc_state(SILAS_ID)["flags"][&"Recruited"] = true
+	var silas := _spawn_silas(true)
+	if silas == null:
+		return
+	hide()
+	if DialogueManager.is_active:
+		DialogueManager.end_conversation()
+	await get_tree().process_frame
+	await get_tree().process_frame
+	DialogueManager.request_conversation(silas.npc, path)
+	_say(("Playing the %s talk" if DialogueManager.is_active else "Could not start the %s talk") % label)
+
+
+# ---- Affection -------------------------------------------------------------
+
+func _change_affection(delta: int) -> void:
+	AffectionManager.change(SILAS_ID, delta)
+	_say("Silas affection: %d" % AffectionManager.get_affection(SILAS_ID))
+
+
+func _set_affection(value: int) -> void:
+	AffectionManager.set_affection(SILAS_ID, value)
+	_say("Silas affection: %d" % AffectionManager.get_affection(SILAS_ID))
+	if value < 0:
+		hide()
+
+
+func _sleep_to_morning() -> void:
+	var day := GameManager.get_day()
+	while GameManager.get_day() == day:
+		GameManager.rest()
+	hide()
+	_say("Day %d morning" % GameManager.get_day())
+
+
+# accept: what saying yes does (start now with clock jump, or book).
+# Otherwise starts the date right away, ignoring its timing.
+func _date_action(date: DateData, accept: bool) -> void:
+	NPCManager.get_npc_state(SILAS_ID)["flags"][&"Recruited"] = true
+	_spawn_silas(true)
+	hide()
+	if DialogueManager.is_active:
+		DialogueManager.end_conversation()
+	await get_tree().process_frame
+	await get_tree().process_frame
+	if accept:
+		DateManager.accept(date)
+	else:
+		DateManager.start_date(date)
+	_say("%s: %s" % [date.display_name, ("booked for " + DateManager.describe_booking(date)) if DateManager.is_booked(date) else "started"])
+
+
+func _reset_dates() -> void:
+	for date: DateData in DateManager.dates.values():
+		DateManager.cancel_booking(date)
+		if date.npc != null:
+			var flags: Dictionary = NPCManager.get_npc_state(date.npc.npc_id)["flags"]
+			flags.erase(date.get_completed_flag())
+			flags.erase(date.get_missed_flag())
+	_say("Date bookings and done/missed flags cleared")
+
+
 func _play_json(path: String) -> void:
 	hide()
 	if DialogueManager.is_active:
@@ -527,6 +600,18 @@ func _info_world() -> String:
 	else:
 		t += "No conversation\n"
 
+	t += _h("Dates")
+	if DateManager.is_active():
+		t += "A date is running
+"
+	if DateManager.bookings.is_empty():
+		t += "No bookings
+"
+	for id in DateManager.bookings:
+		var booked := DateManager.get_date(id)
+		t += "%s: %s at %s
+" % [booked.display_name, DateManager.describe_booking(booked), booked.location_id]
+
 	t += _h("Recruitment")
 	t += "Listening: %s   Free houses: %d\n" % [_onoff(RecruitmentHandler.listening), RecruitmentHandler.available_homes.size()]
 	return t
@@ -538,11 +623,11 @@ func _info_npcs() -> String:
 	if not ids.has(SILAS_ID):
 		ids.append(SILAS_ID)
 	for id in ids:
-		var state: Dictionary = NPCManager.npc_states.get(id, {"attraction": 0, "flags": {}})
+		var state: Dictionary = NPCManager.npc_states.get(id, {"attraction": NPCManager.START_ATTRACTION, "flags": {}})
 		var flags: Dictionary = state.get("flags", {})
 		var data: NPCData = _silas_data() if id == SILAS_ID else null
 		t += _h(String(id))
-		t += "Attraction %d   In world %s\n" % [int(state.get("attraction", 0)), _onoff(id == SILAS_ID and _find_silas() != null)]
+		t += "Affection %d / %d   Last talk day %s   In world %s\n" % [int(state.get("attraction", NPCManager.START_ATTRACTION)), AffectionManager.MAX_AFFECTION, str(state.get(AffectionManager.LAST_TALK_KEY, "-")), _onoff(id == SILAS_ID and _find_silas() != null)]
 		if data != null:
 			t += "Next encounter: %s\n" % _peek_encounter(data)
 		if flags.is_empty():
@@ -600,7 +685,7 @@ func _fishing_summary() -> String:
 
 # Which encounter would play next, without consuming a random pool pick.
 func _peek_encounter(npc: NPCData) -> String:
-	var state: Dictionary = NPCManager.npc_states.get(npc.npc_id, {"attraction": 0, "flags": {}})
+	var state: Dictionary = NPCManager.npc_states.get(npc.npc_id, {"attraction": NPCManager.START_ATTRACTION, "flags": {}})
 	var flags: Dictionary = state.get("flags", {})
 	for rule in npc.encounter_rules:
 		if rule == null:
@@ -642,10 +727,10 @@ func _other_modal_open() -> bool:
 func _build_ui() -> void:
 	_panel = PanelContainer.new()
 	_panel.theme = _build_theme()
-	_panel.anchor_left = 1.0
+	_panel.anchor_left = 1.0 - PANEL_SCREEN_SHARE
 	_panel.anchor_right = 1.0
 	_panel.anchor_bottom = 1.0
-	_panel.offset_left = -PANEL_WIDTH - 16.0
+	_panel.offset_left = 16.0
 	_panel.offset_right = -16.0
 	_panel.offset_top = 16.0
 	_panel.offset_bottom = -16.0
@@ -667,10 +752,13 @@ func _build_ui() -> void:
 
 	_build_info_tab()
 	_build_dialogue_tab()
+	_build_dates_tab()
 	_build_items_tab()
 	_build_progress_tab()
 	_build_flags_tab()
 	_build_fishing_tab()
+	_apply_titles(_tabs, TAB_TITLES)
+	_apply_titles(_info_tabs, INFO_TITLES)
 
 
 # The game's shared pixel theme (PixelUI), extended for the extra controls the
@@ -706,7 +794,7 @@ func _build_theme() -> Theme:
 	t.set_constant("line_separation", "RichTextLabel", 2 * PixelUI.SCALE)
 	t.set_constant("line_spacing", "Label", 2 * PixelUI.SCALE)
 	t.set_stylebox("panel", "TabContainer", PixelUI.box(PixelUI.INSET, PixelUI.ROW_EDGE, 3))
-	# Tighter tabs than the shared theme so all seven fit in one row.
+	# Tighter tabs than the shared theme so all tabs fit in one row.
 	t.set_stylebox("tab_selected", "TabContainer", PixelUI.box(PixelUI.TEAL, PixelUI.CYAN, 1))
 	t.set_stylebox("tab_hovered", "TabContainer", PixelUI.box(PixelUI.TEAL_HOVER, PixelUI.CYAN_DARK, 1))
 	t.set_stylebox("tab_unselected", "TabContainer", PixelUI.box(PixelUI.ROW, PixelUI.ROW_EDGE, 1))
@@ -715,9 +803,36 @@ func _build_theme() -> Theme:
 	t.set_color("font_hovered_color", "TabContainer", PixelUI.TEXT)
 	t.set_color("font_unselected_color", "TabContainer", PixelUI.TEXT_DIM)
 	t.set_constant("side_margin", "TabContainer", 0)
+	# Tab titles at 2x pixel scale (body text is 3x) so the descriptive titles fit in one row.
+	t.set_font_size("font_size", "TabContainer", 8 * 2)
 	t.set_constant("separation", "VBoxContainer", PixelUI.SCALE)
 	t.set_constant("separation", "HBoxContainer", 2 * PixelUI.SCALE)
 	return t
+
+
+# Shown tab titles. Code matches tabs by node name (the keys), so rename here only.
+const TAB_TITLES := {
+	"Info": "Game State",
+	"Talk": "Story",
+	"Dates": "Dates & Clock",
+	"Items": "Give Items",
+	"Progress": "Upgrades & Challenges",
+	"Flags": "NPC Flags",
+	"Fishing": "Fishing & Bobbers",
+}
+const INFO_TITLES := {
+	"World": "World & Time",
+	"NPCs": "NPCs",
+	"Fishing": "Fishing",
+	"Progress": "Upgrades & Challenges",
+}
+
+
+func _apply_titles(tabs: TabContainer, titles: Dictionary) -> void:
+	for i in tabs.get_tab_count():
+		var key := String(tabs.get_tab_control(i).name)
+		if titles.has(key):
+			tabs.set_tab_title(i, titles[key])
 
 
 func _on_tab_changed() -> void:
@@ -801,6 +916,18 @@ func _build_dialogue_tab() -> void:
 		var id: String = entry[1]
 		_button(box, entry[0], func() -> void: _checkpoint(id))
 
+	_heading(box, "Silas affection (0-100, below 0 he leaves)")
+	_button(box, "Affection test talk (sets Recruited, spawns Silas)", func() -> void: _talk_recruited_silas(AFFECTION_TEST_PATH, "affection test"))
+	var affection := _row(box)
+	_button(affection, "+5", func() -> void: _change_affection(5))
+	_button(affection, "-3", func() -> void: _change_affection(-3))
+	_button(affection, "Set 0", func() -> void: _set_affection(0))
+	_button(affection, "Set -1 (leaves)", func() -> void: _set_affection(-1))
+	_button(affection, "Clear greyed choices", func() -> void:
+		AffectionManager.clear_picked(SILAS_ID)
+		_say("Silas's picked choices cleared"))
+	_button(box, "Sleep to next morning (decay check runs)", _sleep_to_morning)
+
 	_heading(box, "Play any dialogue JSON as Silas (flags untouched)")
 	var row := _row(box)
 	_json_picker = OptionButton.new()
@@ -815,6 +942,18 @@ func _build_dialogue_tab() -> void:
 
 	_heading(box, "Conversation")
 	_button(box, "End current dialogue (F5)", skip_dialogue)
+
+
+func _build_dates_tab() -> void:
+	var box := _add_tab("Dates")
+	_heading(box, "Dates with Silas (ask-out is dev-only for now)")
+	_button(box, "Ask Silas out (sets Recruited, spawns Silas, opens the ask-out talk)", _ask_silas_out)
+	for date: DateData in DateManager.get_dates_for(SILAS_ID):
+		var date_row := _row(box)
+		date_row.add_child(PixelUI.label(date.display_name, &"DimLabel"))
+		_button(date_row, "Accept", func() -> void: _date_action(date, true)).tooltip_text = "Same as picking this date in the ask-out talk (starts now or books it)"
+		_button(date_row, "Start now", func() -> void: _date_action(date, false)).tooltip_text = "Run the date right away, ignoring its time rules"
+	_button(box, "Clear date bookings + done/missed flags", _reset_dates)
 
 	# Day clock. Fields go through call/get so a branch without them still compiles.
 	_heading(box, "Day clock")
@@ -977,15 +1116,15 @@ func _rebuild_flags() -> void:
 	var state: Dictionary = NPCManager.get_npc_state(selected_id)
 	var attraction_row := _row(box)
 	var attraction_label := Label.new()
-	attraction_label.text = "Attraction"
+	attraction_label.text = "Affection (below 0: leaves)"
 	attraction_row.add_child(attraction_label)
 	var attraction := SpinBox.new()
-	attraction.min_value = -100
-	attraction.max_value = 100
-	attraction.value = int(state.get("attraction", 0))
+	attraction.min_value = -10
+	attraction.max_value = AffectionManager.MAX_AFFECTION
+	attraction.value = int(state.get("attraction", NPCManager.START_ATTRACTION))
 	attraction.value_changed.connect(func(v: float) -> void:
-		state["attraction"] = int(v)
-		_say("%s attraction = %d" % [selected_id, int(v)]))
+		AffectionManager.set_affection(selected_id, int(v))
+		_say("%s affection = %d" % [selected_id, int(v)]))
 	attraction_row.add_child(attraction)
 
 	_heading(box, "Flags (toggle to set / clear)")

@@ -1,0 +1,11 @@
+{
+	"entry": "start",
+	"nodes": {
+		"start": {
+			"lines": [
+				"TODO (placeholder): Beach date with Silas.",
+				{"speaker": "player", "text": "TODO (placeholder): Penni's beach line."}
+			]
+		}
+	}
+}

@@ -12,6 +12,8 @@ const PLAYER_NAME_COLOR := Color(0.6, 0.85, 1.0)
 const SPEAKING_MODULATE := Color.WHITE
 const LISTENING_MODULATE := Color(0.5, 0.5, 0.55)
 const ADVANCE_ACTION := &"Interact"
+# Choices picked before (no more affection from them): grey, still pickable.
+const PICKED_CHOICE_COLOR := Color(0.55, 0.55, 0.6)
 
 # Shown when an NPC has no portrait assigned yet.
 @export var placeholder_portrait: Texture2D
@@ -157,6 +159,9 @@ func _show_choices() -> void:
 		var button := Button.new()
 		button.text = choices[i].text
 		button.alignment = HORIZONTAL_ALIGNMENT_LEFT
+		if DialogueManager.is_choice_greyed(i):
+			for color_name in ["font_color", "font_hover_color", "font_focus_color", "font_pressed_color"]:
+				button.add_theme_color_override(color_name, PICKED_CHOICE_COLOR)
 		button.pressed.connect(_select_choice.bind(i))
 		_choice_list.add_child(button)
 
