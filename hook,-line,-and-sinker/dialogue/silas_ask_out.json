@@ -1,0 +1,37 @@
+{
+	"entry": "ask",
+	"nodes": {
+		"ask": {
+			"lines": [
+				{"speaker": "player", "text": "TODO (placeholder): Penni asks Silas out."},
+				"TODO (placeholder): Silas asks where."
+			],
+			"choices": [
+				{
+					"text": "The beach",
+					"spoken_text": "TODO (placeholder): Penni suggests the beach.",
+					"required_flags": ["date_ok_silas_beach"],
+					"next": "beach_yes"
+				},
+				{
+					"text": "Out on a ship",
+					"spoken_text": "TODO (placeholder): Penni suggests a boat ride tonight.",
+					"required_flags": ["date_ok_silas_ship"],
+					"next": "ship_yes"
+				}
+			],
+			"next": "not_now"
+		},
+		"beach_yes": {
+			"lines": ["TODO (placeholder): Silas agrees to the beach."],
+			"effects": {"request_scene": "date:silas_beach"}
+		},
+		"ship_yes": {
+			"lines": ["TODO (placeholder): Silas agrees to meet at the ship tonight."],
+			"effects": {"request_scene": "date:silas_ship"}
+		},
+		"not_now": {
+			"lines": ["TODO (placeholder): Silas can't go on a date right now."]
+		}
+	}
+}

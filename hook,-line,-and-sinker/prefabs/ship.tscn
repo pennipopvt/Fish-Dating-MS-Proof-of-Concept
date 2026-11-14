@@ -1,0 +1,14 @@
+[gd_scene format=3]
+
+[node name="Ship" type="Node2D"]
+z_index = 1
+
+[node name="PlaceholderHull" type="Polygon2D" parent="."]
+color = Color(0.55, 0.35, 0.2, 1)
+polygon = PackedVector2Array(-30, -10, 30, -10, 0, 12)
+
+[node name="PlayerSpot" type="Marker2D" parent="."]
+position = Vector2(-10, -10)
+
+[node name="NpcSpot" type="Marker2D" parent="."]
+position = Vector2(12, -26)

@@ -29,6 +29,9 @@ const HOLD_TIME := 4.0
 const FADE_TIME := 0.5
 
 var challenge: ChallengeData
+# Reused for other notices (e.g. affection): set these instead of challenge.
+var subtitle: String = SUBTITLE
+var title: String = ""
 
 var _size := Vector2i.ZERO
 var _rest_y := 0.0
@@ -38,12 +41,13 @@ func _ready() -> void:
 	z_as_relative = false
 	z_index = 20
 
-	var name_text := challenge.display_name if challenge != null else ""
+	if challenge != null:
+		title = challenge.display_name
 	var text_width := maxi(
-		ceili(FONT.get_string_size(SUBTITLE, HORIZONTAL_ALIGNMENT_LEFT, -1, FONT_SIZE).x),
-		ceili(FONT_BOLD.get_string_size(name_text, HORIZONTAL_ALIGNMENT_LEFT, -1, FONT_SIZE).x)
+		ceili(FONT.get_string_size(subtitle, HORIZONTAL_ALIGNMENT_LEFT, -1, FONT_SIZE).x),
+		ceili(FONT_BOLD.get_string_size(title, HORIZONTAL_ALIGNMENT_LEFT, -1, FONT_SIZE).x)
 	)
-	var inner := Vector2i(ICON_SIZE + GAP + text_width, maxi(ICON_SIZE, LINE_HEIGHT * 2))
+	var inner := Vector2i(_icon_space() + text_width, maxi(ICON_SIZE, LINE_HEIGHT * 2))
 	_size = inner + Vector2i.ONE * (PADDING + 2) * 2
 
 	_rest_y = position.y
@@ -94,18 +98,27 @@ func _draw() -> void:
 	var content := Vector2i(left, top) + Vector2i.ONE * (PADDING + 2)
 	var content_h := _size.y - (PADDING + 2) * 2
 
-	if challenge != null and challenge.icon != null:
+	if _icon() != null:
 		var icon_y := content.y + (content_h - ICON_SIZE) / 2
-		draw_texture_rect(challenge.icon, Rect2(content.x, icon_y, ICON_SIZE, ICON_SIZE), false)
+		draw_texture_rect(_icon(), Rect2(content.x, icon_y, ICON_SIZE, ICON_SIZE), false)
 
-	var text_x := content.x + ICON_SIZE + GAP
+	var text_x := content.x + _icon_space()
 	var text_y := content.y + (content_h - LINE_HEIGHT * 2) / 2
 	var ascent := roundi(FONT.get_ascent(FONT_SIZE))
-	draw_string(FONT, Vector2(text_x, text_y + ascent), SUBTITLE,
+	draw_string(FONT, Vector2(text_x, text_y + ascent), subtitle,
 		HORIZONTAL_ALIGNMENT_LEFT, -1, FONT_SIZE, PixelUI.CYAN)
-	if challenge != null:
-		draw_string(FONT_BOLD, Vector2(text_x, text_y + LINE_HEIGHT + ascent), challenge.display_name,
-			HORIZONTAL_ALIGNMENT_LEFT, -1, FONT_SIZE, PixelUI.TEXT)
+	draw_string(FONT_BOLD, Vector2(text_x, text_y + LINE_HEIGHT + ascent), title,
+		HORIZONTAL_ALIGNMENT_LEFT, -1, FONT_SIZE, PixelUI.TEXT)
+
+
+func _icon() -> Texture2D:
+	return challenge.icon if challenge != null else null
+
+
+# Width taken by the icon column: always for challenges (as before), none
+# for text-only notices.
+func _icon_space() -> int:
+	return ICON_SIZE + GAP if challenge != null else 0
 
 
 # Filled rect with its four corner pixels left out.

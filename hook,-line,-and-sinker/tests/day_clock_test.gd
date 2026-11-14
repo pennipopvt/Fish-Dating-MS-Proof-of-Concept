@@ -23,7 +23,7 @@ func _ready() -> void:
 	_test_period_advancement()
 	_test_night_blocks_actions()
 	_test_rest_and_rollover()
-	_test_bed()
+	await _test_bed()
 	_test_dependents_read_new_values()
 	_test_save_round_trip()
 
@@ -79,9 +79,10 @@ func _test_rest_and_rollover() -> void:
 func _test_bed() -> void:
 	var bed := BED_SCENE.instantiate() as BedInteractable
 	add_child(bed)
-	bed.interact(null)
+	# At night the bed fades out and back in before it's done; wait for it.
+	await bed.interact(null)
 	_expect_clock(3, GameManager.Times.MORNING, 3, "bed at night goes to day 3 morning")
-	bed.interact(null)
+	await bed.interact(null)
 	_expect_clock(3, GameManager.Times.AFTERNOON, 3, "bed in the morning goes to afternoon")
 	bed.queue_free()
 

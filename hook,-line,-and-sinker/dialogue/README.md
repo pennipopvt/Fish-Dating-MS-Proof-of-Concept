@@ -56,3 +56,9 @@ Giving the spyglass starts `garden_eel_gift_correct.json`; accepting it consumes
 - A node effect may contain `"request_scene": "silas_house"`. After that conversation finishes, DialogueManager emits `scene_requested(npc, scene_id)`. Connect the house illustration controller to this signal when the actual illustration scene is available. **The scene is not present yet**, so accepting the invitation currently marks the progression flag and emits the request but does not display an illustration.
 - The future next-day gating can go before the invitation's encounter rule; the current milestone unlocks it immediately after accepting the spyglass.
 - NPC flags remain in-memory until game restart; there is no persistence yet.
+
+## Affection on choices (jerry branch)
+- Add `"tone": "positive"`, `"neutral"` or `"negative"` to a choice for +5 / 0 / -3 affection (AffectionManager.TONE_AMOUNTS). An exact number in `"effects": {"attraction": n}` overrides the tone. No tone = neutral.
+- A choice gives affection only the first time it's picked; afterwards DialogueUI shows it grey (still pickable). Add `"grey_when_picked": false` to choices that should never grey (goodbyes, menus you return to).
+- Node-level `"effects": {"attraction": n}` still applies every visit.
+- Example: `dialogue/silas_affection_test.json`.
