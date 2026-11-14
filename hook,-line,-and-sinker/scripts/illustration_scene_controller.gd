@@ -52,6 +52,7 @@ var _music_normal_volume_db: float = 0.0
 func _ready() -> void:
 	_music_normal_volume_db = overworld_music.volume_db
 	background.hide()
+	placeholder_image.texture = null
 	placeholder_image.hide()
 	warning_screen.hide()
 	fade_layer.hide()
@@ -122,11 +123,12 @@ func _start_illustration() -> void:
 	overworld_music.volume_db = _music_normal_volume_db
 	_music_stopped_for_scene = true
 	warning_screen.hide()
-	# Both Silas and Barracuda share this stage. Until scene artwork is ready,
-	# show only a solid black backdrop behind the existing dialogue UI.
+	# Select artwork from the NPC that requested this scene. Missing artwork
+	# keeps the background black rather than showing a previous NPC's image.
 	background.color = Color.BLACK
 	placeholder_label.hide()
-	placeholder_image.hide()
+	placeholder_image.texture = _active_npc.porn_sprite
+	placeholder_image.visible = placeholder_image.texture != null
 	background.show()
 	dialogue_ui.set_illustration_mode(true)
 	await _fade_to(0.0)
@@ -167,6 +169,7 @@ func _finish_scene(completed: bool = false) -> void:
 	# At full black, restore the overworld and normal portrait layout.
 	background.hide()
 	placeholder_image.hide()
+	placeholder_image.texture = null
 	warning_screen.hide()
 	dialogue_ui.set_illustration_mode(false)
 	_active_npc = null
