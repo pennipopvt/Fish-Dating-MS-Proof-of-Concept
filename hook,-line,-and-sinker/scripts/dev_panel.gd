@@ -17,7 +17,7 @@ const FISH_DIR := "res://resources/fish/"
 const DIALOGUE_DIR := "res://dialogue/"
 const FISHING_STATES := ["NOT", "WAITING", "FISHING", "CATCHING"]
 const REFRESH_INTERVAL := 0.25
-const PANEL_WIDTH := 1080.0
+const PANEL_WIDTH := 1300.0
 
 var _panel: PanelContainer
 var _tabs: TabContainer
@@ -727,6 +727,8 @@ func _build_ui() -> void:
 	_build_progress_tab()
 	_build_flags_tab()
 	_build_fishing_tab()
+	_apply_titles(_tabs, TAB_TITLES)
+	_apply_titles(_info_tabs, INFO_TITLES)
 
 
 # The game's shared pixel theme (PixelUI), extended for the extra controls the
@@ -762,7 +764,7 @@ func _build_theme() -> Theme:
 	t.set_constant("line_separation", "RichTextLabel", 2 * PixelUI.SCALE)
 	t.set_constant("line_spacing", "Label", 2 * PixelUI.SCALE)
 	t.set_stylebox("panel", "TabContainer", PixelUI.box(PixelUI.INSET, PixelUI.ROW_EDGE, 3))
-	# Tighter tabs than the shared theme so all seven fit in one row.
+	# Tighter tabs than the shared theme so all tabs fit in one row.
 	t.set_stylebox("tab_selected", "TabContainer", PixelUI.box(PixelUI.TEAL, PixelUI.CYAN, 1))
 	t.set_stylebox("tab_hovered", "TabContainer", PixelUI.box(PixelUI.TEAL_HOVER, PixelUI.CYAN_DARK, 1))
 	t.set_stylebox("tab_unselected", "TabContainer", PixelUI.box(PixelUI.ROW, PixelUI.ROW_EDGE, 1))
@@ -771,9 +773,35 @@ func _build_theme() -> Theme:
 	t.set_color("font_hovered_color", "TabContainer", PixelUI.TEXT)
 	t.set_color("font_unselected_color", "TabContainer", PixelUI.TEXT_DIM)
 	t.set_constant("side_margin", "TabContainer", 0)
+	# Tab titles at 2x pixel scale (body text is 3x) so the descriptive titles fit in one row.
+	t.set_font_size("font_size", "TabContainer", 8 * 2)
 	t.set_constant("separation", "VBoxContainer", PixelUI.SCALE)
 	t.set_constant("separation", "HBoxContainer", 2 * PixelUI.SCALE)
 	return t
+
+
+# Shown tab titles. Code matches tabs by node name (the keys), so rename here only.
+const TAB_TITLES := {
+	"Info": "Game State",
+	"Talk": "Story, Dates & Clock",
+	"Items": "Give Items",
+	"Progress": "Upgrades & Challenges",
+	"Flags": "NPC Flags",
+	"Fishing": "Fishing & Bobbers",
+}
+const INFO_TITLES := {
+	"World": "World & Time",
+	"NPCs": "NPCs",
+	"Fishing": "Fishing",
+	"Progress": "Upgrades & Challenges",
+}
+
+
+func _apply_titles(tabs: TabContainer, titles: Dictionary) -> void:
+	for i in tabs.get_tab_count():
+		var key := String(tabs.get_tab_control(i).name)
+		if titles.has(key):
+			tabs.set_tab_title(i, titles[key])
 
 
 func _on_tab_changed() -> void:
@@ -862,8 +890,8 @@ func _build_dialogue_tab() -> void:
 	for date: DateData in DateManager.get_dates_for(SILAS_ID):
 		var date_row := _row(box)
 		date_row.add_child(PixelUI.label(date.display_name, &"DimLabel"))
-		_button(date_row, "Accept (as if yes)", func() -> void: _date_action(date, true))
-		_button(date_row, "Start here now", func() -> void: _date_action(date, false))
+		_button(date_row, "Accept", func() -> void: _date_action(date, true)).tooltip_text = "Same as picking this date in the ask-out talk (starts now or books it)"
+		_button(date_row, "Start now", func() -> void: _date_action(date, false)).tooltip_text = "Run the date right away, ignoring its time rules"
 	_button(box, "Clear date bookings + done/missed flags", _reset_dates)
 
 	_heading(box, "Play any dialogue JSON as Silas (flags untouched)")

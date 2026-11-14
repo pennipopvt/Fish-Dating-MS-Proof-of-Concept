@@ -36,16 +36,16 @@ Debug builds only (not in exports):
 | Preview challenge popup | F10 |
 
 **Dev panel (F9)** (`prefabs/dev_panel.tscn`, autoload `DevPanel`). Tabs:
-- **Info:** live state in four subtabs.
-  - **World:** time, player, dialogue node, date bookings, recruitment.
+- **Game State:** live state in four subtabs.
+  - **World & Time:** time, player, dialogue node, date bookings, recruitment.
   - **NPCs:** flags, attraction, next encounter.
   - **Fishing:** cast state, storage, catch dex, bobbers.
-  - **Progress:** upgrades, challenges.
-- **Talk:** Silas story checkpoints, which set flags, spawn him and open the talk; or play any `dialogue/*.json`. **Dates:** "Ask Silas out" opens the ask-out talk (the only way to trigger it for now); per date, "Accept" does what saying yes does and "Start here now" runs the date right away; plus a reset for bookings and done/missed flags. Day clock: spend 1 action, or rest (same as the bed).
-- **Items:** put any item in your hands or storage.
-- **Progress:** complete or reset challenges, grant or reset upgrades, reset everything.
-- **Flags:** edit flags and attraction.
-- **Fishing:** instant bite or catch, force a species, cast counts, unlock or equip bobbers, equip bait.
+  - **Upgrades & Challenges:** upgrades, challenges.
+- **Story, Dates & Clock:** Silas story checkpoints, which set flags, spawn him and open the talk; or play any `dialogue/*.json`. **Dates:** "Ask Silas out" opens the ask-out talk (the only way to trigger it for now); per date, "Accept" does what saying yes does and "Start now" runs the date right away; plus a reset for bookings and done/missed flags. Day clock: spend 1 action, or rest (same as the bed).
+- **Give Items:** put any item in your hands or storage.
+- **Upgrades & Challenges:** complete or reset challenges, grant or reset upgrades, reset everything.
+- **NPC Flags:** edit flags and attraction.
+- **Fishing & Bobbers:** instant bite or catch, force a species, cast counts, unlock or equip bobbers, equip bait.
 
 **F3** toggles a small clock overlay in the top-left (its own CanvasLayer, so it stays up while the panel is closed and doesn't pause play).
 
