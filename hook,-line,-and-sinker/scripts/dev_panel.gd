@@ -17,7 +17,8 @@ const FISH_DIR := "res://resources/fish/"
 const DIALOGUE_DIR := "res://dialogue/"
 const FISHING_STATES := ["NOT", "WAITING", "FISHING", "CATCHING"]
 const REFRESH_INTERVAL := 0.25
-const PANEL_WIDTH := 1300.0
+# Share of the screen the panel covers, from the right edge.
+const PANEL_SCREEN_SHARE := 0.8
 
 var _panel: PanelContainer
 var _tabs: TabContainer
@@ -698,10 +699,10 @@ func _other_modal_open() -> bool:
 func _build_ui() -> void:
 	_panel = PanelContainer.new()
 	_panel.theme = _build_theme()
-	_panel.anchor_left = 1.0
+	_panel.anchor_left = 1.0 - PANEL_SCREEN_SHARE
 	_panel.anchor_right = 1.0
 	_panel.anchor_bottom = 1.0
-	_panel.offset_left = -PANEL_WIDTH - 16.0
+	_panel.offset_left = 16.0
 	_panel.offset_right = -16.0
 	_panel.offset_top = 16.0
 	_panel.offset_bottom = -16.0
