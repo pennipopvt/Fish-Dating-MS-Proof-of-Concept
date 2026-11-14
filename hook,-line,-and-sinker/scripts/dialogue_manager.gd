@@ -32,6 +32,10 @@ var _node_effects_applied: bool = false
 var _gift_player: Player = null
 var _expected_gift_item_id: StringName = &""
 var _scene_after_conversation: String = ""
+# JSON file of the running conversation and, per shown choice, whether it is
+# greyed (picked before). Used by AffectionManager / DialogueUI.
+var _current_path: String = ""
+var _choice_greyed: Array[bool] = []
 
 func start_conversation(npc: NPCData, json_override: String = "") -> void:
 	if is_active or npc == null:
@@ -49,6 +53,7 @@ func start_conversation(npc: NPCData, json_override: String = "") -> void:
 			return
 		current_npc = npc
 		_graph = graph
+		_current_path = path
 		is_active = true
 		conversation_started.emit(npc)
 		_enter_node(str(graph["entry"]))
@@ -80,6 +85,10 @@ func is_awaiting_choice() -> bool:
 	if not _graph.is_empty():
 		return line_index >= _lines.size() and not _choices.is_empty()
 	return current_dialogue != null and line_index >= current_dialogue.lines.size() and not current_dialogue.choices.is_empty()
+
+# Picked in an earlier visit: DialogueUI shows it grey (still pickable).
+func is_choice_greyed(index: int) -> bool:
+	return is_awaiting_choice() and index >= 0 and index < _choice_greyed.size() and _choice_greyed[index]
 
 func get_choices() -> Array[DialogueChoiceData]:
 	if not is_awaiting_choice():
@@ -136,18 +145,21 @@ func _show_player_choice(choice: Dictionary) -> void:
 func _complete_pending_choice() -> void:
 	var choice := _pending_choice
 	_pending_choice = {}
-	_apply_json_effects(choice.get("effects", {}))
+	# Affection goes through AffectionManager (tone or exact number, first pick only).
+	AffectionManager.on_choice_picked(current_npc, str(choice.get("_key", "")), choice)
+	_apply_json_effects(choice.get("effects", {}), false)
 	_enter_node(str(choice["next"]))
 
-func _apply_json_effects(effects: Variant) -> void:
+func _apply_json_effects(effects: Variant, include_attraction: bool = true) -> void:
 	if not effects is Dictionary or current_npc == null:
 		return
 	if effects.get("give_held_item", false):
 		NPCManager.accept_gift(current_npc, _gift_player, _expected_gift_item_id)
 	if effects.has("request_scene"):
 		_scene_after_conversation = str(effects["request_scene"])
+	if include_attraction:
+		AffectionManager.change(current_npc.npc_id, int(effects.get("attraction", 0)))
 	var state: Dictionary = NPCManager.get_npc_state(current_npc.npc_id)
-	state["attraction"] = int(state.get("attraction", 0)) + int(effects.get("attraction", 0))
 	var flags: Dictionary = state.get("flags", {})
 	state["flags"] = flags
 	for flag in effects.get("set_flags", []):
@@ -183,6 +195,7 @@ func _enter_node(id: String) -> void:
 	_lines.clear()
 	_choices.clear()
 	_choice_defs.clear()
+	_choice_greyed.clear()
 	line_index = 0
 	for raw_line in node.get("lines", []):
 		var line := DialogueLineData.new()
@@ -201,8 +214,10 @@ func _enter_node(id: String) -> void:
 			continue
 		var display_choice := DialogueChoiceData.new()
 		display_choice.text = str(choice.get("text", ""))
+		choice["_key"] = AffectionManager.choice_key(_current_path, id, display_choice.text)
 		_choices.append(display_choice)
 		_choice_defs.append(choice)
+		_choice_greyed.append(AffectionManager.is_greyed(current_npc.npc_id, choice["_key"], choice))
 	_check_for_end()
 
 func _check_for_end() -> void:
@@ -245,6 +260,8 @@ func end_conversation() -> void:
 	_gift_player = null
 	_expected_gift_item_id = &""
 	_scene_after_conversation = ""
+	_current_path = ""
+	_choice_greyed.clear()
 	conversation_finished.emit(finished_npc)
 	if not requested_scene.is_empty():
 		scene_requested.emit(finished_npc, requested_scene)

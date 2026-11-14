@@ -1,0 +1,20 @@
+{
+	"entry": "menu",
+	"nodes": {
+		"menu": {
+			"lines": ["TODO (placeholder): Affection test talk. Pick options; picked ones turn grey and give no more affection."],
+			"choices": [
+				{"text": "TODO positive option (+5)", "tone": "positive", "next": "reply_positive"},
+				{"text": "TODO neutral option (0)", "tone": "neutral", "next": "reply_neutral"},
+				{"text": "TODO negative option (-3)", "tone": "negative", "next": "reply_negative"},
+				{"text": "TODO custom option (+10, exact number)", "effects": {"attraction": 10}, "next": "reply_custom"},
+				{"text": "TODO goodbye (never greys)", "grey_when_picked": false, "next": "goodbye"}
+			]
+		},
+		"reply_positive": {"lines": ["TODO (placeholder): Silas likes that."], "next": "menu"},
+		"reply_neutral": {"lines": ["TODO (placeholder): Silas doesn't mind."], "next": "menu"},
+		"reply_negative": {"lines": ["TODO (placeholder): Silas didn't like that."], "next": "menu"},
+		"reply_custom": {"lines": ["TODO (placeholder): Silas really likes that."], "next": "menu"},
+		"goodbye": {"lines": ["TODO (placeholder): Bye."]}
+	}
+}

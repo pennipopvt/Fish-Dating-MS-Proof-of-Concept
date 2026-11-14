@@ -16,4 +16,3 @@ dialogue_json = "res://dialogue/silas_date_ship.json"
 periods = 4
 when = 1
 required_flags = Array[StringName]([&"Recruited"])
-attraction_change = 1

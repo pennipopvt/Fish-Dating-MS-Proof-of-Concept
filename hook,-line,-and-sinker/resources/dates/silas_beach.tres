@@ -14,4 +14,3 @@ periods = 2
 when = 0
 jump_clock = true
 required_flags = Array[StringName]([&"Recruited"])
-attraction_change = 1

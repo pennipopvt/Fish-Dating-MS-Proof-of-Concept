@@ -41,7 +41,7 @@ Debug builds only (not in exports):
   - **NPCs:** flags, attraction, next encounter.
   - **Fishing:** cast state, storage, catch dex, bobbers.
   - **Upgrades & Challenges:** upgrades, challenges.
-- **Story:** Silas story checkpoints, which set flags, spawn him and open the talk; play any `dialogue/*.json`; end the current dialogue.
+- **Story:** Silas story checkpoints, which set flags, spawn him and open the talk. **Silas affection:** the affection test talk, +5 / -3 / set 0 / set -1 (he leaves), clear greyed choices, sleep to next morning (runs the daily check). Play any `dialogue/*.json`; end the current dialogue.
 - **Dates & Clock:** "Ask Silas out" opens the ask-out talk (the only way to trigger it for now); per date, "Accept" does what saying yes does and "Start now" runs the date right away; a reset for bookings and done/missed flags. Day clock: spend 1 action, or rest (same as the bed).
 - **Give Items:** put any item in your hands or storage.
 - **Upgrades & Challenges:** complete or reset challenges, grant or reset upgrades, reset everything.
@@ -91,6 +91,21 @@ Debug builds only (not in exports):
   (for example a future NPC hangout) can cost time with `GameManager.spend_actions(n)`.
   Interactables that cost time return `true` from `spends_time()`. The recruitment
   talk right after catching an NPC fish always happens, even at the end of night.
+- **Affection (prototype):** `AffectionManager` autoload. Each NPC's affection
+  (NPCManager's `attraction`) starts at 10 and is capped at 100. JSON choices set
+  `"tone": "positive" | "neutral" | "negative"` (+5 / 0 / -3), or an exact number
+  with `"effects": {"attraction": n}`. A choice gives affection only the first time;
+  after that it shows grey in the dialogue box (still pickable). Picked choices are
+  remembered per NPC; `"grey_when_picked": false` keeps a choice (like goodbye)
+  from greying. Dates add +5 (`DateData.attraction_change`). Each morning, a
+  recruited NPC Penni didn't finish a conversation or date with during the previous
+  day loses 2, with a bubble above Penni ("Silas felt ignored yesterday"). If a
+  recruited NPC drops below 0 (checked after the conversation/date), they jump back
+  into the ocean: Recruited is cleared (other story flags and picked choices stay),
+  affection resets to 10, their house is freed and their fish returns to the catch
+  pool, so they can be caught and recruited again. Test talk:
+  `dialogue/silas_affection_test.json` (TODO placeholder lines, dev panel only).
+  Existing Silas/Barracuda choices are untagged (neutral) until tones are added.
 - **Dates (prototype, Silas only):** `DateManager` autoload + `DateData` resources
   in `resources/dates/` (one `.tres` per date, loaded automatically). Each date sets
   its NPC, place (`location_id`), dialogue JSON, **periods** it can happen in (none
@@ -148,6 +163,8 @@ never drives another system's nodes directly. Reading a manager's state for disp
 | `state_changed(from, to)` | `FishingController` | `FishingRod` (deferred) |
 | `fish_caught` / `fish_lost`, `conversation_finished` | `FishingManager`, `DialogueManager` | `GameManager` (spends 1 action) |
 | `time_changed(day, time)` / `day_started(day)` / `actions_changed(remaining)` / `actions_exhausted` | `GameManager` | `DateManager` (expires missed bookings), `DateLocation` signs |
+| `affection_changed(npc_id, value, delta)` / `npc_left(npc_id)` | `AffectionManager` | nothing yet (for a future affection display) |
+| `conversation_finished`, `day_started`, `date_finished`, `npc_moved_into_home` | `DialogueManager`, `GameManager`, `DateManager`, `RecruitmentHandler` | `AffectionManager` (last talk day, daily drop, leaving, house tracking) |
 | `scene_requested(npc, "date:<id>")` | `DialogueManager` (JSON effect `request_scene`) | `DateManager` (starts or books the date) |
 | `date_booked` / `date_started` / `date_finished` / `date_missed` / `bookings_changed` | `DateManager` | `DateLocation` (`bookings_changed`); the rest are for future UI |
 

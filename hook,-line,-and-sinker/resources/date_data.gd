@@ -47,7 +47,8 @@ enum When {
 # Set when the date ends. Empty = "date_done_<date_id>".
 @export var completed_flag: StringName
 @export var flags_to_set: Array[StringName] = []
-@export var attraction_change: int = 0
+# Affection gained when the date ends (dates are positive by default).
+@export var attraction_change: int = 5
 
 
 func get_completed_flag() -> StringName:

@@ -12,6 +12,7 @@ const SILAS_NPC_PATH := "res://resources/npcs/test_npc.tres"
 const SILAS_FISH_PATH := "res://resources/fish/test_silas.tres"
 const SPYGLASS_PATH := "res://resources/items/spyglass.tres"
 const ASK_OUT_PATH := "res://dialogue/silas_ask_out.json"
+const AFFECTION_TEST_PATH := "res://dialogue/silas_affection_test.json"
 const ITEMS_DIR := "res://resources/items/"
 const FISH_DIR := "res://resources/fish/"
 const DIALOGUE_DIR := "res://dialogue/"
@@ -312,6 +313,11 @@ func _checkpoint(id: String) -> void:
 # ---- Dates ---------------------------------------------------------------
 
 func _ask_silas_out() -> void:
+	_talk_recruited_silas(ASK_OUT_PATH, "ask-out")
+
+
+# Marks Silas recruited, makes sure he's in the world, then plays a JSON as him.
+func _talk_recruited_silas(path: String, label: String) -> void:
 	NPCManager.get_npc_state(SILAS_ID)["flags"][&"Recruited"] = true
 	var silas := _spawn_silas(true)
 	if silas == null:
@@ -321,8 +327,30 @@ func _ask_silas_out() -> void:
 		DialogueManager.end_conversation()
 	await get_tree().process_frame
 	await get_tree().process_frame
-	DialogueManager.request_conversation(silas.npc, ASK_OUT_PATH)
-	_say("Asking Silas out" if DialogueManager.is_active else "Could not start the ask-out talk")
+	DialogueManager.request_conversation(silas.npc, path)
+	_say(("Playing the %s talk" if DialogueManager.is_active else "Could not start the %s talk") % label)
+
+
+# ---- Affection -------------------------------------------------------------
+
+func _change_affection(delta: int) -> void:
+	AffectionManager.change(SILAS_ID, delta)
+	_say("Silas affection: %d" % AffectionManager.get_affection(SILAS_ID))
+
+
+func _set_affection(value: int) -> void:
+	AffectionManager.set_affection(SILAS_ID, value)
+	_say("Silas affection: %d" % AffectionManager.get_affection(SILAS_ID))
+	if value < 0:
+		hide()
+
+
+func _sleep_to_morning() -> void:
+	var day := GameManager.get_day()
+	while GameManager.get_day() == day:
+		GameManager.rest()
+	hide()
+	_say("Day %d morning" % GameManager.get_day())
 
 
 # accept: what saying yes does (start now with clock jump, or book).
@@ -595,11 +623,11 @@ func _info_npcs() -> String:
 	if not ids.has(SILAS_ID):
 		ids.append(SILAS_ID)
 	for id in ids:
-		var state: Dictionary = NPCManager.npc_states.get(id, {"attraction": 0, "flags": {}})
+		var state: Dictionary = NPCManager.npc_states.get(id, {"attraction": NPCManager.START_ATTRACTION, "flags": {}})
 		var flags: Dictionary = state.get("flags", {})
 		var data: NPCData = _silas_data() if id == SILAS_ID else null
 		t += _h(String(id))
-		t += "Attraction %d   In world %s\n" % [int(state.get("attraction", 0)), _onoff(id == SILAS_ID and _find_silas() != null)]
+		t += "Affection %d / %d   Last talk day %s   In world %s\n" % [int(state.get("attraction", NPCManager.START_ATTRACTION)), AffectionManager.MAX_AFFECTION, str(state.get(AffectionManager.LAST_TALK_KEY, "-")), _onoff(id == SILAS_ID and _find_silas() != null)]
 		if data != null:
 			t += "Next encounter: %s\n" % _peek_encounter(data)
 		if flags.is_empty():
@@ -657,7 +685,7 @@ func _fishing_summary() -> String:
 
 # Which encounter would play next, without consuming a random pool pick.
 func _peek_encounter(npc: NPCData) -> String:
-	var state: Dictionary = NPCManager.npc_states.get(npc.npc_id, {"attraction": 0, "flags": {}})
+	var state: Dictionary = NPCManager.npc_states.get(npc.npc_id, {"attraction": NPCManager.START_ATTRACTION, "flags": {}})
 	var flags: Dictionary = state.get("flags", {})
 	for rule in npc.encounter_rules:
 		if rule == null:
@@ -888,6 +916,18 @@ func _build_dialogue_tab() -> void:
 		var id: String = entry[1]
 		_button(box, entry[0], func() -> void: _checkpoint(id))
 
+	_heading(box, "Silas affection (0-100, below 0 he leaves)")
+	_button(box, "Affection test talk (sets Recruited, spawns Silas)", func() -> void: _talk_recruited_silas(AFFECTION_TEST_PATH, "affection test"))
+	var affection := _row(box)
+	_button(affection, "+5", func() -> void: _change_affection(5))
+	_button(affection, "-3", func() -> void: _change_affection(-3))
+	_button(affection, "Set 0", func() -> void: _set_affection(0))
+	_button(affection, "Set -1 (leaves)", func() -> void: _set_affection(-1))
+	_button(affection, "Clear greyed choices", func() -> void:
+		AffectionManager.clear_picked(SILAS_ID)
+		_say("Silas's picked choices cleared"))
+	_button(box, "Sleep to next morning (decay check runs)", _sleep_to_morning)
+
 	_heading(box, "Play any dialogue JSON as Silas (flags untouched)")
 	var row := _row(box)
 	_json_picker = OptionButton.new()
@@ -1076,15 +1116,15 @@ func _rebuild_flags() -> void:
 	var state: Dictionary = NPCManager.get_npc_state(selected_id)
 	var attraction_row := _row(box)
 	var attraction_label := Label.new()
-	attraction_label.text = "Attraction"
+	attraction_label.text = "Affection (below 0: leaves)"
 	attraction_row.add_child(attraction_label)
 	var attraction := SpinBox.new()
-	attraction.min_value = -100
-	attraction.max_value = 100
-	attraction.value = int(state.get("attraction", 0))
+	attraction.min_value = -10
+	attraction.max_value = AffectionManager.MAX_AFFECTION
+	attraction.value = int(state.get("attraction", NPCManager.START_ATTRACTION))
 	attraction.value_changed.connect(func(v: float) -> void:
-		state["attraction"] = int(v)
-		_say("%s attraction = %d" % [selected_id, int(v)]))
+		AffectionManager.set_affection(selected_id, int(v))
+		_say("%s affection = %d" % [selected_id, int(v)]))
 	attraction_row.add_child(attraction)
 
 	_heading(box, "Flags (toggle to set / clear)")

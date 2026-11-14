@@ -274,7 +274,7 @@ func _finish(completed: bool) -> void:
 		flags[date.get_completed_flag()] = true
 		for flag in date.flags_to_set:
 			flags[flag] = true
-		state["attraction"] = int(state.get("attraction", 0)) + date.attraction_change
+		AffectionManager.change(date.npc.npc_id, date.attraction_change)
 		_use_up_period()
 	_active = null
 	await _fade_to(0.0)

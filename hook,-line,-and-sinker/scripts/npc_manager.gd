@@ -1,6 +1,9 @@
 
 extends Node
 
+# Affection ("attraction") every NPC starts with; AffectionManager caps it at 100.
+const START_ATTRACTION := 10
+
 var npc_states: Dictionary = {}
 
 
@@ -8,7 +11,7 @@ var npc_states: Dictionary = {}
 func get_npc_state(npc_id: StringName) -> Dictionary:
 	if not npc_states.has(npc_id):
 		npc_states[npc_id] = {
-			"attraction": 0,
+			"attraction": START_ATTRACTION,
 			"flags": {}
 		}
 
