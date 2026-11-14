@@ -1,6 +1,7 @@
 [gd_scene format=3 uid="uid://bt2iu4iois2sb"]
 
 [ext_resource type="Script" uid="uid://bxntwr1rnd7aa" path="res://scripts/illustration_scene_controller.gd" id="1_ctrl"]
+[ext_resource type="Texture2D" uid="uid://c4v1axr8aete3" path="res://sprites/porn/silas.png" id="2_72875"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_show"]
 bg_color = Color(0.88, 0.44, 0.59, 1)
@@ -28,7 +29,6 @@ layer = 5
 script = ExtResource("1_ctrl")
 
 [node name="Background" type="ColorRect" parent="." unique_id=1418291172]
-visible = false
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -37,25 +37,18 @@ grow_vertical = 2
 mouse_filter = 1
 color = Color(0, 0, 0, 1)
 
-[node name="PlaceholderImage" type="TextureRect" parent="Background"]
+[node name="PlaceholderImage" type="TextureRect" parent="Background" unique_id=227914824]
 layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -176.0
-offset_top = -300.0
-offset_right = 176.0
-offset_bottom = 52.0
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-expand_mode = 1
-stretch_mode = 5
-visible = false
+texture = ExtResource("2_72875")
 
 [node name="PlaceholderLabel" type="Label" parent="Background" unique_id=2043233632]
+visible = false
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -63,7 +56,6 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 theme_override_font_sizes/font_size = 32
-visible = false
 text = "Illustration placeholder"
 horizontal_alignment = 1
 vertical_alignment = 2
