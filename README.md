@@ -118,9 +118,9 @@ Debug builds only (not in exports):
   TODO placeholders. Bookings and flags live in memory only.
 - **UI:** visual-novel style dialogue UI, shop menu, bait menu, interact prompt.
 - **Player** movement on the dock, plus interactables for NPCs and the shop.
-- **Island:** the ground tiles are the original land (cells 7-33) mirrored to the
-  right (flipped tiles, cells 34-60), so the island runs to x=976, where the beach
-  starts. The water rect reaches x=2800 for the ship.
+- **Island:** the ground tiles are the original island plus 7 extra cells of land
+  on the right (cells 34-40, mirrored copies of the land next to them), so the
+  island runs to x=656, where the beach starts. The water rect reaches x=2800 for the ship.
 - **Fishing rod (visual only):** `prefabs/fishing_rod.tscn` on the player. When you
   start fishing, the player faces the water and pulls out the rod. Every cast swings
   the rod back and flicks it forward, and the equipped bait's icon flies out on the
