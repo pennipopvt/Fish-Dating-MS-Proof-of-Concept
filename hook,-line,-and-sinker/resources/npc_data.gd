@@ -7,6 +7,7 @@ extends Resource
 @export_group("Appearance")
 @export var portrait: Texture2D
 @export var house: Texture2D
+@export var porn_sprite: Texture2D # Optional illustrated adult-scene background.
 
 @export_group("JSON Encounter Rules (first matching rule wins)")
 @export var encounter_rules: Array[EncounterRuleData] = []
