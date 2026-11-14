@@ -1,7 +1,6 @@
 [gd_scene format=3 uid="uid://bt2iu4iois2sb"]
 
 [ext_resource type="Script" uid="uid://bxntwr1rnd7aa" path="res://scripts/illustration_scene_controller.gd" id="1_ctrl"]
-[ext_resource type="Texture2D" uid="uid://c4v1axr8aete3" path="res://sprites/porn/silas.png" id="2_72875"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_show"]
 bg_color = Color(0.88, 0.44, 0.59, 1)
@@ -45,7 +44,6 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-texture = ExtResource("2_72875")
 
 [node name="PlaceholderLabel" type="Label" parent="Background" unique_id=2043233632]
 visible = false
@@ -108,7 +106,7 @@ theme_override_font_sizes/font_size = 32
 theme_override_styles/normal = SubResource("StyleBoxFlat_show")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_show_pressed")
 theme_override_styles/hover = SubResource("StyleBoxFlat_show_hover")
-text = "Continue (black screen)"
+text = "Continue"
 
 [node name="FadeLayer" type="CanvasLayer" parent="." unique_id=794095072]
 layer = 20
