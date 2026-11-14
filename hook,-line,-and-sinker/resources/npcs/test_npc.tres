@@ -7,6 +7,7 @@
 [ext_resource type="Texture2D" uid="uid://raysrsoqufps" path="res://sprites/characters/garden_eel_portrait.png" id="4_a4wu8"]
 [ext_resource type="Texture2D" uid="uid://bv41gk34hgl5s" path="res://sprites/placeholders/placeholderhousegood.png" id="5_816r6"]
 [ext_resource type="Resource" uid="uid://dq4sy5yms8tqq" path="res://resources/items/spyglass.tres" id="5_spyglass"]
+[ext_resource type="Texture2D" path="res://sprites/porn/silas.png" id="6_porn"]
 
 [sub_resource type="Resource" id="Resource_hvwbg"]
 script = ExtResource("3_w20er")
@@ -30,6 +31,7 @@ npc_id = &"test_npc"
 display_name = "Silas"
 portrait = ExtResource("4_a4wu8")
 house = ExtResource("5_816r6")
+porn_sprite = ExtResource("6_porn")
 encounter_rules = Array[ExtResource("3_w20er")]([SubResource("Resource_hvwbg"), SubResource("Resource_silas_invitation"), SubResource("Resource_w20er")])
 desired_gift = ExtResource("5_spyglass")
 correct_gift_json = "res://dialogue/garden_eel_gift_correct.json"
