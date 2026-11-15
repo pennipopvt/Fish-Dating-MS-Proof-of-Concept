@@ -24,6 +24,20 @@ const SCENE_PREFIX := "date:"
 const LOCATION_GROUP := &"date_locations"
 const FADE_DURATION := 0.5
 const PERIOD_COUNT := 3
+# Placeholder choice evaluation: reassuring / neutral / bold, each against
+# four jealousy tiers (0-24, 25-49, 50-74, 75-100).
+# Balance values are intentionally provisional until dialogue playtesting.
+const DATE_SCORE_BY_STYLE := {
+	"reassure": [1, 2, 3, 4],
+	"neutral": [2, 2, 1, 0],
+	"bold": [4, 2, -2, -4],
+}
+const JEALOUSY_BY_STYLE := {
+	"reassure": [-2, -4, -6, -8],
+	"neutral": [0, 0, 0, 0],
+	"bold": [0, 2, 5, 8],
+}
+const OUTCOME_AFFECTION := {"bad": -6, "okay": 1, "good": 5, "great": 10}
 
 # date_id -> DateData
 var dates: Dictionary = {}
@@ -32,6 +46,11 @@ var bookings: Dictionary = {}
 
 var _active: DateData = null
 var _in_dialogue: bool = false
+var _date_score: int = 0
+var _date_choice_count: int = 0
+var _last_reaction: String = ""
+var last_date_outcome: String = ""
+var last_date_score: int = 0
 # The conversation can consume its final action before scene_requested fires.
 # Capture when the NPC was asked, so "next afternoon" keeps its meaning.
 var _conversation_day: int = 1
@@ -53,6 +72,7 @@ func _ready() -> void:
 
 
 func _connect_sources() -> void:
+	DialogueManager.choice_resolved.connect(_on_date_choice)
 	DialogueManager.conversation_started.connect(_on_conversation_started)
 	DialogueManager.conversation_finished.connect(_on_conversation_finished)
 	DialogueManager.scene_requested.connect(_on_scene_requested)
@@ -280,6 +300,10 @@ func start_date(date: DateData) -> void:
 	if player == null:
 		return
 	_active = date
+	_date_score = 0
+	_date_choice_count = 0
+	_last_reaction = ""
+	last_date_outcome = ""
 	date_started.emit(date)
 	await _fade_to(1.0)
 	# Unbooked developer-only dates may still use legacy time-jump behavior.
@@ -304,6 +328,51 @@ func start_date(date: DateData) -> void:
 		push_warning("Date dialogue could not start: " + date.dialogue_json)
 		_in_dialogue = false
 		_finish(false)
+
+
+# A date exposes the same three choices on every scene and jealousy tier.
+# The current tier changes their score/reaction rather than hiding choices.
+static func score_for_choice(style: String, tier: int) -> int:
+	var row: Array = DATE_SCORE_BY_STYLE.get(style, [])
+	return int(row[clampi(tier, 0, 3)]) if not row.is_empty() else 0
+
+
+static func jealousy_for_choice(style: String, tier: int) -> int:
+	var row: Array = JEALOUSY_BY_STYLE.get(style, [])
+	return int(row[clampi(tier, 0, 3)]) if not row.is_empty() else 0
+
+
+static func outcome_for_score(score: int) -> String:
+	if score < 0:
+		return "bad"
+	if score < 5:
+		return "okay"
+	if score < 10:
+		return "good"
+	return "great"
+
+
+func _on_date_choice(npc: NPCData, choice: Dictionary) -> void:
+	if not _in_dialogue or _active == null or npc != _active.npc:
+		return
+	var style := str(choice.get("date_style", ""))
+	if not DATE_SCORE_BY_STYLE.has(style):
+		return
+	var tier := AffectionManager.get_jealousy_tier(npc.npc_id)
+	var points := score_for_choice(style, tier)
+	_date_score += points
+	_date_choice_count += 1
+	AffectionManager.change_jealousy(npc.npc_id, jealousy_for_choice(style, tier))
+	_last_reaction = "[Placeholder: %s / jealousy tier %d / score %+d]" % [style, tier, points]
+
+
+func get_placeholder_reaction() -> String:
+	return _last_reaction if not _last_reaction.is_empty() else "[Placeholder: date reaction]"
+
+
+func get_placeholder_outcome() -> String:
+	var outcome := outcome_for_score(_date_score)
+	return "[Placeholder: %s date / affection %+d]" % [outcome, int(OUTCOME_AFFECTION[outcome])]
 
 
 # Rests period by period until the date's period (at most a day).
@@ -331,7 +400,14 @@ func _finish(completed: bool) -> void:
 		flags[date.get_completed_flag()] = true
 		for flag in date.flags_to_set:
 			flags[flag] = true
-		AffectionManager.change(date.npc.npc_id, date.attraction_change)
+		var outcome := outcome_for_score(_date_score) if _date_choice_count > 0 else ""
+		last_date_score = _date_score
+		last_date_outcome = outcome
+		# Repeating a date always scores again, but never farms individual
+		# dialogue-choice affection. Successful completion prevents daily decay.
+		AffectionManager.mark_date_completed(date.npc.npc_id, _date_day)
+		var gain: int = int(OUTCOME_AFFECTION[outcome]) if not outcome.is_empty() else date.attraction_change
+		AffectionManager.change(date.npc.npc_id, gain)
 		_use_up_period()
 	_active = null
 	await _fade_to(0.0)
