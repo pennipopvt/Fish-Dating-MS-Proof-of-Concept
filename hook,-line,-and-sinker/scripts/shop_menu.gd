@@ -393,17 +393,17 @@ func _refresh_schedule_page() -> void:
 			tile.toggle_mode = true
 			tile.clip_text = true
 			tile.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
-			tile.text = "DAY %d\\n%s" % [
+			tile.text = "DAY %d\n%s" % [
 				day, "TODAY" if day_offset == 0 else "TOMORROW"
 			]
 			if booking != null:
-				tile.text += "\\n" + booking.display_name
+				tile.text += "\n" + booking.display_name
 			elif day == GameManager.get_day() and period == GameManager.get_period():
-				tile.text += "\\nNOW"
+				tile.text += "\nNOW"
 			elif _schedule_is_future(day, period):
-				tile.text += "\\nAVAILABLE"
+				tile.text += "\nAVAILABLE"
 			else:
-				tile.text += "\\nPAST"
+				tile.text += "\nPAST"
 			if not _schedule_is_future(day, period) and booking == null and not (
 				day == GameManager.get_day() and period == GameManager.get_period()
 			):
@@ -428,10 +428,10 @@ func _refresh_schedule_details() -> void:
 		_select_default_schedule_slot()
 		day = _schedule_day
 		period = _schedule_period
-	_item_name.text = "DAY %d - %s" % [day, GameManager.get_period_name(period).to_upper()]
+	_item_name.text = "DAY %d - %s" % [day, GameManager.get_period_name(period as GameManager.Times).to_upper()]
 	var booked := _get_schedule_booking(day, period)
 	if booked != null:
-		_description.text = "%s\\n\\n%s" % [
+		_description.text = "%s\n\n%s" % [
 			booked.display_name,
 			"Start now: first action of the period." if DateManager.is_booking_ready(booked)
 			else "The date is scheduled. Begin before spending any actions in this period."
