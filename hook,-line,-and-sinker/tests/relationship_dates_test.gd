@@ -42,9 +42,10 @@ func _ready() -> void:
 			for phase in range(1, 5):
 				var choices: Array = nodes["choice_%d" % phase]["choices"]
 				_expect(choices.size() == 3, "Date step %d contains exactly three options" % phase)
-				_expect(
-					choices.map(func(choice: Dictionary) -> String: return str(choice.get("date_style", ""))) == [
-						"reassure", "neutral", "bold"],
+				var styles: Array[String] = []
+				for choice in choices:
+					styles.append(str(choice.get("date_style", "")))
+				_expect(styles == ["reassure", "neutral", "bold"],
 					"Every step uses the same three choice styles")
 				for choice in choices:
 					_expect(not choice.has("required_flags") and not choice.has("forbidden_flags"),
