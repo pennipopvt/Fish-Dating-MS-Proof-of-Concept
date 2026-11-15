@@ -38,6 +38,8 @@ func _ready() -> void:
 		"Repeated recruitment cannot duplicate Silas or reserve another home")
 	_expect(RecruitmentHandler.recruit_actor_for_debug(kuda, KUDA_FISH),
 		"Kuda shortcut successfully recruits independently")
+	_expect(ShopManager.gifts_unlocked,
+		"Recruiting the first NPC permanently reveals gifts for this run")
 	_expect(not FishingManager.possible_catches.has(SILAS_FISH)
 		and not FishingManager.possible_catches.has(KUDA_FISH),
 		"Both recruited fish leave the fishing catch pool")
