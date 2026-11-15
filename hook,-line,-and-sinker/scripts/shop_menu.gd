@@ -401,6 +401,8 @@ func _refresh_quota_page() -> void:
 		bar.value = current
 		bar.show_percentage = false
 		bar.custom_minimum_size.y = 18
+		bar.add_theme_stylebox_override("background", PixelUI.box(PixelUI.INSET, PixelUI.ROW_EDGE, 1))
+		bar.add_theme_stylebox_override("fill", PixelUI.box(PixelUI.CYAN_DARK, PixelUI.CYAN, 1))
 		body.add_child(bar)
 
 		var submit_row := HBoxContainer.new()
@@ -614,11 +616,17 @@ func _refresh_schedule_page() -> void:
 						booking.display_name, day, GameManager.get_period_name(period as GameManager.Times)
 					]
 				if quota_due:
-					event_text = " ! QUOTA"
-					action_tile.tooltip_text = "FISH CO. weekly quota deadline — end of Day %d" % day
+					event_text = " ✓ QUOTA" if QuotaManager.is_complete() else " ! QUOTA"
+					action_tile.tooltip_text = (
+						"Weekly quota fulfilled" if QuotaManager.is_complete()
+						else "FISH CO. quota deadline — end of Day %d" % day
+					)
 				action_tile.text = "%s %d%s" % [marker, action + 1, event_text]
 				if quota_due:
-					action_tile.self_modulate = Color(1.0, 0.78, 0.62, 1.0)
+					action_tile.self_modulate = (
+						Color(0.78, 1.0, 0.86, 1.0) if QuotaManager.is_complete()
+						else Color(1.0, 0.78, 0.62, 1.0)
+					)
 				elif booking != null:
 					action_tile.self_modulate = Color(0.96, 0.78, 0.83, 1.0)
 				elif is_spent:
@@ -649,8 +657,9 @@ func _refresh_schedule_details() -> void:
 	_item_name.text = "DAY %d - %s" % [day, GameManager.get_period_name(period as GameManager.Times).to_upper()]
 	var date := _get_schedule_booking(day, period)
 	var quota_deadline := _schedule_slot_is_quota_deadline(day, period, _schedule_action)
+	var quota_note := "FISH CO. quota fulfilled." if QuotaManager.is_complete() else "FISH CO. quota due tonight."
 	if date == null:
-		_description.text = "FISH CO. quota due tonight." if quota_deadline else "Nothing scheduled."
+		_description.text = quota_note if quota_deadline else "Nothing scheduled."
 		return
 	var npc_name := date.npc.display_name if date.npc != null else "your date"
 	# Date display names currently include the partner (e.g. "Beach date with
@@ -658,7 +667,7 @@ func _refresh_schedule_details() -> void:
 	var date_type := date.display_name.trim_suffix(" with " + npc_name).to_lower()
 	_description.text = "Scheduled a %s with %s." % [date_type, npc_name]
 	if quota_deadline:
-		_description.text += "\nFISH CO. quota due tonight."
+		_description.text += "\n" + quota_note
 
 
 func _collect_trades() -> void:
