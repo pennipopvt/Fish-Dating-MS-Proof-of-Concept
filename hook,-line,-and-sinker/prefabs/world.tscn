@@ -22,6 +22,7 @@
 [ext_resource type="Shader" uid="uid://bv2isyw6ln31h" path="res://shaders/moon.gdshader" id="moon_shader"]
 [ext_resource type="Shader" uid="uid://cli6ci0c4km7b" path="res://shaders/night_stars.gdshader" id="night_stars"]
 [ext_resource type="Script" uid="uid://cba27f3x60a3r" path="res://scripts/world_day_night.gd" id="world_day_night"]
+[ext_resource type="Script" path="res://scripts/date_agenda.gd" id="date_agenda"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_4284n"]
 shader = ExtResource("6_07nuu")
@@ -215,3 +216,6 @@ offset_left = -237.0
 offset_top = 140.0
 offset_right = 2800.0
 offset_bottom = 320.0
+
+[node name="DateAgenda" type="CanvasLayer" parent="."]
+script = ExtResource("date_agenda")
