@@ -18,6 +18,8 @@ const TONE_AMOUNTS := {"positive": 5, "neutral": 0, "negative": -3}
 const DAILY_DECAY_BY_TIER := [2, 4, 6, 10]
 const OTHER_ROMANCE_JEALOUSY := 45
 const MISSED_DATE_JEALOUSY := 15
+const FIRST_ROMANCE_DEADLINE_DAYS := 5
+const RECRUITED_DAY_KEY := "recruited_day"
 const RECRUITED_FLAG := &"Recruited"
 const LAST_DATE_KEY := "last_date_day"
 const JEALOUSY_KEY := "jealousy"
@@ -78,7 +80,7 @@ func get_jealousy(npc_id: StringName) -> int:
 
 
 func get_jealousy_tier(npc_id: StringName) -> int:
-	return mini(get_jealousy(npc_id) / 25, 3)
+	return mini(floori(float(get_jealousy(npc_id)) / 25.0), 3)
 
 
 func change_jealousy(npc_id: StringName, delta: int) -> void:
@@ -114,6 +116,12 @@ func on_romance_completed(npc_id: StringName) -> void:
 		if other_id != npc_id and NPCManager.npc_states[other_id].get("flags", {}).get(RECRUITED_FLAG, false) and has_completed_romance(other_id):
 			change_jealousy(other_id, OTHER_ROMANCE_JEALOUSY)
 	flags[ROMANCE_KEY] = true
+
+
+func on_recruited(npc_id: StringName) -> void:
+	var state: Dictionary = NPCManager.get_npc_state(npc_id)
+	if not has_completed_romance(npc_id):
+		state[RECRUITED_DAY_KEY] = GameManager.get_day()
 
 
 func mark_date_completed(npc_id: StringName, day: int) -> void:
@@ -183,9 +191,19 @@ func _on_day_started(day: int) -> void:
 		var state: Dictionary = NPCManager.npc_states[npc_id]
 		if not state.get("flags", {}).get(RECRUITED_FLAG, false):
 			continue
-		# Relationship upkeep starts after first romance. Talking never replaces dates.
+		# There are five days from recruitment to finish the first romance.
+		# Recruited on day 1 => must complete it by the end of day 5.
 		if not has_completed_romance(npc_id):
+			var recruited_day: int = int(state.get(RECRUITED_DAY_KEY, day - 1))
+			state[RECRUITED_DAY_KEY] = recruited_day
+			if day - recruited_day >= FIRST_ROMANCE_DEADLINE_DAYS:
+				leave(npc_id)
+			elif day - recruited_day >= FIRST_ROMANCE_DEADLINE_DAYS - 2:
+				show_message("ROMANCE DEADLINE", "%s has %d day(s) left" % [
+					_display_name(npc_id), FIRST_ROMANCE_DEADLINE_DAYS - (day - recruited_day)
+				])
 			continue
+		# Relationship upkeep starts after first romance. Talking never replaces dates.
 		if int(state.get(LAST_DATE_KEY, -1)) == day - 1:
 			continue
 		var decay: int = DAILY_DECAY_BY_TIER[get_jealousy_tier(npc_id)]
@@ -213,8 +231,15 @@ func leave(npc_id: StringName) -> void:
 	state["attraction"] = NPCManager.START_ATTRACTION
 	state.erase(LAST_TALK_KEY)
 	state.erase(LAST_DATE_KEY)
+	state.erase(RECRUITED_DAY_KEY)
 	state[JEALOUSY_KEY] = 0
 	state["flags"].erase(ROMANCE_KEY)
+	# A recaught NPC must complete the first-romance route again before dates.
+	for flag in [&"silas_route_complete", &"barracuda_route_complete",
+		&"house_invitation_accepted", &"barracuda_invitation_accepted"]:
+		state["flags"].erase(flag)
+	for date: DateData in DateManager.get_dates_for(npc_id):
+		DateManager.cancel_booking(date)
 	var npc_name := _display_name(npc_id)
 	var actor := _find_actor(npc_id)
 	_return_fish(npc_id, actor)
