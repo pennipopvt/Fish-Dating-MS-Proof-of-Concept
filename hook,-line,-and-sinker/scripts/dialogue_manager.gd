@@ -6,6 +6,8 @@ signal conversation_finished(npc: NPCData)
 # Animation cues from JSON nodes and special-scene requests after a conversation ends.
 signal dialogue_cue(npc: NPCData, cue: String)
 signal scene_requested(npc: NPCData, scene_id: String)
+# Only DateManager consumes date_style choices; normal dialogue is unaffected.
+signal choice_resolved(npc: NPCData, choice: Dictionary)
 
 func request_conversation(npc: NPCData, json_override: String = "", gift_player: Player = null) -> void:
 	if npc != null and not is_active:
@@ -154,8 +156,10 @@ func _complete_pending_choice() -> void:
 	if bool(choice.get("spends_action", true)):
 		_conversation_costs_action = true
 	# Affection goes through AffectionManager (tone or exact number, first pick only).
-	AffectionManager.on_choice_picked(current_npc, str(choice.get("_key", "")), choice)
+	if not choice.has("date_style"):
+		AffectionManager.on_choice_picked(current_npc, str(choice.get("_key", "")), choice)
 	_apply_json_effects(choice.get("effects", {}), false)
+	choice_resolved.emit(current_npc, choice)
 	_enter_node(str(choice["next"]))
 
 func _apply_json_effects(effects: Variant, include_attraction: bool = true) -> void:
@@ -210,9 +214,9 @@ func _enter_node(id: String) -> void:
 	for raw_line in node.get("lines", []):
 		var line := DialogueLineData.new()
 		if raw_line is String:
-			line.text = raw_line
+			line.text = _format_date_placeholder(raw_line)
 		elif raw_line is Dictionary:
-			line.text = str(raw_line.get("text", ""))
+			line.text = _format_date_placeholder(str(raw_line.get("text", "")))
 			line.speaker = DialogueLineData.Speaker.PLAYER if raw_line.get("speaker", "npc") == "player" else DialogueLineData.Speaker.NPC
 			line.expression = StringName(str(raw_line.get("expression", "neutral")))
 		else:
@@ -229,6 +233,17 @@ func _enter_node(id: String) -> void:
 		_choice_defs.append(choice)
 		_choice_greyed.append(AffectionManager.is_greyed(current_npc.npc_id, choice["_key"], choice))
 	_check_for_end()
+
+# Date reaction and outcome placeholders are resolved at display time.
+# Date authors can replace these with real branches later without changing
+# the scoring API or the three response styles.
+func _format_date_placeholder(raw: String) -> String:
+	if raw == "{{date_reaction}}":
+		return DateManager.get_placeholder_reaction()
+	if raw == "{{date_outcome}}":
+		return DateManager.get_placeholder_outcome()
+	return raw
+
 
 func _check_for_end() -> void:
 	if not is_active:
