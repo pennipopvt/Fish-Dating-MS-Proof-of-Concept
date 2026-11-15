@@ -66,8 +66,6 @@ var _tabs_pop_tween: Tween
 var _nav_rest_x: float = 0.0
 var _schedule_day: int = -1
 var _schedule_period: int = 0
-var _schedule_date_id: StringName = &""
-var _schedule_message: String = ""
 
 
 func _ready() -> void:
@@ -198,7 +196,6 @@ func _select_page(page: int) -> void:
 	_selected_index = 0
 	_last_order_message = ""
 	if page == Page.SCHEDULE:
-		_schedule_message = ""
 		_select_default_schedule_slot()
 	_refresh_page()
 	_update_nav_tabs(true)
@@ -310,7 +307,7 @@ func _refresh_page() -> void:
 		_status.text = _last_order_message
 
 
-# ---- Schedule / calendar ------------------------------------------------
+# ---- Schedule / calendar (view-only; book dates by talking to NPCs) -----
 
 func _on_schedule_changed() -> void:
 	if visible and _page == Page.SCHEDULE:
@@ -326,14 +323,12 @@ func _select_default_schedule_slot() -> void:
 		if DateManager.is_booking_ready(date):
 			_schedule_day = today
 			_schedule_period = GameManager.get_period()
-			_schedule_date_id = &""
 			return
 	_schedule_day = today
 	_schedule_period = GameManager.get_period() + 1
 	if _schedule_period >= 3:
 		_schedule_day += 1
 		_schedule_period = 0
-	_schedule_date_id = &""
 
 
 func _get_schedule_booking(day: int, period: int) -> DateData:
@@ -344,33 +339,21 @@ func _get_schedule_booking(day: int, period: int) -> DateData:
 	return null
 
 
-func _schedule_is_future(day: int, period: int) -> bool:
-	return day * 3 + period > GameManager.get_day() * 3 + GameManager.get_period()
-
-
 func _select_schedule_slot(day: int, period: int) -> void:
 	_schedule_day = day
 	_schedule_period = period
-	_schedule_date_id = &""
-	_schedule_message = ""
 	_refresh_schedule_page()
 
 
-func _choose_schedule_date(id: StringName) -> void:
-	_schedule_date_id = id
-	_schedule_message = ""
-	_refresh_schedule_details()
-
-
 func _refresh_schedule_page() -> void:
-	# Reuse the existing terminal's left grid and right detail controls.
+	# Preserve the same pixel-art terminal layout, with a small two-day grid.
 	_grid.columns = 3
 	_preview_frame.hide()
 	_page_title.text = "SCHEDULE"
-	_page_hint.text = "Day %d  /  %s  /  %d of 3 actions left" % [
+	_page_hint.text = "Day %d / %s / %d actions left" % [
 		GameManager.get_day(), GameManager.get_period_name(), GameManager.get_actions_left()
 	]
-	_page_indicator.text = "DATES / START AT THE FIRST ACTION OF THE PERIOD"
+	_page_indicator.text = "DATES / BOOK WITH NPCS / VIEW ONLY"
 	for i in range(_nav_buttons.size()):
 		_nav_buttons[i].button_pressed = i == _page
 		_nav_buttons[i].self_modulate = Color.WHITE if i == _page else Color(0.88, 0.9, 0.9, 0.9)
@@ -390,32 +373,27 @@ func _refresh_schedule_page() -> void:
 	for day_offset in 2:
 		var day := GameManager.get_day() + day_offset
 		for period in 3:
-			var booking := _get_schedule_booking(day, period)
+			var booked := _get_schedule_booking(day, period)
 			var tile := Button.new()
-			tile.custom_minimum_size = Vector2(228, 177)
+			tile.custom_minimum_size = Vector2(228, 168)
 			tile.toggle_mode = true
 			tile.clip_text = true
 			tile.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 			tile.text = "DAY %d\n%s" % [
 				day, "TODAY" if day_offset == 0 else "TOMORROW"
 			]
-			if booking != null:
-				tile.text += "\n" + ("NOW: " if DateManager.is_booking_ready(booking) else "") + booking.display_name
-				tile.tooltip_text = booking.display_name
+			if booked != null:
+				tile.text += "\n" + ("DUE NOW" if DateManager.is_booking_ready(booked) else booked.display_name)
+				tile.tooltip_text = booked.display_name
 			elif day == GameManager.get_day() and period == GameManager.get_period():
 				tile.text += "\nNOW"
-			elif _schedule_is_future(day, period):
-				tile.text += "\nAVAILABLE"
 			else:
-				tile.text += "\nPAST"
-			if not _schedule_is_future(day, period) and booking == null and not (
-				day == GameManager.get_day() and period == GameManager.get_period()
-			):
+				tile.text += "\n--"
+			if day == GameManager.get_day() and period < GameManager.get_period():
 				tile.self_modulate = Color(0.65, 0.68, 0.68, 0.75)
 			tile.set_pressed_no_signal(day == _schedule_day and period == _schedule_period)
 			tile.pressed.connect(_select_schedule_slot.bind(day, period))
 			_grid.add_child(tile)
-
 	_refresh_schedule_details()
 
 
@@ -425,7 +403,7 @@ func _refresh_schedule_details() -> void:
 		child.queue_free()
 	_preview.texture = null
 	_order_button.hide()
-	_status.text = _schedule_message
+	_status.text = ""
 	var day := _schedule_day
 	var period := _schedule_period
 	if day < GameManager.get_day() or day > GameManager.get_day() + 1:
@@ -433,82 +411,19 @@ func _refresh_schedule_details() -> void:
 		day = _schedule_day
 		period = _schedule_period
 	_item_name.text = "DAY %d - %s" % [day, GameManager.get_period_name(period as GameManager.Times).to_upper()]
-	var booked := _get_schedule_booking(day, period)
-	if booked != null:
-		_description.text = "%s\n\n%s" % [
-			booked.display_name,
-			"Start now: first action of the period." if DateManager.is_booking_ready(booked)
-			else "The date is scheduled. Begin before spending any actions in this period."
+	var date := _get_schedule_booking(day, period)
+	if date == null:
+		_description.text = "Nothing planned.\n\nAsk an NPC out in conversation, choose a location and time, and the date will appear here automatically."
+		return
+	var npc_name := date.npc.display_name if date.npc != null else "your date"
+	if DateManager.is_booking_ready(date):
+		_description.text = "%s\nWith %s\n\nREADY NOW! Talk to %s before spending any actions this period to start the date." % [
+			date.display_name, npc_name, npc_name
 		]
-		if DateManager.is_booking_ready(booked):
-			_order_button.text = "START DATE (3 ACTIONS)"
-			_order_button.show()
-		elif _schedule_is_future(day, period):
-			_order_button.text = "CANCEL BOOKING"
-			_order_button.show()
-		return
-
-	if not _schedule_is_future(day, period):
-		_description.text = "This period has already started. Schedule for a future morning, afternoon or night."
-		return
-
-	_description.text = "Choose a date to plan for this period. Booking costs one action. The date itself takes all three actions of its scheduled period."
-	var valid: Array[DateData] = []
-	for item in DateManager.dates.values():
-		var date := item as DateData
-		if DateManager.can_book_at(date, day, period):
-			valid.append(date)
-	valid.sort_custom(func(a: DateData, b: DateData) -> bool:
-		return a.display_name < b.display_name
-	)
-
-	if valid.is_empty():
-		_status.text = "No dates available yet. Finish an NPC's first romance route to unlock them."
-		return
-	var selection_exists := false
-	for date in valid:
-		if date.date_id == _schedule_date_id:
-			selection_exists = true
-	if not selection_exists:
-		_schedule_date_id = valid[0].date_id
-
-	for date in valid:
-		var choice := Button.new()
-		choice.custom_minimum_size.y = 60
-		choice.text = date.display_name
-		choice.toggle_mode = true
-		choice.set_pressed_no_signal(date.date_id == _schedule_date_id)
-		choice.pressed.connect(_choose_schedule_date.bind(date.date_id))
-		_costs.add_child(choice)
-
-	if GameManager.can_act():
-		_order_button.text = "BOOK DATE (1 ACTION)"
-		_order_button.show()
 	else:
-		_status.text = "No actions left. Rest before booking another date."
-
-
-func _on_schedule_action() -> void:
-	var date := _get_schedule_booking(_schedule_day, _schedule_period)
-	if date != null:
-		if DateManager.is_booking_ready(date):
-			close()
-			DateManager.start_date(date)
-		elif _schedule_is_future(_schedule_day, _schedule_period):
-			DateManager.cancel_booking(date)
-			_schedule_message = "Date cancelled."
-			_refresh_schedule_page()
-		return
-
-	var chosen := DateManager.get_date(_schedule_date_id)
-	if chosen == null or not GameManager.can_act():
-		return
-	if DateManager.book_at(chosen, _schedule_day, _schedule_period):
-		_schedule_message = "Booked %s for Day %d %s." % [
-			chosen.display_name, _schedule_day, GameManager.get_period_name(_schedule_period as GameManager.Times)
+		_description.text = "%s\nWith %s\n\nMeet %s at the start of this period, before spending any actions. The date takes the whole period." % [
+			date.display_name, npc_name, npc_name
 		]
-		GameManager.spend_actions(1)
-		_refresh_schedule_page()
 
 
 func _collect_trades() -> void:
@@ -805,9 +720,6 @@ func _human_name(id: StringName) -> String:
 
 
 func _on_order_pressed() -> void:
-	if _page == Page.SCHEDULE:
-		_on_schedule_action()
-		return
 	if _entries.is_empty() or _entries[_selected_index].get("kind") != "trade":
 		return
 	var trade: TradeData = _entries[_selected_index].get("ref") as TradeData
