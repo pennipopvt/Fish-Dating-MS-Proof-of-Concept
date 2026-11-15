@@ -521,26 +521,20 @@ func _refresh_schedule_details() -> void:
 	_status.text = ""
 	var day := _schedule_day
 	var period := _schedule_period
-	var action := _schedule_action
 	if day < GameManager.get_day() or day >= GameManager.get_day() + SCHEDULE_DAYS:
 		_select_default_schedule_slot()
 		day = _schedule_day
 		period = _schedule_period
-		action = _schedule_action
 	_item_name.text = "DAY %d - %s" % [day, GameManager.get_period_name(period as GameManager.Times).to_upper()]
 	var date := _get_schedule_booking(day, period)
 	if date == null:
-		_description.text = "ACTION %d / 3\n\nNothing planned. Ask an NPC out in conversation and the date will appear here automatically." % [action + 1]
+		_description.text = "Nothing scheduled."
 		return
 	var npc_name := date.npc.display_name if date.npc != null else "your date"
-	if DateManager.is_booking_ready(date):
-		_description.text = "%s\nWith %s\n\nREADY NOW! Talk to %s before spending the first action. The date uses all three actions." % [
-			date.display_name, npc_name, npc_name
-		]
-	else:
-		_description.text = "%s\nWith %s\n\nBooked for action 1, occupying actions 1-3. Talk to %s at the start of this period." % [
-			date.display_name, npc_name, npc_name
-		]
+	# Date display names currently include the partner (e.g. "Beach date with
+	# Silas"), so strip the suffix to avoid saying their name twice.
+	var date_type := date.display_name.trim_suffix(" with " + npc_name).to_lower()
+	_description.text = "Scheduled a %s with %s." % [date_type, npc_name]
 
 
 func _collect_trades() -> void:
