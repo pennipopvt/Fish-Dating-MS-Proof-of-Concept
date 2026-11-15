@@ -16,7 +16,8 @@
         },
         {
           "text": "See you later!",
-          "next": "goodbye"
+          "next": "goodbye",
+          "spends_action": false
         }
       ]
     },
@@ -128,5 +129,6 @@
         "Okay! See you soon!"
       ]
     }
-  }
+  },
+  "free_greeting": true
 }
