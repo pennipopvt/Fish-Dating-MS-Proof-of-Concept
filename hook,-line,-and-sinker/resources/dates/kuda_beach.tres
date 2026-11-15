@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="DateData" format=3]
+
+[ext_resource type="Script" path="res://resources/date_data.gd" id="1_date"]
+[ext_resource type="Resource" path="res://resources/npcs/barracuda.tres" id="2_npc"]
+
+[resource]
+script = ExtResource("1_date")
+date_id = &"kuda_beach"
+display_name = "Beach date with Kuda"
+npc = ExtResource("2_npc")
+location_id = &"beach"
+dialogue_json = "res://dialogue/kuda_date_beach.json"
+periods = 0
+when = 1
+jump_clock = false
+required_flags = Array[StringName]([&"Recruited", &"barracuda_route_complete"])
+repeatable = true
