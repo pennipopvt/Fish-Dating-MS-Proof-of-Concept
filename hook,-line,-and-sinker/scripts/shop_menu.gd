@@ -198,6 +198,7 @@ func _select_page(page: int) -> void:
 	_selected_index = 0
 	_last_order_message = ""
 	if page == Page.SCHEDULE:
+		_schedule_message = ""
 		_select_default_schedule_slot()
 	_refresh_page()
 	_update_nav_tabs(true)
@@ -501,7 +502,7 @@ func _on_schedule_action() -> void:
 		return
 	if DateManager.book_at(chosen, _schedule_day, _schedule_period):
 		_schedule_message = "Booked %s for Day %d %s." % [
-			chosen.display_name, _schedule_day, GameManager.get_period_name(_schedule_period)
+			chosen.display_name, _schedule_day, GameManager.get_period_name(_schedule_period as GameManager.Times)
 		]
 		GameManager.spend_actions(1)
 		_refresh_schedule_page()
