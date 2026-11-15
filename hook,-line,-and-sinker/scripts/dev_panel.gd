@@ -254,8 +254,12 @@ func _dev_recruit(npc_id: StringName) -> void:
 		_say("No recruitable NPC fish found for " + String(npc_id))
 		return
 	if state["flags"].get(&"Recruited", false):
-		_say(data.display_name + " is already recruited")
-		return
+		if _find_npc_actor(npc_id) != null:
+			_say(data.display_name + " is already recruited and in the world")
+			return
+		# Older story shortcuts sometimes left Recruited=true without a
+		# corresponding actor. Recover through the real recruitment path.
+		state["flags"].erase(&"Recruited")
 	if DialogueManager.is_active:
 		_say("Finish the current dialogue before recruiting another NPC")
 		return
@@ -1086,15 +1090,16 @@ func _rebuild_flags() -> void:
 	if is_instance_valid(_flag_npc) and _flag_npc.selected >= 0:
 		selected_id = StringName(str(_flag_npc.get_item_metadata(_flag_npc.selected)))
 	for child in _flags_box.get_children():
+		_flags_box.remove_child(child)
 		child.queue_free()
 	var box := _flags_box
 
+	_heading(box, "NPC management")
 	var row := _row(box)
-	var label := Label.new()
-	label.text = "NPC"
-	row.add_child(label)
+	row.add_child(PixelUI.label("Character", &"DimLabel"))
 	_flag_npc = OptionButton.new()
-	# Both playable NPCs always appear, even before they have a state.
+	_flag_npc.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	# Always expose both NPCs, regardless of whether their state exists yet.
 	var ids: Array[StringName] = [SILAS_ID, KUDA_ID]
 	for id in NPCManager.npc_states.keys():
 		if not ids.has(id):
@@ -1110,10 +1115,37 @@ func _rebuild_flags() -> void:
 	row.add_child(_flag_npc)
 
 	var state: Dictionary = NPCManager.get_npc_state(selected_id)
+	var flags: Dictionary = state["flags"]
+	var data: NPCData = _flag_npc_resource(selected_id)
+	var actor := _find_npc_actor(selected_id)
+	var label_name := data.display_name if data != null else String(selected_id)
+	var recruited: bool = bool(flags.get(&"Recruited", false))
+	var active_text := "In world" if actor != null else "Not spawned"
+	if actor != null and RecruitmentHandler.waiting_npcs.has(actor):
+		active_text = "Waiting at dock"
+	var status_text := "%s  /  %s  /  %s" % [
+		label_name,
+		"Recruited" if recruited else "Not recruited",
+		active_text
+	]
+	var status_label := PixelUI.label(status_text, &"DimLabel")
+	box.add_child(status_label)
+
+	_heading(box, "Quick actions")
+	var actions := _row(box)
+	var recruit_button := _button(actions, "Recruit", func() -> void: _dev_recruit(selected_id))
+	recruit_button.tooltip_text = "Spawns the NPC, removes their fish from catches, and uses the real housing queue"
+	recruit_button.disabled = recruited and actor != null
+	var talk_button := _button(actions, "Talk", func() -> void: _dev_talk(selected_id))
+	talk_button.disabled = not recruited or actor == null
+	var scene_button := _button(actions, "First romance scene", func() -> void: _dev_romance_scene(selected_id))
+	scene_button.disabled = not recruited or actor == null
+	var unlock_button := _button(actions, "Unlock dating (skip scene)", func() -> void: _dev_unlock_dating(selected_id))
+	unlock_button.disabled = not recruited or AffectionManager.has_completed_romance(selected_id)
+
+	_heading(box, "Relationship")
 	var attraction_row := _row(box)
-	var attraction_label := Label.new()
-	attraction_label.text = "Affection (below 0: leaves)"
-	attraction_row.add_child(attraction_label)
+	attraction_row.add_child(PixelUI.label("Affection", &"DimLabel"))
 	var attraction := SpinBox.new()
 	attraction.min_value = -10
 	attraction.max_value = AffectionManager.MAX_AFFECTION
@@ -1124,7 +1156,7 @@ func _rebuild_flags() -> void:
 	attraction_row.add_child(attraction)
 
 	var jealousy_row := _row(box)
-	jealousy_row.add_child(PixelUI.label("Jealousy (0-100; tier 0-3)", &"DimLabel"))
+	jealousy_row.add_child(PixelUI.label("Jealousy (tier %d)" % AffectionManager.get_jealousy_tier(selected_id), &"DimLabel"))
 	var jealousy := SpinBox.new()
 	jealousy.min_value = 0
 	jealousy.max_value = AffectionManager.MAX_JEALOUSY
@@ -1137,36 +1169,53 @@ func _rebuild_flags() -> void:
 		]))
 	jealousy_row.add_child(jealousy)
 
-	_heading(box, "Flags for %s (toggle to set / clear)" % (
-		_flag_npc_resource(selected_id).display_name
-		if _flag_npc_resource(selected_id) != null else String(selected_id)
-	))
-	var flags: Dictionary = state["flags"]
+	# Regular workflows live above. Keep raw flags available for debugging,
+	# collapsed by default, so the NPC page no longer starts with 30 toggles.
+	_button(
+		box, "Hide advanced flags" if _advanced_npc_flags_open else "Show advanced flags",
+		func() -> void:
+			_advanced_npc_flags_open = not _advanced_npc_flags_open
+			_rebuild_flags.call_deferred()
+	)
+	if not _advanced_npc_flags_open:
+		return
+
+	_heading(box, "Story flags — " + label_name)
 	for flag in _known_flags(selected_id):
+		# These date eligibility flags are calculated when dialogue starts,
+		# so exposing editable checkboxes only creates misleading duplicates.
+		if String(flag).begins_with("date_ok_"):
+			continue
 		var check := CheckBox.new()
 		check.text = String(flag)
 		check.focus_mode = Control.FOCUS_NONE
 		check.button_pressed = bool(flags.get(flag, false))
-		var id: StringName = flag
-		check.toggled.connect(func(on: bool) -> void:
-			flags[id] = on
-			_say("%s.%s = %s" % [selected_id, id, on]))
+		# These flags drive gameplay state, not just dialogue. Toggling them
+		# directly would bypass the spawn, pool, housing and jealousy systems.
+		if flag in [&"Recruited", &"silas_route_complete", &"barracuda_route_complete", &"romance_complete"]:
+			check.disabled = true
+			check.tooltip_text = "Use Recruit / Unlock dating above to keep gameplay state in sync"
+		else:
+			var id: StringName = flag
+			check.toggled.connect(func(on: bool) -> void:
+				flags[id] = on
+				_say("%s.%s = %s" % [selected_id, id, on]))
 		box.add_child(check)
 
 	var add_row := _row(box)
 	var field := LineEdit.new()
-	field.placeholder_text = "new flag name"
+	field.placeholder_text = "Custom flag name"
 	field.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	add_row.add_child(field)
-	_button(add_row, "Set true", func() -> void:
-		if field.text.strip_edges().is_empty():
+	_button(add_row, "Set", func() -> void:
+		var flag_name := field.text.strip_edges()
+		if flag_name.is_empty():
 			return
-		flags[StringName(field.text.strip_edges())] = true
-		_say("Set " + field.text.strip_edges())
-		_rebuild_flags.call_deferred())
-	_button(box, "Clear all flags for this NPC", func() -> void:
-		flags.clear()
-		_say("Cleared flags for " + String(selected_id))
+		if flag_name in ["Recruited", "silas_route_complete", "barracuda_route_complete", "romance_complete"] or flag_name.begins_with("date_ok_"):
+			_say("Use the NPC actions above for that gameplay flag")
+			return
+		flags[StringName(flag_name)] = true
+		_say("Set %s on %s" % [flag_name, selected_id])
 		_rebuild_flags.call_deferred())
 
 
