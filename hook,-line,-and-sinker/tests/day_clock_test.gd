@@ -3,9 +3,7 @@ extends Node
 # Debug test for the GameManager day clock. Uses autoloads, so it runs as a
 # scene, not with -s. From the Godot project folder:
 #   godot --headless --path . res://tests/day_clock_test.tscn
-# Exits with code 1 if any check fails. Never touches the real save file.
-
-const TEST_SAVE: String = "user://day_clock_test.cfg"
+# Exits with code 1 if any check fails. Clock state is session-only.
 const BED_SCENE: PackedScene = preload("res://prefabs/bed.tscn")
 
 var _failures: int = 0
@@ -16,18 +14,16 @@ var _seen: Array[String] = []
 func _ready() -> void:
 	# GameManager connects to other managers deferred; wait for that.
 	await get_tree().process_frame
-	GameManager.save_path = TEST_SAVE
-	DirAccess.remove_absolute(ProjectSettings.globalize_path(TEST_SAVE))
 	GameManager.time_changed.connect(_on_time_changed)
+	_expect_clock(1, GameManager.Times.MORNING, 3, "fresh launch always starts day 1 morning")
 
 	_test_period_advancement()
 	_test_night_blocks_actions()
 	_test_rest_and_rollover()
 	await _test_bed()
 	_test_dependents_read_new_values()
-	_test_save_round_trip()
+	_test_session_only_clock()
 
-	DirAccess.remove_absolute(ProjectSettings.globalize_path(TEST_SAVE))
 	print("day_clock_test: %s" % ("PASS" if _failures == 0 else "%d FAILED" % _failures))
 	get_tree().quit(1 if _failures > 0 else 0)
 
@@ -46,7 +42,6 @@ func _test_period_advancement() -> void:
 	_expect_clock(1, GameManager.Times.NIGHT, 3, "spending all afternoon actions starts night")
 	GameManager.spend_actions(10)
 	_expect_clock(1, GameManager.Times.NIGHT, 0, "night doesn't roll over by itself")
-	_expect(GameManager.get_save_data()["period"] == GameManager.Times.NIGHT, "save data reports night")
 
 
 func _test_night_blocks_actions() -> void:
@@ -98,25 +93,15 @@ func _test_dependents_read_new_values() -> void:
 	_expect(GameManager.get_day() == 4 and GameManager.get_actions_left() == 3, "get_day / get_actions_left after rollover")
 
 
-func _test_save_round_trip() -> void:
+# No persisted clock: changing time only affects the current run, and the
+# dev reset restores a predictable morning state for the next test.
+func _test_session_only_clock() -> void:
 	GameManager.rest()
 	GameManager.spend_actions(2)
-	_expect_clock(4, GameManager.Times.AFTERNOON, 1, "setup for save")
-	var config := ConfigFile.new()
-	_expect(config.load(TEST_SAVE) == OK, "the clock was written to the save file")
-	_expect(config.get_value("clock", "day", -1) == 4 and config.get_value("clock", "period", -1) == GameManager.Times.AFTERNOON and config.get_value("clock", "actions", -1) == 1, "save file holds day 4 afternoon, 1 action")
-
-	# Scramble memory, then load like a fresh start.
-	GameManager.load_save_data({})
-	_expect_clock(1, GameManager.Times.MORNING, 3, "empty save data falls back to defaults")
-	_expect(GameManager.load_from_disk(), "load_from_disk finds the clock")
-	_expect_clock(4, GameManager.Times.AFTERNOON, 1, "loading restores day 4 afternoon, 1 action")
-
-	GameManager.load_save_data({"day": -3, "period": 9, "actions": 99})
-	_expect_clock(1, GameManager.Times.NIGHT, 3, "out-of-range save values are clamped")
-
-	DirAccess.remove_absolute(ProjectSettings.globalize_path(TEST_SAVE))
-	_expect(not GameManager.load_from_disk(), "no save file means nothing is loaded")
+	_expect_clock(4, GameManager.Times.AFTERNOON, 1, "clock still advances within a session")
+	GameManager.reset_clock()
+	_expect_clock(1, GameManager.Times.MORNING, 3, "reset restores day 1 morning with full actions")
+	_expect(not GameManager.has_method("save_to_disk") and not GameManager.has_method("load_from_disk"), "clock has no disk persistence methods")
 
 
 func _on_time_changed(d: int, t: GameManager.Times) -> void:
