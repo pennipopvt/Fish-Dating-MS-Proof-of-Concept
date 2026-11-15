@@ -218,7 +218,11 @@ func _mark_route_complete(npc: NPCData, flag_name: StringName) -> void:
 	if flag_name == &"":
 		return
 	var flags: Dictionary = NPCManager.get_npc_state(npc.npc_id)["flags"]
+	if flags.get(flag_name, false):
+		return
 	flags[flag_name] = true
+	# Completing the first romance affects jealousy of existing partners.
+	AffectionManager.on_romance_completed(npc.npc_id)
 
 func _fade_to(alpha: float) -> void:
 	fade_layer.show()
