@@ -373,6 +373,14 @@ theme_override_constants/h_separation = 12
 theme_override_constants/v_separation = 12
 columns = 4
 
+[node name="ChallengeView" type="VBoxContainer" parent="TerminalRoot/Panel/Margin/Layout/Body/Left"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/separation = 15
+
 [node name="QuotaView" type="VBoxContainer" parent="TerminalRoot/Panel/Margin/Layout/Body/Left"]
 unique_name_in_owner = true
 visible = false
