@@ -5,7 +5,7 @@ extends Node
 #   godot --headless --path . res://tests/day_clock_test.tscn
 # Exits with code 1 if any check fails. Clock state is session-only.
 const BED_SCENE: PackedScene = preload("res://prefabs/bed.tscn")
-const FISHING_CONTROLLER_SCRIPT: Script = preload("res://scripts/fishing_controller.gd")
+const FISHING_CONTROLLER_SCRIPT = preload("res://scripts/fishing_controller.gd")
 
 var _failures: int = 0
 # What a dependent system saw when it was notified.
