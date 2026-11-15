@@ -171,9 +171,14 @@ func begin_fishing() -> void:
 		await _lock_fishing_camera()
 		cast_rod()
 	
+# One fishing session consumes exactly one action. Additional casts happen
+# automatically only when the casts-per-action upgrade leaves casts available.
+func has_casts_left() -> bool:
+	return casts < maxi(FishingManager.casts_per_action, 1) and GameManager.can_act()
+
+
 func cast_rod() -> void:
-	# Out of actions for the night: stop recasting (GameManager day clock).
-	if(casts >= FishingManager.max_casts_per_session or not GameManager.can_act()):
+	if not has_casts_left():
 		exit_fishing()
 		return
 	casts += 1
@@ -422,11 +427,13 @@ func catch_fish() -> void:
 func finish_cast() -> void:
 	_cast_unresolved = false
 	reset_values()
-	
-	if(casts >= FishingManager.max_casts_per_session):
-		exit_fishing()
-	else:
+
+	# At the base value (one cast per action), this exits immediately. An
+	# upgrade to two or more casts automatically chains only that many casts.
+	if has_casts_left():
 		cast_rod()
+	else:
+		exit_fishing()
 	
 func exit_fishing() -> void:
 	if _cast_unresolved:
