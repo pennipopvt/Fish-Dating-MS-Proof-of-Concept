@@ -5,6 +5,7 @@ extends Node
 #   godot --headless --path . res://tests/day_clock_test.tscn
 # Exits with code 1 if any check fails. Clock state is session-only.
 const BED_SCENE: PackedScene = preload("res://prefabs/bed.tscn")
+const FISHING_CONTROLLER_SCRIPT: Script = preload("res://scripts/fishing_controller.gd")
 
 var _failures: int = 0
 # What a dependent system saw when it was notified.
@@ -33,7 +34,15 @@ func _ready() -> void:
 func _test_casts_per_action() -> void:
 	GameManager.reset_clock()
 	var original := FishingManager.casts_per_action
+	var controller: Node = FISHING_CONTROLLER_SCRIPT.new()
+	FishingManager.casts_per_action = 1
+	_expect(controller.has_casts_left(), "base fishing session allows the first cast")
+	controller.set("casts", 1)
+	_expect(not controller.has_casts_left(), "base fishing session stops after just one cast")
 	FishingManager.casts_per_action = 2
+	_expect(controller.has_casts_left(), "upgrading to two casts allows a second cast")
+	controller.set("casts", 2)
+	_expect(not controller.has_casts_left(), "two-cast session stops after the second cast")
 	var fish := FishData.new()
 	FishingManager.catch_fish(fish, false)
 	_expect_clock(1, GameManager.Times.MORNING, 3, "first of two casts does not spend an action yet")
@@ -44,6 +53,7 @@ func _test_casts_per_action() -> void:
 	GameManager.finish_fishing_session()
 	_expect_clock(1, GameManager.Times.MORNING, 1, "leaving after one cast charges the partial action")
 	FishingManager.casts_per_action = original
+	controller.free()
 	GameManager.reset_clock()
 
 
