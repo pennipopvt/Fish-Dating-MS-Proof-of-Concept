@@ -47,11 +47,44 @@ offset_top = 12.0
 offset_right = 141.0
 offset_bottom = 612.0
 theme = ExtResource("2_theme")
-theme_override_constants/separation = 9
+theme_override_constants/separation = 6
+
+[node name="QuotaTab" type="Button" parent="TerminalRoot/NavTabs"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(90, 57)
+clip_contents = true
+layout_mode = 2
+tooltip_text = "weekly fish quota"
+toggle_mode = true
+
+[node name="Icon" type="TextureRect" parent="TerminalRoot/NavTabs/QuotaTab"]
+texture_filter = 1
+layout_mode = 0
+offset_left = 9.0
+offset_top = 5.0
+offset_right = 57.0
+offset_bottom = 53.0
+mouse_filter = 2
+texture = ExtResource("8_challenge_icon")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="VerticalTitle" type="Label" parent="TerminalRoot/NavTabs/QuotaTab"]
+layout_mode = 0
+offset_left = 21.0
+offset_top = 200.0
+offset_right = 195.0
+offset_bottom = 232.0
+rotation = -1.5707964
+theme_type_variation = &"TitleLabel"
+theme_override_font_sizes/font_size = 27
+text = "QUOTA"
+horizontal_alignment = 1
+vertical_alignment = 1
 
 [node name="UpgradesTab" type="Button" parent="TerminalRoot/NavTabs" unique_id=471544707]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(90, 216)
+custom_minimum_size = Vector2(90, 57)
 clip_contents = true
 layout_mode = 2
 tooltip_text = "upgrades"
@@ -61,9 +94,9 @@ toggle_mode = true
 texture_filter = 1
 layout_mode = 0
 offset_left = 9.0
-offset_top = 9.0
+offset_top = 5.0
 offset_right = 57.0
-offset_bottom = 57.0
+offset_bottom = 53.0
 mouse_filter = 2
 texture = ExtResource("4_upgrade_icon")
 expand_mode = 1
@@ -84,7 +117,7 @@ vertical_alignment = 1
 
 [node name="GiftsTab" type="Button" parent="TerminalRoot/NavTabs" unique_id=1320023177]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(90, 66)
+custom_minimum_size = Vector2(90, 57)
 clip_contents = true
 layout_mode = 2
 tooltip_text = "gifts"
@@ -94,9 +127,9 @@ toggle_mode = true
 texture_filter = 1
 layout_mode = 0
 offset_left = 9.0
-offset_top = 9.0
+offset_top = 5.0
 offset_right = 57.0
-offset_bottom = 57.0
+offset_bottom = 53.0
 mouse_filter = 2
 texture = ExtResource("5_gift_icon")
 expand_mode = 1
@@ -117,7 +150,7 @@ vertical_alignment = 1
 
 [node name="StorageTab" type="Button" parent="TerminalRoot/NavTabs" unique_id=879580532]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(90, 66)
+custom_minimum_size = Vector2(90, 57)
 clip_contents = true
 layout_mode = 2
 tooltip_text = "storage"
@@ -127,9 +160,9 @@ toggle_mode = true
 texture_filter = 1
 layout_mode = 0
 offset_left = 9.0
-offset_top = 9.0
+offset_top = 5.0
 offset_right = 57.0
-offset_bottom = 57.0
+offset_bottom = 53.0
 mouse_filter = 2
 texture = ExtResource("6_storage_icon")
 expand_mode = 1
@@ -150,7 +183,7 @@ vertical_alignment = 1
 
 [node name="CollectionTab" type="Button" parent="TerminalRoot/NavTabs" unique_id=89272909]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(90, 66)
+custom_minimum_size = Vector2(90, 57)
 clip_contents = true
 layout_mode = 2
 tooltip_text = "collection"
@@ -160,9 +193,9 @@ toggle_mode = true
 texture_filter = 1
 layout_mode = 0
 offset_left = 9.0
-offset_top = 9.0
+offset_top = 5.0
 offset_right = 57.0
-offset_bottom = 57.0
+offset_bottom = 53.0
 mouse_filter = 2
 texture = ExtResource("7_collection_icon")
 expand_mode = 1
@@ -183,7 +216,7 @@ vertical_alignment = 1
 
 [node name="ChallengesTab" type="Button" parent="TerminalRoot/NavTabs" unique_id=490205985]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(90, 66)
+custom_minimum_size = Vector2(90, 57)
 clip_contents = true
 layout_mode = 2
 tooltip_text = "challenges"
@@ -193,9 +226,9 @@ toggle_mode = true
 texture_filter = 1
 layout_mode = 0
 offset_left = 9.0
-offset_top = 9.0
+offset_top = 5.0
 offset_right = 57.0
-offset_bottom = 57.0
+offset_bottom = 53.0
 mouse_filter = 2
 texture = ExtResource("8_challenge_icon")
 expand_mode = 1
@@ -216,7 +249,7 @@ vertical_alignment = 1
 
 [node name="ScheduleTab" type="Button" parent="TerminalRoot/NavTabs"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(90, 66)
+custom_minimum_size = Vector2(90, 57)
 clip_contents = true
 layout_mode = 2
 tooltip_text = "schedule"
@@ -226,9 +259,9 @@ toggle_mode = true
 texture_filter = 1
 layout_mode = 0
 offset_left = 9.0
-offset_top = 9.0
+offset_top = 5.0
 offset_right = 57.0
-offset_bottom = 57.0
+offset_bottom = 53.0
 mouse_filter = 2
 texture = ExtResource("10_schedule_icon")
 expand_mode = 1
@@ -350,6 +383,14 @@ layout_mode = 2
 theme_override_constants/h_separation = 12
 theme_override_constants/v_separation = 12
 columns = 4
+
+[node name="QuotaView" type="VBoxContainer" parent="TerminalRoot/Panel/Margin/Layout/Body/Left"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/separation = 18
 
 [node name="ScheduleDays" type="HBoxContainer" parent="TerminalRoot/Panel/Margin/Layout/Body/Left"]
 unique_name_in_owner = true
