@@ -426,7 +426,7 @@ func _refresh_schedule_page() -> void:
 				var event_text := ""
 				if booking != null:
 					if action == 0:
-						event_text = " ♥ " + booking.npc.display_name.to_upper() if booking.npc != null else " ♥ DATE"
+						event_text = " ♥ " + booking.npc.display_name.to_upper().substr(0, 6) if booking.npc != null else " ♥ DATE"
 					else:
 						event_text = " · DATE"
 					action_tile.tooltip_text = "%s - Day %d %s (all 3 actions)" % [
