@@ -26,8 +26,8 @@ ChallengeManager="*res://scenes/challenge_manager.tscn"
 BobberManager="*res://scripts/bobber_manager.gd"
 DateManager="*res://scripts/date_manager.gd"
 AffectionManager="*res://scripts/affection_manager.gd"
-QuotaManager="*res://scripts/quota_manager.gd"
 DevPanel="*res://prefabs/dev_panel.tscn"
+QuotaManager="*res://scripts/quota_manager.gd"
 
 [display]
 

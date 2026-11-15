@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://cv7xybodbo8pe"
-path="res://.godot/imported/barracuda.png-1b84e727e6df798f15e7effdb7a42679.ctex"
+uid="uid://btn7uh1qk00jp"
+path="res://.godot/imported/kuda_idle.png-4cf40da193553d3e53bed7e692290702.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://sprites/characters/barracuda.png"
-dest_files=["res://.godot/imported/barracuda.png-1b84e727e6df798f15e7effdb7a42679.ctex"]
+source_file="res://sprites/characters/kuda_idle.png"
+dest_files=["res://.godot/imported/kuda_idle.png-4cf40da193553d3e53bed7e692290702.ctex"]
 
 [params]
 
