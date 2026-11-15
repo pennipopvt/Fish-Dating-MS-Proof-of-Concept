@@ -7,6 +7,7 @@ extends Node
 
 signal challenge_progressed(challenge: ChallengeData)
 signal challenge_completed(challenge: ChallengeData)
+signal challenge_claimed(challenge: ChallengeData)
 signal streak_changed(streak: int)
 signal progress_reset
 # Debug: show the unlock popup for a challenge without completing it.
@@ -114,12 +115,28 @@ func is_trade_locked(trade: TradeData) -> bool:
 	return get_locking_challenge(trade) != null
 
 
-# The first incomplete challenge that rewards this trade, or null if it's unlocked.
+# The first unclaimed challenge that rewards this trade; completion alone does NOT unlock.
 func get_locking_challenge(trade: TradeData) -> ChallengeData:
 	for challenge in challenges:
-		if challenge != null and not challenge.completed and challenge.unlocks_trade(trade):
+		if challenge != null and not challenge.claimed and challenge.unlocks_trade(trade):
 			return challenge
 	return null
+
+
+func get_claimable_count() -> int:
+	var count := 0
+	for challenge in challenges:
+		if challenge != null and challenge.completed and not challenge.claimed:
+			count += 1
+	return count
+
+
+func claim(challenge: ChallengeData) -> bool:
+	if challenge == null or not challenges.has(challenge) or not challenge.completed or challenge.claimed:
+		return false
+	challenge.claimed = true
+	challenge_claimed.emit(challenge)
+	return true
 
 
 func get_completed_count() -> int:
@@ -161,3 +178,4 @@ func _reset_state(challenge: ChallengeData) -> void:
 	challenge.progress = 0
 	challenge.completed = false
 	challenge.completed_at = 0
+	challenge.claimed = false
