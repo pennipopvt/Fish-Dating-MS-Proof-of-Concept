@@ -50,12 +50,17 @@ func _ready() -> void:
 	shop.call("_refresh_quota_page")
 	_expect(shop.get_node("TerminalRoot/Panel/Margin/Layout/Body/Left/QuotaView").visible,
 		"Quota page renders submitted progress")
+	# Advance to day four, when the four-day calendar includes day seven.
+	for step in range(9):
+		GameManager.rest()
+	_expect(GameManager.get_day() == 4, "Skipping nine periods reaches day four")
 	shop.call("_select_default_schedule_slot")
 	shop.set("_page", ShopMenu.Page.SCHEDULE)
 	shop.call("_refresh_schedule_page")
-	var last_slot := shop.get_node("TerminalRoot/Panel/Margin/Layout/Body/Left/ScheduleDays").get_child(3).find_children("*", "Button", true, false)
-	# Day 7 is outside the initial 4-day window. Check at day 4.
-	QuotaManager.call("_on_day_started", 5) # does not advance a completed quota early
+	var deadline_day := shop.get_node("TerminalRoot/Panel/Margin/Layout/Body/Left/ScheduleDays").get_child(3)
+	var slots := deadline_day.find_children("*", "Button", true, false)
+	_expect(slots.size() == 9 and (slots[8] as Button).text.contains("QUOTA"),
+		"Quota deadline appears in day seven's final night action")
 	_expect(QuotaManager.week == 1, "Completed quota stays active until deadline passes")
 	shop.queue_free()
 
