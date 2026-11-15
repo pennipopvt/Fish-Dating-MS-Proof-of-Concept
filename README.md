@@ -137,8 +137,9 @@ Debug builds only (not in exports):
 - **Island:** the ground tiles are the original island plus extra land on the right
   (cells 34-38, mirrored copies of the land next to them). Cells 39-51 are the beach
   from `tileset.png`: grass, stairs down from x=656 and flat sand (atlas rows 2-3,
-  cells 39-46), then the slope into the water (atlas row 1, cols 3-7, cells 47-51),
-  so the beach ends at x=832. The stair handle (`tilesetOnPlayer.png`) is on its own
+  cols 0-6 at cells 39-45), then 3 more copies of sand tiles 4-6 (cells 46-54), sand
+  tile 7 (cell 55), then the slope into the water (atlas row 1, cols 3-7, cells
+  56-60), so the beach ends at x=976. The stair handle (`tilesetOnPlayer.png`) is on its own
   layer, `GroundFront` (z_index 4), so it draws in front of the player. The player
   still walks at grass height across the beach. The water rect reaches x=2800 for the ship.
 - **Fishing rod (visual only):** `prefabs/fishing_rod.tscn` on the player. When you
