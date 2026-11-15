@@ -5,7 +5,7 @@ extends CanvasLayer
 # Tabs and borders are laid out in shop_menu.tscn and styled by terminal_theme.tres.
 # This script only fills in the grid, item details, and actions.
 
-enum Page { UPGRADES, GIFTS, STORAGE, COLLECTION, CHALLENGES, SCHEDULE }
+enum Page { QUOTA, UPGRADES, GIFTS, STORAGE, COLLECTION, CHALLENGES, SCHEDULE }
 
 const SLOT_SIZE := Vector2(168, 168) # 56 x 56 art pixels at 3x
 const MIN_SLOTS := 12                 # Four columns, three visible rows
@@ -17,9 +17,9 @@ const WARNING_TEXT := Color("984b24")
 # Art pixels are scaled x3. The visible part of each tab is 72 screen pixels.
 # A further 24 screen pixels sit under the terminal panel.
 const TAB_VISIBLE_WIDTH := 66.0
-const TAB_CLOSED_HEIGHT := 66.0
-const TAB_TEXT_PADDING := 12.0
-const TAB_TEXT_GAP := 12.0
+const TAB_CLOSED_HEIGHT := 57.0
+const TAB_TEXT_PADDING := 6.0
+const TAB_TEXT_GAP := 6.0
 
 # Terminal boot sequence: horizontal expansion, vertical expansion, tabs emerge.
 const BOOT_LINE := 36.0  # 12 art pixels; fits both 9-slice corner margins
@@ -32,6 +32,7 @@ const TABS_HIDDEN_X_OFFSET := 12.0
 @onready var _opening_frame: NinePatchRect = $TerminalRoot/OpeningFrame
 @onready var _nav_tabs: VBoxContainer = $TerminalRoot/NavTabs
 
+@onready var _quota_tab: Button = %QuotaTab
 @onready var _upgrades_tab: Button = %UpgradesTab
 @onready var _gifts_tab: Button = %GiftsTab
 @onready var _storage_tab: Button = %StorageTab
@@ -47,6 +48,7 @@ const TABS_HIDDEN_X_OFFSET := 12.0
 @onready var _grid: GridContainer = %ItemGrid
 @onready var _grid_scroll: ScrollContainer = $TerminalRoot/Panel/Margin/Layout/Body/Left/GridScroll
 @onready var _schedule_days: HBoxContainer = %ScheduleDays
+@onready var _quota_view: VBoxContainer = %QuotaView
 @onready var _preview: TextureRect = %PreviewIcon
 @onready var _item_name: Label = %ItemName
 @onready var _description: Label = %DescriptionLabel
@@ -57,7 +59,7 @@ const TABS_HIDDEN_X_OFFSET := 12.0
 @onready var _close_button: Button = %CloseButton
 
 var _nav_buttons: Array[Button] = []
-var _page: int = Page.UPGRADES
+var _page: int = Page.QUOTA
 var _entries: Array[Dictionary] = []
 var _entry_buttons: Array[Button] = []
 var _selected_index: int = 0
@@ -90,7 +92,7 @@ func _ready() -> void:
 	_terminal_panel.hide()
 	_nav_tabs.hide()
 	_opening_frame.hide()
-	_nav_buttons = [_upgrades_tab, _gifts_tab, _storage_tab, _collection_tab, _challenges_tab, _schedule_tab]
+	_nav_buttons = [_quota_tab, _upgrades_tab, _gifts_tab, _storage_tab, _collection_tab, _challenges_tab, _schedule_tab]
 	for i in range(_nav_buttons.size()):
 		_nav_buttons[i].pressed.connect(_select_page.bind(i))
 
@@ -105,6 +107,7 @@ func _ready() -> void:
 	FishingManager.storage_changed.connect(_on_inventory_changed)
 	FishingManager.fish_caught.connect(_on_inventory_changed)  # collection/dex, incl. NPC catches
 	DateManager.bookings_changed.connect(_on_schedule_changed)
+	QuotaManager.quota_changed.connect(_on_quota_changed)
 	GameManager.time_changed.connect(func(_day: int, _period: GameManager.Times) -> void: _on_schedule_changed())
 	GameManager.actions_changed.connect(func(_actions: int) -> void: _on_schedule_changed())
 	_refresh_page()
@@ -120,7 +123,7 @@ func _unhandled_input(event: InputEvent) -> void:
 func open() -> void:
 	if visible:
 		return
-	_page = Page.UPGRADES
+	_page = Page.QUOTA
 	_selected_index = 0
 	_last_order_message = ""
 	_delivery_status.text = "NO DELIVERIES"
@@ -196,7 +199,7 @@ func _on_frame_opened() -> void:
 
 func _on_tabs_opened() -> void:
 	if visible:
-		_upgrades_tab.grab_focus()
+		_quota_tab.grab_focus()
 
 
 func _cancel_open_animation() -> void:
@@ -271,6 +274,10 @@ func _refresh_page() -> void:
 	if _page == Page.SCHEDULE:
 		_refresh_schedule_page()
 		return
+	if _page == Page.QUOTA:
+		_refresh_quota_page()
+		return
+	_quota_view.hide()
 	_grid.columns = 4
 	_grid.add_theme_constant_override("h_separation", 12)
 	_grid_scroll.show()
@@ -289,8 +296,9 @@ func _refresh_page() -> void:
 		Page.CHALLENGES:
 			_collect_challenges()
 
-	var names := ["UPGRADES", "GIFTS", "STORAGE", "COLLECTION", "CHALLENGES"]
+	var names := ["QUOTA", "UPGRADES", "GIFTS", "STORAGE", "COLLECTION", "CHALLENGES"]
 	var explanations := [
+		"Mandatory weekly fish deliveries",
 		"Permanent fishing improvements",
 		"Things to give your new friends",
 		"Fish and items you currently own",
@@ -328,7 +336,107 @@ func _refresh_page() -> void:
 		_status.text = _last_order_message
 
 
+# ---- Mandatory weekly fish quota ---------------------------------------
+
+func _refresh_quota_page() -> void:
+	_grid_scroll.hide()
+	_schedule_days.hide()
+	_quota_view.show()
+	_preview_frame.hide()
+	_page_title.show()
+	_page_hint.show()
+	_details_panel.custom_minimum_size.x = 420
+	_page_title.text = "WEEK %d QUOTA" % QuotaManager.week
+	_page_hint.text = "Deliver fish by the end of Day %d (Night)" % QuotaManager.deadline_day
+	_page_indicator.text = "FISH CO.  /  MANDATORY WEEKLY CONTRACT"
+	for i in range(_nav_buttons.size()):
+		_nav_buttons[i].button_pressed = i == _page
+		_nav_buttons[i].self_modulate = Color.WHITE if i == _page else Color(0.88, 0.9, 0.9, 0.9)
+	for child in _quota_view.get_children():
+		_quota_view.remove_child(child)
+		child.queue_free()
+	for child in _costs.get_children():
+		_costs.remove_child(child)
+		child.queue_free()
+	_order_button.hide()
+	_preview.texture = null
+	_item_name.text = "FISH CO. CONTRACT"
+	_description.text = "Fish are surrendered as soon as you submit them. They cannot also be used for gifts or upgrades."
+	var is_done: bool = QuotaManager.is_complete()
+	_status.text = "QUOTA COMPLETE / NEXT CONTRACT STARTS DAY %d" % (QuotaManager.deadline_day + 1) if is_done else (
+		"FAILURE TO DELIVER BY DAY %d ENDS THE RUN" % QuotaManager.deadline_day
+	)
+	if is_done:
+		var complete := PixelUI.label("DELIVERY REQUIREMENTS MET", &"TitleLabel")
+		complete.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		_quota_view.add_child(complete)
+
+	for requirement in QuotaManager.requirements:
+		var item_id: StringName = requirement["item_id"]
+		var amount: int = int(requirement["target"])
+		var current: int = QuotaManager.get_delivered(item_id)
+		var available: int = FishingManager.count_in_storage(item_id)
+		var remaining: int = QuotaManager.get_remaining(item_id)
+
+		var frame := PanelContainer.new()
+		frame.add_theme_stylebox_override("panel", TERMINAL_FRAME)
+		_quota_view.add_child(frame)
+		var padding := MarginContainer.new()
+		for side in ["margin_left", "margin_right", "margin_top", "margin_bottom"]:
+			padding.add_theme_constant_override(side, 12)
+		frame.add_child(padding)
+		var body := VBoxContainer.new()
+		body.add_theme_constant_override("separation", 10)
+		padding.add_child(body)
+		var header := HBoxContainer.new()
+		body.add_child(header)
+		var title := PixelUI.label(str(requirement["label"]).to_upper(), &"TitleLabel")
+		title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		header.add_child(title)
+		var progress := PixelUI.label("%d / %d" % [current, amount], &"TitleLabel")
+		header.add_child(progress)
+
+		var bar := ProgressBar.new()
+		bar.max_value = amount
+		bar.value = current
+		bar.show_percentage = false
+		bar.custom_minimum_size.y = 18
+		body.add_child(bar)
+
+		var submit_row := HBoxContainer.new()
+		body.add_child(submit_row)
+		var available_label := PixelUI.label("%d IN STORAGE" % available, &"DimLabel")
+		available_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		submit_row.add_child(available_label)
+		var take: int = mini(available, remaining)
+		var send := Button.new()
+		send.text = "DELIVER %d" % take if take > 0 else ("FULFILLED" if remaining == 0 else "NO FISH")
+		send.disabled = take <= 0 or is_done
+		send.custom_minimum_size.x = 168
+		send.pressed.connect(_submit_quota_fish.bind(item_id))
+		submit_row.add_child(send)
+
+
+func _submit_quota_fish(item_id: StringName) -> void:
+	var sent: int = QuotaManager.submit(item_id)
+	if sent == 0:
+		_status.text = "NO ELIGIBLE FISH TO SUBMIT"
+	else:
+		_last_order_message = "DELIVERED %d FISH TO FISH CO." % sent
+		# Stock removal also signals the shared inventory; rebuild after it.
+		_refresh_quota_page.call_deferred()
+
+
 # ---- Schedule / calendar (view-only; book dates by talking to NPCs) -----
+
+func _on_quota_changed() -> void:
+	if not visible:
+		return
+	if _page == Page.QUOTA:
+		_refresh_quota_page.call_deferred()
+	elif _page == Page.SCHEDULE:
+		_refresh_schedule_page.call_deferred()
+
 
 func _on_schedule_changed() -> void:
 	if visible and _page == Page.SCHEDULE:
@@ -381,6 +489,7 @@ func _schedule_action_is_now(day: int, period: int, action: int) -> bool:
 
 
 func _refresh_schedule_page() -> void:
+	_quota_view.hide()
 	# Four days in a fixed horizontal layout, NOT inside the shop scroll view.
 	# Today has extra width; strong nine-slice outlines frame each day, while
 	# subtle rules separate actions and periods within the day.
