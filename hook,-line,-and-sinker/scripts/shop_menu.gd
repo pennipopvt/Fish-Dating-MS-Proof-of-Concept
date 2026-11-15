@@ -314,6 +314,8 @@ func _refresh_page() -> void:
 
 func _on_schedule_changed() -> void:
 	if visible and _page == Page.SCHEDULE:
+		if _schedule_day < GameManager.get_day() or _schedule_day > GameManager.get_day() + 1:
+			_select_default_schedule_slot()
 		_refresh_schedule_page()
 
 
@@ -398,7 +400,8 @@ func _refresh_schedule_page() -> void:
 				day, "TODAY" if day_offset == 0 else "TOMORROW"
 			]
 			if booking != null:
-				tile.text += "\n" + booking.display_name
+				tile.text += "\n" + ("NOW: " if DateManager.is_booking_ready(booking) else "") + booking.display_name
+				tile.tooltip_text = booking.display_name
 			elif day == GameManager.get_day() and period == GameManager.get_period():
 				tile.text += "\nNOW"
 			elif _schedule_is_future(day, period):
