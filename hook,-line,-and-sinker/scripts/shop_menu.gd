@@ -5,7 +5,7 @@ extends CanvasLayer
 # Tabs and borders are laid out in shop_menu.tscn and styled by terminal_theme.tres.
 # This script only fills in the grid, item details, and actions.
 
-enum Page { QUOTA, UPGRADES, GIFTS, STORAGE, COLLECTION, CHALLENGES, SCHEDULE }
+enum Page { QUOTA, SHOP, STORAGE, COLLECTION, CHALLENGES, SCHEDULE }
 
 const SLOT_SIZE := Vector2(168, 168) # 56 x 56 art pixels at 3x
 const MIN_SLOTS := 12                 # Four columns, three visible rows
@@ -17,9 +17,9 @@ const WARNING_TEXT := Color("984b24")
 # Art pixels are scaled x3. The visible part of each tab is 72 screen pixels.
 # A further 24 screen pixels sit under the terminal panel.
 const TAB_VISIBLE_WIDTH := 66.0
-const TAB_CLOSED_HEIGHT := 57.0
-const TAB_TEXT_PADDING := 6.0
-const TAB_TEXT_GAP := 6.0
+const TAB_CLOSED_HEIGHT := 78.0
+const TAB_TEXT_PADDING := 12.0
+const TAB_TEXT_GAP := 12.0
 
 # Terminal boot sequence: horizontal expansion, vertical expansion, tabs emerge.
 const BOOT_LINE := 36.0  # 12 art pixels; fits both 9-slice corner margins
@@ -33,8 +33,10 @@ const TABS_HIDDEN_X_OFFSET := 12.0
 @onready var _nav_tabs: VBoxContainer = $TerminalRoot/NavTabs
 
 @onready var _quota_tab: Button = %QuotaTab
-@onready var _upgrades_tab: Button = %UpgradesTab
-@onready var _gifts_tab: Button = %GiftsTab
+@onready var _shop_tab: Button = %ShopTab
+@onready var _shop_categories: HBoxContainer = %ShopCategories
+@onready var _shop_upgrades: Button = %ShopUpgrades
+@onready var _shop_gifts: Button = %ShopGifts
 @onready var _storage_tab: Button = %StorageTab
 @onready var _collection_tab: Button = %CollectionTab
 @onready var _challenges_tab: Button = %ChallengesTab
@@ -63,6 +65,7 @@ var _page: int = Page.QUOTA
 var _entries: Array[Dictionary] = []
 var _entry_buttons: Array[Button] = []
 var _selected_index: int = 0
+var _shop_section: int = 0  # 0 upgrades, 1 gifts
 var _button_group := ButtonGroup.new()
 var _last_order_message := ""
 var _tab_tween: Tween
@@ -92,10 +95,12 @@ func _ready() -> void:
 	_terminal_panel.hide()
 	_nav_tabs.hide()
 	_opening_frame.hide()
-	_nav_buttons = [_quota_tab, _upgrades_tab, _gifts_tab, _storage_tab, _collection_tab, _challenges_tab, _schedule_tab]
+	_nav_buttons = [_quota_tab, _shop_tab, _storage_tab, _collection_tab, _challenges_tab, _schedule_tab]
 	for i in range(_nav_buttons.size()):
 		_nav_buttons[i].pressed.connect(_select_page.bind(i))
 
+	_shop_upgrades.pressed.connect(_select_shop_section.bind(0))
+	_shop_gifts.pressed.connect(_select_shop_section.bind(1))
 	_order_button.pressed.connect(_on_order_pressed)
 	_close_button.pressed.connect(close)
 	ShopManager.shop_requested.connect(open)
@@ -124,6 +129,7 @@ func open() -> void:
 	if visible:
 		return
 	_page = Page.QUOTA
+	_shop_section = 0
 	_selected_index = 0
 	_last_order_message = ""
 	_delivery_status.text = "NO DELIVERIES"
@@ -209,6 +215,21 @@ func _cancel_open_animation() -> void:
 		_tabs_pop_tween.kill()
 
 
+func _has_recruited_npc() -> bool:
+	for state in NPCManager.npc_states.values():
+		if state.get("flags", {}).get(&"Recruited", false):
+			return true
+	return false
+
+
+func _select_shop_section(section: int) -> void:
+	if section == 1 and not _has_recruited_npc():
+		return
+	_shop_section = section
+	_selected_index = 0
+	_refresh_page()
+
+
 func _select_page(page: int) -> void:
 	_page = page
 	_selected_index = 0
@@ -278,6 +299,12 @@ func _refresh_page() -> void:
 		_refresh_quota_page()
 		return
 	_quota_view.hide()
+	_shop_categories.visible = _page == Page.SHOP
+	_shop_gifts.visible = _has_recruited_npc()
+	if _shop_section == 1 and not _shop_gifts.visible:
+		_shop_section = 0
+	_shop_upgrades.set_pressed_no_signal(_shop_section == 0)
+	_shop_gifts.set_pressed_no_signal(_shop_section == 1)
 	_grid.columns = 4
 	_grid.add_theme_constant_override("h_separation", 12)
 	_grid_scroll.show()
@@ -287,7 +314,7 @@ func _refresh_page() -> void:
 	_details_panel.custom_minimum_size.x = 500
 	_preview_frame.show()
 	match _page:
-		Page.UPGRADES, Page.GIFTS:
+		Page.SHOP:
 			_collect_trades()
 		Page.STORAGE:
 			_collect_storage()
@@ -296,11 +323,10 @@ func _refresh_page() -> void:
 		Page.CHALLENGES:
 			_collect_challenges()
 
-	var names := ["QUOTA", "UPGRADES", "GIFTS", "STORAGE", "COLLECTION", "CHALLENGES"]
+	var names := ["QUOTA", "SHOP", "STORAGE", "COLLECTION", "CHALLENGES"]
 	var explanations := [
 		"Mandatory weekly fish deliveries",
-		"Permanent fishing improvements",
-		"Things to give your new friends",
+		"Fishing improvements and gifts",
 		"Fish and items you currently own",
 		"Fish you have discovered",
 		"Objectives and unlocks"
@@ -341,6 +367,7 @@ func _refresh_page() -> void:
 func _refresh_quota_page() -> void:
 	_grid_scroll.hide()
 	_schedule_days.hide()
+	_shop_categories.hide()
 	_quota_view.show()
 	_entry_buttons.clear()
 	_preview_frame.hide()
@@ -499,6 +526,7 @@ func _schedule_slot_is_quota_deadline(day: int, period: int, action: int) -> boo
 
 func _refresh_schedule_page() -> void:
 	_quota_view.hide()
+	_shop_categories.hide()
 	# Four days in a fixed horizontal layout, NOT inside the shop scroll view.
 	# Today has extra width; strong nine-slice outlines frame each day, while
 	# subtle rules separate actions and periods within the day.
@@ -677,7 +705,7 @@ func _collect_trades() -> void:
 			continue
 		var is_upgrade := trade.reward_method != &""
 		var is_gift := trade.reward_item != null and not is_upgrade
-		if (_page == Page.UPGRADES and is_upgrade) or (_page == Page.GIFTS and is_gift):
+		if _page == Page.SHOP and ((_shop_section == 0 and is_upgrade) or (_shop_section == 1 and is_gift and _has_recruited_npc())):
 			var icon: Texture2D = trade.icon
 			if icon == null and trade.reward_item != null:
 				icon = trade.reward_item.sprite
@@ -846,7 +874,7 @@ func _show_details() -> void:
 
 
 func _show_trade_details(trade: TradeData) -> void:
-	_description.text = trade.description if not trade.description.is_empty() else ("Fishing equipment upgrade." if _page == Page.UPGRADES else "A present for someone in town.")
+	_description.text = trade.description if not trade.description.is_empty() else ("Fishing equipment upgrade." if trade.reward_method != &"" else "A present for someone in town.")
 	_add_detail_line("REQUIRES:", DIM_TEXT)
 	# Sprite + actual owned/required counts, one row per required fish.
 	for requirement in trade.requirements:
@@ -974,7 +1002,7 @@ func _on_order_pressed() -> void:
 
 
 func _on_upgrade_state_changed(_trade: TradeData) -> void:
-	if visible and _page == Page.UPGRADES:
+	if visible and _page == Page.SHOP:
 		_refresh_page()
 
 
@@ -1002,5 +1030,5 @@ func _on_inventory_changed(_fish: Variant = null) -> void:
 		return
 	if _page == Page.QUOTA:
 		_refresh_quota_page.call_deferred()
-	elif _page == Page.STORAGE or _page == Page.COLLECTION:
+	elif _page == Page.SHOP or _page == Page.STORAGE or _page == Page.COLLECTION:
 		_refresh_page()
