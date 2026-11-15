@@ -24,18 +24,20 @@ const SCENE_PREFIX := "date:"
 const LOCATION_GROUP := &"date_locations"
 const FADE_DURATION := 0.5
 const PERIOD_COUNT := 3
-# Placeholder choice evaluation: reassuring / neutral / bold, each against
-# four jealousy tiers (0-24, 25-49, 50-74, 75-100).
-# Balance values are intentionally provisional until dialogue playtesting.
+# Three choices, ordered from high-risk/high-score to low-risk/repair.
+# At jealousy tiers 0 and 1 the first (bold) response scores highest.
+# Playful and reassuring choices score less, but both reduce jealousy.
+# At higher jealousy the bold choice backfires; the safe choices help recover.
+# Four tiers: 0-24, 25-49, 50-74, 75-100. Numbers are playtest placeholders.
 const DATE_SCORE_BY_STYLE := {
-	"reassure": [1, 2, 3, 4],
-	"neutral": [2, 2, 1, 0],
-	"bold": [4, 2, -2, -4],
+	"bold": [6, 5, -4, -6],
+	"playful": [3, 2, 0, -2],
+	"reassure": [1, 1, 1, 1],
 }
 const JEALOUSY_BY_STYLE := {
-	"reassure": [-2, -4, -6, -8],
-	"neutral": [0, 0, 0, 0],
 	"bold": [0, 2, 5, 8],
+	"playful": [-3, -5, -6, -8],
+	"reassure": [-8, -10, -12, -15],
 }
 const OUTCOME_AFFECTION := {"bad": -6, "okay": 1, "good": 5, "great": 10}
 
