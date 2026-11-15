@@ -25,6 +25,8 @@ const ACTIONS_PER_PERIOD: int = 3
 var day: int = 1
 var time_of_day : Times = Times.MORNING
 var player_actions : int = ACTIONS_PER_PERIOD
+# Casts in the current (not yet charged) fishing action.
+var _casts_in_action: int = 0
 
 
 func _ready() -> void:
@@ -35,8 +37,8 @@ func _ready() -> void:
 
 
 func _connect_sources() -> void:
-	FishingManager.fish_caught.connect(func(_fish: FishData) -> void: spend_actions(1))
-	FishingManager.fish_lost.connect(func(_fish: FishData) -> void: spend_actions(1))
+	FishingManager.fish_caught.connect(func(_fish: FishData) -> void: record_fishing_cast())
+	FishingManager.fish_lost.connect(func(_fish: FishData) -> void: record_fishing_cast())
 	DialogueManager.conversation_finished.connect(func(_npc: NPCData) -> void: spend_actions(1))
 
 
@@ -71,6 +73,26 @@ func can_act() -> bool:
 
 # --- Moving the clock ---
 
+# Each completed (or abandoned) cast counts toward the current fishing action.
+# Upgrades may allow several casts before one clock action is spent.
+func record_fishing_cast() -> void:
+	if not can_act():
+		return
+	_casts_in_action += 1
+	if _casts_in_action >= maxi(FishingManager.casts_per_action, 1):
+		_casts_in_action = 0
+		spend_actions(1)
+
+
+# Leaving the fishing session partway through a batch still costs an action:
+# cancelling after one cast must not let the player fish for free.
+func finish_fishing_session() -> void:
+	if _casts_in_action > 0:
+		_casts_in_action = 0
+		spend_actions(1)
+
+
+
 # Use for any time-costing activity (e.g. a future NPC hangout scene could
 # cost more than 1). Rolls into the next period when this one runs out;
 # never past night (only rest() starts a new day).
@@ -97,6 +119,7 @@ func rest() -> void:
 
 # Back to day 1 morning (dev reset); nothing is stored across launches.
 func reset_clock() -> void:
+	_casts_in_action = 0
 	_set_clock(1, Times.MORNING, ACTIONS_PER_PERIOD)
 
 
