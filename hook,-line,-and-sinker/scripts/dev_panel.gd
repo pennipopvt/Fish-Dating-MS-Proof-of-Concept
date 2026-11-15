@@ -8,7 +8,9 @@ extends CanvasLayer
 # runtime state from outside; no gameplay script depends on this panel.
 
 const SILAS_ID: StringName = &"test_npc"
+const KUDA_ID: StringName = &"barracuda"
 const SILAS_NPC_PATH := "res://resources/npcs/test_npc.tres"
+const KUDA_NPC_PATH := "res://resources/npcs/barracuda.tres"
 const SILAS_FISH_PATH := "res://resources/fish/test_silas.tres"
 const SPYGLASS_PATH := "res://resources/items/spyglass.tres"
 const ASK_OUT_PATH := "res://dialogue/silas_ask_out.json"
@@ -1061,28 +1063,82 @@ func _build_flags_tab() -> void:
 	_flags_box = _add_tab("Flags")
 
 
-# Every flag named anywhere in the dialogue JSON or NPC data, plus any set at runtime.
+# NPC flags are stored per NPC in NPCManager.npc_states[npc_id]["flags"].
+# Only show the selected NPC's dialogue/encounter/date flags. The old dev UI
+# erroneously discovered every flag in every JSON file for both NPCs.
+func _flag_npc_resource(npc_id: StringName) -> NPCData:
+	match npc_id:
+		SILAS_ID:
+			return load(SILAS_NPC_PATH) as NPCData
+		KUDA_ID:
+			return load(KUDA_NPC_PATH) as NPCData
+	return null
+
+
+func _flag_dialogue_paths(npc_id: StringName) -> Array[String]:
+	var paths: Array[String] = []
+	# Include the character's full route, not just the currently unlocked
+	# encounters. Also include files linked by NPC data and DateData below.
+	var prefixes: Array[String] = []
+	match npc_id:
+		SILAS_ID:
+			prefixes = ["silas_", "garden_eel"]
+		KUDA_ID:
+			prefixes = ["kuda_", "barracuda_"]
+	for path in _list_dialogue():
+		for prefix in prefixes:
+			if path.get_file().begins_with(prefix) and not paths.has(path):
+				paths.append(path)
+	return paths
+
+
 func _known_flags(npc_id: StringName) -> Array[StringName]:
 	var found: Array[StringName] = []
-	for path in _list_dialogue():
-		_collect_flags(JSON.parse_string(FileAccess.get_file_as_string(path)), found)
-	if npc_id == SILAS_ID:
-		var data := _silas_data()
+	var paths: Array[String] = _flag_dialogue_paths(npc_id)
+	var data: NPCData = _flag_npc_resource(npc_id)
+	if data != null:
 		for rule in data.encounter_rules:
-			for f in rule.required_flags + rule.forbidden_flags:
-				if not found.has(f):
-					found.append(f)
-		if not found.has(data.gift_completed_flag):
+			if rule == null:
+				continue
+			for flag in rule.required_flags + rule.forbidden_flags:
+				if not found.has(flag):
+					found.append(flag)
+			if not rule.json_path.is_empty() and not paths.has(rule.json_path):
+				paths.append(rule.json_path)
+			for path in rule.json_pool:
+				if not paths.has(path):
+					paths.append(path)
+		if data.gift_completed_flag != &"" and not found.has(data.gift_completed_flag):
 			found.append(data.gift_completed_flag)
-		if not found.has(&"silas_route_complete"):
-			found.append(&"silas_route_complete")
+		if not data.correct_gift_json.is_empty() and not paths.has(data.correct_gift_json):
+			paths.append(data.correct_gift_json)
+		for path in data.incorrect_gift_json_pool:
+			if not paths.has(path):
+				paths.append(path)
+
+	for date in DateManager.get_dates_for(npc_id):
+		for flag in date.required_flags + date.forbidden_flags:
+			if not found.has(flag):
+				found.append(flag)
+		for flag in [date.get_available_flag(), date.get_completed_flag(), date.get_missed_flag()]:
+			if not found.has(flag):
+				found.append(flag)
+		if not date.dialogue_json.is_empty() and not paths.has(date.dialogue_json):
+			paths.append(date.dialogue_json)
+
+	for path in paths:
+		if FileAccess.file_exists(path):
+			_collect_flags(JSON.parse_string(FileAccess.get_file_as_string(path)), found)
+
+	# Runtime-only/manual flags belong to THIS NPC's state only. If an
+	# unrelated flag really was saved on this NPC, keep it visible to clear.
 	var flags: Dictionary = NPCManager.npc_states.get(npc_id, {}).get("flags", {})
-	for f in flags:
-		if not found.has(StringName(f)):
-			found.append(StringName(f))
+	for flag in flags:
+		var id := StringName(str(flag))
+		if not found.has(id):
+			found.append(id)
 	found.sort_custom(func(a: StringName, b: StringName) -> bool: return String(a) < String(b))
 	return found
-
 
 func _collect_flags(value: Variant, found: Array[StringName]) -> void:
 	if value is Dictionary:
@@ -1103,8 +1159,8 @@ func _rebuild_flags() -> void:
 	if _flags_box == null:
 		return
 	var selected_id: StringName = SILAS_ID
-	if _flag_npc != null and _flag_npc.selected >= 0:
-		selected_id = StringName(_flag_npc.get_item_text(_flag_npc.selected))
+	if is_instance_valid(_flag_npc) and _flag_npc.selected >= 0:
+		selected_id = StringName(str(_flag_npc.get_item_metadata(_flag_npc.selected)))
 	for child in _flags_box.get_children():
 		child.queue_free()
 	var box := _flags_box
@@ -1114,12 +1170,17 @@ func _rebuild_flags() -> void:
 	label.text = "NPC"
 	row.add_child(label)
 	_flag_npc = OptionButton.new()
-	var ids: Array = NPCManager.npc_states.keys()
-	if not ids.has(SILAS_ID):
-		ids.append(SILAS_ID)
+	# Both playable NPCs always appear, even before they have a state.
+	var ids: Array[StringName] = [SILAS_ID, KUDA_ID]
+	for id in NPCManager.npc_states.keys():
+		if not ids.has(id):
+			ids.append(id)
 	for id in ids:
-		_flag_npc.add_item(String(id))
-		if StringName(id) == selected_id:
+		var npc_data := _flag_npc_resource(id)
+		var label_text := "%s (%s)" % [npc_data.display_name, id] if npc_data != null else String(id)
+		_flag_npc.add_item(label_text)
+		_flag_npc.set_item_metadata(_flag_npc.item_count - 1, String(id))
+		if id == selected_id:
 			_flag_npc.select(_flag_npc.item_count - 1)
 	_flag_npc.item_selected.connect(func(_i: int) -> void: _rebuild_flags.call_deferred())
 	row.add_child(_flag_npc)
@@ -1152,7 +1213,10 @@ func _rebuild_flags() -> void:
 		]))
 	jealousy_row.add_child(jealousy)
 
-	_heading(box, "Flags (toggle to set / clear)")
+	_heading(box, "Flags for %s (toggle to set / clear)" % (
+		_flag_npc_resource(selected_id).display_name
+		if _flag_npc_resource(selected_id) != null else String(selected_id)
+	))
 	var flags: Dictionary = state["flags"]
 	for flag in _known_flags(selected_id):
 		var check := CheckBox.new()
