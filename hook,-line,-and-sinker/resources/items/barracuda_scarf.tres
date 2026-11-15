@@ -1,6 +1,6 @@
-[gd_resource type="Resource" script_class="ItemData" format=3]
+[gd_resource type="Resource" script_class="ItemData" format=3 uid="uid://b4fcc4cial7fn"]
 
-[ext_resource type="Script" path="res://resources/item_data.gd" id="1_item"]
+[ext_resource type="Script" uid="uid://yvmtx3kcsond" path="res://resources/item_data.gd" id="1_item"]
 [ext_resource type="Texture2D" uid="uid://c3is1dfjebkfc" path="res://sprites/gifts/gift_scarf.png" id="2_sprite"]
 
 [resource]
