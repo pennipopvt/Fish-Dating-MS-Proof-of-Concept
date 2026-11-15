@@ -14,6 +14,11 @@ json_path = "res://dialogue/barracuda_invitation.json"
 required_flags = Array[StringName]([&"Recruited", &"barracuda_scarf_complete"])
 forbidden_flags = Array[StringName]([&"barracuda_invitation_accepted"])
 
+[sub_resource type="Resource" id="Rule_post_romance"]
+script = ExtResource("2_rule")
+json_path = "res://dialogue/kuda_post_romance.json"
+required_flags = Array[StringName]([&"Recruited", &"barracuda_route_complete"])
+
 [sub_resource type="Resource" id="Rule_casual"]
 script = ExtResource("2_rule")
 json_path = "res://dialogue/barracuda_casual.json"
@@ -33,10 +38,10 @@ forbidden_flags = Array[StringName]([&"Recruited"])
 [resource]
 script = ExtResource("1_npc")
 npc_id = &"barracuda"
-display_name = "Barracuda"
+display_name = "Kuda"
 portrait = ExtResource("6_2m545")
 house = ExtResource("4_house")
-encounter_rules = Array[ExtResource("2_rule")]([SubResource("Rule_invitation"), SubResource("Rule_casual"), SubResource("Rule_retry"), SubResource("Rule_first")])
+encounter_rules = Array[ExtResource("2_rule")]([SubResource("Rule_invitation"), SubResource("Rule_post_romance"), SubResource("Rule_casual"), SubResource("Rule_retry"), SubResource("Rule_first")])
 desired_gift = ExtResource("5_gift")
 correct_gift_json = "res://dialogue/barracuda_gift_correct.json"
 incorrect_gift_json_pool = Array[String](["res://dialogue/barracuda_gift_wrong.json"])
