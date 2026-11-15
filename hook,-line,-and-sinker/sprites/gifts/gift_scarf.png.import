@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://c21gmtgi8ytlt"
-path="res://.godot/imported/barracuda_sunglasses.svg-017577e58d3ddd9e234a93b070c21673.ctex"
+uid="uid://c3is1dfjebkfc"
+path="res://.godot/imported/gift_scarf.png-746183d9ee173250d92724116bc25755.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://sprites/gifts/barracuda_sunglasses.svg"
-dest_files=["res://.godot/imported/barracuda_sunglasses.svg-017577e58d3ddd9e234a93b070c21673.ctex"]
+source_file="res://sprites/gifts/gift_scarf.png"
+dest_files=["res://.godot/imported/gift_scarf.png-746183d9ee173250d92724116bc25755.ctex"]
 
 [params]
 
@@ -38,6 +38,3 @@ process/hdr_as_srgb=false
 process/hdr_clamp_exposure=false
 process/size_limit=0
 detect_3d/compress_to=1
-svg/scale=1.0
-editor/scale_with_editor_scale=false
-editor/convert_colors_with_editor_theme=false

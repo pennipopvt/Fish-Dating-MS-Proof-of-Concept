@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://q74jw1i8lgff"
-path="res://.godot/imported/barracuda_scarf.svg-083481efd720b0c916efe259365ebad2.ctex"
+uid="uid://dgh6q5j2wgmq"
+path="res://.godot/imported/bobber_knife.png-8379e8973c1558024db77a1dea3400e4.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://sprites/gifts/barracuda_scarf.svg"
-dest_files=["res://.godot/imported/barracuda_scarf.svg-083481efd720b0c916efe259365ebad2.ctex"]
+source_file="res://sprites/bobbers/bobber_knife.png"
+dest_files=["res://.godot/imported/bobber_knife.png-8379e8973c1558024db77a1dea3400e4.ctex"]
 
 [params]
 
@@ -38,6 +38,3 @@ process/hdr_as_srgb=false
 process/hdr_clamp_exposure=false
 process/size_limit=0
 detect_3d/compress_to=1
-svg/scale=1.0
-editor/scale_with_editor_scale=false
-editor/convert_colors_with_editor_theme=false
