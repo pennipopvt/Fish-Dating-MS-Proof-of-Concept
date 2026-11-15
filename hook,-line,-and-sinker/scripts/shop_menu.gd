@@ -39,6 +39,7 @@ const TABS_HIDDEN_X_OFFSET := 12.0
 @onready var _challenges_tab: Button = %ChallengesTab
 @onready var _schedule_tab: Button = %ScheduleTab
 @onready var _preview_frame: PanelContainer = $TerminalRoot/Panel/Margin/Layout/Body/Details/PreviewFrame
+@onready var _details_panel: VBoxContainer = $TerminalRoot/Panel/Margin/Layout/Body/Details
 
 @onready var _delivery_status: Label = %DeliveryStatus
 @onready var _page_title: Label = %PageTitle
@@ -65,6 +66,13 @@ var _boot_tween: Tween
 var _tabs_pop_tween: Tween
 var _nav_rest_x: float = 0.0
 const SCHEDULE_DAYS: int = 4
+# Calendar-specific whitespace, using multiples of the game's 3x art-pixel grid.
+const SCHEDULE_COLUMN_GAP: int = 21
+const SCHEDULE_DAY_PADDING: int = 12
+const SCHEDULE_SECTION_GAP: int = 18
+const SCHEDULE_HEADER_GAP: int = 9
+const SCHEDULE_ACTION_GAP: int = 6
+const SCHEDULE_ACTION_HEIGHT: int = 45
 const TERMINAL_FRAME: StyleBoxTexture = preload("res://resources/ui/terminal_border.tres")
 var _schedule_day: int = -1
 var _schedule_period: int = 0
@@ -260,6 +268,8 @@ func _refresh_page() -> void:
 		_refresh_schedule_page()
 		return
 	_grid.columns = 4
+	_grid.add_theme_constant_override("h_separation", 12)
+	_details_panel.custom_minimum_size.x = 500
 	_preview_frame.show()
 	match _page:
 		Page.UPGRADES, Page.GIFTS:
@@ -366,6 +376,9 @@ func _refresh_schedule_page() -> void:
 	# Four calendar columns match the terminal's normal four-column grid.
 	# Each day contains 3 named periods, with 3 action slots per period.
 	_grid.columns = SCHEDULE_DAYS
+	_grid.add_theme_constant_override("h_separation", SCHEDULE_COLUMN_GAP)
+	# Give the four columns more breathing room without changing other tabs.
+	_details_panel.custom_minimum_size.x = 420
 	_preview_frame.hide()
 	_page_title.text = "SCHEDULE"
 	_page_hint.text = "Day %d / %s / %d of 3 actions left" % [
@@ -384,24 +397,29 @@ func _refresh_schedule_page() -> void:
 	for day_offset in SCHEDULE_DAYS:
 		var day := GameManager.get_day() + day_offset
 		var day_panel := PanelContainer.new()
-		day_panel.custom_minimum_size = Vector2(168, 0)
+		day_panel.custom_minimum_size = Vector2(180, 0)
 		# Use the actual terminal 9-slice, not a separately drawn UI border.
 		day_panel.add_theme_stylebox_override("panel", TERMINAL_FRAME)
 		_grid.add_child(day_panel)
 
 		var margin := MarginContainer.new()
-		margin.add_theme_constant_override("margin_left", 6)
-		margin.add_theme_constant_override("margin_right", 6)
-		margin.add_theme_constant_override("margin_top", 9)
-		margin.add_theme_constant_override("margin_bottom", 9)
+		margin.add_theme_constant_override("margin_left", SCHEDULE_DAY_PADDING)
+		margin.add_theme_constant_override("margin_right", SCHEDULE_DAY_PADDING)
+		margin.add_theme_constant_override("margin_top", SCHEDULE_DAY_PADDING)
+		margin.add_theme_constant_override("margin_bottom", SCHEDULE_DAY_PADDING)
 		day_panel.add_child(margin)
 		var column := VBoxContainer.new()
-		column.add_theme_constant_override("separation", 4)
+		column.add_theme_constant_override("separation", SCHEDULE_SECTION_GAP)
 		margin.add_child(column)
 
 		var day_title := Label.new()
 		day_title.theme_type_variation = &"TitleLabel"
-		day_title.text = "DAY %d%s" % [day, "  (TODAY)" if day_offset == 0 else ""]
+		# Keep all four headings the same height; "DAY 1 (TODAY)" used to
+		# wrap above MORNING and push the first column out of alignment.
+		day_title.text = "DAY %d" % day
+		if day_offset == 0:
+			day_title.tooltip_text = "Today"
+			day_title.add_theme_color_override("font_color", Color("0e666b"))
 		day_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		column.add_child(day_title)
 
@@ -410,12 +428,19 @@ func _refresh_schedule_page() -> void:
 			period_title.theme_type_variation = &"TitleLabel"
 			period_title.text = GameManager.get_period_name(period as GameManager.Times).to_upper()
 			period_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-			column.add_child(period_title)
+			var period_section := VBoxContainer.new()
+			period_section.add_theme_constant_override("separation", SCHEDULE_HEADER_GAP)
+			column.add_child(period_section)
+			period_section.add_child(period_title)
+
+			var action_rows := VBoxContainer.new()
+			action_rows.add_theme_constant_override("separation", SCHEDULE_ACTION_GAP)
+			period_section.add_child(action_rows)
 
 			var booking := _get_schedule_booking(day, period)
 			for action in GameManager.ACTIONS_PER_PERIOD:
 				var action_tile := Button.new()
-				action_tile.custom_minimum_size = Vector2(0, 39)
+				action_tile.custom_minimum_size = Vector2(0, SCHEDULE_ACTION_HEIGHT)
 				action_tile.toggle_mode = true
 				action_tile.clip_text = true
 				action_tile.alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -443,7 +468,7 @@ func _refresh_schedule_page() -> void:
 					action_tile.self_modulate = Color(0.83, 1.0, 0.95, 1.0)
 				action_tile.set_pressed_no_signal(day == _schedule_day and period == _schedule_period and action == _schedule_action)
 				action_tile.pressed.connect(_select_schedule_slot.bind(day, period, action))
-				column.add_child(action_tile)
+				action_rows.add_child(action_tile)
 
 	_refresh_schedule_details()
 
