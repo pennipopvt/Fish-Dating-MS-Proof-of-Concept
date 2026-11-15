@@ -19,26 +19,26 @@ func _ready() -> void:
 
 	_expect(QuotaManager.week == 1 and QuotaManager.deadline_day == 7,
 		"Week one quota is due at the end of day seven")
-	_expect(QuotaManager.get_target(&"easy_test_fish") == 5
-		and QuotaManager.get_target(&"hard_test_fish") == 1,
+	_expect(QuotaManager.get_target(&"placeholder_fish_a") == 5
+		and QuotaManager.get_target(&"placeholder_fish_b") == 1,
 		"First week's targets start at five common and one hard fish")
 	FishingManager.add_to_storage(EASY, 8)
 	FishingManager.add_to_storage(HARD, 1)
-	_expect(QuotaManager.submit(&"easy_test_fish", 2) == 2,
+	_expect(QuotaManager.submit(&"placeholder_fish_a", 2) == 2,
 		"Partial submission immediately accepts two common fish")
-	_expect(FishingManager.count_in_storage(&"easy_test_fish") == 6,
+	_expect(FishingManager.count_in_storage(&"placeholder_fish_a") == 6,
 		"Submitted fish are removed from inventory, not just counted")
-	_expect(QuotaManager.submit(&"easy_test_fish") == 3,
+	_expect(QuotaManager.submit(&"placeholder_fish_a") == 3,
 		"Send available submits only the remaining three quota fish")
-	_expect(FishingManager.count_in_storage(&"easy_test_fish") == 3,
+	_expect(FishingManager.count_in_storage(&"placeholder_fish_a") == 3,
 		"Extra fish remain in storage for upgrades and gifts")
-	_expect(QuotaManager.submit(&"easy_test_fish") == 0,
+	_expect(QuotaManager.submit(&"placeholder_fish_a") == 0,
 		"Cannot submit excess fish after a target is filled")
 	_expect(not QuotaManager.is_complete(), "Common fish alone do not complete the contract")
-	_expect(QuotaManager.submit(&"hard_test_fish") == 1,
+	_expect(QuotaManager.submit(&"placeholder_fish_b") == 1,
 		"Hard fish submit through the same inventory API")
 	_expect(QuotaManager.is_complete(), "Both deliveries finish the week's quota")
-	_expect(FishingManager.count_in_storage(&"hard_test_fish") == 0,
+	_expect(FishingManager.count_in_storage(&"placeholder_fish_b") == 0,
 		"Hard fish cannot be spent twice")
 
 	var shop := SHOP.instantiate() as ShopMenu
@@ -67,8 +67,8 @@ func _ready() -> void:
 	QuotaManager.call("_on_day_started", 8)
 	_expect(QuotaManager.week == 2 and QuotaManager.deadline_day == 14,
 		"Completing the contract opens next week's quota on day eight")
-	_expect(QuotaManager.get_target(&"easy_test_fish") == 7
-		and QuotaManager.get_target(&"hard_test_fish") == 2,
+	_expect(QuotaManager.get_target(&"placeholder_fish_a") == 7
+		and QuotaManager.get_target(&"placeholder_fish_b") == 2,
 		"Second week's targets increase")
 	QuotaManager.call("_on_day_started", 14)
 	_expect(not QuotaManager.failed, "Day fourteen remains available for last-minute submissions")
