@@ -356,8 +356,11 @@ func _sleep_to_morning() -> void:
 # accept: what saying yes does (start now with clock jump, or book).
 # Otherwise starts the date right away, ignoring its timing.
 func _date_action(date: DateData, accept: bool) -> void:
-	NPCManager.get_npc_state(SILAS_ID)["flags"][&"Recruited"] = true
-	_spawn_silas(true)
+	if date == null or date.npc == null:
+		return
+	NPCManager.get_npc_state(date.npc.npc_id)["flags"][&"Recruited"] = true
+	if date.npc.npc_id == SILAS_ID:
+		_spawn_silas(true)
 	hide()
 	if DialogueManager.is_active:
 		DialogueManager.end_conversation()
@@ -627,7 +630,14 @@ func _info_npcs() -> String:
 		var flags: Dictionary = state.get("flags", {})
 		var data: NPCData = _silas_data() if id == SILAS_ID else null
 		t += _h(String(id))
-		t += "Affection %d / %d   Last talk day %s   In world %s\n" % [int(state.get("attraction", NPCManager.START_ATTRACTION)), AffectionManager.MAX_AFFECTION, str(state.get(AffectionManager.LAST_TALK_KEY, "-")), _onoff(id == SILAS_ID and _find_silas() != null)]
+		t += "Affection %d / %d   Jealousy %d / %d (tier %d)\n" % [
+			AffectionManager.get_affection(id), AffectionManager.MAX_AFFECTION,
+			AffectionManager.get_jealousy(id), AffectionManager.MAX_JEALOUSY,
+			AffectionManager.get_jealousy_tier(id)]
+		t += "Last date day %s   First recruited day %s   In world %s\n" % [
+			str(state.get(AffectionManager.LAST_DATE_KEY, "-")),
+			str(state.get(AffectionManager.RECRUITED_DAY_KEY, "-")),
+			_onoff(id == SILAS_ID and _find_silas() != null)]
 		if data != null:
 			t += "Next encounter: %s\n" % _peek_encounter(data)
 		if flags.is_empty():
@@ -946,13 +956,14 @@ func _build_dialogue_tab() -> void:
 
 func _build_dates_tab() -> void:
 	var box := _add_tab("Dates")
-	_heading(box, "Dates with Silas (ask-out is dev-only for now)")
-	_button(box, "Ask Silas out (sets Recruited, spawns Silas, opens the ask-out talk)", _ask_silas_out)
-	for date: DateData in DateManager.get_dates_for(SILAS_ID):
-		var date_row := _row(box)
-		date_row.add_child(PixelUI.label(date.display_name, &"DimLabel"))
-		_button(date_row, "Accept", func() -> void: _date_action(date, true)).tooltip_text = "Same as picking this date in the ask-out talk (starts now or books it)"
-		_button(date_row, "Start now", func() -> void: _date_action(date, false)).tooltip_text = "Run the date right away, ignoring its time rules"
+	_heading(box, "Silas + Kuda: four placeholder decisions with three choices each")
+	_button(box, "Ask Silas out (dev)", _ask_silas_out)
+	for npc_id in [&"test_npc", &"barracuda"]:
+		for date: DateData in DateManager.get_dates_for(npc_id):
+			var date_row := _row(box)
+			date_row.add_child(PixelUI.label(date.display_name, &"DimLabel"))
+			_button(date_row, "Book next slot", func() -> void: _date_action(date, true))
+			_button(date_row, "Start (dev)", func() -> void: _date_action(date, false))
 	_button(box, "Clear date bookings + done/missed flags", _reset_dates)
 
 	# Day clock. Fields go through call/get so a branch without them still compiles.
@@ -1126,6 +1137,20 @@ func _rebuild_flags() -> void:
 		AffectionManager.set_affection(selected_id, int(v))
 		_say("%s affection = %d" % [selected_id, int(v)]))
 	attraction_row.add_child(attraction)
+
+	var jealousy_row := _row(box)
+	jealousy_row.add_child(PixelUI.label("Jealousy (0-100; tier 0-3)", &"DimLabel"))
+	var jealousy := SpinBox.new()
+	jealousy.min_value = 0
+	jealousy.max_value = AffectionManager.MAX_JEALOUSY
+	jealousy.value = AffectionManager.get_jealousy(selected_id)
+	jealousy.value_changed.connect(func(v: float) -> void:
+		AffectionManager.set_jealousy(selected_id, int(v))
+		_say("%s jealousy = %d (tier %d)" % [
+			selected_id, AffectionManager.get_jealousy(selected_id),
+			AffectionManager.get_jealousy_tier(selected_id)
+		]))
+	jealousy_row.add_child(jealousy)
 
 	_heading(box, "Flags (toggle to set / clear)")
 	var flags: Dictionary = state["flags"]
