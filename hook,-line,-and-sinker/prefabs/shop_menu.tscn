@@ -10,6 +10,7 @@
 [ext_resource type="Texture2D" uid="uid://cy6m4p32euy7d" path="res://sprites/ui/icon_challenges.png" id="8_challenge_icon"]
 [ext_resource type="Texture2D" path="res://sprites/ui/ui_background_3x.png" id="9_boot_frame"]
 [ext_resource type="Texture2D" path="res://sprites/ui/icon_schedule.svg" id="10_schedule_icon"]
+[ext_resource type="Texture2D" path="res://sprites/ui/icon_quota.svg" id="11_quota_icon"]
 
 [node name="ShopMenu" type="CanvasLayer" unique_id=21315034]
 process_mode = 3
@@ -65,7 +66,7 @@ offset_top = 5.0
 offset_right = 57.0
 offset_bottom = 53.0
 mouse_filter = 2
-texture = ExtResource("8_challenge_icon")
+texture = ExtResource("11_quota_icon")
 expand_mode = 1
 stretch_mode = 5
 
