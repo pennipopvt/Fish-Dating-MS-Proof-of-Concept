@@ -5,7 +5,7 @@ extends CanvasLayer
 # Tabs and borders are laid out in shop_menu.tscn and styled by terminal_theme.tres.
 # This script only fills in the grid, item details, and actions.
 
-enum Page { QUOTA, UPGRADES, GIFTS, STORAGE, COLLECTION, CHALLENGES, SCHEDULE }
+enum Page { QUOTA, SHOP, STORAGE, COLLECTION, CHALLENGES, SCHEDULE }
 
 const SLOT_SIZE := Vector2(168, 168) # 56 x 56 art pixels at 3x
 const MIN_SLOTS := 12                 # Four columns, three visible rows
@@ -17,9 +17,9 @@ const WARNING_TEXT := Color("984b24")
 # Art pixels are scaled x3. The visible part of each tab is 72 screen pixels.
 # A further 24 screen pixels sit under the terminal panel.
 const TAB_VISIBLE_WIDTH := 66.0
-const TAB_CLOSED_HEIGHT := 57.0
-const TAB_TEXT_PADDING := 6.0
-const TAB_TEXT_GAP := 6.0
+const TAB_CLOSED_HEIGHT := 78.0
+const TAB_TEXT_PADDING := 12.0
+const TAB_TEXT_GAP := 12.0
 
 # Terminal boot sequence: horizontal expansion, vertical expansion, tabs emerge.
 const BOOT_LINE := 36.0  # 12 art pixels; fits both 9-slice corner margins
@@ -33,8 +33,10 @@ const TABS_HIDDEN_X_OFFSET := 12.0
 @onready var _nav_tabs: VBoxContainer = $TerminalRoot/NavTabs
 
 @onready var _quota_tab: Button = %QuotaTab
-@onready var _upgrades_tab: Button = %UpgradesTab
-@onready var _gifts_tab: Button = %GiftsTab
+@onready var _shop_tab: Button = %ShopTab
+@onready var _shop_categories: HBoxContainer = %ShopCategories
+@onready var _shop_upgrades: Button = %ShopUpgrades
+@onready var _shop_gifts: Button = %ShopGifts
 @onready var _storage_tab: Button = %StorageTab
 @onready var _collection_tab: Button = %CollectionTab
 @onready var _challenges_tab: Button = %ChallengesTab
@@ -49,6 +51,7 @@ const TABS_HIDDEN_X_OFFSET := 12.0
 @onready var _grid_scroll: ScrollContainer = $TerminalRoot/Panel/Margin/Layout/Body/Left/GridScroll
 @onready var _schedule_days: HBoxContainer = %ScheduleDays
 @onready var _quota_view: VBoxContainer = %QuotaView
+@onready var _challenge_view: VBoxContainer = %ChallengeView
 @onready var _preview: TextureRect = %PreviewIcon
 @onready var _item_name: Label = %ItemName
 @onready var _description: Label = %DescriptionLabel
@@ -63,8 +66,10 @@ var _page: int = Page.QUOTA
 var _entries: Array[Dictionary] = []
 var _entry_buttons: Array[Button] = []
 var _selected_index: int = 0
+var _shop_section: int = 0  # 0 upgrades, 1 gifts
 var _button_group := ButtonGroup.new()
 var _last_order_message := ""
+var _challenge_notification: PanelContainer
 var _tab_tween: Tween
 var _boot_tween: Tween
 var _tabs_pop_tween: Tween
@@ -92,10 +97,12 @@ func _ready() -> void:
 	_terminal_panel.hide()
 	_nav_tabs.hide()
 	_opening_frame.hide()
-	_nav_buttons = [_quota_tab, _upgrades_tab, _gifts_tab, _storage_tab, _collection_tab, _challenges_tab, _schedule_tab]
+	_nav_buttons = [_quota_tab, _shop_tab, _storage_tab, _collection_tab, _challenges_tab, _schedule_tab]
 	for i in range(_nav_buttons.size()):
 		_nav_buttons[i].pressed.connect(_select_page.bind(i))
 
+	_shop_upgrades.pressed.connect(_select_shop_section.bind(0))
+	_shop_gifts.pressed.connect(_select_shop_section.bind(1))
 	_order_button.pressed.connect(_on_order_pressed)
 	_close_button.pressed.connect(close)
 	ShopManager.shop_requested.connect(open)
@@ -103,6 +110,7 @@ func _ready() -> void:
 	ShopManager.upgrade_state_changed.connect(_on_upgrade_state_changed)
 	ChallengeManager.challenge_progressed.connect(_on_challenge_changed)
 	ChallengeManager.challenge_completed.connect(_on_challenge_changed)
+	ChallengeManager.challenge_claimed.connect(_on_challenge_changed)
 	ChallengeManager.progress_reset.connect(_on_challenge_reset)
 	FishingManager.storage_changed.connect(_on_inventory_changed)
 	FishingManager.fish_caught.connect(_on_inventory_changed)  # collection/dex, incl. NPC catches
@@ -110,8 +118,32 @@ func _ready() -> void:
 	QuotaManager.quota_changed.connect(_on_quota_changed)
 	GameManager.time_changed.connect(func(_day: int, _period: GameManager.Times) -> void: _on_schedule_changed())
 	GameManager.actions_changed.connect(func(_actions: int) -> void: _on_schedule_changed())
+	_setup_challenge_notification()
 	_refresh_page()
 	_update_nav_tabs(false)
+
+
+func _setup_challenge_notification() -> void:
+	_challenge_notification = PanelContainer.new()
+	_challenge_notification.name = "ChallengeNoticeBubble"
+	_challenge_notification.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_challenge_notification.custom_minimum_size = Vector2(30, 30)
+	_challenge_notification.position = Vector2(33, 6)
+	_challenge_notification.add_theme_stylebox_override("panel", TERMINAL_FRAME)
+	var notice_label := Label.new()
+	notice_label.text = "!"
+	notice_label.theme_type_variation = &"TitleLabel"
+	notice_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	notice_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	notice_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_challenge_notification.add_child(notice_label)
+	_challenges_tab.add_child(_challenge_notification)
+	_update_challenge_notification()
+
+
+func _update_challenge_notification() -> void:
+	if is_instance_valid(_challenge_notification):
+		_challenge_notification.visible = ChallengeManager.get_claimable_count() > 0
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -124,6 +156,7 @@ func open() -> void:
 	if visible:
 		return
 	_page = Page.QUOTA
+	_shop_section = 0
 	_selected_index = 0
 	_last_order_message = ""
 	_delivery_status.text = "NO DELIVERIES"
@@ -209,6 +242,23 @@ func _cancel_open_animation() -> void:
 		_tabs_pop_tween.kill()
 
 
+func _has_recruited_npc() -> bool:
+	if ShopManager.gifts_unlocked:
+		return true
+	for state in NPCManager.npc_states.values():
+		if state.get("flags", {}).get(&"Recruited", false):
+			return true
+	return false
+
+
+func _select_shop_section(section: int) -> void:
+	if section == 1 and not _has_recruited_npc():
+		return
+	_shop_section = section
+	_selected_index = 0
+	_refresh_page()
+
+
 func _select_page(page: int) -> void:
 	_page = page
 	_selected_index = 0
@@ -277,9 +327,19 @@ func _refresh_page() -> void:
 	if _page == Page.QUOTA:
 		_refresh_quota_page()
 		return
+	if _page == Page.CHALLENGES:
+		_refresh_challenges_page()
+		return
+	_challenge_view.hide()
 	_quota_view.hide()
+	_shop_categories.visible = _page == Page.SHOP
+	_shop_gifts.visible = _has_recruited_npc()
+	if _shop_section == 1 and not _shop_gifts.visible:
+		_shop_section = 0
+	_shop_upgrades.set_pressed_no_signal(_shop_section == 0)
+	_shop_gifts.set_pressed_no_signal(_shop_section == 1)
 	_grid.columns = 4
-	_grid.add_theme_constant_override("h_separation", 12)
+	_grid.add_theme_constant_override("h_separation", 18)
 	_grid_scroll.show()
 	_schedule_days.hide()
 	_page_title.show()
@@ -287,7 +347,7 @@ func _refresh_page() -> void:
 	_details_panel.custom_minimum_size.x = 500
 	_preview_frame.show()
 	match _page:
-		Page.UPGRADES, Page.GIFTS:
+		Page.SHOP:
 			_collect_trades()
 		Page.STORAGE:
 			_collect_storage()
@@ -296,11 +356,10 @@ func _refresh_page() -> void:
 		Page.CHALLENGES:
 			_collect_challenges()
 
-	var names := ["QUOTA", "UPGRADES", "GIFTS", "STORAGE", "COLLECTION", "CHALLENGES"]
+	var names := ["QUOTA", "SHOP", "STORAGE", "COLLECTION", "CHALLENGES"]
 	var explanations := [
 		"Mandatory weekly fish deliveries",
-		"Permanent fishing improvements",
-		"Things to give your new friends",
+		"Fishing improvements and gifts",
 		"Fish and items you currently own",
 		"Fish you have discovered",
 		"Objectives and unlocks"
@@ -336,11 +395,110 @@ func _refresh_page() -> void:
 		_status.text = _last_order_message
 
 
+# ---- Claimable challenge cards: no empty 4 x 3 inventory grid ------------
+
+func _refresh_challenges_page() -> void:
+	_grid_scroll.hide()
+	_schedule_days.hide()
+	_quota_view.hide()
+	_shop_categories.hide()
+	_challenge_view.show()
+	_page_title.show()
+	_page_hint.show()
+	_preview_frame.hide()
+	_details_panel.custom_minimum_size.x = 420
+	_page_title.text = "CHALLENGES"
+	_page_hint.text = "Complete objectives, then claim their rewards here."
+	_entries.clear()
+	_collect_challenges()
+	_selected_index = mini(_selected_index, maxi(_entries.size() - 1, 0))
+	_page_indicator.text = "CHALLENGES / %d TO CLAIM" % ChallengeManager.get_claimable_count()
+	for i in range(_nav_buttons.size()):
+		_nav_buttons[i].button_pressed = i == _page
+		_nav_buttons[i].self_modulate = Color.WHITE if i == _page else Color(0.88, 0.9, 0.9, 0.9)
+	for child in _challenge_view.get_children():
+		_challenge_view.remove_child(child)
+		child.queue_free()
+	_entry_buttons.clear()
+	for i in range(_entries.size()):
+		var challenge := _entries[i]["ref"] as ChallengeData
+		var card := PanelContainer.new()
+		card.custom_minimum_size.y = 165
+		card.add_theme_stylebox_override("panel", TERMINAL_FRAME)
+		_challenge_view.add_child(card)
+		var pad := MarginContainer.new()
+		for side in ["margin_left", "margin_right", "margin_top", "margin_bottom"]:
+			pad.add_theme_constant_override(side, 15)
+		card.add_child(pad)
+		var body := VBoxContainer.new()
+		body.add_theme_constant_override("separation", 12)
+		pad.add_child(body)
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 15)
+		body.add_child(row)
+		var icon := TextureRect.new()
+		icon.custom_minimum_size = Vector2(72, 72)
+		icon.texture = challenge.icon
+		icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		if not challenge.completed:
+			icon.modulate = Color(0.6, 0.68, 0.68)
+		row.add_child(icon)
+		var description := VBoxContainer.new()
+		description.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		description.add_theme_constant_override("separation", 6)
+		row.add_child(description)
+		description.add_child(PixelUI.label(challenge.display_name.to_upper(), &"TitleLabel"))
+		var progress_text := "READY TO CLAIM" if challenge.completed and not challenge.claimed else (
+			"CLAIMED" if challenge.claimed else "%d / %d" % [challenge.progress, challenge.target_amount]
+		)
+		description.add_child(PixelUI.label(progress_text, &"DimLabel"))
+		var actions := VBoxContainer.new()
+		actions.add_theme_constant_override("separation", 9)
+		row.add_child(actions)
+		var view := Button.new()
+		view.text = "DETAILS"
+		view.custom_minimum_size = Vector2(120, 45)
+		view.pressed.connect(_select_challenge.bind(i))
+		actions.add_child(view)
+		if challenge.completed and not challenge.claimed:
+			var claim := Button.new()
+			claim.text = "CLAIM"
+			claim.custom_minimum_size = Vector2(120, 45)
+			claim.pressed.connect(_claim_challenge.bind(challenge))
+			actions.add_child(claim)
+		var bar := ProgressBar.new()
+		bar.max_value = challenge.target_amount
+		bar.value = challenge.progress
+		bar.show_percentage = false
+		bar.custom_minimum_size.y = 15
+		bar.add_theme_stylebox_override("background", PixelUI.box(PixelUI.INSET, PixelUI.ROW_EDGE, 1))
+		bar.add_theme_stylebox_override("fill", PixelUI.box(PixelUI.CYAN_DARK, PixelUI.CYAN, 1))
+		body.add_child(bar)
+	_show_details()
+	if not _last_order_message.is_empty():
+		_status.text = _last_order_message
+
+
+func _select_challenge(index: int) -> void:
+	_selected_index = index
+	_show_details()
+
+
+func _claim_challenge(challenge: ChallengeData) -> void:
+	if ChallengeManager.claim(challenge):
+		_last_order_message = "CLAIMED: %s" % challenge.display_name
+		# challenge_claimed already queues the page refresh; avoid rebuilding twice.
+
+
 # ---- Mandatory weekly fish quota ---------------------------------------
 
 func _refresh_quota_page() -> void:
 	_grid_scroll.hide()
 	_schedule_days.hide()
+	_shop_categories.hide()
+	_challenge_view.hide()
 	_quota_view.show()
 	_entry_buttons.clear()
 	_preview_frame.hide()
@@ -499,6 +657,8 @@ func _schedule_slot_is_quota_deadline(day: int, period: int, action: int) -> boo
 
 func _refresh_schedule_page() -> void:
 	_quota_view.hide()
+	_challenge_view.hide()
+	_shop_categories.hide()
 	# Four days in a fixed horizontal layout, NOT inside the shop scroll view.
 	# Today has extra width; strong nine-slice outlines frame each day, while
 	# subtle rules separate actions and periods within the day.
@@ -677,7 +837,7 @@ func _collect_trades() -> void:
 			continue
 		var is_upgrade := trade.reward_method != &""
 		var is_gift := trade.reward_item != null and not is_upgrade
-		if (_page == Page.UPGRADES and is_upgrade) or (_page == Page.GIFTS and is_gift):
+		if _page == Page.SHOP and ((_shop_section == 0 and is_upgrade) or (_shop_section == 1 and is_gift and _has_recruited_npc())):
 			var icon: Texture2D = trade.icon
 			if icon == null and trade.reward_item != null:
 				icon = trade.reward_item.sprite
@@ -765,7 +925,8 @@ func _collect_challenges() -> void:
 			"ref": challenge,
 			"name": "???" if hidden else challenge.display_name,
 			"icon": art,
-			"locked": hidden
+			"locked": hidden,
+			"claimable": challenge.completed and not challenge.claimed
 		})
 
 
@@ -788,6 +949,13 @@ func _make_tile(entry: Dictionary, index: int) -> Button:
 	if bool(entry.get("locked", false)):
 		tile.self_modulate = LOCKED_TINT
 
+	if bool(entry.get("claimable", false)):
+		var claim_badge := Label.new()
+		claim_badge.text = "!"
+		claim_badge.theme_type_variation = &"TitleLabel"
+		claim_badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		claim_badge.position = Vector2(SLOT_SIZE.x - 33, 9)
+		tile.add_child(claim_badge)
 	var amount: int = int(entry.get("quantity", 0))
 	if amount > 0:
 		var badge := Label.new()
@@ -846,7 +1014,7 @@ func _show_details() -> void:
 
 
 func _show_trade_details(trade: TradeData) -> void:
-	_description.text = trade.description if not trade.description.is_empty() else ("Fishing equipment upgrade." if _page == Page.UPGRADES else "A present for someone in town.")
+	_description.text = trade.description if not trade.description.is_empty() else ("Fishing equipment upgrade." if trade.reward_method != &"" else "A present for someone in town.")
 	_add_detail_line("REQUIRES:", DIM_TEXT)
 	# Sprite + actual owned/required counts, one row per required fish.
 	for requirement in trade.requirements:
@@ -879,11 +1047,13 @@ func _show_trade_details(trade: TradeData) -> void:
 		_status.text = "DELIVERY ORDERED"
 		_order_button.text = "ORDERED"
 	elif locking != null:
-		_status.text = "LOCKED: %s" % ("Complete a hidden challenge" if locking.hidden else locking.display_name)
+		_status.text = ("CLAIM CHALLENGE: " if locking.completed else "LOCKED: ") + (
+			"Hidden challenge" if locking.hidden and not locking.completed else locking.display_name
+		)
 		_order_button.self_modulate = UNAFFORD_TINT
 	elif _order_button.disabled:
 		_status.text = "Not enough items to trade."
-		if ShopManager.upgrades_today >= ShopManager.max_daily_upgrades:
+		if trade.one_time_purchase and ShopManager.upgrades_today >= ShopManager.max_daily_upgrades:
 			_status.text = "Maximum daily upgrades reached."
 		_order_button.self_modulate = UNAFFORD_TINT
 
@@ -949,7 +1119,15 @@ func _show_challenge_details(challenge: ChallengeData) -> void:
 	_add_detail_line("PROGRESS: %d / %d" % [challenge.progress, challenge.target_amount], DARK_TEXT)
 	if challenge.reward_text != "":
 		_add_detail_line("UNLOCK: " + challenge.reward_text, DIM_TEXT)
-	_status.text = "COMPLETED" if challenge.completed else "IN PROGRESS"
+	if challenge.completed and not challenge.claimed:
+		_status.text = "READY TO CLAIM"
+		_order_button.show()
+		_order_button.disabled = false
+		_order_button.text = "CLAIM REWARD"
+	elif challenge.claimed:
+		_status.text = "REWARD CLAIMED"
+	else:
+		_status.text = "IN PROGRESS"
 
 
 func _add_detail_line(value: String, color: Color) -> void:
@@ -965,7 +1143,12 @@ func _human_name(id: StringName) -> String:
 
 
 func _on_order_pressed() -> void:
-	if _entries.is_empty() or _entries[_selected_index].get("kind") != "trade":
+	if _entries.is_empty():
+		return
+	if _entries[_selected_index].get("kind") == "challenge":
+		_claim_challenge(_entries[_selected_index].get("ref") as ChallengeData)
+		return
+	if _entries[_selected_index].get("kind") != "trade":
 		return
 	var trade: TradeData = _entries[_selected_index].get("ref") as TradeData
 	if trade == null or not ShopManager.make_trade(trade):
@@ -974,7 +1157,7 @@ func _on_order_pressed() -> void:
 
 
 func _on_upgrade_state_changed(_trade: TradeData) -> void:
-	if visible and _page == Page.UPGRADES:
+	if visible and _page == Page.SHOP:
 		_refresh_page()
 
 
@@ -988,13 +1171,15 @@ func _on_trade_completed(trade: TradeData) -> void:
 
 
 func _on_challenge_changed(_challenge: ChallengeData) -> void:
-	if visible and _page == Page.CHALLENGES:
-		_refresh_page()
+	_update_challenge_notification()
+	if visible and (_page == Page.CHALLENGES or _page == Page.SHOP):
+		_refresh_page.call_deferred()
 
 
 func _on_challenge_reset() -> void:
-	if visible and _page == Page.CHALLENGES:
-		_refresh_page()
+	_update_challenge_notification()
+	if visible and (_page == Page.CHALLENGES or _page == Page.SHOP):
+		_refresh_page.call_deferred()
 
 
 func _on_inventory_changed(_fish: Variant = null) -> void:
@@ -1002,5 +1187,5 @@ func _on_inventory_changed(_fish: Variant = null) -> void:
 		return
 	if _page == Page.QUOTA:
 		_refresh_quota_page.call_deferred()
-	elif _page == Page.STORAGE or _page == Page.COLLECTION:
+	elif _page == Page.SHOP or _page == Page.STORAGE or _page == Page.COLLECTION:
 		_refresh_page()

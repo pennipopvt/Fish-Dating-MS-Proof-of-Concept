@@ -13,7 +13,7 @@ extends Node2D
 
 signal finished
 
-const SUBTITLE := "CHALLENGE DONE"
+const SUBTITLE := "CLAIM IN TERMINAL"
 const FONT := PixelUI.FONT_SMALL
 const FONT_BOLD := PixelUI.FONT_SMALL_BOLD
 const FONT_SIZE := 8

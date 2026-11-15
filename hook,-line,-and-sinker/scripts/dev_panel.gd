@@ -469,6 +469,7 @@ func _reset_all() -> void:
 	_reset_upgrades()
 	ChallengeManager.reset_all()
 	QuotaManager.reset_run()
+	ShopManager.gifts_unlocked = false
 	_reset_bobbers()
 	if GameManager.has_method("reset_clock"):
 		GameManager.call("reset_clock")

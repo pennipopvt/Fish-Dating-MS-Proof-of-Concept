@@ -18,6 +18,7 @@ const STRONGER_REEL_ID: StringName = &"stronger_reel"
 const REINFORCED_LINE_ID: StringName = &"reinforced_line"
 const HARD_BAIT_UPGRADE_ID: StringName = &"hard_fish_bait"
 const YELLOW_BAIT_UPGRADE_ID: StringName = &"yellow_bait"
+const EXTRA_CAST_UPGRADE_ID: StringName = &"increase_casts"
 
 @export var possible_catches: Array[FishData] = []
 @export var current_storage: Array[ItemData] = []
@@ -122,6 +123,13 @@ func shop_reward_reinforced_line(amount: int) -> void:
 	reel_tension_reduction = 0.005  # -0.5 percentage points per reel scroll
 	miss_tension_reduction = 0.04  # -4 percentage points per missed dash
 	upgrades_changed.emit()
+
+
+func shop_reward_upgrade_casts(amount: int) -> void:
+	if amount <= 0 or has_upgrade(EXTRA_CAST_UPGRADE_ID):
+		return
+	owned_upgrade_ids.append(EXTRA_CAST_UPGRADE_ID)
+	shop_reward_add_casts(amount)
 
 
 func shop_reward_add_casts(amount: int) -> void:
