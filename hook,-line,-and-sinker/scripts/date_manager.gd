@@ -363,7 +363,7 @@ func _on_date_choice(npc: NPCData, choice: Dictionary) -> void:
 	_date_score += points
 	_date_choice_count += 1
 	AffectionManager.change_jealousy(npc.npc_id, jealousy_for_choice(style, tier))
-	_last_reaction = "[Placeholder: %s / jealousy tier %d / score %+d]" % [style, tier, points]
+	_last_reaction = "[Placeholder: %s / jealousy tier %d / score %d]" % [style, tier, points]
 
 
 func get_placeholder_reaction() -> String:
@@ -372,7 +372,7 @@ func get_placeholder_reaction() -> String:
 
 func get_placeholder_outcome() -> String:
 	var outcome := outcome_for_score(_date_score)
-	return "[Placeholder: %s date / affection %+d]" % [outcome, int(OUTCOME_AFFECTION[outcome])]
+	return "[Placeholder: %s date / affection %d]" % [outcome, int(OUTCOME_AFFECTION[outcome])]
 
 
 # Rests period by period until the date's period (at most a day).
