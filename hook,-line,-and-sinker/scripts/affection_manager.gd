@@ -1,30 +1,27 @@
 extends Node
 
-# Affection (autoload "AffectionManager"). The value itself is NPCManager's
-# per-NPC "attraction" (starts at NPCManager.START_ATTRACTION); every change
-# should go through change() so the cap, signals and leaving rule apply.
-#
-# - Dialogue choices: a JSON choice can set "tone": "positive" | "neutral" |
-#   "negative" (+5 / 0 / -3), or an exact "attraction" number in its effects.
-#   Each choice gives affection only the first time it's picked; after that
-#   DialogueUI shows it greyed out (still pickable). Picked choices are
-#   remembered per NPC. A choice with "grey_when_picked": false never greys.
-# - Dates add DateData.attraction_change (positive by default).
-# - Each morning, a recruited NPC Penni didn't finish a conversation (or date)
-#   with during the whole previous day loses DAILY_DECAY.
-# - Below 0, a recruited NPC jumps back into the ocean: Recruited is cleared
-#   (other story flags and picked choices stay), affection resets to the start
-#   value, their house is freed and their fish goes back into the catch pool.
-# Morning/leaving messages pop up above Penni in the challenge-notice bubble.
-# State is in memory only, like the rest of NPC state.
+# Relationship values are session-only in NPCManager state.
+# Affection may dip below zero, triggering departure at the next morning.
+# Jealousy ranges 0-100 with four tiers; only dates lower jealousy.
+# After first romance, every day without a completed date incurs tier-based
+# affection decay. Casual conversations do NOT prevent that decay.
+# Placeholder dates evaluate three response styles against the jealousy tier.
 
 signal affection_changed(npc_id: StringName, value: int, delta: int)
+signal jealousy_changed(npc_id: StringName, value: int, delta: int)
 signal npc_left(npc_id: StringName)
 
 const MAX_AFFECTION := 100
+const MAX_JEALOUSY := 100
 const TONE_AMOUNTS := {"positive": 5, "neutral": 0, "negative": -3}
-const DAILY_DECAY := 2
+# 0-24, 25-49, 50-74, 75-100. Adjust after playtesting.
+const DAILY_DECAY_BY_TIER := [2, 4, 6, 10]
+const OTHER_ROMANCE_JEALOUSY := 45
+const MISSED_DATE_JEALOUSY := 15
 const RECRUITED_FLAG := &"Recruited"
+const LAST_DATE_KEY := "last_date_day"
+const JEALOUSY_KEY := "jealousy"
+const ROMANCE_KEY := &"romance_complete"
 # Keys in NPCManager's per-NPC state.
 const PICKED_KEY := "picked_choices"
 const LAST_TALK_KEY := "last_talk_day"
@@ -49,7 +46,7 @@ func _connect_sources() -> void:
 			_npc_fish.append(fish)
 	DialogueManager.conversation_finished.connect(_on_conversation_finished)
 	GameManager.day_started.connect(_on_day_started)
-	DateManager.date_finished.connect(func(_date: DateData) -> void: _check_leaving())
+	DateManager.date_missed.connect(_on_date_missed)
 	RecruitmentHandler.npc_moved_into_home.connect(
 		func(actor: NPCInteractable, home: Sprite2D) -> void: _homes[actor.get_instance_id()] = home)
 
@@ -68,12 +65,64 @@ func change(npc_id: StringName, delta: int) -> void:
 	var value: int = mini(get_affection(npc_id) + delta, MAX_AFFECTION)
 	state["attraction"] = value
 	affection_changed.emit(npc_id, value, delta)
-	if value < 0:
-		_check_leaving.call_deferred()
+	# Never trigger departure in the middle of a date or conversation.
+	# _on_day_started() handles it on the following morning.
 
 
 func set_affection(npc_id: StringName, value: int) -> void:
 	change(npc_id, mini(value, MAX_AFFECTION) - get_affection(npc_id))
+
+
+func get_jealousy(npc_id: StringName) -> int:
+	return int(NPCManager.get_npc_state(npc_id).get(JEALOUSY_KEY, 0))
+
+
+func get_jealousy_tier(npc_id: StringName) -> int:
+	return mini(get_jealousy(npc_id) / 25, 3)
+
+
+func change_jealousy(npc_id: StringName, delta: int) -> void:
+	if npc_id == &"" or delta == 0:
+		return
+	var state: Dictionary = NPCManager.get_npc_state(npc_id)
+	var prior := get_jealousy(npc_id)
+	var next := clampi(prior + delta, 0, MAX_JEALOUSY)
+	state[JEALOUSY_KEY] = next
+	if next != prior:
+		jealousy_changed.emit(npc_id, next, next - prior)
+
+
+func set_jealousy(npc_id: StringName, value: int) -> void:
+	change_jealousy(npc_id, clampi(value, 0, MAX_JEALOUSY) - get_jealousy(npc_id))
+
+
+func has_completed_romance(npc_id: StringName) -> bool:
+	var flags: Dictionary = NPCManager.get_npc_state(npc_id).get("flags", {})
+	return bool(flags.get(ROMANCE_KEY, false)
+		or flags.get(&"silas_route_complete", false)
+		or flags.get(&"barracuda_route_complete", false))
+
+
+# Called only once, after the first romance route's post-scene dialogue.
+func on_romance_completed(npc_id: StringName) -> void:
+	var state: Dictionary = NPCManager.get_npc_state(npc_id)
+	var flags: Dictionary = state["flags"]
+	if flags.get(ROMANCE_KEY, false):
+		return
+	# Existing romantic partners become jealous, not the new partner.
+	for other_id: StringName in NPCManager.npc_states.keys():
+		if other_id != npc_id and NPCManager.npc_states[other_id].get("flags", {}).get(RECRUITED_FLAG, false) and has_completed_romance(other_id):
+			change_jealousy(other_id, OTHER_ROMANCE_JEALOUSY)
+	flags[ROMANCE_KEY] = true
+
+
+func mark_date_completed(npc_id: StringName, day: int) -> void:
+	NPCManager.get_npc_state(npc_id)[LAST_DATE_KEY] = day
+
+
+func _on_date_missed(date: DateData) -> void:
+	if date != null and date.npc != null and has_completed_romance(date.npc.npc_id):
+		change_jealousy(date.npc.npc_id, MISSED_DATE_JEALOUSY)
 
 
 static func tone_amount(tone: String) -> int:
@@ -127,7 +176,6 @@ func clear_picked(npc_id: StringName) -> void:
 func _on_conversation_finished(npc: NPCData) -> void:
 	if npc != null:
 		NPCManager.get_npc_state(npc.npc_id)[LAST_TALK_KEY] = GameManager.get_day()
-	_check_leaving.call_deferred()
 
 
 func _on_day_started(day: int) -> void:
@@ -135,14 +183,16 @@ func _on_day_started(day: int) -> void:
 		var state: Dictionary = NPCManager.npc_states[npc_id]
 		if not state.get("flags", {}).get(RECRUITED_FLAG, false):
 			continue
-		# First check for an NPC never talked to (e.g. dev shortcuts): start counting now.
-		if not state.has(LAST_TALK_KEY):
-			state[LAST_TALK_KEY] = day - 1
+		# Relationship upkeep starts after first romance. Talking never replaces dates.
+		if not has_completed_romance(npc_id):
 			continue
-		if int(state[LAST_TALK_KEY]) >= day - 1:
+		if int(state.get(LAST_DATE_KEY, -1)) == day - 1:
 			continue
-		change(npc_id, -DAILY_DECAY)
-		show_message("AFFECTION -%d" % DAILY_DECAY, "%s felt ignored yesterday" % _display_name(npc_id))
+		var decay: int = DAILY_DECAY_BY_TIER[get_jealousy_tier(npc_id)]
+		change(npc_id, -decay)
+		show_message("AFFECTION -%d" % decay, "%s missed a date yesterday" % _display_name(npc_id))
+	# Departures take place at the beginning of a day, never during dialogue.
+	_check_leaving()
 
 
 # --- Leaving ---
@@ -162,6 +212,9 @@ func leave(npc_id: StringName) -> void:
 	state["flags"][RECRUITED_FLAG] = false
 	state["attraction"] = NPCManager.START_ATTRACTION
 	state.erase(LAST_TALK_KEY)
+	state.erase(LAST_DATE_KEY)
+	state[JEALOUSY_KEY] = 0
+	state["flags"].erase(ROMANCE_KEY)
 	var npc_name := _display_name(npc_id)
 	var actor := _find_actor(npc_id)
 	_return_fish(npc_id, actor)
