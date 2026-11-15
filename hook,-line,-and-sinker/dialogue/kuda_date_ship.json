@@ -13,35 +13,29 @@
       ],
       "choices": [
         {
-          "text": "[Reassuring choice]",
-          "spoken_text": "[Placeholder: reassure response]",
-          "date_style": "reassure",
-          "grey_when_picked": false,
-          "next": "reaction_1_reassure"
-        },
-        {
-          "text": "[Neutral choice]",
-          "spoken_text": "[Placeholder: neutral response]",
-          "date_style": "neutral",
-          "grey_when_picked": false,
-          "next": "reaction_1_neutral"
-        },
-        {
           "text": "[Bold/flirty choice]",
           "spoken_text": "[Placeholder: bold response]",
           "date_style": "bold",
           "grey_when_picked": false,
           "next": "reaction_1_bold"
+        },
+        {
+          "text": "[Playful choice]",
+          "spoken_text": "[Placeholder: playful response]",
+          "date_style": "playful",
+          "grey_when_picked": false,
+          "next": "reaction_1_playful"
+        },
+        {
+          "text": "[Reassuring choice]",
+          "spoken_text": "[Placeholder: reassure response]",
+          "date_style": "reassure",
+          "grey_when_picked": false,
+          "next": "reaction_1_reassure"
         }
       ]
     },
     "reaction_1_reassure": {
-      "lines": [
-        "{{date_reaction}}"
-      ],
-      "next": "choice_2"
-    },
-    "reaction_1_neutral": {
       "lines": [
         "{{date_reaction}}"
       ],
@@ -59,35 +53,29 @@
       ],
       "choices": [
         {
-          "text": "[Reassuring choice]",
-          "spoken_text": "[Placeholder: reassure response]",
-          "date_style": "reassure",
-          "grey_when_picked": false,
-          "next": "reaction_2_reassure"
-        },
-        {
-          "text": "[Neutral choice]",
-          "spoken_text": "[Placeholder: neutral response]",
-          "date_style": "neutral",
-          "grey_when_picked": false,
-          "next": "reaction_2_neutral"
-        },
-        {
           "text": "[Bold/flirty choice]",
           "spoken_text": "[Placeholder: bold response]",
           "date_style": "bold",
           "grey_when_picked": false,
           "next": "reaction_2_bold"
+        },
+        {
+          "text": "[Playful choice]",
+          "spoken_text": "[Placeholder: playful response]",
+          "date_style": "playful",
+          "grey_when_picked": false,
+          "next": "reaction_2_playful"
+        },
+        {
+          "text": "[Reassuring choice]",
+          "spoken_text": "[Placeholder: reassure response]",
+          "date_style": "reassure",
+          "grey_when_picked": false,
+          "next": "reaction_2_reassure"
         }
       ]
     },
     "reaction_2_reassure": {
-      "lines": [
-        "{{date_reaction}}"
-      ],
-      "next": "choice_3"
-    },
-    "reaction_2_neutral": {
       "lines": [
         "{{date_reaction}}"
       ],
@@ -105,35 +93,29 @@
       ],
       "choices": [
         {
-          "text": "[Reassuring choice]",
-          "spoken_text": "[Placeholder: reassure response]",
-          "date_style": "reassure",
-          "grey_when_picked": false,
-          "next": "reaction_3_reassure"
-        },
-        {
-          "text": "[Neutral choice]",
-          "spoken_text": "[Placeholder: neutral response]",
-          "date_style": "neutral",
-          "grey_when_picked": false,
-          "next": "reaction_3_neutral"
-        },
-        {
           "text": "[Bold/flirty choice]",
           "spoken_text": "[Placeholder: bold response]",
           "date_style": "bold",
           "grey_when_picked": false,
           "next": "reaction_3_bold"
+        },
+        {
+          "text": "[Playful choice]",
+          "spoken_text": "[Placeholder: playful response]",
+          "date_style": "playful",
+          "grey_when_picked": false,
+          "next": "reaction_3_playful"
+        },
+        {
+          "text": "[Reassuring choice]",
+          "spoken_text": "[Placeholder: reassure response]",
+          "date_style": "reassure",
+          "grey_when_picked": false,
+          "next": "reaction_3_reassure"
         }
       ]
     },
     "reaction_3_reassure": {
-      "lines": [
-        "{{date_reaction}}"
-      ],
-      "next": "choice_4"
-    },
-    "reaction_3_neutral": {
       "lines": [
         "{{date_reaction}}"
       ],
@@ -151,35 +133,29 @@
       ],
       "choices": [
         {
-          "text": "[Reassuring choice]",
-          "spoken_text": "[Placeholder: reassure response]",
-          "date_style": "reassure",
-          "grey_when_picked": false,
-          "next": "reaction_4_reassure"
-        },
-        {
-          "text": "[Neutral choice]",
-          "spoken_text": "[Placeholder: neutral response]",
-          "date_style": "neutral",
-          "grey_when_picked": false,
-          "next": "reaction_4_neutral"
-        },
-        {
           "text": "[Bold/flirty choice]",
           "spoken_text": "[Placeholder: bold response]",
           "date_style": "bold",
           "grey_when_picked": false,
           "next": "reaction_4_bold"
+        },
+        {
+          "text": "[Playful choice]",
+          "spoken_text": "[Placeholder: playful response]",
+          "date_style": "playful",
+          "grey_when_picked": false,
+          "next": "reaction_4_playful"
+        },
+        {
+          "text": "[Reassuring choice]",
+          "spoken_text": "[Placeholder: reassure response]",
+          "date_style": "reassure",
+          "grey_when_picked": false,
+          "next": "reaction_4_reassure"
         }
       ]
     },
     "reaction_4_reassure": {
-      "lines": [
-        "{{date_reaction}}"
-      ],
-      "next": "ending"
-    },
-    "reaction_4_neutral": {
       "lines": [
         "{{date_reaction}}"
       ],
@@ -195,6 +171,30 @@
       "lines": [
         "{{date_outcome}}"
       ]
+    },
+    "reaction_1_playful": {
+      "lines": [
+        "{{date_reaction}}"
+      ],
+      "next": "choice_2"
+    },
+    "reaction_2_playful": {
+      "lines": [
+        "{{date_reaction}}"
+      ],
+      "next": "choice_3"
+    },
+    "reaction_3_playful": {
+      "lines": [
+        "{{date_reaction}}"
+      ],
+      "next": "choice_4"
+    },
+    "reaction_4_playful": {
+      "lines": [
+        "{{date_reaction}}"
+      ],
+      "next": "ending"
     }
   }
 }
