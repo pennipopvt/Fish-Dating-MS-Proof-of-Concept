@@ -95,9 +95,9 @@ func _run() -> void:
 	# The same reset API is used by the F9 developer panel. Verify that
 	# resetting ownership also removes every bonus and restores default bait.
 	fish.shop_reward_add_casts(2)
-	_expect(fish.max_casts_per_session == 5, "extra cast reward applies")
+	_expect(fish.casts_per_action == 3, "extra cast reward adds casts to one action")
 	fish.reset_session_upgrades()
-	_expect(fish.max_casts_per_session == 3, "reset restores original cast limit")
+	_expect(fish.casts_per_action == 1, "reset restores one cast per action")
 	_expect(fish.owned_upgrade_ids.is_empty(), "reset clears upgrade ownership")
 	_expect(fish.get_unlocked_baits().size() == 1 and fish.equipped_bait == BASIC, "reset restores basic bait")
 	_expect(is_zero_approx(fish.reel_progress_bonus) and is_zero_approx(fish.reel_tension_reduction) and is_zero_approx(fish.miss_tension_reduction), "reset removes all flat combat bonuses")
@@ -109,6 +109,7 @@ func _run() -> void:
 	fresh.equipped_bait = HARD
 	fresh._ready()
 	_expect(fresh.get_unlocked_baits().size() == 1, "new session has only basic bait")
+	_expect(fresh.casts_per_action == 1, "new sessions begin with one cast per action")
 	_expect(fresh.equipped_bait == BASIC, "new session equips basic bait")
 	_expect(not fresh.has_upgrade(&"hard_fish_bait"), "hard bait must be re-earned on relaunch")
 	_expect(not fresh.has_upgrade(&"yellow_bait"), "yellow bait must be re-earned on relaunch")
