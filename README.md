@@ -125,8 +125,8 @@ Debug builds only (not in exports):
   the talk follows its `next` to a "not now" line.
   **The date:** fade out, Penni and the NPC move to the place's `PlayerSpot` /
   `NpcSpot`, the date JSON plays, then fade back and both return. Places are
-  `DateLocation` interactables (`prefabs/beach.tscn`, on the stairs and sand at the
-  island's right end); a booked place shows a sign with the date and time. A date
+  `DateLocation` interactables (`prefabs/beach.tscn`, at x=860 near the water end of
+  the beach); a booked place shows a sign with the date and time. A date
   can instead happen at a `venue_scene` spawned just for it at `venue_position` and
   removed afterwards: `prefabs/ship.tscn`, an upside-down triangle out at sea
   (x=2400, no island in view). Current data: beach = NOW, afternoon only (jumps
