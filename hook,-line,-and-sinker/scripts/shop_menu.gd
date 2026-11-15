@@ -1,11 +1,11 @@
 class_name ShopMenu
 extends CanvasLayer
 
-# FISH CO. terminal: five pages share one scene and one set of controls.
+# FISH CO. terminal: shop, inventory and calendar pages share one scene.
 # Tabs and borders are laid out in shop_menu.tscn and styled by terminal_theme.tres.
 # This script only fills in the grid, item details, and actions.
 
-enum Page { UPGRADES, GIFTS, STORAGE, COLLECTION, CHALLENGES }
+enum Page { UPGRADES, GIFTS, STORAGE, COLLECTION, CHALLENGES, SCHEDULE }
 
 const SLOT_SIZE := Vector2(168, 168) # 56 x 56 art pixels at 3x
 const MIN_SLOTS := 12                 # Four columns, three visible rows
@@ -37,6 +37,8 @@ const TABS_HIDDEN_X_OFFSET := 12.0
 @onready var _storage_tab: Button = %StorageTab
 @onready var _collection_tab: Button = %CollectionTab
 @onready var _challenges_tab: Button = %ChallengesTab
+@onready var _schedule_tab: Button = %ScheduleTab
+@onready var _preview_frame: PanelContainer = $TerminalRoot/Panel/Margin/Layout/Body/Details/PreviewFrame
 
 @onready var _delivery_status: Label = %DeliveryStatus
 @onready var _page_title: Label = %PageTitle
@@ -62,6 +64,10 @@ var _tab_tween: Tween
 var _boot_tween: Tween
 var _tabs_pop_tween: Tween
 var _nav_rest_x: float = 0.0
+var _schedule_day: int = -1
+var _schedule_period: int = 0
+var _schedule_date_id: StringName = &""
+var _schedule_message: String = ""
 
 
 func _ready() -> void:
@@ -71,7 +77,7 @@ func _ready() -> void:
 	_terminal_panel.hide()
 	_nav_tabs.hide()
 	_opening_frame.hide()
-	_nav_buttons = [_upgrades_tab, _gifts_tab, _storage_tab, _collection_tab, _challenges_tab]
+	_nav_buttons = [_upgrades_tab, _gifts_tab, _storage_tab, _collection_tab, _challenges_tab, _schedule_tab]
 	for i in range(_nav_buttons.size()):
 		_nav_buttons[i].pressed.connect(_select_page.bind(i))
 
@@ -85,6 +91,9 @@ func _ready() -> void:
 	ChallengeManager.progress_reset.connect(_on_challenge_reset)
 	FishingManager.storage_changed.connect(_on_inventory_changed)
 	FishingManager.fish_caught.connect(_on_inventory_changed)  # collection/dex, incl. NPC catches
+	DateManager.bookings_changed.connect(_on_schedule_changed)
+	GameManager.time_changed.connect(func(_day: int, _period: GameManager.Times) -> void: _on_schedule_changed())
+	GameManager.actions_changed.connect(func(_actions: int) -> void: _on_schedule_changed())
 	_refresh_page()
 	_update_nav_tabs(false)
 
@@ -188,6 +197,8 @@ func _select_page(page: int) -> void:
 	_page = page
 	_selected_index = 0
 	_last_order_message = ""
+	if page == Page.SCHEDULE:
+		_select_default_schedule_slot()
 	_refresh_page()
 	_update_nav_tabs(true)
 	if not _entry_buttons.is_empty():
@@ -244,6 +255,11 @@ func _layout_vertical_caption(caption: Label) -> float:
 
 func _refresh_page() -> void:
 	_entries.clear()
+	if _page == Page.SCHEDULE:
+		_refresh_schedule_page()
+		return
+	_grid.columns = 4
+	_preview_frame.show()
 	match _page:
 		Page.UPGRADES, Page.GIFTS:
 			_collect_trades()
@@ -291,6 +307,204 @@ func _refresh_page() -> void:
 	_show_details()
 	if _last_order_message != "":
 		_status.text = _last_order_message
+
+
+# ---- Schedule / calendar ------------------------------------------------
+
+func _on_schedule_changed() -> void:
+	if visible and _page == Page.SCHEDULE:
+		_refresh_schedule_page()
+
+
+func _select_default_schedule_slot() -> void:
+	var today := GameManager.get_day()
+	for id in DateManager.bookings:
+		var date := DateManager.get_date(id)
+		if DateManager.is_booking_ready(date):
+			_schedule_day = today
+			_schedule_period = GameManager.get_period()
+			_schedule_date_id = &""
+			return
+	_schedule_day = today
+	_schedule_period = GameManager.get_period() + 1
+	if _schedule_period >= 3:
+		_schedule_day += 1
+		_schedule_period = 0
+	_schedule_date_id = &""
+
+
+func _get_schedule_booking(day: int, period: int) -> DateData:
+	for date_id in DateManager.bookings:
+		var slot: Dictionary = DateManager.bookings[date_id]
+		if int(slot["day"]) == day and int(slot["period"]) == period:
+			return DateManager.get_date(date_id)
+	return null
+
+
+func _schedule_is_future(day: int, period: int) -> bool:
+	return day * 3 + period > GameManager.get_day() * 3 + GameManager.get_period()
+
+
+func _select_schedule_slot(day: int, period: int) -> void:
+	_schedule_day = day
+	_schedule_period = period
+	_schedule_date_id = &""
+	_schedule_message = ""
+	_refresh_schedule_page()
+
+
+func _choose_schedule_date(id: StringName) -> void:
+	_schedule_date_id = id
+	_schedule_message = ""
+	_refresh_schedule_details()
+
+
+func _refresh_schedule_page() -> void:
+	# Reuse the existing terminal's left grid and right detail controls.
+	_grid.columns = 3
+	_preview_frame.hide()
+	_page_title.text = "SCHEDULE"
+	_page_hint.text = "Day %d  /  %s  /  %d of 3 actions left" % [
+		GameManager.get_day(), GameManager.get_period_name(), GameManager.get_actions_left()
+	]
+	_page_indicator.text = "DATES / START AT THE FIRST ACTION OF THE PERIOD"
+	for i in range(_nav_buttons.size()):
+		_nav_buttons[i].button_pressed = i == _page
+		_nav_buttons[i].self_modulate = Color.WHITE if i == _page else Color(0.88, 0.9, 0.9, 0.9)
+
+	for child in _grid.get_children():
+		_grid.remove_child(child)
+		child.queue_free()
+	_entry_buttons.clear()
+
+	for period in 3:
+		var heading := Label.new()
+		heading.theme_type_variation = &"TitleLabel"
+		heading.text = GameManager.get_period_name(period as GameManager.Times).to_upper()
+		heading.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		_grid.add_child(heading)
+
+	for day_offset in 2:
+		var day := GameManager.get_day() + day_offset
+		for period in 3:
+			var booking := _get_schedule_booking(day, period)
+			var tile := Button.new()
+			tile.custom_minimum_size = Vector2(228, 177)
+			tile.toggle_mode = true
+			tile.clip_text = true
+			tile.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+			tile.text = "DAY %d\\n%s" % [
+				day, "TODAY" if day_offset == 0 else "TOMORROW"
+			]
+			if booking != null:
+				tile.text += "\\n" + booking.display_name
+			elif day == GameManager.get_day() and period == GameManager.get_period():
+				tile.text += "\\nNOW"
+			elif _schedule_is_future(day, period):
+				tile.text += "\\nAVAILABLE"
+			else:
+				tile.text += "\\nPAST"
+			if not _schedule_is_future(day, period) and booking == null and not (
+				day == GameManager.get_day() and period == GameManager.get_period()
+			):
+				tile.self_modulate = Color(0.65, 0.68, 0.68, 0.75)
+			tile.set_pressed_no_signal(day == _schedule_day and period == _schedule_period)
+			tile.pressed.connect(_select_schedule_slot.bind(day, period))
+			_grid.add_child(tile)
+
+	_refresh_schedule_details()
+
+
+func _refresh_schedule_details() -> void:
+	for child in _costs.get_children():
+		_costs.remove_child(child)
+		child.queue_free()
+	_preview.texture = null
+	_order_button.hide()
+	_status.text = _schedule_message
+	var day := _schedule_day
+	var period := _schedule_period
+	if day < GameManager.get_day() or day > GameManager.get_day() + 1:
+		_select_default_schedule_slot()
+		day = _schedule_day
+		period = _schedule_period
+	_item_name.text = "DAY %d - %s" % [day, GameManager.get_period_name(period).to_upper()]
+	var booked := _get_schedule_booking(day, period)
+	if booked != null:
+		_description.text = "%s\\n\\n%s" % [
+			booked.display_name,
+			"Start now: first action of the period." if DateManager.is_booking_ready(booked)
+			else "The date is scheduled. Begin before spending any actions in this period."
+		]
+		if DateManager.is_booking_ready(booked):
+			_order_button.text = "START DATE (3 ACTIONS)"
+			_order_button.show()
+		elif _schedule_is_future(day, period):
+			_order_button.text = "CANCEL BOOKING"
+			_order_button.show()
+		return
+
+	if not _schedule_is_future(day, period):
+		_description.text = "This period has already started. Schedule for a future morning, afternoon or night."
+		return
+
+	_description.text = "Choose a date to plan for this period. Booking costs one action. The date itself takes all three actions of its scheduled period."
+	var valid: Array[DateData] = []
+	for item in DateManager.dates.values():
+		var date := item as DateData
+		if DateManager.can_book_at(date, day, period):
+			valid.append(date)
+	valid.sort_custom(func(a: DateData, b: DateData) -> bool:
+		return a.display_name < b.display_name
+	)
+
+	if valid.is_empty():
+		_status.text = "No dates available yet. Finish an NPC's first romance route to unlock them."
+		return
+	var selection_exists := false
+	for date in valid:
+		if date.date_id == _schedule_date_id:
+			selection_exists = true
+	if not selection_exists:
+		_schedule_date_id = valid[0].date_id
+
+	for date in valid:
+		var choice := Button.new()
+		choice.custom_minimum_size.y = 60
+		choice.text = date.display_name
+		choice.toggle_mode = true
+		choice.set_pressed_no_signal(date.date_id == _schedule_date_id)
+		choice.pressed.connect(_choose_schedule_date.bind(date.date_id))
+		_costs.add_child(choice)
+
+	if GameManager.can_act():
+		_order_button.text = "BOOK DATE (1 ACTION)"
+		_order_button.show()
+	else:
+		_status.text = "No actions left. Rest before booking another date."
+
+
+func _on_schedule_action() -> void:
+	var date := _get_schedule_booking(_schedule_day, _schedule_period)
+	if date != null:
+		if DateManager.is_booking_ready(date):
+			close()
+			DateManager.start_date(date)
+		elif _schedule_is_future(_schedule_day, _schedule_period):
+			DateManager.cancel_booking(date)
+			_schedule_message = "Date cancelled."
+			_refresh_schedule_page()
+		return
+
+	var chosen := DateManager.get_date(_schedule_date_id)
+	if chosen == null or not GameManager.can_act():
+		return
+	if DateManager.book_at(chosen, _schedule_day, _schedule_period):
+		_schedule_message = "Booked %s for Day %d %s." % [
+			chosen.display_name, _schedule_day, GameManager.get_period_name(_schedule_period)
+		]
+		GameManager.spend_actions(1)
+		_refresh_schedule_page()
 
 
 func _collect_trades() -> void:
@@ -587,6 +801,9 @@ func _human_name(id: StringName) -> String:
 
 
 func _on_order_pressed() -> void:
+	if _page == Page.SCHEDULE:
+		_on_schedule_action()
+		return
 	if _entries.is_empty() or _entries[_selected_index].get("kind") != "trade":
 		return
 	var trade: TradeData = _entries[_selected_index].get("ref") as TradeData
