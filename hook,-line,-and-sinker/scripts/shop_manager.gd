@@ -19,6 +19,8 @@ var upgrades_today: int = 0
 @export var max_daily_upgrades: int = 1
 
 var is_shop_open: bool = false
+# Once the first NPC has joined, keep Gifts visible for this run.
+var gifts_unlocked: bool = false
 
 func _ready() -> void:
 	GameManager.day_started.connect(on_day_start)
@@ -94,13 +96,13 @@ func can_trade(trade: TradeData) -> bool:
 		return false
 	# Gifts do not exist as a purchase option until the player has brought
 	# somebody to the island. Gate the API too, not just the terminal UI.
-	if trade.reward_item != null:
-		var has_friend := false
+	if trade.reward_item != null and not gifts_unlocked:
+		var has_ever_recruited := false
 		for state in NPCManager.npc_states.values():
 			if state.get("flags", {}).get(&"Recruited", false):
-				has_friend = true
+				has_ever_recruited = true
 				break
-		if not has_friend:
+		if not has_ever_recruited:
 			return false
 	if is_upgrade_owned(trade) or is_upgrade_ordered(trade):
 		return false
