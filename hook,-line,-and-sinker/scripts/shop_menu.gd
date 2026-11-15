@@ -487,7 +487,7 @@ func _select_challenge(index: int) -> void:
 func _claim_challenge(challenge: ChallengeData) -> void:
 	if ChallengeManager.claim(challenge):
 		_last_order_message = "CLAIMED: %s" % challenge.display_name
-		_refresh_challenges_page.call_deferred()
+		# challenge_claimed already queues the page refresh; avoid rebuilding twice.
 
 
 # ---- Mandatory weekly fish quota ---------------------------------------
