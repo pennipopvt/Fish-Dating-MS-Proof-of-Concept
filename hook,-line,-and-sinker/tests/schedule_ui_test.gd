@@ -28,6 +28,22 @@ func _ready() -> void:
 	shop.call("_refresh_schedule_page")
 	var grid := shop.get_node("TerminalRoot/Panel/Margin/Layout/Body/Left/GridScroll/ItemGrid") as GridContainer
 	_expect(grid.columns == 4, "Calendar has four day columns")
+	_expect(grid.get_theme_constant("h_separation") >= 18,
+		"Schedule columns have breathing room")
+	var first_day_panel := grid.get_child(0) as PanelContainer
+	var day_margins := first_day_panel.get_child(0) as MarginContainer
+	_expect(day_margins.get_theme_constant("margin_left") >= 10
+		and day_margins.get_theme_constant("margin_top") >= 10,
+		"Day panels have comfortable inner padding")
+	var day_column := day_margins.get_child(0) as VBoxContainer
+	_expect(day_column.get_theme_constant("separation") >= 12,
+		"Time-of-day sections have extra spacing")
+	var first_period := day_column.get_child(1) as VBoxContainer
+	var first_rows := first_period.get_child(1) as VBoxContainer
+	_expect(first_rows.get_theme_constant("separation") >= 6,
+		"Actions within a period have visible gaps")
+	_expect((first_rows.get_child(0) as Button).custom_minimum_size.y >= 44,
+		"Each action slot has enough vertical space")
 	_expect(grid.get_child_count() == 4, "Current day and three future days are displayed")
 	for col in grid.get_children():
 		var actions := (col as Node).find_children("*", "Button", true, false)
