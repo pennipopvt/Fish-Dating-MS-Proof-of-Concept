@@ -127,8 +127,8 @@ func _setup_challenge_notification() -> void:
 	_challenge_notification = PanelContainer.new()
 	_challenge_notification.name = "ChallengeNoticeBubble"
 	_challenge_notification.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_challenge_notification.custom_minimum_size = Vector2(36, 36)
-	_challenge_notification.position = Vector2(51, 6)
+	_challenge_notification.custom_minimum_size = Vector2(30, 30)
+	_challenge_notification.position = Vector2(33, 6)
 	_challenge_notification.add_theme_stylebox_override("panel", TERMINAL_FRAME)
 	var notice_label := Label.new()
 	notice_label.text = "!"
