@@ -417,7 +417,7 @@ func _storage_changed() -> void:
 
 # ---- Progress / upgrades ---------------------------------------------------
 
-const _UPGRADE_FIELDS := ["max_casts_per_session", "reel_strength_multiplier", "tension_gain_multiplier"]
+const _UPGRADE_FIELDS := ["casts_per_action", "reel_strength_multiplier", "tension_gain_multiplier"]
 const _UPGRADE_LISTS := ["owned_upgrade_ids", "unlocked_bait_ids"]
 
 
@@ -678,7 +678,7 @@ func _fishing_summary() -> String:
 	if controller != null:
 		var state: int = controller.get("current_state")
 		var hooked: FishData = controller.get("hooked_fish")
-		t += "State %s  casts %d/%d  bite in %.1fs  fish %s\n" % [FISHING_STATES[state] if state < FISHING_STATES.size() else str(state), int(controller.get("casts")), FishingManager.max_casts_per_session, float(controller.get("bite_time")), String(hooked.fish_id) if hooked != null else "-"]
+		t += "State %s  casts %d/%d  bite in %.1fs  fish %s\n" % [FISHING_STATES[state] if state < FISHING_STATES.size() else str(state), int(controller.get("casts")), FishingManager.casts_per_action, float(controller.get("bite_time")), String(hooked.fish_id) if hooked != null else "-"]
 	t += "Bait: %s   Forced species: %s" % [FishingManager.equipped_bait.display_name if FishingManager.equipped_bait != null else "-", String(_forced_fish.fish_id) if _forced_fish != null else "off"]
 	return t
 
@@ -1180,9 +1180,10 @@ func _build_fishing_tab() -> void:
 	box.add_child(_force_fish)
 
 	_heading(box, "Casts")
-	_button(box, "+1 max casts per session", func() -> void:
-		FishingManager.max_casts_per_session += 1
-		_say("Max casts = %d" % FishingManager.max_casts_per_session))
+	_button(box, "+1 cast per action", func() -> void:
+		FishingManager.casts_per_action += 1
+		FishingManager.upgrades_changed.emit()
+		_say("Casts per action = %d" % FishingManager.casts_per_action))
 	_button(box, "Refill casts this session", func() -> void:
 		var controller := _controller()
 		if controller != null:
