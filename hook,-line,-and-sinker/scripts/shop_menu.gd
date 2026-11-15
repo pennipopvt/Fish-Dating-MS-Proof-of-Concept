@@ -68,6 +68,7 @@ var _selected_index: int = 0
 var _shop_section: int = 0  # 0 upgrades, 1 gifts
 var _button_group := ButtonGroup.new()
 var _last_order_message := ""
+var _challenge_notification: PanelContainer
 var _tab_tween: Tween
 var _boot_tween: Tween
 var _tabs_pop_tween: Tween
@@ -108,6 +109,7 @@ func _ready() -> void:
 	ShopManager.upgrade_state_changed.connect(_on_upgrade_state_changed)
 	ChallengeManager.challenge_progressed.connect(_on_challenge_changed)
 	ChallengeManager.challenge_completed.connect(_on_challenge_changed)
+	ChallengeManager.challenge_claimed.connect(_on_challenge_changed)
 	ChallengeManager.progress_reset.connect(_on_challenge_reset)
 	FishingManager.storage_changed.connect(_on_inventory_changed)
 	FishingManager.fish_caught.connect(_on_inventory_changed)  # collection/dex, incl. NPC catches
@@ -115,8 +117,32 @@ func _ready() -> void:
 	QuotaManager.quota_changed.connect(_on_quota_changed)
 	GameManager.time_changed.connect(func(_day: int, _period: GameManager.Times) -> void: _on_schedule_changed())
 	GameManager.actions_changed.connect(func(_actions: int) -> void: _on_schedule_changed())
+	_setup_challenge_notification()
 	_refresh_page()
 	_update_nav_tabs(false)
+
+
+func _setup_challenge_notification() -> void:
+	_challenge_notification = PanelContainer.new()
+	_challenge_notification.name = "ChallengeNoticeBubble"
+	_challenge_notification.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_challenge_notification.custom_minimum_size = Vector2(36, 36)
+	_challenge_notification.position = Vector2(51, 6)
+	_challenge_notification.add_theme_stylebox_override("panel", TERMINAL_FRAME)
+	var notice_label := Label.new()
+	notice_label.text = "!"
+	notice_label.theme_type_variation = &"TitleLabel"
+	notice_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	notice_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	notice_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_challenge_notification.add_child(notice_label)
+	_challenges_tab.add_child(_challenge_notification)
+	_update_challenge_notification()
+
+
+func _update_challenge_notification() -> void:
+	if is_instance_valid(_challenge_notification):
+		_challenge_notification.visible = ChallengeManager.get_claimable_count() > 0
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -793,7 +819,8 @@ func _collect_challenges() -> void:
 			"ref": challenge,
 			"name": "???" if hidden else challenge.display_name,
 			"icon": art,
-			"locked": hidden
+			"locked": hidden,
+			"claimable": challenge.completed and not challenge.claimed
 		})
 
 
@@ -816,6 +843,13 @@ func _make_tile(entry: Dictionary, index: int) -> Button:
 	if bool(entry.get("locked", false)):
 		tile.self_modulate = LOCKED_TINT
 
+	if bool(entry.get("claimable", false)):
+		var claim_badge := Label.new()
+		claim_badge.text = "!"
+		claim_badge.theme_type_variation = &"TitleLabel"
+		claim_badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		claim_badge.position = Vector2(SLOT_SIZE.x - 33, 9)
+		tile.add_child(claim_badge)
 	var amount: int = int(entry.get("quantity", 0))
 	if amount > 0:
 		var badge := Label.new()
@@ -907,11 +941,13 @@ func _show_trade_details(trade: TradeData) -> void:
 		_status.text = "DELIVERY ORDERED"
 		_order_button.text = "ORDERED"
 	elif locking != null:
-		_status.text = "LOCKED: %s" % ("Complete a hidden challenge" if locking.hidden else locking.display_name)
+		_status.text = ("CLAIM CHALLENGE: " if locking.completed else "LOCKED: ") + (
+			"Hidden challenge" if locking.hidden and not locking.completed else locking.display_name
+		)
 		_order_button.self_modulate = UNAFFORD_TINT
 	elif _order_button.disabled:
 		_status.text = "Not enough items to trade."
-		if ShopManager.upgrades_today >= ShopManager.max_daily_upgrades:
+		if trade.one_time_purchase and ShopManager.upgrades_today >= ShopManager.max_daily_upgrades:
 			_status.text = "Maximum daily upgrades reached."
 		_order_button.self_modulate = UNAFFORD_TINT
 
@@ -977,7 +1013,15 @@ func _show_challenge_details(challenge: ChallengeData) -> void:
 	_add_detail_line("PROGRESS: %d / %d" % [challenge.progress, challenge.target_amount], DARK_TEXT)
 	if challenge.reward_text != "":
 		_add_detail_line("UNLOCK: " + challenge.reward_text, DIM_TEXT)
-	_status.text = "COMPLETED" if challenge.completed else "IN PROGRESS"
+	if challenge.completed and not challenge.claimed:
+		_status.text = "READY TO CLAIM"
+		_order_button.show()
+		_order_button.disabled = false
+		_order_button.text = "CLAIM REWARD"
+	elif challenge.claimed:
+		_status.text = "REWARD CLAIMED"
+	else:
+		_status.text = "IN PROGRESS"
 
 
 func _add_detail_line(value: String, color: Color) -> void:
@@ -993,7 +1037,15 @@ func _human_name(id: StringName) -> String:
 
 
 func _on_order_pressed() -> void:
-	if _entries.is_empty() or _entries[_selected_index].get("kind") != "trade":
+	if _entries.is_empty():
+		return
+	if _entries[_selected_index].get("kind") == "challenge":
+		var achievement := _entries[_selected_index].get("ref") as ChallengeData
+		if ChallengeManager.claim(achievement):
+			_last_order_message = "CLAIMED: %s" % achievement.display_name
+			_refresh_page()
+		return
+	if _entries[_selected_index].get("kind") != "trade":
 		return
 	var trade: TradeData = _entries[_selected_index].get("ref") as TradeData
 	if trade == null or not ShopManager.make_trade(trade):
@@ -1016,12 +1068,14 @@ func _on_trade_completed(trade: TradeData) -> void:
 
 
 func _on_challenge_changed(_challenge: ChallengeData) -> void:
-	if visible and _page == Page.CHALLENGES:
+	_update_challenge_notification()
+	if visible and (_page == Page.CHALLENGES or _page == Page.SHOP):
 		_refresh_page()
 
 
 func _on_challenge_reset() -> void:
-	if visible and _page == Page.CHALLENGES:
+	_update_challenge_notification()
+	if visible and (_page == Page.CHALLENGES or _page == Page.SHOP):
 		_refresh_page()
 
 
