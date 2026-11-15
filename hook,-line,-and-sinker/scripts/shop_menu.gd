@@ -339,7 +339,7 @@ func _refresh_page() -> void:
 	_shop_upgrades.set_pressed_no_signal(_shop_section == 0)
 	_shop_gifts.set_pressed_no_signal(_shop_section == 1)
 	_grid.columns = 4
-	_grid.add_theme_constant_override("h_separation", 12)
+	_grid.add_theme_constant_override("h_separation", 18)
 	_grid_scroll.show()
 	_schedule_days.hide()
 	_page_title.show()
