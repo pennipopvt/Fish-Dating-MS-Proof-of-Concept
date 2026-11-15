@@ -64,8 +64,11 @@ var _tab_tween: Tween
 var _boot_tween: Tween
 var _tabs_pop_tween: Tween
 var _nav_rest_x: float = 0.0
+const SCHEDULE_DAYS: int = 4
+const TERMINAL_FRAME: StyleBoxTexture = preload("res://resources/ui/terminal_border.tres")
 var _schedule_day: int = -1
 var _schedule_period: int = 0
+var _schedule_action: int = 0
 
 
 func _ready() -> void:
@@ -311,24 +314,18 @@ func _refresh_page() -> void:
 
 func _on_schedule_changed() -> void:
 	if visible and _page == Page.SCHEDULE:
-		if _schedule_day < GameManager.get_day() or _schedule_day > GameManager.get_day() + 1:
+		if _schedule_day < GameManager.get_day() or _schedule_day >= GameManager.get_day() + SCHEDULE_DAYS:
 			_select_default_schedule_slot()
 		_refresh_schedule_page()
 
 
 func _select_default_schedule_slot() -> void:
-	var today := GameManager.get_day()
-	for id in DateManager.bookings:
-		var date := DateManager.get_date(id)
-		if DateManager.is_booking_ready(date):
-			_schedule_day = today
-			_schedule_period = GameManager.get_period()
-			return
-	_schedule_day = today
-	_schedule_period = GameManager.get_period() + 1
-	if _schedule_period >= 3:
-		_schedule_day += 1
-		_schedule_period = 0
+	_schedule_day = GameManager.get_day()
+	_schedule_period = GameManager.get_period()
+	_schedule_action = mini(
+		GameManager.ACTIONS_PER_PERIOD - GameManager.get_actions_left(),
+		GameManager.ACTIONS_PER_PERIOD - 1
+	)
 
 
 func _get_schedule_booking(day: int, period: int) -> DateData:
@@ -339,18 +336,39 @@ func _get_schedule_booking(day: int, period: int) -> DateData:
 	return null
 
 
-func _select_schedule_slot(day: int, period: int) -> void:
+func _select_schedule_slot(day: int, period: int, action: int) -> void:
 	_schedule_day = day
 	_schedule_period = period
+	_schedule_action = action
 	_refresh_schedule_page()
 
 
+func _schedule_action_has_passed(day: int, period: int, action: int) -> bool:
+	if day < GameManager.get_day():
+		return true
+	if day > GameManager.get_day():
+		return false
+	if period < GameManager.get_period():
+		return true
+	if period > GameManager.get_period():
+		return false
+	return action < GameManager.ACTIONS_PER_PERIOD - GameManager.get_actions_left()
+
+
+func _schedule_action_is_now(day: int, period: int, action: int) -> bool:
+	return day == GameManager.get_day() \
+		and period == GameManager.get_period() \
+		and action == GameManager.ACTIONS_PER_PERIOD - GameManager.get_actions_left() \
+		and GameManager.can_act()
+
+
 func _refresh_schedule_page() -> void:
-	# Preserve the same pixel-art terminal layout, with a small two-day grid.
-	_grid.columns = 3
+	# Four calendar columns match the terminal's normal four-column grid.
+	# Each day contains 3 named periods, with 3 action slots per period.
+	_grid.columns = SCHEDULE_DAYS
 	_preview_frame.hide()
 	_page_title.text = "SCHEDULE"
-	_page_hint.text = "Day %d / %s / %d actions left" % [
+	_page_hint.text = "Day %d / %s / %d of 3 actions left" % [
 		GameManager.get_day(), GameManager.get_period_name(), GameManager.get_actions_left()
 	]
 	_page_indicator.text = "DATES / BOOK WITH NPCS / VIEW ONLY"
@@ -363,37 +381,70 @@ func _refresh_schedule_page() -> void:
 		child.queue_free()
 	_entry_buttons.clear()
 
-	for period in 3:
-		var heading := Label.new()
-		heading.theme_type_variation = &"TitleLabel"
-		heading.text = GameManager.get_period_name(period as GameManager.Times).to_upper()
-		heading.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		_grid.add_child(heading)
-
-	for day_offset in 2:
+	for day_offset in SCHEDULE_DAYS:
 		var day := GameManager.get_day() + day_offset
-		for period in 3:
-			var booked := _get_schedule_booking(day, period)
-			var tile := Button.new()
-			tile.custom_minimum_size = Vector2(228, 168)
-			tile.toggle_mode = true
-			tile.clip_text = true
-			tile.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
-			tile.text = "DAY %d\n%s" % [
-				day, "TODAY" if day_offset == 0 else "TOMORROW"
-			]
-			if booked != null:
-				tile.text += "\n" + ("DUE NOW" if DateManager.is_booking_ready(booked) else booked.display_name)
-				tile.tooltip_text = booked.display_name
-			elif day == GameManager.get_day() and period == GameManager.get_period():
-				tile.text += "\nNOW"
-			else:
-				tile.text += "\n--"
-			if day == GameManager.get_day() and period < GameManager.get_period():
-				tile.self_modulate = Color(0.65, 0.68, 0.68, 0.75)
-			tile.set_pressed_no_signal(day == _schedule_day and period == _schedule_period)
-			tile.pressed.connect(_select_schedule_slot.bind(day, period))
-			_grid.add_child(tile)
+		var day_panel := PanelContainer.new()
+		day_panel.custom_minimum_size = Vector2(168, 0)
+		# Use the actual terminal 9-slice, not a separately drawn UI border.
+		day_panel.add_theme_stylebox_override("panel", TERMINAL_FRAME)
+		_grid.add_child(day_panel)
+
+		var margin := MarginContainer.new()
+		margin.add_theme_constant_override("margin_left", 6)
+		margin.add_theme_constant_override("margin_right", 6)
+		margin.add_theme_constant_override("margin_top", 9)
+		margin.add_theme_constant_override("margin_bottom", 9)
+		day_panel.add_child(margin)
+		var column := VBoxContainer.new()
+		column.add_theme_constant_override("separation", 4)
+		margin.add_child(column)
+
+		var day_title := Label.new()
+		day_title.theme_type_variation = &"TitleLabel"
+		day_title.text = "DAY %d%s" % [day, "  (TODAY)" if day_offset == 0 else ""]
+		day_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		column.add_child(day_title)
+
+		for period in GameManager.Times.size():
+			var period_title := Label.new()
+			period_title.theme_type_variation = &"TitleLabel"
+			period_title.text = GameManager.get_period_name(period as GameManager.Times).to_upper()
+			period_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+			column.add_child(period_title)
+
+			var booking := _get_schedule_booking(day, period)
+			for action in GameManager.ACTIONS_PER_PERIOD:
+				var action_tile := Button.new()
+				action_tile.custom_minimum_size = Vector2(0, 39)
+				action_tile.toggle_mode = true
+				action_tile.clip_text = true
+				action_tile.alignment = HORIZONTAL_ALIGNMENT_CENTER
+				action_tile.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+				var is_now := _schedule_action_is_now(day, period, action)
+				var is_spent := _schedule_action_has_passed(day, period, action)
+				var marker := ">" if is_now else ("x" if is_spent else " ")
+				var event_text := ""
+				if booking != null:
+					if action == 0:
+						event_text = " ♥ " + booking.npc.display_name.to_upper() if booking.npc != null else " ♥ DATE"
+					else:
+						event_text = " · DATE"
+					action_tile.tooltip_text = "%s - Day %d %s (all 3 actions)" % [
+						booking.display_name, day, GameManager.get_period_name(period as GameManager.Times)
+					]
+				else:
+					event_text = " --"
+				action_tile.text = "%s %d%s" % [marker, action + 1, event_text]
+				if booking != null:
+					action_tile.self_modulate = Color(1.0, 0.87, 0.91, 1.0)
+				elif is_spent:
+					action_tile.self_modulate = Color(0.64, 0.68, 0.68, 0.80)
+				elif is_now:
+					action_tile.self_modulate = Color(0.83, 1.0, 0.95, 1.0)
+				action_tile.set_pressed_no_signal(day == _schedule_day and period == _schedule_period and action == _schedule_action)
+				action_tile.pressed.connect(_select_schedule_slot.bind(day, period, action))
+				column.add_child(action_tile)
+
 	_refresh_schedule_details()
 
 
@@ -406,22 +457,24 @@ func _refresh_schedule_details() -> void:
 	_status.text = ""
 	var day := _schedule_day
 	var period := _schedule_period
-	if day < GameManager.get_day() or day > GameManager.get_day() + 1:
+	var action := _schedule_action
+	if day < GameManager.get_day() or day >= GameManager.get_day() + SCHEDULE_DAYS:
 		_select_default_schedule_slot()
 		day = _schedule_day
 		period = _schedule_period
+		action = _schedule_action
 	_item_name.text = "DAY %d - %s" % [day, GameManager.get_period_name(period as GameManager.Times).to_upper()]
 	var date := _get_schedule_booking(day, period)
 	if date == null:
-		_description.text = "Nothing planned.\n\nAsk an NPC out in conversation, choose a location and time, and the date will appear here automatically."
+		_description.text = "ACTION %d / 3\n\nNothing planned. Ask an NPC out in conversation and the date will appear here automatically." % [action + 1]
 		return
 	var npc_name := date.npc.display_name if date.npc != null else "your date"
 	if DateManager.is_booking_ready(date):
-		_description.text = "%s\nWith %s\n\nREADY NOW! Talk to %s before spending any actions this period to start the date." % [
+		_description.text = "%s\nWith %s\n\nREADY NOW! Talk to %s before spending the first action. The date uses all three actions." % [
 			date.display_name, npc_name, npc_name
 		]
 	else:
-		_description.text = "%s\nWith %s\n\nMeet %s at the start of this period, before spending any actions. The date takes the whole period." % [
+		_description.text = "%s\nWith %s\n\nBooked for action 1, occupying actions 1-3. Talk to %s at the start of this period." % [
 			date.display_name, npc_name, npc_name
 		]
 
