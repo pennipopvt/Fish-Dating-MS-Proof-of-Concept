@@ -166,10 +166,6 @@ func _world() -> Node:
 	return player.get_parent() if player != null else null
 
 
-func _silas_data() -> NPCData:
-	return load(SILAS_NPC_PATH) as NPCData
-
-
 func _find_npc_actor(npc_id: StringName) -> NPCInteractable:
 	var world := _world()
 	if world == null:
@@ -179,10 +175,6 @@ func _find_npc_actor(npc_id: StringName) -> NPCInteractable:
 		if actor != null and actor.npc != null and actor.npc.npc_id == npc_id and not actor.is_queued_for_deletion():
 			return actor
 	return null
-
-
-func _find_silas() -> NPCInteractable:
-	return _find_npc_actor(SILAS_ID)
 
 
 static func _list_resources(dir: String) -> Array[String]:
@@ -253,16 +245,17 @@ func _dev_recruit(npc_id: StringName) -> void:
 	if fish == null or data == null:
 		_say("No recruitable NPC fish found for " + String(npc_id))
 		return
+	if DialogueManager.is_active:
+		_say("Finish the current dialogue before recruiting another NPC")
+		return
+	var existing := _find_npc_actor(npc_id)
 	if state["flags"].get(&"Recruited", false):
-		if _find_npc_actor(npc_id) != null:
+		if existing != null:
 			_say(data.display_name + " is already recruited and in the world")
 			return
 		# Older story shortcuts sometimes left Recruited=true without a
 		# corresponding actor. Recover through the real recruitment path.
 		state["flags"].erase(&"Recruited")
-	if DialogueManager.is_active:
-		_say("Finish the current dialogue before recruiting another NPC")
-		return
 	var actor := _spawn_npc_for_debug(npc_id)
 	if actor == null:
 		return
@@ -271,6 +264,8 @@ func _dev_recruit(npc_id: StringName) -> void:
 	if RecruitmentHandler.recruit_actor_for_debug(actor, fish):
 		_say(data.display_name + " recruited (housing queue updated)")
 	else:
+		if existing == null and is_instance_valid(actor):
+			actor.queue_free()
 		_say(data.display_name + " could not be recruited")
 	_rebuild_flags.call_deferred()
 
@@ -294,6 +289,9 @@ func _dev_talk(npc_id: StringName) -> void:
 
 
 func _dev_romance_scene(npc_id: StringName) -> void:
+	if npc_id != SILAS_ID and npc_id != KUDA_ID:
+		_say("No romance scene configured for this NPC")
+		return
 	if not NPCManager.get_npc_state(npc_id)["flags"].get(&"Recruited", false):
 		_say("Recruit this NPC first")
 		return
@@ -313,6 +311,9 @@ func _dev_romance_scene(npc_id: StringName) -> void:
 
 
 func _dev_unlock_dating(npc_id: StringName) -> void:
+	if npc_id != SILAS_ID and npc_id != KUDA_ID:
+		_say("No dating route configured for this NPC")
+		return
 	if not NPCManager.get_npc_state(npc_id)["flags"].get(&"Recruited", false):
 		_say("Recruit this NPC first")
 		return
@@ -1135,7 +1136,7 @@ func _rebuild_flags() -> void:
 	var actions := _row(box)
 	var recruit_button := _button(actions, "Recruit", func() -> void: _dev_recruit(selected_id))
 	recruit_button.tooltip_text = "Spawns the NPC, removes their fish from catches, and uses the real housing queue"
-	recruit_button.disabled = recruited and actor != null
+	recruit_button.disabled = (recruited and actor != null) or (data == null)
 	var talk_button := _button(actions, "Talk", func() -> void: _dev_talk(selected_id))
 	talk_button.disabled = not recruited or actor == null
 	var scene_button := _button(actions, "First romance scene", func() -> void: _dev_romance_scene(selected_id))
