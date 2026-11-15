@@ -92,6 +92,16 @@ func get_pending_upgrade_pickups() -> Array[ItemPickup]:
 func can_trade(trade: TradeData) -> bool:
 	if trade == null or not trades.has(trade):
 		return false
+	# Gifts do not exist as a purchase option until the player has brought
+	# somebody to the island. Gate the API too, not just the terminal UI.
+	if trade.reward_item != null:
+		var has_friend := false
+		for state in NPCManager.npc_states.values():
+			if state.get("flags", {}).get(&"Recruited", false):
+				has_friend = true
+				break
+		if not has_friend:
+			return false
 	if is_upgrade_owned(trade) or is_upgrade_ordered(trade):
 		return false
 	
