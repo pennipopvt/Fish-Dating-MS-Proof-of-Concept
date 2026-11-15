@@ -45,7 +45,7 @@ func _ready() -> void:
 				var styles: Array[String] = []
 				for choice in choices:
 					styles.append(str(choice.get("date_style", "")))
-				_expect(styles == ["reassure", "neutral", "bold"],
+				_expect(styles == ["bold", "playful", "reassure"],
 					"Every step uses the same three choice styles")
 				for choice in choices:
 					_expect(not choice.has("required_flags") and not choice.has("forbidden_flags"),
@@ -54,6 +54,16 @@ func _ready() -> void:
 	for tier in range(4):
 		_expect(DateManager.score_for_choice("reassure", tier) >= 1,
 			"Reassurance is score-safe at jealousy tier %d" % tier)
+	for tier in [0, 1]:
+		var bold_score: int = DateManager.score_for_choice("bold", tier)
+		var playful_score: int = DateManager.score_for_choice("playful", tier)
+		var safe_score: int = DateManager.score_for_choice("reassure", tier)
+		_expect(bold_score > playful_score and playful_score > safe_score,
+			"At low jealousy, the first bold choice scores most; playful scores more than reassuring")
+		_expect(DateManager.jealousy_for_choice("playful", tier) < 0,
+			"Second choice reduces jealousy at low tiers")
+		_expect(DateManager.jealousy_for_choice("reassure", tier) < DateManager.jealousy_for_choice("playful", tier),
+			"Third choice reduces jealousy even more")
 	_expect(DateManager.score_for_choice("bold", 0) > 0, "Bold choices work at low jealousy")
 	_expect(DateManager.score_for_choice("bold", 3) < 0, "Bold choices backfire at high jealousy")
 	_expect(DateManager.outcome_for_score(-1) == "bad", "Negative total yields a bad date")
