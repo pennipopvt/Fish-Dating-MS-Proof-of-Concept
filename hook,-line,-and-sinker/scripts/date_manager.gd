@@ -3,9 +3,9 @@ extends Node
 # Dates (autoload "DateManager"). Penni asks an NPC out in an ask-out JSON;
 # each choice there is gated by the flag "date_ok_<date_id>" (refreshed here
 # whenever a conversation starts) and requests the scene "date:<date_id>".
-# Date plans are booked for a future morning/afternoon/night from dialogue or
-# the terminal calendar. Dates start from the terminal or their location only
-# at the FIRST action of their booked period; otherwise they are missed.
+# Date plans are made with the NPC in dialogue. The terminal calendar only
+# displays booked dates. Meet the NPC at the FIRST action of the booked period
+# (or use the date location), otherwise the appointment is missed.
 # A date: fade out, move Penni and the NPC to the location's spots (or to a
 # venue spawned just for the date, like the ship out at sea), play the
 # date JSON, then fade back and put everyone where they were. A finished date
@@ -32,6 +32,10 @@ var bookings: Dictionary = {}
 
 var _active: DateData = null
 var _in_dialogue: bool = false
+# The conversation can consume its final action before scene_requested fires.
+# Capture when the NPC was asked, so "next afternoon" keeps its meaning.
+var _conversation_day: int = 1
+var _conversation_period: int = 0
 # Day/period the date took place in (after any clock jump).
 var _date_day: int = 0
 var _date_period: int = 0
@@ -127,17 +131,39 @@ func is_booking_ready(date: DateData) -> bool:
 		and int(slot["period"]) == GameManager.get_period() \
 		and GameManager.get_actions_left() == GameManager.ACTIONS_PER_PERIOD
 
-# Calendar booking is deliberately distinct from starting the date.
+# Booking is only invoked by NPC dialogue; the calendar is a read-only view.
 func can_book_at(date: DateData, day: int, period: int) -> bool:
 	if not can_ask(date) or period < 0 or period >= PERIOD_COUNT or not date.allows_period(period):
 		return false
-	if _slot_index(day, period) <= _slot_index(GameManager.get_day(), GameManager.get_period()):
+	var chosen_slot := _slot_index(day, period)
+	var current_slot := _slot_index(GameManager.get_day(), GameManager.get_period())
+	if chosen_slot < current_slot:
+		return false
+	# If talking used the last action, the next period may already have begun.
+	if chosen_slot == current_slot and GameManager.get_actions_left() != GameManager.ACTIONS_PER_PERIOD:
 		return false
 	for id in bookings:
 		var slot: Dictionary = bookings[id]
 		if int(slot["day"]) == day and int(slot["period"]) == period:
 			return false
 	return true
+
+# "Next morning/afternoon/night" means the next occurrence measured from when
+# the conversation started, not the time AFTER conversation_finished's action.
+func book_next_period(date: DateData, period: int, from_day: int, from_period: int) -> bool:
+	if period < 0 or period >= PERIOD_COUNT:
+		return false
+	var day := from_day + (1 if period <= from_period else 0)
+	return book_at(date, day, period)
+
+
+func get_ready_booking_for_npc(npc_id: StringName) -> DateData:
+	for date_id in bookings:
+		var date := get_date(date_id)
+		if date != null and date.npc != null and date.npc.npc_id == npc_id and is_booking_ready(date):
+			return date
+	return null
+
 
 func book_at(date: DateData, day: int, period: int) -> bool:
 	if not can_book_at(date, day, period):
@@ -355,6 +381,8 @@ func _find_actor(npc_id: StringName) -> NPCInteractable:
 func _on_conversation_started(npc: NPCData) -> void:
 	if npc == null:
 		return
+	_conversation_day = GameManager.get_day()
+	_conversation_period = GameManager.get_period()
 	var flags: Dictionary = NPCManager.get_npc_state(npc.npc_id)["flags"]
 	for date in get_dates_for(npc.npc_id):
 		flags[date.get_available_flag()] = can_ask(date)
@@ -366,9 +394,19 @@ func _on_conversation_finished(npc: NPCData) -> void:
 		_finish(true)
 
 
-func _on_scene_requested(_npc: NPCData, scene_id: String) -> void:
-	if scene_id.begins_with(SCENE_PREFIX):
-		accept(get_date(StringName(scene_id.trim_prefix(SCENE_PREFIX))))
+func _on_scene_requested(npc: NPCData, scene_id: String) -> void:
+	if npc == null or not scene_id.begins_with(SCENE_PREFIX):
+		return
+	# Format "date:<date_id>:<period>" is emitted by ask-out dialogue.
+	var parts := scene_id.trim_prefix(SCENE_PREFIX).split(":")
+	var date := get_date(StringName(parts[0]))
+	if date == null or date.npc == null or date.npc.npc_id != npc.npc_id:
+		return
+	if parts.size() >= 2 and parts[1].is_valid_int():
+		book_next_period(date, int(parts[1]), _conversation_day, _conversation_period)
+	else:
+		# Legacy ask-out scenes still book the next allowed slot.
+		accept(date)
 
 
 # --- Fade ---
