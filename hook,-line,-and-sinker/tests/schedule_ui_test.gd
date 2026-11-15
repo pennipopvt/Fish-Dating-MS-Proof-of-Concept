@@ -26,42 +26,40 @@ func _ready() -> void:
 	shop.call("_select_default_schedule_slot")
 	shop.set("_page", 5)
 	shop.call("_refresh_schedule_page")
-	var grid := shop.get_node("TerminalRoot/Panel/Margin/Layout/Body/Left/GridScroll/ItemGrid") as GridContainer
-	_expect(grid.columns == 4, "Calendar has four day columns")
-	_expect(grid.get_theme_constant("h_separation") >= 18,
-		"Schedule columns have breathing room")
-	var first_day_panel := grid.get_child(0) as PanelContainer
-	var day_margins := first_day_panel.get_child(0) as MarginContainer
-	_expect(day_margins.get_theme_constant("margin_left") >= 10
-		and day_margins.get_theme_constant("margin_top") >= 10,
-		"Day panels have comfortable inner padding")
-	var day_column := day_margins.get_child(0) as VBoxContainer
-	_expect(day_column.get_theme_constant("separation") >= 12,
-		"Time-of-day sections have extra spacing")
-	var first_period := day_column.get_child(1) as VBoxContainer
-	var first_rows := first_period.get_child(1) as VBoxContainer
-	_expect(first_rows.get_theme_constant("separation") >= 6,
-		"Actions within a period have visible gaps")
-	_expect((first_rows.get_child(0) as Button).custom_minimum_size.y >= 44,
-		"Each action slot has enough vertical space")
+	var grid := shop.get_node("TerminalRoot/Panel/Margin/Layout/Body/Left/ScheduleDays") as HBoxContainer
+	var old_scroll := shop.get_node("TerminalRoot/Panel/Margin/Layout/Body/Left/GridScroll") as ScrollContainer
+	_expect(grid.visible and not old_scroll.visible, "Schedule is visible without using the shop scroll container")
 	_expect(grid.get_child_count() == 4, "Current day and three future days are displayed")
-	for col in grid.get_children():
-		var actions := (col as Node).find_children("*", "Button", true, false)
-		_expect(actions.size() == 9, "Every day has 3 periods with 3 action slots each")
-	var day_one_actions := grid.get_child(0).find_children("*", "Button", true, false)
+	_expect(not shop.get_node("TerminalRoot/Panel/Margin/Layout/Body/Left/PageTitle").visible, "Redundant page title is hidden to save vertical space")
+	_expect(not shop.get_node("TerminalRoot/Panel/Margin/Layout/Body/Left/PageHint").visible, "Redundant hint is hidden to save vertical space")
+	var today := grid.get_child(0) as PanelContainer
+	var future_day := grid.get_child(1) as PanelContainer
+	_expect(today.size_flags_stretch_ratio > future_day.size_flags_stretch_ratio,
+		"Today's column is wider than future days")
+	_expect(today.get_theme_stylebox("panel") is StyleBoxTexture,
+		"Day columns retain the terminal's strong 9-slice borders")
+	for day in grid.get_children():
+		var actions := day.find_children("*", "Button", true, false)
+		var dividers := day.find_children("*", "ColorRect", true, false)
+		_expect(actions.size() == 9, "Each day has nine action slots")
+		_expect(dividers.size() == 8, "Only soft dividers separate actions and periods")
+		if not actions.is_empty():
+			_expect((actions[0] as Button).get_theme_stylebox("normal") is StyleBoxEmpty,
+				"Individual action slots no longer have hard 9-slice borders")
+	var day_one_actions := today.find_children("*", "Button", true, false)
 	_expect((day_one_actions[0] as Button).text.begins_with("> 1"), "First action is marked NOW")
 	GameManager.spend_actions(1)
 	shop.call("_refresh_schedule_page")
-	grid = shop.get_node("TerminalRoot/Panel/Margin/Layout/Body/Left/GridScroll/ItemGrid")
+	grid = shop.get_node("TerminalRoot/Panel/Margin/Layout/Body/Left/ScheduleDays")
 	day_one_actions = grid.get_child(0).find_children("*", "Button", true, false)
 	_expect((day_one_actions[1] as Button).text.begins_with("> 2"), "Current-action marker advances after use")
 
 	var beach := DateManager.get_date(&"silas_beach")
-	_expect(DateManager.book_at(beach, GameManager.get_day() + 1, GameManager.Times.AFTERNOON), "A date arranged with Silas is recorded")
+	_expect(DateManager.book_at(beach, GameManager.get_day() + 1, GameManager.Times.AFTERNOON), "An NPC-booked date appears on the calendar")
 	shop.call("_refresh_schedule_page")
-	grid = shop.get_node("TerminalRoot/Panel/Margin/Layout/Body/Left/GridScroll/ItemGrid")
+	grid = shop.get_node("TerminalRoot/Panel/Margin/Layout/Body/Left/ScheduleDays")
 	var tomorrow := grid.get_child(1).find_children("*", "Button", true, false)
-	_expect((tomorrow[3] as Button).text.contains("SILAS"), "Booked date appears in next day's afternoon first-action slot")
+	_expect((tomorrow[3] as Button).text.contains("SILAS"), "Booked date appears in afternoon's first-action slot")
 	_expect((tomorrow[4] as Button).text.contains("DATE"), "The booked date reserves the next two actions")
 	DateManager.cancel_booking(beach)
 	shop.queue_free()
