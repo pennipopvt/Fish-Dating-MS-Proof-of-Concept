@@ -34,7 +34,7 @@ func _ready() -> void:
 func _test_casts_per_action() -> void:
 	GameManager.reset_clock()
 	var original := FishingManager.casts_per_action
-	var controller: Node = FISHING_CONTROLLER_SCRIPT.new()
+	var controller: Variant = FISHING_CONTROLLER_SCRIPT.new()
 	FishingManager.casts_per_action = 1
 	_expect(controller.has_casts_left(), "base fishing session allows the first cast")
 	controller.set("casts", 1)
