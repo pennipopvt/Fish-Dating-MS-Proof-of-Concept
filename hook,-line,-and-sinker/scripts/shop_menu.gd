@@ -243,6 +243,8 @@ func _cancel_open_animation() -> void:
 
 
 func _has_recruited_npc() -> bool:
+	if ShopManager.gifts_unlocked:
+		return true
 	for state in NPCManager.npc_states.values():
 		if state.get("flags", {}).get(&"Recruited", false):
 			return true
