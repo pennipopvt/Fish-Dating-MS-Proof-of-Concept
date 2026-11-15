@@ -63,6 +63,7 @@ func check_for_recruitment(finished_npc: NPCData) -> void:
 
 	# Acceptance is permanent for this session, even before a house exists.
 	FishingManager.remove_recruited_catch(caught_fish)
+	AffectionManager.on_recruited(finished_npc.npc_id)
 	_enqueue_accepted_actor(caught_actor)
 
 
