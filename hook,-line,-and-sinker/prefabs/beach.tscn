@@ -12,19 +12,15 @@ script = ExtResource("1_loc")
 location_id = &"beach"
 prompt = NodePath("InteractPrompt")
 
-[node name="PlaceholderSand" type="Polygon2D" parent="."]
-color = Color(0.95, 0.82, 0.35, 1)
-polygon = PackedVector2Array(0, 14, 110, 28, 0, 28)
-
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 position = Vector2(40, -8)
 shape = SubResource("RectangleShape2D_beach")
 
 [node name="PlayerSpot" type="Marker2D" parent="."]
-position = Vector2(28, 18)
+position = Vector2(36, 22)
 
 [node name="NpcSpot" type="Marker2D" parent="."]
-position = Vector2(50, 4)
+position = Vector2(60, 9)
 
 [node name="InteractPrompt" parent="." instance=ExtResource("2_prompt")]
 position = Vector2(40, -30)
