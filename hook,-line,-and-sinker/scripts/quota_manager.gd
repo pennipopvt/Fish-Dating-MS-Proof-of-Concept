@@ -24,7 +24,7 @@ func _ready() -> void:
 
 
 static func week_for_day(day: int) -> int:
-	return maxi(1, (maxi(1, day) - 1) / WEEK_DAYS + 1)
+	return maxi(1, floori(float(maxi(1, day) - 1) / float(WEEK_DAYS)) + 1)
 
 
 static func deadline_for_week(for_week: int) -> int:
