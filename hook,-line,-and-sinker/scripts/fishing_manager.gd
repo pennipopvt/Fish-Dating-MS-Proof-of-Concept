@@ -37,15 +37,12 @@ var reel_tension_reduction: float = 0.0
 var miss_tension_reduction: float = 0.0
 
 @export_category("Fishing Stats")
-@export var max_casts_per_session: int = 3
-# Number of casts covered by one clock action. Starts at 1; may be upgraded later.
-# Unlike max_casts_per_session, this is an action-economy stat.
+# A fishing session is exactly one action, with this many consecutive casts.
+# Starts at one; the Increase Casts upgrade can add more to that action.
 @export_range(1, 20, 1) var casts_per_action: int = 1
-var _starting_max_casts_per_session: int = 3
 var _starting_casts_per_action: int = 1
 
 func _ready() -> void:
-	_starting_max_casts_per_session = max_casts_per_session
 	_starting_casts_per_action = maxi(casts_per_action, 1)
 	reset_session_upgrades()
 
@@ -58,7 +55,6 @@ func reset_session_upgrades() -> void:
 	reel_progress_bonus = 0.0
 	reel_tension_reduction = 0.0
 	miss_tension_reduction = 0.0
-	max_casts_per_session = _starting_max_casts_per_session
 	casts_per_action = _starting_casts_per_action
 	equipped_bait = _find_bait(BASIC_BAIT_ID)
 	bait_changed.emit(equipped_bait)
@@ -132,7 +128,8 @@ func shop_reward_add_casts(amount: int) -> void:
 	if amount <= 0:
 		return
 
-	max_casts_per_session += amount
+	casts_per_action += amount
+	upgrades_changed.emit()
 
 func equip_bait(bait: BaitData) -> void:
 	if bait == null or not available_baits.has(bait) or not unlocked_bait_ids.has(bait.bait_id):
