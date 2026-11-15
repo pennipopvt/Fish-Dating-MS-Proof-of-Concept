@@ -3,8 +3,8 @@ extends Node
 # godot --headless --path . res://tests/relationship_dates_test.tscn
 # Shared 4-step date templates, 4 jealousy tiers, scores, decay and Kuda route.
 
-const SILAS: NPCData = preload("res://resources/npcs/test_npc.tres")
-const KUDA: NPCData = preload("res://resources/npcs/barracuda.tres")
+const SILAS = preload("res://resources/npcs/test_npc.tres")
+const KUDA = preload("res://resources/npcs/barracuda.tres")
 var failures := 0
 
 
@@ -64,8 +64,8 @@ func _ready() -> void:
 	silas_state["flags"][&"Recruited"] = true
 	kuda_state["flags"][&"Recruited"] = true
 	silas_state["flags"][&"silas_route_complete"] = true
-	kuda_state["flags"][&"barracuda_route_complete"] = true
 	AffectionManager.on_romance_completed(SILAS.npc_id)
+	kuda_state["flags"][&"barracuda_route_complete"] = true
 	AffectionManager.on_romance_completed(KUDA.npc_id)
 	_expect(AffectionManager.get_jealousy(SILAS.npc_id) == 45,
 		"Completing Kuda's first romance spikes existing partner Silas's jealousy")
