@@ -1,59 +1,65 @@
 extends Node
 
-# From the Godot project folder:
+# Run from the Godot project folder:
 #   godot --headless --path . res://tests/date_schedule_test.tscn
-# Tests date eligibility, calendar scheduling, and first-action appointments.
+# NPC-only bookings, the meaning of "next", and first-action start rules.
 
 var _failures: int = 0
 
 
 func _ready() -> void:
-	# DateManager's signal connections are deferred until autoloads are ready.
 	await get_tree().process_frame
 	await get_tree().process_frame
 	GameManager.reset_clock()
 
 	var beach := DateManager.get_date(&"silas_beach")
 	var boat := DateManager.get_date(&"silas_ship")
-	_expect(beach != null and boat != null, "Silas's dates are available")
+	_expect(beach != null and boat != null, "Silas date resources are present")
 	if beach == null or boat == null:
 		get_tree().quit(1)
 		return
 
 	var flags: Dictionary = NPCManager.get_npc_state(&"test_npc")["flags"]
 	flags[&"Recruited"] = true
-	_expect(not DateManager.can_book_at(beach, 1, GameManager.Times.AFTERNOON),
-		"Dates are locked until Silas's first romance route finishes")
+	_expect(not DateManager.can_ask(beach), "Date is locked until first romance scene")
 	flags[&"silas_route_complete"] = true
-
-	_expect(DateManager.can_book_at(beach, 1, GameManager.Times.AFTERNOON),
-		"Completed romance route unlocks future date slots")
-	_expect(not DateManager.can_book_at(beach, 1, GameManager.Times.MORNING),
-		"Cannot book the current period")
-	_expect(DateManager.book_at(beach, 1, GameManager.Times.AFTERNOON),
-		"Can book tomorrow / next period from the terminal")
+	_expect(DateManager.can_ask(beach), "Finished romance route allows asking out")
+	var encounter := NPCManager.get_encounter_json_path(beach.npc)
+	_expect(encounter == "res://dialogue/silas_post_romance.json",
+		"Post-romance interaction offers NPC-side date scheduling")
+	var dialogue := DialogueJsonLoader.read_graph(encounter)
+	_expect(not dialogue.is_empty(), "Ask-out dialogue graph is valid")
+	_expect(DateManager.book_next_period(beach, GameManager.Times.AFTERNOON, 1, GameManager.Times.MORNING),
+		"NPC can schedule the next afternoon")
+	_expect(DateManager.describe_booking(beach) == "Day 1 Afternoon",
+		"Calendar shows the day and period chosen in conversation")
 	_expect(not DateManager.can_book_at(boat, 1, GameManager.Times.AFTERNOON),
-		"Can't double-book the same time slot")
+		"NPCs cannot be double-booked at the same time")
 	_expect(not DateManager.can_book_at(boat, 1, GameManager.Times.NIGHT),
-		"Can't double-book the same NPC")
+		"Same NPC cannot hold two bookings")
 
 	GameManager.rest()
-	_expect(DateManager.is_booking_ready(beach),
-		"Appointment is ready at the first action of afternoon")
+	_expect(DateManager.is_booking_ready(beach), "Date becomes ready at first afternoon action")
+	_expect(DateManager.get_ready_booking_for_npc(&"test_npc") == beach,
+		"Talking to the NPC can start their planned date")
 	GameManager.spend_actions(1)
-	_expect(not DateManager.is_booked(beach),
-		"Using first action causes the unstarted date to be missed")
-	_expect(bool(flags.get(beach.get_missed_flag(), false)),
-		"Missed-date story flag is recorded")
+	_expect(not DateManager.is_booked(beach), "Using the first action misses the date")
+	_expect(bool(flags.get(beach.get_missed_flag(), false)), "Missed flag is recorded")
 
 	GameManager.reset_clock()
-	_expect(DateManager.book_at(beach, 2, GameManager.Times.MORNING),
-		"Can rebook repeatable dates on a later day")
-	GameManager.rest()
-	GameManager.rest()
-	GameManager.rest()
-	_expect(DateManager.is_booking_ready(beach),
-		"Booking becomes ready on the planned morning")
+	_expect(DateManager.book_next_period(beach, GameManager.Times.MORNING, 1, GameManager.Times.MORNING),
+		"Next morning means TOMORROW when asked in morning")
+	_expect(DateManager.describe_booking(beach) == "Day 2 Morning",
+		"Next occurrence of same period is next day")
+	DateManager.cancel_booking(beach)
+
+	# The conversation may spend its last action BEFORE scene_requested fires.
+	# Booking still points to the NEXT period chosen at conversation start.
+	GameManager.reset_clock()
+	GameManager.spend_actions(3)
+	_expect(DateManager.book_next_period(beach, GameManager.Times.AFTERNOON, 1, GameManager.Times.MORNING),
+		"After a clock rollover, NPC's chosen next afternoon is still today")
+	_expect(DateManager.is_booking_ready(beach), "Rollover booking begins at first action")
 	DateManager.cancel_booking(beach)
 	GameManager.reset_clock()
 
