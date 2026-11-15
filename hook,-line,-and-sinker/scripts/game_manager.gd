@@ -39,7 +39,7 @@ func _ready() -> void:
 func _connect_sources() -> void:
 	FishingManager.fish_caught.connect(func(_fish: FishData) -> void: record_fishing_cast())
 	FishingManager.fish_lost.connect(func(_fish: FishData) -> void: record_fishing_cast())
-	DialogueManager.conversation_finished.connect(func(_npc: NPCData) -> void: spend_actions(1))
+	DialogueManager.conversation_finished.connect(func(_npc: NPCData) -> void: spend_actions(DialogueManager.last_conversation_cost))
 
 
 # --- Reading the clock (for shop/delivery, fish and NPC rules) ---
