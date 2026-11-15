@@ -605,7 +605,7 @@ func _info_npcs() -> String:
 	for id in ids:
 		var state: Dictionary = NPCManager.npc_states.get(id, {"attraction": NPCManager.START_ATTRACTION, "flags": {}})
 		var flags: Dictionary = state.get("flags", {})
-		var data: NPCData = _silas_data() if id == SILAS_ID else null
+		var data: NPCData = _flag_npc_resource(id)
 		t += _h(String(id))
 		t += "Affection %d / %d   Jealousy %d / %d (tier %d)\n" % [
 			AffectionManager.get_affection(id), AffectionManager.MAX_AFFECTION,
@@ -614,7 +614,7 @@ func _info_npcs() -> String:
 		t += "Last date day %s   First recruited day %s   In world %s\n" % [
 			str(state.get(AffectionManager.LAST_DATE_KEY, "-")),
 			str(state.get(AffectionManager.RECRUITED_DAY_KEY, "-")),
-			_onoff(id == SILAS_ID and _find_silas() != null)]
+			_onoff(_find_npc_actor(id) != null)]
 		if data != null:
 			t += "Next encounter: %s\n" % _peek_encounter(data)
 		if flags.is_empty():
@@ -738,10 +738,10 @@ func _build_ui() -> void:
 	root.add_child(_tabs)
 
 	_build_info_tab()
+	_build_flags_tab()
 	_build_dates_tab()
 	_build_items_tab()
 	_build_progress_tab()
-	_build_flags_tab()
 	_build_fishing_tab()
 	_apply_titles(_tabs, TAB_TITLES)
 	_apply_titles(_info_tabs, INFO_TITLES)
