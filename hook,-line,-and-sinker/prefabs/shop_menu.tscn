@@ -369,8 +369,8 @@ horizontal_scroll_mode = 0
 [node name="ItemGrid" type="GridContainer" parent="TerminalRoot/Panel/Margin/Layout/Body/Left/GridScroll" unique_id=1213167026]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_constants/h_separation = 12
-theme_override_constants/v_separation = 12
+theme_override_constants/h_separation = 18
+theme_override_constants/v_separation = 18
 columns = 4
 
 [node name="ChallengeView" type="VBoxContainer" parent="TerminalRoot/Panel/Margin/Layout/Body/Left"]
@@ -404,7 +404,7 @@ layout_mode = 2
 custom_minimum_size = Vector2(500, 0)
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_constants/separation = 12
+theme_override_constants/separation = 18
 
 [node name="PreviewFrame" type="PanelContainer" parent="TerminalRoot/Panel/Margin/Layout/Body/Details" unique_id=839892416]
 custom_minimum_size = Vector2(0, 310)
@@ -449,7 +449,7 @@ autowrap_mode = 3
 [node name="OrderButton" type="Button" parent="TerminalRoot/Panel/Margin/Layout/Body/Details" unique_id=164678316]
 unique_name_in_owner = true
 visible = false
-custom_minimum_size = Vector2(0, 52)
+custom_minimum_size = Vector2(0, 60)
 layout_mode = 2
 text = "ORDER"
 
@@ -469,6 +469,6 @@ size_flags_horizontal = 3
 
 [node name="CloseButton" type="Button" parent="TerminalRoot/Panel/Margin/Layout/Footer" unique_id=1721751483]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(156, 52)
+custom_minimum_size = Vector2(156, 60)
 layout_mode = 2
 text = "CLOSE"
