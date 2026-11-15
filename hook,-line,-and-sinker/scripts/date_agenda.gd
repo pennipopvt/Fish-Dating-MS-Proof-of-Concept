@@ -44,6 +44,14 @@ func _refresh() -> void:
 		GameManager.get_actions_left(),
 		GameManager.ACTIONS_PER_PERIOD
 	]
+	if GameManager.get_period() == GameManager.Times.NIGHT:
+		_clock_label.text += "\nREST TO START THE NEXT MORNING"
+	else:
+		var next_period := (GameManager.get_period() + 1) as GameManager.Times
+		_clock_label.text += "\n%s IN %d ACTIONS" % [
+			GameManager.get_period_name(next_period).to_upper(),
+			GameManager.get_actions_left()
+		]
 
 	var lines := PackedStringArray()
 	var ordered: Array[Dictionary] = []
