@@ -1,11 +1,200 @@
 {
-	"entry": "start",
-	"nodes": {
-		"start": {
-			"lines": [
-				"TODO (placeholder): Beach date with Silas.",
-				{"speaker": "player", "text": "TODO (placeholder): Penni's beach line."}
-			]
-		}
-	}
+  "entry": "start",
+  "nodes": {
+    "start": {
+      "lines": [
+        "[Placeholder: date introduction]"
+      ],
+      "next": "choice_1"
+    },
+    "choice_1": {
+      "lines": [
+        "[Placeholder: date decision 1]"
+      ],
+      "choices": [
+        {
+          "text": "[Reassuring choice]",
+          "spoken_text": "[Placeholder: reassure response]",
+          "date_style": "reassure",
+          "grey_when_picked": false,
+          "next": "reaction_1_reassure"
+        },
+        {
+          "text": "[Neutral choice]",
+          "spoken_text": "[Placeholder: neutral response]",
+          "date_style": "neutral",
+          "grey_when_picked": false,
+          "next": "reaction_1_neutral"
+        },
+        {
+          "text": "[Bold/flirty choice]",
+          "spoken_text": "[Placeholder: bold response]",
+          "date_style": "bold",
+          "grey_when_picked": false,
+          "next": "reaction_1_bold"
+        }
+      ]
+    },
+    "reaction_1_reassure": {
+      "lines": [
+        "{{date_reaction}}"
+      ],
+      "next": "choice_2"
+    },
+    "reaction_1_neutral": {
+      "lines": [
+        "{{date_reaction}}"
+      ],
+      "next": "choice_2"
+    },
+    "reaction_1_bold": {
+      "lines": [
+        "{{date_reaction}}"
+      ],
+      "next": "choice_2"
+    },
+    "choice_2": {
+      "lines": [
+        "[Placeholder: date decision 2]"
+      ],
+      "choices": [
+        {
+          "text": "[Reassuring choice]",
+          "spoken_text": "[Placeholder: reassure response]",
+          "date_style": "reassure",
+          "grey_when_picked": false,
+          "next": "reaction_2_reassure"
+        },
+        {
+          "text": "[Neutral choice]",
+          "spoken_text": "[Placeholder: neutral response]",
+          "date_style": "neutral",
+          "grey_when_picked": false,
+          "next": "reaction_2_neutral"
+        },
+        {
+          "text": "[Bold/flirty choice]",
+          "spoken_text": "[Placeholder: bold response]",
+          "date_style": "bold",
+          "grey_when_picked": false,
+          "next": "reaction_2_bold"
+        }
+      ]
+    },
+    "reaction_2_reassure": {
+      "lines": [
+        "{{date_reaction}}"
+      ],
+      "next": "choice_3"
+    },
+    "reaction_2_neutral": {
+      "lines": [
+        "{{date_reaction}}"
+      ],
+      "next": "choice_3"
+    },
+    "reaction_2_bold": {
+      "lines": [
+        "{{date_reaction}}"
+      ],
+      "next": "choice_3"
+    },
+    "choice_3": {
+      "lines": [
+        "[Placeholder: date decision 3]"
+      ],
+      "choices": [
+        {
+          "text": "[Reassuring choice]",
+          "spoken_text": "[Placeholder: reassure response]",
+          "date_style": "reassure",
+          "grey_when_picked": false,
+          "next": "reaction_3_reassure"
+        },
+        {
+          "text": "[Neutral choice]",
+          "spoken_text": "[Placeholder: neutral response]",
+          "date_style": "neutral",
+          "grey_when_picked": false,
+          "next": "reaction_3_neutral"
+        },
+        {
+          "text": "[Bold/flirty choice]",
+          "spoken_text": "[Placeholder: bold response]",
+          "date_style": "bold",
+          "grey_when_picked": false,
+          "next": "reaction_3_bold"
+        }
+      ]
+    },
+    "reaction_3_reassure": {
+      "lines": [
+        "{{date_reaction}}"
+      ],
+      "next": "choice_4"
+    },
+    "reaction_3_neutral": {
+      "lines": [
+        "{{date_reaction}}"
+      ],
+      "next": "choice_4"
+    },
+    "reaction_3_bold": {
+      "lines": [
+        "{{date_reaction}}"
+      ],
+      "next": "choice_4"
+    },
+    "choice_4": {
+      "lines": [
+        "[Placeholder: date decision 4]"
+      ],
+      "choices": [
+        {
+          "text": "[Reassuring choice]",
+          "spoken_text": "[Placeholder: reassure response]",
+          "date_style": "reassure",
+          "grey_when_picked": false,
+          "next": "reaction_4_reassure"
+        },
+        {
+          "text": "[Neutral choice]",
+          "spoken_text": "[Placeholder: neutral response]",
+          "date_style": "neutral",
+          "grey_when_picked": false,
+          "next": "reaction_4_neutral"
+        },
+        {
+          "text": "[Bold/flirty choice]",
+          "spoken_text": "[Placeholder: bold response]",
+          "date_style": "bold",
+          "grey_when_picked": false,
+          "next": "reaction_4_bold"
+        }
+      ]
+    },
+    "reaction_4_reassure": {
+      "lines": [
+        "{{date_reaction}}"
+      ],
+      "next": "ending"
+    },
+    "reaction_4_neutral": {
+      "lines": [
+        "{{date_reaction}}"
+      ],
+      "next": "ending"
+    },
+    "reaction_4_bold": {
+      "lines": [
+        "{{date_reaction}}"
+      ],
+      "next": "ending"
+    },
+    "ending": {
+      "lines": [
+        "{{date_outcome}}"
+      ]
+    }
+  }
 }
