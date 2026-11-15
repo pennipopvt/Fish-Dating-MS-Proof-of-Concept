@@ -468,6 +468,7 @@ func _reset_all() -> void:
 	FishingManager.catch_lifetime.clear()
 	_reset_upgrades()
 	ChallengeManager.reset_all()
+	QuotaManager.reset_run()
 	_reset_bobbers()
 	if GameManager.has_method("reset_clock"):
 		GameManager.call("reset_clock")
