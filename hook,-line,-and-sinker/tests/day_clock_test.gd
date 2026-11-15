@@ -17,6 +17,7 @@ func _ready() -> void:
 	GameManager.time_changed.connect(_on_time_changed)
 	_expect_clock(1, GameManager.Times.MORNING, 3, "fresh launch always starts day 1 morning")
 
+	_test_casts_per_action()
 	_test_period_advancement()
 	_test_night_blocks_actions()
 	_test_rest_and_rollover()
@@ -26,6 +27,24 @@ func _ready() -> void:
 
 	print("day_clock_test: %s" % ("PASS" if _failures == 0 else "%d FAILED" % _failures))
 	get_tree().quit(1 if _failures > 0 else 0)
+
+
+# One action may cover several casts; leaving midway still consumes one action.
+func _test_casts_per_action() -> void:
+	GameManager.reset_clock()
+	var original := FishingManager.casts_per_action
+	FishingManager.casts_per_action = 2
+	var fish := FishData.new()
+	FishingManager.catch_fish(fish, false)
+	_expect_clock(1, GameManager.Times.MORNING, 3, "first of two casts does not spend an action yet")
+	FishingManager.lose_fish(fish)
+	_expect_clock(1, GameManager.Times.MORNING, 2, "two casts together spend one action")
+	FishingManager.catch_fish(fish, false)
+	_expect_clock(1, GameManager.Times.MORNING, 2, "a new partial batch is not charged twice")
+	GameManager.finish_fishing_session()
+	_expect_clock(1, GameManager.Times.MORNING, 1, "leaving after one cast charges the partial action")
+	FishingManager.casts_per_action = original
+	GameManager.reset_clock()
 
 
 func _test_period_advancement() -> void:
