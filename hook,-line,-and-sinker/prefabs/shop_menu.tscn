@@ -351,6 +351,14 @@ theme_override_constants/h_separation = 12
 theme_override_constants/v_separation = 12
 columns = 4
 
+[node name="ScheduleDays" type="HBoxContainer" parent="TerminalRoot/Panel/Margin/Layout/Body/Left"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/separation = 12
+
 [node name="MiddleDivider" type="VSeparator" parent="TerminalRoot/Panel/Margin/Layout/Body" unique_id=1645277931]
 layout_mode = 2
 
