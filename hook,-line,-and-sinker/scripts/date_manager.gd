@@ -3,10 +3,9 @@ extends Node
 # Dates (autoload "DateManager"). Penni asks an NPC out in an ask-out JSON;
 # each choice there is gated by the flag "date_ok_<date_id>" (refreshed here
 # whenever a conversation starts) and requests the scene "date:<date_id>".
-# Accepting either starts the date now (skipping the clock forward to an
-# allowed period if needed) or books it; a booked date starts when Penni
-# interacts with its DateLocation during the booked period, and is missed
-# once that period passes.
+# Date plans are booked for a future morning/afternoon/night from dialogue or
+# the terminal calendar. Dates start from the terminal or their location only
+# at the FIRST action of their booked period; otherwise they are missed.
 # A date: fade out, move Penni and the NPC to the location's spots (or to a
 # venue spawned just for the date, like the ship out at sea), play the
 # date JSON, then fade back and put everyone where they were. A finished date
@@ -54,6 +53,7 @@ func _connect_sources() -> void:
 	DialogueManager.conversation_finished.connect(_on_conversation_finished)
 	DialogueManager.scene_requested.connect(_on_scene_requested)
 	GameManager.time_changed.connect(func(_day: int, _period: int) -> void: _expire_bookings())
+	GameManager.actions_changed.connect(func(_actions: int) -> void: _expire_bookings())
 
 
 func _load_dates() -> void:
@@ -112,8 +112,40 @@ func meets_requirements(date: DateData) -> bool:
 func can_ask(date: DateData) -> bool:
 	if not meets_requirements(date) or is_booked(date) or _active == date:
 		return false
-	if date.when == DateData.When.NOW and not date.jump_clock:
-		return date.allows_period(GameManager.get_period())
+	for id in bookings:
+		var other := get_date(id)
+		if other != null and other.npc == date.npc:
+			return false
+	return true
+
+# Only the first action of a booked period can begin a date.
+func is_booking_ready(date: DateData) -> bool:
+	if date == null or not is_booked(date):
+		return false
+	var slot: Dictionary = bookings[date.date_id]
+	return int(slot["day"]) == GameManager.get_day() \
+		and int(slot["period"]) == GameManager.get_period() \
+		and GameManager.get_actions_left() == GameManager.ACTIONS_PER_PERIOD
+
+# Calendar booking is deliberately distinct from starting the date.
+func can_book_at(date: DateData, day: int, period: int) -> bool:
+	if not can_ask(date) or period < 0 or period >= PERIOD_COUNT or not date.allows_period(period):
+		return false
+	if _slot_index(day, period) <= _slot_index(GameManager.get_day(), GameManager.get_period()):
+		return false
+	for id in bookings:
+		var slot: Dictionary = bookings[id]
+		if int(slot["day"]) == day and int(slot["period"]) == period:
+			return false
+	return true
+
+func book_at(date: DateData, day: int, period: int) -> bool:
+	if not can_book_at(date, day, period):
+		return false
+	bookings[date.date_id] = {"day": day, "period": period}
+	print("[Date] %s booked for %s" % [date.display_name, describe_booking(date)])
+	date_booked.emit(date, day, period)
+	bookings_changed.emit()
 	return true
 
 
@@ -122,8 +154,7 @@ func get_ready_booking(location_id: StringName) -> DateData:
 	for id in bookings:
 		var date := get_date(id)
 		var slot: Dictionary = bookings[id]
-		if date != null and date.location_id == location_id \
-				and int(slot["day"]) == GameManager.get_day() and int(slot["period"]) == GameManager.get_period():
+		if date != null and date.location_id == location_id and is_booking_ready(date):
 			return date
 	return null
 
@@ -153,24 +184,15 @@ func describe_booking(date: DateData) -> String:
 
 # --- Asking out / booking ---
 
-# What saying yes does: start now or book. Called for "date:<id>" scene requests.
+# All dates are now planned instead of starting immediately from dialogue.
 func accept(date: DateData) -> void:
-	if date == null:
-		return
-	if date.when == DateData.When.SCHEDULED:
-		book(date)
-	else:
-		start_date(date)
+	book(date)
 
 
 func book(date: DateData) -> void:
-	if date == null:
-		return
-	var slot := _next_slot(date)
-	bookings[date.date_id] = slot
-	print("[Date] %s booked for %s" % [date.display_name, describe_booking(date)])
-	date_booked.emit(date, int(slot["day"]), int(slot["period"]))
-	bookings_changed.emit()
+	if date != null:
+		var slot := _next_slot(date)
+		book_at(date, int(slot["day"]), int(slot["period"]))
 
 
 func cancel_booking(date: DateData) -> void:
@@ -178,13 +200,16 @@ func cancel_booking(date: DateData) -> void:
 		bookings_changed.emit()
 
 
-# First allowed period from now (or from the morning days_ahead days later).
+# Find the next ALLOWED period after the current one; no same-period booking.
 func _next_slot(date: DateData) -> Dictionary:
 	var day: int = GameManager.get_day() + maxi(date.days_ahead, 0)
-	var period: int = GameManager.get_period() if date.days_ahead <= 0 else 0
-	for i in PERIOD_COUNT:
-		if date.allows_period(period):
-			break
+	var period: int = GameManager.get_period() + 1 if date.days_ahead <= 0 else 0
+	if period >= PERIOD_COUNT:
+		period = 0
+		day += 1
+	for i in PERIOD_COUNT * 2:
+		if date.allows_period(period) and can_book_at(date, day, period):
+			return {"day": day, "period": period}
 		period += 1
 		if period >= PERIOD_COUNT:
 			period = 0
@@ -200,7 +225,9 @@ func _expire_bookings() -> void:
 	var now: int = _slot_index(GameManager.get_day(), GameManager.get_period())
 	for id in bookings.keys():
 		var slot: Dictionary = bookings[id]
-		if _slot_index(slot["day"], slot["period"]) >= now:
+		if _slot_index(int(slot["day"]), int(slot["period"])) > now:
+			continue
+		if _slot_index(int(slot["day"]), int(slot["period"])) == now and GameManager.get_actions_left() == GameManager.ACTIONS_PER_PERIOD:
 			continue
 		bookings.erase(id)
 		var date := get_date(id)
@@ -216,6 +243,9 @@ func _expire_bookings() -> void:
 func start_date(date: DateData) -> void:
 	if _active != null or date == null or date.npc == null:
 		return
+	# Enforce the first-action rule even when a scene calls this directly.
+	if is_booked(date) and not is_booking_ready(date):
+		return
 	var location := _find_location(date.location_id)
 	if date.venue_scene == null and location == null:
 		push_warning("No DateLocation '%s' in the world for date %s" % [date.location_id, date.date_id])
@@ -226,7 +256,8 @@ func start_date(date: DateData) -> void:
 	_active = date
 	date_started.emit(date)
 	await _fade_to(1.0)
-	if date.when == DateData.When.NOW and date.jump_clock:
+	# Unbooked developer-only dates may still use legacy time-jump behavior.
+	if not is_booked(date) and date.when == DateData.When.NOW and date.jump_clock:
 		_jump_to_allowed_period(date)
 	cancel_booking(date)
 	_date_day = GameManager.get_day()
