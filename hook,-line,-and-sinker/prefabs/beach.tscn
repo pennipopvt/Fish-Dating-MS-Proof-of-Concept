@@ -17,10 +17,10 @@ position = Vector2(40, -8)
 shape = SubResource("RectangleShape2D_beach")
 
 [node name="PlayerSpot" type="Marker2D" parent="."]
-position = Vector2(36, 22)
+position = Vector2(36, 18)
 
 [node name="NpcSpot" type="Marker2D" parent="."]
-position = Vector2(60, 9)
+position = Vector2(60, 2)
 
 [node name="InteractPrompt" parent="." instance=ExtResource("2_prompt")]
 position = Vector2(40, -30)

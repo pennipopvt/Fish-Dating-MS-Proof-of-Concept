@@ -135,9 +135,10 @@ Debug builds only (not in exports):
 - **UI:** visual-novel style dialogue UI, shop menu, bait menu, interact prompt.
 - **Player** movement on the dock, plus interactables for NPCs and the shop.
 - **Island:** the ground tiles are the original island plus extra land on the right
-  (cells 34-38, mirrored copies of the land next to them). Cells 39-46 are the beach
-  from `tileset.png` (atlas rows 2-3): grass, then stairs down from x=656, then sand
-  sloping into the water. The stair handle (`tilesetOnPlayer.png`) is on its own
+  (cells 34-38, mirrored copies of the land next to them). Cells 39-51 are the beach
+  from `tileset.png`: grass, stairs down from x=656 and flat sand (atlas rows 2-3,
+  cells 39-46), then the slope into the water (atlas row 1, cols 3-7, cells 47-51),
+  so the beach ends at x=832. The stair handle (`tilesetOnPlayer.png`) is on its own
   layer, `GroundFront` (z_index 4), so it draws in front of the player. The player
   still walks at grass height across the beach. The water rect reaches x=2800 for the ship.
 - **Fishing rod (visual only):** `prefabs/fishing_rod.tscn` on the player. When you
