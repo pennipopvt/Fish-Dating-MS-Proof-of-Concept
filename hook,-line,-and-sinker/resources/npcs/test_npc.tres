@@ -20,6 +20,11 @@ json_path = "res://dialogue/garden_eel_invitation.json"
 required_flags = Array[StringName]([&"Recruited", &"spyglass_complete"])
 forbidden_flags = Array[StringName]([&"house_invitation_accepted"])
 
+[sub_resource type="Resource" id="Resource_silas_post_romance"]
+script = ExtResource("3_w20er")
+json_path = "res://dialogue/silas_post_romance.json"
+required_flags = Array[StringName]([&"Recruited", &"silas_route_complete"])
+
 [sub_resource type="Resource" id="Resource_w20er"]
 script = ExtResource("3_w20er")
 json_path = "res://dialogue/garden_eel_casual.json"
@@ -32,7 +37,7 @@ display_name = "Silas"
 portrait = ExtResource("4_a4wu8")
 house = ExtResource("5_816r6")
 porn_sprite = ExtResource("6_porn")
-encounter_rules = Array[ExtResource("3_w20er")]([SubResource("Resource_hvwbg"), SubResource("Resource_silas_invitation"), SubResource("Resource_w20er")])
+encounter_rules = Array[ExtResource("3_w20er")]([SubResource("Resource_hvwbg"), SubResource("Resource_silas_post_romance"), SubResource("Resource_silas_invitation"), SubResource("Resource_w20er")])
 desired_gift = ExtResource("5_spyglass")
 correct_gift_json = "res://dialogue/garden_eel_gift_correct.json"
 incorrect_gift_json_pool = Array[String](["res://dialogue/garden_eel_gift_wrong.json", "res://dialogue/garden_eel_gift_wrong_distant.json"])
