@@ -342,6 +342,7 @@ func _refresh_quota_page() -> void:
 	_grid_scroll.hide()
 	_schedule_days.hide()
 	_quota_view.show()
+	_entry_buttons.clear()
 	_preview_frame.hide()
 	_page_title.show()
 	_page_hint.show()
