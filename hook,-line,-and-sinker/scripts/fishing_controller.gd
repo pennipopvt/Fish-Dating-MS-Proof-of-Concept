@@ -20,6 +20,8 @@ var current_state: Fish_State = Fish_State.NOT:
 var hooked_fish: FishData = null
 
 var casts: int = 0
+# True between starting a cast and reporting its outcome or abandonment.
+var _cast_unresolved: bool = false
 var progress: float = 0
 var bite_time: float = 0
 
@@ -190,6 +192,7 @@ func cast_rod() -> void:
 		push_warning("No catchable fish in FishingManager.possible_catches")
 		exit_fishing()
 		return
+	_cast_unresolved = true
 	fishing_line.send(starting_progress)
 	print("Cast #", casts, " will be a ", hooked_fish.fish_id)
 
@@ -328,6 +331,7 @@ func lose_fish() -> void:
 	play_fishing_sound(lose_sfx)
 	#inform the fishing manager
 	print("Lost ", hooked_fish.fish_id)
+	_cast_unresolved = false
 	FishingManager.lose_fish(hooked_fish)
 	finish_cast()
 	
@@ -401,6 +405,7 @@ func _finish_catch_animation() -> void:
 	if hooked_fish.npc_data == null:
 		catch_fish()
 	else:
+		_cast_unresolved = false
 		FishingManager.catch_fish(hooked_fish, false)
 		create_npc(hooked_fish.npc_data)
 
@@ -410,10 +415,12 @@ func catch_fish() -> void:
 	
 	print("Caught ", hooked_fish.fish_id)
 	
+	_cast_unresolved = false
 	FishingManager.catch_fish(hooked_fish)
 	finish_cast()
 	
 func finish_cast() -> void:
+	_cast_unresolved = false
 	reset_values()
 	
 	if(casts >= FishingManager.max_casts_per_session):
@@ -422,8 +429,15 @@ func finish_cast() -> void:
 		cast_rod()
 	
 func exit_fishing() -> void:
-	if(current_state == Fish_State.FISHING && hooked_fish != null):
-		FishingManager.lose_fish(hooked_fish)
+	if _cast_unresolved:
+		_cast_unresolved = false
+		if current_state == Fish_State.FISHING and hooked_fish != null:
+			FishingManager.lose_fish(hooked_fish)
+		else:
+			# Cancelling a cast while waiting for a bite still uses its quota.
+			GameManager.record_fishing_cast()
+	# Any incomplete batch is charged when a fishing session ends.
+	GameManager.finish_fishing_session()
 	#reset everything upon exit
 	reset_values()
 	current_state = Fish_State.NOT
