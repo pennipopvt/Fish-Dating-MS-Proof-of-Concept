@@ -12,7 +12,7 @@
 script = ExtResource("2_rule")
 json_path = "res://dialogue/barracuda_invitation.json"
 required_flags = Array[StringName]([&"Recruited", &"barracuda_scarf_complete"])
-forbidden_flags = Array[StringName]([&"barracuda_invitation_accepted"])
+forbidden_flags = Array[StringName]([&"barracuda_invitation_accepted", &"barracuda_route_complete"])
 
 [sub_resource type="Resource" id="Rule_post_romance"]
 script = ExtResource("2_rule")
