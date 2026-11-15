@@ -7,8 +7,8 @@ signal quota_completed(week: int)
 signal quota_failed(week: int)
 
 const WEEK_DAYS: int = 7
-const EASY_FISH_ID: StringName = &"easy_test_fish"
-const HARD_FISH_ID: StringName = &"hard_test_fish"
+const EASY_FISH_ID: StringName = &"placeholder_fish_a"
+const HARD_FISH_ID: StringName = &"placeholder_fish_b"
 
 var week: int = 1
 var deadline_day: int = WEEK_DAYS
