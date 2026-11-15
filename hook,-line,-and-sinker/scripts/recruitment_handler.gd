@@ -88,6 +88,7 @@ func _finalize_recruitment(actor: NPCInteractable, fish: FishData) -> void:
 	if not _actor_valid(actor) or actor.npc == null:
 		return
 	FishingManager.remove_recruited_catch(fish)
+	ShopManager.gifts_unlocked = true
 	AffectionManager.on_recruited(actor.npc.npc_id)
 	_enqueue_accepted_actor(actor)
 
