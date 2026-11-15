@@ -24,7 +24,7 @@ func _ready() -> void:
 	var shop := SHOP_SCENE.instantiate() as ShopMenu
 	add_child(shop)
 	shop.call("_select_default_schedule_slot")
-	shop.set("_page", 5)
+	shop.set("_page", ShopMenu.Page.SCHEDULE)
 	shop.call("_refresh_schedule_page")
 	var grid := shop.get_node("TerminalRoot/Panel/Margin/Layout/Body/Left/ScheduleDays") as HBoxContainer
 	var old_scroll := shop.get_node("TerminalRoot/Panel/Margin/Layout/Body/Left/GridScroll") as ScrollContainer
