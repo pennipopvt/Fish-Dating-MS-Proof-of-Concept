@@ -1,0 +1,23 @@
+[gd_resource type="Resource" script_class="FishData" format=3 uid="uid://c2argebsm6uyk"]
+
+[ext_resource type="Script" uid="uid://d2iidpvp5wrw7" path="res://resources/fish_data.gd" id="1_3ugjn"]
+[ext_resource type="Resource" uid="uid://c18cl4fy3efxo" path="res://resources/items/tuna.tres" id="1_nm365"]
+[ext_resource type="Script" uid="uid://cur8k0lqp6jxh" path="res://resources/fish_escape_state.gd" id="3_r7p2w"]
+
+[sub_resource type="Resource" id="Resource_r7p2w"]
+script = ExtResource("3_r7p2w")
+state_name = "Angry"
+escape_rate = 0.3
+state_length = 10.0
+state_probability = 0.5
+metadata/_custom_type_script = "uid://cur8k0lqp6jxh"
+
+[resource]
+script = ExtResource("1_3ugjn")
+hooked_sprite_width = 42.0
+fish_id = &"tuna"
+item_data = ExtResource("1_nm365")
+passive_escape_rate = 0.03
+attack_tension_multiplier = 1.4
+states = Array[ExtResource("3_r7p2w")]([SubResource("Resource_r7p2w")])
+metadata/_custom_type_script = "uid://d2iidpvp5wrw7"

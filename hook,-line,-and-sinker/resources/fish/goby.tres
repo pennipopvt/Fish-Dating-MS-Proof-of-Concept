@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="FishData" format=3]
+
+[ext_resource type="Script" path="res://resources/fish_data.gd" id="1_fish"]
+[ext_resource type="Resource" path="res://resources/items/goby.tres" id="2_item"]
+[ext_resource type="Script" path="res://resources/fish_escape_state.gd" id="3_attack"]
+
+[sub_resource type="Resource" id="DefaultAttack"]
+script = ExtResource("3_attack")
+state_name = "Default"
+escape_rate = 0.1
+state_length = 5.0
+state_probability = 1.0
+
+[resource]
+script = ExtResource("1_fish")
+fish_id = &"goby"
+item_data = ExtResource("2_item")
+hooked_sprite_width = 30.0
+states = Array[ExtResource("3_attack")]([SubResource("DefaultAttack")])
