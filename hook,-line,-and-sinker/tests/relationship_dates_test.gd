@@ -107,6 +107,30 @@ func _ready() -> void:
 		_expect(last_line is Dictionary and last_line.get("speaker", "") == "player",
 			"Silas beach date ends with Penni's reply")
 
+	# Kuda's boat date is fully written and keeps the same non-branching flow.
+	var boat_graph := DialogueJsonLoader.read_graph("res://dialogue/kuda_date_ship.json")
+	_expect(not boat_graph.is_empty(), "Kuda boat draft parses")
+	if not boat_graph.is_empty():
+		var boat_nodes: Dictionary = boat_graph["nodes"]
+		_expect(not str(boat_nodes["start"]["lines"][0]).begins_with("[Placeholder"),
+			"Kuda boat date opens with authored lines")
+		for phase in range(1, 5):
+			var destination := "choice_%d" % (phase + 1) if phase < 4 else "ending"
+			for choice in boat_nodes["choice_%d" % phase]["choices"]:
+				var reaction: Dictionary = boat_nodes[str(choice["next"])]
+				_expect(str(reaction.get("next", "")) == destination,
+					"Kuda choices at step %d converge on the next shared beat" % phase)
+				_expect(not str(reaction["lines"][0]).contains("{{date_reaction}}"),
+					"Kuda choice reactions are authored")
+		for node in boat_nodes.values():
+			for line in node.get("lines", []):
+				var line_text := str(line.get("text", "")) if line is Dictionary else str(line)
+				_expect(not line_text.to_lower().contains("heh"),
+					"Kuda dialogue avoids smug chuckling")
+		var last_line: Variant = boat_nodes["ending"]["lines"].back()
+		_expect(last_line is Dictionary and last_line.get("speaker", "") == "player",
+			"Kuda boat date ends with Penni's reply")
+
 	_expect(DateManager.outcome_for_score(-1) == "bad", "Negative total yields a bad date")
 	_expect(DateManager.outcome_for_score(2) == "okay", "Low total yields an okay date")
 	_expect(DateManager.outcome_for_score(8) == "good", "Middle total yields a good date")
