@@ -1,7 +1,7 @@
 [gd_resource type="Resource" script_class="DateData" format=3]
 
 [ext_resource type="Script" path="res://resources/date_data.gd" id="1_date"]
-[ext_resource type="Resource" path="res://resources/npcs/barracuda.tres" id="2_npc"]
+[ext_resource type="Resource" path="res://resources/npcs/kuda.tres" id="2_npc"]
 [ext_resource type="PackedScene" path="res://prefabs/ship.tscn" id="3_ship"]
 
 [resource]
