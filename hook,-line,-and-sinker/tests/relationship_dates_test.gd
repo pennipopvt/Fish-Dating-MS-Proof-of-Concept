@@ -131,6 +131,55 @@ func _ready() -> void:
 		_expect(last_line is Dictionary and last_line.get("speaker", "") == "player",
 			"Kuda boat date ends with Penni's reply")
 
+	# Every authored reaction has four jealousy-tier versions and stays on
+	# the same route; tiers 1-3 replace only the response lines.
+	for date_path in ["res://dialogue/silas_date_beach.json", "res://dialogue/kuda_date_ship.json"]:
+		var tiered_graph := DialogueJsonLoader.read_graph(date_path)
+		_expect(not tiered_graph.is_empty(), "Jealousy-aware date dialogue parses: " + date_path)
+		if tiered_graph.is_empty():
+			continue
+		var tiered_nodes: Dictionary = tiered_graph["nodes"]
+		for phase in range(1, 5):
+			for style in ["bold", "playful", "reassure"]:
+				var reaction: Dictionary = tiered_nodes["reaction_%d_%s" % [phase, style]]
+				var unique_reactions: Array[String] = []
+				for tier in range(4):
+					var variant: Array = DialogueJsonLoader.lines_for_jealousy_tier(reaction, tier)
+					_expect(not variant.is_empty(), "Tier %d reaction is populated" % tier)
+					var signature := JSON.stringify(variant)
+					_expect(not unique_reactions.has(signature), "Tier %d reaction is distinct" % tier)
+					unique_reactions.append(signature)
+				_expect(reaction["next"] == ("choice_%d" % (phase + 1) if phase < 4 else "ending"),
+					"Jealousy does not branch or skip any date moments")
+		_expect(DialogueJsonLoader.lines_for_jealousy_tier(tiered_nodes["ending"], 3) ==
+			tiered_nodes["ending"]["lines"], "All jealousy tiers share the same ending")
+
+	# Capturing the tier before applying date choice effects matters at tier 1:
+	# reassurance lowers jealousy below 25, but the response should still
+	# sound like the tier-1 Silas that Penni was responding to.
+	AffectionManager.set_jealousy(SILAS.npc_id, 25)
+	DateManager.set("_active", DateManager.get_date(&"silas_beach"))
+	DateManager.set("_in_dialogue", true)
+	DialogueManager.start_conversation(SILAS, "res://dialogue/silas_date_beach.json")
+	for i in range(10):
+		if DialogueManager.is_awaiting_choice():
+			break
+		DialogueManager.advance()
+	_expect(DialogueManager.is_awaiting_choice(), "The beach conversation reaches its first choices")
+	if DialogueManager.is_awaiting_choice():
+		DialogueManager.select_choice(2) # Reassure
+		DialogueManager.advance() # Finish Penni's line, apply jealousy change
+		_expect(AffectionManager.get_jealousy_tier(SILAS.npc_id) == 0,
+			"Reassuring Silas lowered jealousy from tier 1 to tier 0")
+		var expected_reaction: Array = DialogueJsonLoader.lines_for_jealousy_tier(
+			beach_graph["nodes"]["reaction_1_reassure"], 1)
+		var reaction_line: DialogueLineData = DialogueManager.get_current_line()
+		_expect(reaction_line != null and reaction_line.text == str(expected_reaction[0]),
+			"The reaction retains the tier that existed when the answer was selected")
+	DateManager.set("_active", null)
+	DateManager.set("_in_dialogue", false)
+	DialogueManager.end_conversation()
+
 	_expect(DateManager.outcome_for_score(-1) == "bad", "Negative total yields a bad date")
 	_expect(DateManager.outcome_for_score(2) == "okay", "Low total yields an okay date")
 	_expect(DateManager.outcome_for_score(8) == "good", "Middle total yields a good date")

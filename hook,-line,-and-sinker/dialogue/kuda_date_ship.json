@@ -37,21 +37,63 @@
         "You could've just said that.",
         "Alright, move over."
       ],
-      "next": "choice_2"
+      "next": "choice_2",
+      "jealousy_lines": {
+        "1": [
+          "You trying to make up for something?",
+          "Fine. Sit down."
+        ],
+        "2": [
+          "That's convenient. Now you want me to yourself?",
+          "Whatever. Let's go."
+        ],
+        "3": [
+          "Don't say that unless you mean it.",
+          "I'm not in the mood for games."
+        ]
+      }
     },
     "reaction_1_playful": {
       "lines": [
         "Scared? Seriously?",
         "I could swim circles around this thing."
       ],
-      "next": "choice_2"
+      "next": "choice_2",
+      "jealousy_lines": {
+        "1": [
+          "Oh, come on. You know I can swim.",
+          "Stop trying to get a rise out of me."
+        ],
+        "2": [
+          "You think everything's a joke lately?",
+          "Just get on the boat."
+        ],
+        "3": [
+          "Seriously? That's what you want to say right now?",
+          "Forget it. Let's just go."
+        ]
+      }
     },
     "reaction_1_reassure": {
       "lines": [
         "I didn't say that.",
         "C'mon, let's go already."
       ],
-      "next": "choice_2"
+      "next": "choice_2",
+      "jealousy_lines": {
+        "1": [
+          "I said I'd come, didn't I?",
+          "I'm here."
+        ],
+        "2": [
+          "...I didn't say I wanted to leave.",
+          "Can we just go?"
+        ],
+        "3": [
+          "Thanks. But if I wanted to go, I'd say so.",
+          "I'm still here, aren't I?"
+        ]
+      }
     },
     "choice_2": {
       "lines": [
@@ -86,21 +128,63 @@
         "You sure you could keep up with me?",
         "...I might take you up on that."
       ],
-      "next": "choice_3"
+      "next": "choice_3",
+      "jealousy_lines": {
+        "1": [
+          "Maybe.",
+          "Depends if you can actually keep up."
+        ],
+        "2": [
+          "Why, so you can leave me hanging again?",
+          "Sorry. Forget I said that."
+        ],
+        "3": [
+          "Not sure I want to make plans I can't count on.",
+          "Let's just get through today."
+        ]
+      }
     },
     "reaction_2_playful": {
       "lines": [
         "Don't tempt me.",
         "I'd win, obviously."
       ],
-      "next": "choice_3"
+      "next": "choice_3",
+      "jealousy_lines": {
+        "1": [
+          "Don't push it.",
+          "I'd still win."
+        ],
+        "2": [
+          "Yeah, great. More jokes.",
+          "You don't get to laugh everything off."
+        ],
+        "3": [
+          "I'm not doing this.",
+          "Can we talk like normal people for once?"
+        ]
+      }
     },
     "reaction_2_reassure": {
       "lines": [
         "Sometimes.",
         "But I guess being up here has its perks."
       ],
-      "next": "choice_3"
+      "next": "choice_3",
+      "jealousy_lines": {
+        "1": [
+          "Yeah. A little.",
+          "Doesn't mean I want to go back."
+        ],
+        "2": [
+          "Sometimes I miss not having to think about all this.",
+          "Being a fish was simpler."
+        ],
+        "3": [
+          "Yeah. I miss it.",
+          "At least I knew where I stood down there."
+        ]
+      }
     },
     "choice_3": {
       "lines": [
@@ -135,21 +219,63 @@
         "Don't flatter yourself.",
         "...But you're not completely wrong."
       ],
-      "next": "choice_4"
+      "next": "choice_4",
+      "jealousy_lines": {
+        "1": [
+          "Don't get ahead of yourself.",
+          "...But you probably helped."
+        ],
+        "2": [
+          "You really think that's funny?",
+          "I stayed for more than that."
+        ],
+        "3": [
+          "I stayed because I thought this was something.",
+          "Don't make me regret it."
+        ]
+      }
     },
     "reaction_3_playful": {
       "lines": [
         "And leave you alone with your terrible steering?",
         "Yeah, no thanks."
       ],
-      "next": "choice_4"
+      "next": "choice_4",
+      "jealousy_lines": {
+        "1": [
+          "You think I'm leaving you to steer alone?",
+          "No chance."
+        ],
+        "2": [
+          "Maybe I should.",
+          "At least the ocean makes sense."
+        ],
+        "3": [
+          "You keep saying I can leave.",
+          "Is that what you want?"
+        ]
+      }
     },
     "reaction_3_reassure": {
       "lines": [
         "...Yeah.",
         "Me too."
       ],
-      "next": "choice_4"
+      "next": "choice_4",
+      "jealousy_lines": {
+        "1": [
+          "Yeah. Guess I am too.",
+          "Don't make me say it twice."
+        ],
+        "2": [
+          "Then why's it feel like we're drifting?",
+          "Look, I want this to work."
+        ],
+        "3": [
+          "...I used to be.",
+          "I want to get back to that."
+        ]
+      }
     },
     "choice_4": {
       "lines": [
@@ -183,21 +309,63 @@
         "Getting a little attached, are we?",
         "...Can't say I blame you."
       ],
-      "next": "ending"
+      "next": "ending",
+      "jealousy_lines": {
+        "1": [
+          "You're getting sentimental.",
+          "Not saying I hate it."
+        ],
+        "2": [
+          "Are you sure? Because you haven't acted like it.",
+          "Just tell me straight."
+        ],
+        "3": [
+          "Don't say that to keep me here.",
+          "I need more than a line like that."
+        ]
+      }
     },
     "reaction_4_playful": {
       "lines": [
         "Oh, real funny.",
         "Just remember I'm the one who can swim back."
       ],
-      "next": "ending"
+      "next": "ending",
+      "jealousy_lines": {
+        "1": [
+          "Real original.",
+          "Try not to fall in while you're laughing."
+        ],
+        "2": [
+          "Not funny, Penni.",
+          "You know I've been thinking about leaving."
+        ],
+        "3": [
+          "Maybe being stranded would be easier.",
+          "At least I'd know where I stood."
+        ]
+      }
     },
     "reaction_4_reassure": {
       "lines": [
         "Nah. We can stay a little longer.",
         "I'm not in a rush."
       ],
-      "next": "ending"
+      "next": "ending",
+      "jealousy_lines": {
+        "1": [
+          "Yeah. Maybe a few more minutes.",
+          "It's quiet out here."
+        ],
+        "2": [
+          "I appreciate that.",
+          "I don't always know what I'm ready for."
+        ],
+        "3": [
+          "I think I need a minute.",
+          "Thanks for not pushing me."
+        ]
+      }
     },
     "ending": {
       "lines": [
