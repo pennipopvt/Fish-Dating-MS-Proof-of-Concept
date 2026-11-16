@@ -4,16 +4,35 @@
 [ext_resource type="Resource" path="res://resources/items/porgy.tres" id="2_item"]
 [ext_resource type="Script" path="res://resources/fish_escape_state.gd" id="3_attack"]
 
-[sub_resource type="Resource" id="DefaultAttack"]
+[sub_resource type="Resource" id="ShortNip"]
 script = ExtResource("3_attack")
-state_name = "Default"
-escape_rate = 0.1
-state_length = 5.0
-state_probability = 1.0
+state_name = "Short Nip"
+escape_rate = 0.055
+state_length = 0.30
+state_probability = 0.65
+pre_windup_duration = 0.20
+windup_duration = 0.34
+counter_window = 0.16
+close_early_window = 0.09
+close_late_window = 0.11
+
+[sub_resource type="Resource" id="QuickNip"]
+script = ExtResource("3_attack")
+state_name = "Quick Nip"
+escape_rate = 0.065
+state_length = 0.24
+state_probability = 0.35
+pre_windup_duration = 0.16
+windup_duration = 0.26
+counter_window = 0.16
+close_early_window = 0.07
+close_late_window = 0.06
 
 [resource]
 script = ExtResource("1_fish")
 fish_id = &"porgy"
 item_data = ExtResource("2_item")
 hooked_sprite_width = 18.0
-states = Array[ExtResource("3_attack")]([SubResource("DefaultAttack")])
+miss_tension_gain = 0.06
+attack_tension_multiplier = 0.85
+states = Array[ExtResource("3_attack")]([SubResource("ShortNip"), SubResource("QuickNip")])
