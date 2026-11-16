@@ -1013,9 +1013,9 @@ func _flag_dialogue_paths(npc_id: StringName) -> Array[String]:
 	var prefixes: Array[String] = []
 	match npc_id:
 		SILAS_ID:
-			prefixes = ["silas_", "garden_eel"]
+			prefixes = ["silas"]
 		KUDA_ID:
-			prefixes = ["kuda_", "barracuda_"]
+			prefixes = ["kuda"]
 	for path in _list_dialogue():
 		for prefix in prefixes:
 			if path.get_file().begins_with(prefix) and not paths.has(path):
