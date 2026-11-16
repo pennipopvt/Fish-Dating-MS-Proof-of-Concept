@@ -358,7 +358,7 @@ func _refresh_page() -> void:
 
 	var names := ["QUOTA", "SHOP", "STORAGE", "COLLECTION", "CHALLENGES"]
 	var explanations := [
-		"Mandatory weekly fish deliveries",
+		"Mandatory fish deliveries every 3 days",
 		"Fishing improvements and gifts",
 		"Fish and items you currently own",
 		"Fish you have discovered",
@@ -492,7 +492,7 @@ func _claim_challenge(challenge: ChallengeData) -> void:
 		# challenge_claimed already queues the page refresh; avoid rebuilding twice.
 
 
-# ---- Mandatory weekly fish quota ---------------------------------------
+# ---- Mandatory 3-day fish quota ---------------------------------------
 
 func _refresh_quota_page() -> void:
 	_grid_scroll.hide()
@@ -505,9 +505,9 @@ func _refresh_quota_page() -> void:
 	_page_title.show()
 	_page_hint.show()
 	_details_panel.custom_minimum_size.x = 420
-	_page_title.text = "WEEK %d QUOTA" % QuotaManager.week
+	_page_title.text = "CONTRACT %d QUOTA" % QuotaManager.week
 	_page_hint.text = "Deliver fish by the end of Day %d (Night)" % QuotaManager.deadline_day
-	_page_indicator.text = "FISH CO.  /  MANDATORY WEEKLY CONTRACT"
+	_page_indicator.text = "FISH CO.  /  MANDATORY 3-DAY CONTRACT"
 	for i in range(_nav_buttons.size()):
 		_nav_buttons[i].button_pressed = i == _page
 		_nav_buttons[i].self_modulate = Color.WHITE if i == _page else Color(0.88, 0.9, 0.9, 0.9)
@@ -779,7 +779,7 @@ func _refresh_schedule_page() -> void:
 				if quota_due:
 					event_text = " ✓ QUOTA" if QuotaManager.is_complete() else " ! QUOTA"
 					action_tile.tooltip_text = (
-						"Weekly quota fulfilled" if QuotaManager.is_complete()
+						"Quota fulfilled" if QuotaManager.is_complete()
 						else "FISH CO. quota deadline — end of Day %d" % day
 					)
 				action_tile.text = "%s %d%s" % [marker, action + 1, event_text]

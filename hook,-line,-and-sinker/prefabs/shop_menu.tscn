@@ -9,8 +9,8 @@
 [ext_resource type="Texture2D" uid="uid://be2mehv3j2ohp" path="res://sprites/ui/icon_collection.png" id="7_collection_icon"]
 [ext_resource type="Texture2D" uid="uid://cy6m4p32euy7d" path="res://sprites/ui/icon_challenges.png" id="8_challenge_icon"]
 [ext_resource type="Texture2D" path="res://sprites/ui/ui_background_3x.png" id="9_boot_frame"]
-[ext_resource type="Texture2D" path="res://sprites/ui/icon_schedule.svg" id="10_schedule_icon"]
-[ext_resource type="Texture2D" path="res://sprites/ui/icon_quota.svg" id="11_quota_icon"]
+[ext_resource type="Texture2D" path="res://sprites/ui/icon_schedule.png" id="10_schedule_icon"]
+[ext_resource type="Texture2D" path="res://sprites/ui/icon_quota.png" id="11_quota_icon"]
 
 [node name="ShopMenu" type="CanvasLayer" unique_id=21315034]
 process_mode = 3
@@ -55,7 +55,7 @@ unique_name_in_owner = true
 custom_minimum_size = Vector2(90, 78)
 clip_contents = true
 layout_mode = 2
-tooltip_text = "weekly fish quota"
+tooltip_text = "3-day fish quota"
 toggle_mode = true
 
 [node name="Icon" type="TextureRect" parent="TerminalRoot/NavTabs/QuotaTab"]

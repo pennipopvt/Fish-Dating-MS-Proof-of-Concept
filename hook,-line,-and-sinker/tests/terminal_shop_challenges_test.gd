@@ -6,7 +6,9 @@ extends Node
 
 const SHOP_MENU = preload("res://prefabs/shop_menu.tscn")
 const TERMINAL = preload("res://prefabs/shop.tscn")
-const SCARF = preload("res://resources/trades/barracuda_scarf.tres")
+const QUOTA_ICON = preload("res://sprites/ui/icon_quota.png")
+const SCHEDULE_ICON = preload("res://sprites/ui/icon_schedule.png")
+const SCARF = preload("res://resources/trades/kuda_scarf.tres")
 const REEL = preload("res://resources/trades/stronger_reel.tres")
 const LINE = preload("res://resources/trades/reinforced_line.tres")
 const CAST = preload("res://resources/trades/increase_casts.tres")
@@ -24,6 +26,12 @@ func _ready() -> void:
 	var shop := SHOP_MENU.instantiate() as ShopMenu
 	add_child(shop)
 	_expect(shop.get("_page") == ShopMenu.Page.QUOTA, "Quota is the first page")
+	var quota_icon := shop.get_node("TerminalRoot/NavTabs/QuotaTab/Icon") as TextureRect
+	var schedule_icon := shop.get_node("TerminalRoot/NavTabs/ScheduleTab/Icon") as TextureRect
+	_expect(quota_icon.texture == QUOTA_ICON and QUOTA_ICON.get_size() == Vector2(16, 16),
+		"Quota tab uses the supplied 16x16 PNG")
+	_expect(schedule_icon.texture == SCHEDULE_ICON and SCHEDULE_ICON.get_size() == Vector2(16, 16),
+		"Schedule tab uses the supplied 16x16 PNG")
 	_expect((shop.get("_nav_buttons") as Array).size() == 6,
 		"Six terminal tabs remain after merging gifts and upgrades")
 	var nav := shop.get_node("TerminalRoot/NavTabs") as VBoxContainer

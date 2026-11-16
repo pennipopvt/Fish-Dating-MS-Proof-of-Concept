@@ -1,7 +1,7 @@
 extends Node
 
 # godot --headless --path . res://tests/quota_test.tscn
-# Weekly inventory submissions, calendar deadline and termination behavior.
+# Three-day inventory submissions, calendar deadline and termination behavior.
 const EASY = preload("res://resources/items/easy_test_fish_item.tres")
 const HARD = preload("res://resources/items/hard_test_fish_item.tres")
 const SHOP = preload("res://prefabs/shop_menu.tscn")
@@ -17,11 +17,11 @@ func _ready() -> void:
 	FishingManager.current_storage.clear()
 	FishingManager.storage_changed.emit()
 
-	_expect(QuotaManager.week == 1 and QuotaManager.deadline_day == 7,
-		"Week one quota is due at the end of day seven")
+	_expect(QuotaManager.week == 1 and QuotaManager.deadline_day == 3,
+		"First quota is due at the end of day three")
 	_expect(QuotaManager.get_target(&"placeholder_fish_a") == 5
 		and QuotaManager.get_target(&"placeholder_fish_b") == 1,
-		"First week's targets start at five common and one hard fish")
+		"First cycle targets start at five common and one hard fish")
 	FishingManager.add_to_storage(EASY, 8)
 	FishingManager.add_to_storage(HARD, 1)
 	_expect(QuotaManager.submit(&"placeholder_fish_a", 2) == 2,
@@ -37,7 +37,7 @@ func _ready() -> void:
 	_expect(not QuotaManager.is_complete(), "Common fish alone do not complete the contract")
 	_expect(QuotaManager.submit(&"placeholder_fish_b") == 1,
 		"Hard fish submit through the same inventory API")
-	_expect(QuotaManager.is_complete(), "Both deliveries finish the week's quota")
+	_expect(QuotaManager.is_complete(), "Both deliveries finish the current quota")
 	_expect(FishingManager.count_in_storage(&"placeholder_fish_b") == 0,
 		"Hard fish cannot be spent twice")
 
@@ -50,31 +50,44 @@ func _ready() -> void:
 	shop.call("_refresh_quota_page")
 	_expect(shop.get_node("TerminalRoot/Panel/Margin/Layout/Body/Left/QuotaView").visible,
 		"Quota page renders submitted progress")
-	# Advance to day four, when the four-day calendar includes day seven.
-	for step in range(9):
-		GameManager.rest()
-	_expect(GameManager.get_day() == 4, "Skipping nine periods reaches day four")
+	# Today's four-column calendar shows the day-three deadline immediately.
 	shop.call("_select_default_schedule_slot")
 	shop.set("_page", ShopMenu.Page.SCHEDULE)
 	shop.call("_refresh_schedule_page")
-	var deadline_day := shop.get_node("TerminalRoot/Panel/Margin/Layout/Body/Left/ScheduleDays").get_child(3)
-	var slots := deadline_day.find_children("*", "Button", true, false)
+	var first_deadline := shop.get_node("TerminalRoot/Panel/Margin/Layout/Body/Left/ScheduleDays").get_child(2)
+	var slots := first_deadline.find_children("*", "Button", true, false)
 	_expect(slots.size() == 9 and (slots[8] as Button).text.contains("QUOTA"),
-		"Quota deadline appears in day seven's final night action")
-	_expect(QuotaManager.week == 1, "Completed quota stays active until deadline passes")
-	shop.queue_free()
+		"First deadline appears at the end of Day 3")
+	QuotaManager.call("_on_day_started", 3)
+	_expect(QuotaManager.week == 1 and not QuotaManager.failed,
+		"Day three still belongs to the first quota")
+	_expect(QuotaManager.cycle_for_day(3) == 1 and QuotaManager.cycle_for_day(4) == 2
+		and QuotaManager.cycle_for_day(6) == 2 and QuotaManager.cycle_for_day(7) == 3,
+		"Cycles begin on Days 1, 4, and 7")
+	_expect(QuotaManager.deadline_for_cycle(2) == 6 and QuotaManager.deadline_for_cycle(3) == 9,
+		"Every contract deadline is three days after the last one")
 
-	QuotaManager.call("_on_day_started", 8)
-	_expect(QuotaManager.week == 2 and QuotaManager.deadline_day == 14,
-		"Completing the contract opens next week's quota on day eight")
+	# Complete first quota rolls over automatically when Day 4 starts.
+	for step in range(9):
+		GameManager.rest()
+	_expect(GameManager.get_day() == 4, "Nine rests advance to day four")
+	_expect(QuotaManager.week == 2 and QuotaManager.deadline_day == 6,
+		"Second quota starts Day 4 and is due Day 6")
 	_expect(QuotaManager.get_target(&"placeholder_fish_a") == 7
 		and QuotaManager.get_target(&"placeholder_fish_b") == 2,
-		"Second week's targets increase")
-	QuotaManager.call("_on_day_started", 14)
-	_expect(not QuotaManager.failed, "Day fourteen remains available for last-minute submissions")
-	QuotaManager.call("_on_day_started", 15)
+		"Second quota targets continue to increase")
+	shop.call("_select_default_schedule_slot")
+	shop.call("_refresh_schedule_page")
+	var second_deadline := shop.get_node("TerminalRoot/Panel/Margin/Layout/Body/Left/ScheduleDays").get_child(2)
+	var second_slots := second_deadline.find_children("*", "Button", true, false)
+	_expect(second_slots.size() == 9 and (second_slots[8] as Button).text.contains("QUOTA"),
+		"Second deadline appears at the end of Day 6")
+	shop.queue_free()
+	QuotaManager.call("_on_day_started", 6)
+	_expect(not QuotaManager.failed, "The final deadline day remains available")
+	QuotaManager.call("_on_day_started", 7)
 	_expect(QuotaManager.failed and get_tree().paused,
-		"An incomplete quota ends the run when next week begins")
+		"Missing Day 6 quota ends the run when Day 7 begins")
 	QuotaManager.reset_run()
 	_expect(not get_tree().paused, "Resetting a run clears the termination screen")
 
