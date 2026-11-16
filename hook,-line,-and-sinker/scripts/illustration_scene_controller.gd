@@ -5,17 +5,17 @@ extends CanvasLayer
 const SCENES := {
 	"silas_house": {
 		"title": "Silas's House",
-		"dialogue": "res://dialogue/garden_eel_house_scene.json",
+		"dialogue": "res://dialogue/silas_house_scene.json",
 		# Post-scene dialogue runs in the overworld, after fading back in.
-		"post_dialogue": "res://dialogue/garden_eel_after_scene.json",
+		"post_dialogue": "res://dialogue/silas_after_scene.json",
 		"reward_item": "silas",
 		"npc_id": "test_npc",
 		"route_complete_flag": "silas_route_complete"
 	},
 	"barracuda_house": {
 		"title": "Barracuda's House (placeholder)",
-		"dialogue": "res://dialogue/barracuda_house_scene.json",
-		"post_dialogue": "res://dialogue/barracuda_after_scene.json",
+		"dialogue": "res://dialogue/kuda_house_scene.json",
+		"post_dialogue": "res://dialogue/kuda_after_scene.json",
 		"reward_item": "barracuda",
 		"npc_id": "barracuda",
 		"route_complete_flag": "barracuda_route_complete"
