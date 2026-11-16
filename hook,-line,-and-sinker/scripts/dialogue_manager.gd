@@ -6,6 +6,8 @@ signal conversation_finished(npc: NPCData)
 # Animation cues from JSON nodes and special-scene requests after a conversation ends.
 signal dialogue_cue(npc: NPCData, cue: String)
 signal scene_requested(npc: NPCData, scene_id: String)
+# Only DateManager consumes date_style choices; normal dialogue is unaffected.
+signal choice_resolved(npc: NPCData, choice: Dictionary)
 
 func request_conversation(npc: NPCData, json_override: String = "", gift_player: Player = null) -> void:
 	if npc != null and not is_active:
@@ -36,6 +38,10 @@ var _scene_after_conversation: String = ""
 # greyed (picked before). Used by AffectionManager / DialogueUI.
 var _current_path: String = ""
 var _choice_greyed: Array[bool] = []
+# The clock reads this before conversation_finished subscribers run.
+# Casual greetings can be free; discussing something or arranging a date isn't.
+var last_conversation_cost: int = 1
+var _conversation_costs_action: bool = true
 
 func start_conversation(npc: NPCData, json_override: String = "") -> void:
 	if is_active or npc == null:
@@ -53,6 +59,7 @@ func start_conversation(npc: NPCData, json_override: String = "") -> void:
 			return
 		current_npc = npc
 		_graph = graph
+		_conversation_costs_action = not bool(graph.get("free_greeting", false))
 		_current_path = path
 		is_active = true
 		conversation_started.emit(npc)
@@ -62,6 +69,7 @@ func start_conversation(npc: NPCData, json_override: String = "") -> void:
 	if dialogue == null:
 		return
 	current_npc = npc
+	_conversation_costs_action = true
 	current_dialogue = dialogue
 	line_index = 0
 	is_active = true
@@ -145,14 +153,20 @@ func _show_player_choice(choice: Dictionary) -> void:
 func _complete_pending_choice() -> void:
 	var choice := _pending_choice
 	_pending_choice = {}
+	if bool(choice.get("spends_action", true)):
+		_conversation_costs_action = true
 	# Affection goes through AffectionManager (tone or exact number, first pick only).
-	AffectionManager.on_choice_picked(current_npc, str(choice.get("_key", "")), choice)
+	if not choice.has("date_style"):
+		AffectionManager.on_choice_picked(current_npc, str(choice.get("_key", "")), choice)
 	_apply_json_effects(choice.get("effects", {}), false)
+	choice_resolved.emit(current_npc, choice)
 	_enter_node(str(choice["next"]))
 
 func _apply_json_effects(effects: Variant, include_attraction: bool = true) -> void:
 	if not effects is Dictionary or current_npc == null:
 		return
+	if not effects.is_empty():
+		_conversation_costs_action = true
 	if effects.get("give_held_item", false):
 		NPCManager.accept_gift(current_npc, _gift_player, _expected_gift_item_id)
 	if effects.has("request_scene"):
@@ -200,9 +214,9 @@ func _enter_node(id: String) -> void:
 	for raw_line in node.get("lines", []):
 		var line := DialogueLineData.new()
 		if raw_line is String:
-			line.text = raw_line
+			line.text = _format_date_placeholder(raw_line)
 		elif raw_line is Dictionary:
-			line.text = str(raw_line.get("text", ""))
+			line.text = _format_date_placeholder(str(raw_line.get("text", "")))
 			line.speaker = DialogueLineData.Speaker.PLAYER if raw_line.get("speaker", "npc") == "player" else DialogueLineData.Speaker.NPC
 			line.expression = StringName(str(raw_line.get("expression", "neutral")))
 		else:
@@ -219,6 +233,17 @@ func _enter_node(id: String) -> void:
 		_choice_defs.append(choice)
 		_choice_greyed.append(AffectionManager.is_greyed(current_npc.npc_id, choice["_key"], choice))
 	_check_for_end()
+
+# Date reaction and outcome placeholders are resolved at display time.
+# Date authors can replace these with real branches later without changing
+# the scoring API or the three response styles.
+func _format_date_placeholder(raw: String) -> String:
+	if raw == "{{date_reaction}}":
+		return DateManager.get_placeholder_reaction()
+	if raw == "{{date_outcome}}":
+		return DateManager.get_placeholder_outcome()
+	return raw
+
 
 func _check_for_end() -> void:
 	if not is_active:
@@ -246,6 +271,8 @@ func _check_for_end() -> void:
 func end_conversation() -> void:
 	var finished_npc := current_npc
 	var requested_scene := _scene_after_conversation
+	last_conversation_cost = 1 if _conversation_costs_action else 0
+	_conversation_costs_action = true
 	current_npc = null
 	current_dialogue = null
 	line_index = 0

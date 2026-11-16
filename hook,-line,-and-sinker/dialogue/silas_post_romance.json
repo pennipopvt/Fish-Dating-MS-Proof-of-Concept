@@ -1,0 +1,134 @@
+{
+  "entry": "greeting",
+  "nodes": {
+    "greeting": {
+      "lines": [
+        "Oh, hello again!",
+        "Did you need something?"
+      ],
+      "choices": [
+        {
+          "text": "Want to go on a date?",
+          "next": "where",
+          "required_flags": [
+            "date_ok_silas_beach"
+          ]
+        },
+        {
+          "text": "See you later!",
+          "next": "goodbye",
+          "spends_action": false
+        }
+      ]
+    },
+    "where": {
+      "lines": [
+        "A date? Oh! I'd like that.",
+        "Where were you thinking?"
+      ],
+      "choices": [
+        {
+          "text": "Let's go to the beach.",
+          "next": "beach_when",
+          "required_flags": [
+            "date_ok_silas_beach"
+          ]
+        },
+        {
+          "text": "What about a boat ride?",
+          "next": "ship_when",
+          "required_flags": [
+            "date_ok_silas_ship"
+          ]
+        },
+        {
+          "text": "Actually, never mind.",
+          "next": "goodbye"
+        }
+      ]
+    },
+    "beach_when": {
+      "lines": [
+        "The beach sounds nice! When should we go?"
+      ],
+      "choices": [
+        {
+          "text": "Next morning",
+          "spoken_text": "How about next morning?",
+          "next": "confirmed",
+          "effects": {
+            "request_scene": "date:silas_beach:0"
+          }
+        },
+        {
+          "text": "Next afternoon",
+          "spoken_text": "How about next afternoon?",
+          "next": "confirmed",
+          "effects": {
+            "request_scene": "date:silas_beach:1"
+          }
+        },
+        {
+          "text": "Next night",
+          "spoken_text": "How about next night?",
+          "next": "confirmed",
+          "effects": {
+            "request_scene": "date:silas_beach:2"
+          }
+        },
+        {
+          "text": "Maybe another time.",
+          "next": "goodbye"
+        }
+      ]
+    },
+    "ship_when": {
+      "lines": [
+        "Out on the water again? That sounds lovely.",
+        "When should we go?"
+      ],
+      "choices": [
+        {
+          "text": "Next morning",
+          "spoken_text": "How about next morning?",
+          "next": "confirmed",
+          "effects": {
+            "request_scene": "date:silas_ship:0"
+          }
+        },
+        {
+          "text": "Next afternoon",
+          "spoken_text": "How about next afternoon?",
+          "next": "confirmed",
+          "effects": {
+            "request_scene": "date:silas_ship:1"
+          }
+        },
+        {
+          "text": "Next night",
+          "spoken_text": "How about next night?",
+          "next": "confirmed",
+          "effects": {
+            "request_scene": "date:silas_ship:2"
+          }
+        },
+        {
+          "text": "Maybe another time.",
+          "next": "goodbye"
+        }
+      ]
+    },
+    "confirmed": {
+      "lines": [
+        "Okay! I'll be there.",
+        "I'm looking forward to it!"
+      ]
+    },
+    "goodbye": {
+      "lines": [
+        "Okay! See you soon!"
+      ]
+    }
+  },
+  "free_greeting": true
+}

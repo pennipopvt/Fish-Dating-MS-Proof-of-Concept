@@ -12,9 +12,11 @@ item = ExtResource("3_c6r5n")
 [resource]
 script = ExtResource("1_trade")
 trade_id = &"increase_casts"
-display_name = "Increase Casts"
+display_name = "Extra Cast"
+description = "Adds one extra cast per fishing action. 1 day delivery."
+one_time_purchase = true
 icon = ExtResource("4_icon")
 delivery_time = 1
 requirements = Array[ExtResource("2_req")]([SubResource("Resource_fish1")])
-reward_method = &"shop_reward_add_casts"
+reward_method = &"shop_reward_upgrade_casts"
 metadata/_custom_type_script = "uid://co23u2dkxgpsq"

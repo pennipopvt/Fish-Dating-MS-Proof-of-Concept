@@ -3,10 +3,9 @@ extends Node
 # Dates (autoload "DateManager"). Penni asks an NPC out in an ask-out JSON;
 # each choice there is gated by the flag "date_ok_<date_id>" (refreshed here
 # whenever a conversation starts) and requests the scene "date:<date_id>".
-# Accepting either starts the date now (skipping the clock forward to an
-# allowed period if needed) or books it; a booked date starts when Penni
-# interacts with its DateLocation during the booked period, and is missed
-# once that period passes.
+# Date plans are made with the NPC in dialogue. The terminal calendar only
+# displays booked dates. Meet the NPC at the FIRST action of the booked period
+# (or use the date location), otherwise the appointment is missed.
 # A date: fade out, move Penni and the NPC to the location's spots (or to a
 # venue spawned just for the date, like the ship out at sea), play the
 # date JSON, then fade back and put everyone where they were. A finished date
@@ -25,6 +24,22 @@ const SCENE_PREFIX := "date:"
 const LOCATION_GROUP := &"date_locations"
 const FADE_DURATION := 0.5
 const PERIOD_COUNT := 3
+# Three choices, ordered from high-risk/high-score to low-risk/repair.
+# At jealousy tiers 0 and 1 the first (bold) response scores highest.
+# Playful and reassuring choices score less, but both reduce jealousy.
+# At higher jealousy the bold choice backfires; the safe choices help recover.
+# Four tiers: 0-24, 25-49, 50-74, 75-100. Numbers are playtest placeholders.
+const DATE_SCORE_BY_STYLE := {
+	"bold": [6, 5, -4, -6],
+	"playful": [3, 2, 0, -2],
+	"reassure": [1, 1, 1, 1],
+}
+const JEALOUSY_BY_STYLE := {
+	"bold": [0, 2, 5, 8],
+	"playful": [-3, -5, -6, -8],
+	"reassure": [-8, -10, -12, -15],
+}
+const OUTCOME_AFFECTION := {"bad": -6, "okay": 1, "good": 5, "great": 10}
 
 # date_id -> DateData
 var dates: Dictionary = {}
@@ -33,6 +48,15 @@ var bookings: Dictionary = {}
 
 var _active: DateData = null
 var _in_dialogue: bool = false
+var _date_score: int = 0
+var _date_choice_count: int = 0
+var _last_reaction: String = ""
+var last_date_outcome: String = ""
+var last_date_score: int = 0
+# The conversation can consume its final action before scene_requested fires.
+# Capture when the NPC was asked, so "next afternoon" keeps its meaning.
+var _conversation_day: int = 1
+var _conversation_period: int = 0
 # Day/period the date took place in (after any clock jump).
 var _date_day: int = 0
 var _date_period: int = 0
@@ -50,10 +74,12 @@ func _ready() -> void:
 
 
 func _connect_sources() -> void:
+	DialogueManager.choice_resolved.connect(_on_date_choice)
 	DialogueManager.conversation_started.connect(_on_conversation_started)
 	DialogueManager.conversation_finished.connect(_on_conversation_finished)
 	DialogueManager.scene_requested.connect(_on_scene_requested)
 	GameManager.time_changed.connect(func(_day: int, _period: int) -> void: _expire_bookings())
+	GameManager.actions_changed.connect(func(_actions: int) -> void: _expire_bookings())
 
 
 func _load_dates() -> void:
@@ -112,8 +138,62 @@ func meets_requirements(date: DateData) -> bool:
 func can_ask(date: DateData) -> bool:
 	if not meets_requirements(date) or is_booked(date) or _active == date:
 		return false
-	if date.when == DateData.When.NOW and not date.jump_clock:
-		return date.allows_period(GameManager.get_period())
+	for id in bookings:
+		var other := get_date(id)
+		if other != null and other.npc == date.npc:
+			return false
+	return true
+
+# Only the first action of a booked period can begin a date.
+func is_booking_ready(date: DateData) -> bool:
+	if date == null or not is_booked(date):
+		return false
+	var slot: Dictionary = bookings[date.date_id]
+	return int(slot["day"]) == GameManager.get_day() \
+		and int(slot["period"]) == GameManager.get_period() \
+		and GameManager.get_actions_left() == GameManager.ACTIONS_PER_PERIOD
+
+# Booking is only invoked by NPC dialogue; the calendar is a read-only view.
+func can_book_at(date: DateData, day: int, period: int) -> bool:
+	if not can_ask(date) or period < 0 or period >= PERIOD_COUNT or not date.allows_period(period):
+		return false
+	var chosen_slot := _slot_index(day, period)
+	var current_slot := _slot_index(GameManager.get_day(), GameManager.get_period())
+	if chosen_slot < current_slot:
+		return false
+	# If talking used the last action, the next period may already have begun.
+	if chosen_slot == current_slot and GameManager.get_actions_left() != GameManager.ACTIONS_PER_PERIOD:
+		return false
+	for id in bookings:
+		var slot: Dictionary = bookings[id]
+		if int(slot["day"]) == day and int(slot["period"]) == period:
+			return false
+	return true
+
+# "Next morning/afternoon/night" means the next occurrence measured from when
+# the conversation started, not the time AFTER conversation_finished's action.
+func book_next_period(date: DateData, period: int, from_day: int, from_period: int) -> bool:
+	if period < 0 or period >= PERIOD_COUNT:
+		return false
+	var day := from_day + (1 if period <= from_period else 0)
+	return book_at(date, day, period)
+
+
+func get_ready_booking_for_npc(npc_id: StringName) -> DateData:
+	for date_id in bookings:
+		var date := get_date(date_id)
+		if date != null and date.npc != null and date.npc.npc_id == npc_id and is_booking_ready(date):
+			return date
+	return null
+
+
+func book_at(date: DateData, day: int, period: int) -> bool:
+	if not can_book_at(date, day, period):
+		return false
+	bookings[date.date_id] = {"day": day, "period": period}
+	print("[Date] %s booked for %s" % [date.display_name, describe_booking(date)])
+	date_booked.emit(date, day, period)
+	bookings_changed.emit()
 	return true
 
 
@@ -122,8 +202,7 @@ func get_ready_booking(location_id: StringName) -> DateData:
 	for id in bookings:
 		var date := get_date(id)
 		var slot: Dictionary = bookings[id]
-		if date != null and date.location_id == location_id \
-				and int(slot["day"]) == GameManager.get_day() and int(slot["period"]) == GameManager.get_period():
+		if date != null and date.location_id == location_id and is_booking_ready(date):
 			return date
 	return null
 
@@ -153,24 +232,15 @@ func describe_booking(date: DateData) -> String:
 
 # --- Asking out / booking ---
 
-# What saying yes does: start now or book. Called for "date:<id>" scene requests.
+# All dates are now planned instead of starting immediately from dialogue.
 func accept(date: DateData) -> void:
-	if date == null:
-		return
-	if date.when == DateData.When.SCHEDULED:
-		book(date)
-	else:
-		start_date(date)
+	book(date)
 
 
 func book(date: DateData) -> void:
-	if date == null:
-		return
-	var slot := _next_slot(date)
-	bookings[date.date_id] = slot
-	print("[Date] %s booked for %s" % [date.display_name, describe_booking(date)])
-	date_booked.emit(date, int(slot["day"]), int(slot["period"]))
-	bookings_changed.emit()
+	if date != null:
+		var slot := _next_slot(date)
+		book_at(date, int(slot["day"]), int(slot["period"]))
 
 
 func cancel_booking(date: DateData) -> void:
@@ -178,13 +248,16 @@ func cancel_booking(date: DateData) -> void:
 		bookings_changed.emit()
 
 
-# First allowed period from now (or from the morning days_ahead days later).
+# Find the next ALLOWED period after the current one; no same-period booking.
 func _next_slot(date: DateData) -> Dictionary:
 	var day: int = GameManager.get_day() + maxi(date.days_ahead, 0)
-	var period: int = GameManager.get_period() if date.days_ahead <= 0 else 0
-	for i in PERIOD_COUNT:
-		if date.allows_period(period):
-			break
+	var period: int = GameManager.get_period() + 1 if date.days_ahead <= 0 else 0
+	if period >= PERIOD_COUNT:
+		period = 0
+		day += 1
+	for i in PERIOD_COUNT * 2:
+		if date.allows_period(period) and can_book_at(date, day, period):
+			return {"day": day, "period": period}
 		period += 1
 		if period >= PERIOD_COUNT:
 			period = 0
@@ -200,7 +273,9 @@ func _expire_bookings() -> void:
 	var now: int = _slot_index(GameManager.get_day(), GameManager.get_period())
 	for id in bookings.keys():
 		var slot: Dictionary = bookings[id]
-		if _slot_index(slot["day"], slot["period"]) >= now:
+		if _slot_index(int(slot["day"]), int(slot["period"])) > now:
+			continue
+		if _slot_index(int(slot["day"]), int(slot["period"])) == now and GameManager.get_actions_left() == GameManager.ACTIONS_PER_PERIOD:
 			continue
 		bookings.erase(id)
 		var date := get_date(id)
@@ -216,6 +291,9 @@ func _expire_bookings() -> void:
 func start_date(date: DateData) -> void:
 	if _active != null or date == null or date.npc == null:
 		return
+	# Enforce the first-action rule even when a scene calls this directly.
+	if is_booked(date) and not is_booking_ready(date):
+		return
 	var location := _find_location(date.location_id)
 	if date.venue_scene == null and location == null:
 		push_warning("No DateLocation '%s' in the world for date %s" % [date.location_id, date.date_id])
@@ -224,9 +302,14 @@ func start_date(date: DateData) -> void:
 	if player == null:
 		return
 	_active = date
+	_date_score = 0
+	_date_choice_count = 0
+	_last_reaction = ""
+	last_date_outcome = ""
 	date_started.emit(date)
 	await _fade_to(1.0)
-	if date.when == DateData.When.NOW and date.jump_clock:
+	# Unbooked developer-only dates may still use legacy time-jump behavior.
+	if not is_booked(date) and date.when == DateData.When.NOW and date.jump_clock:
 		_jump_to_allowed_period(date)
 	cancel_booking(date)
 	_date_day = GameManager.get_day()
@@ -247,6 +330,51 @@ func start_date(date: DateData) -> void:
 		push_warning("Date dialogue could not start: " + date.dialogue_json)
 		_in_dialogue = false
 		_finish(false)
+
+
+# A date exposes the same three choices on every scene and jealousy tier.
+# The current tier changes their score/reaction rather than hiding choices.
+static func score_for_choice(style: String, tier: int) -> int:
+	var row: Array = DATE_SCORE_BY_STYLE.get(style, [])
+	return int(row[clampi(tier, 0, 3)]) if not row.is_empty() else 0
+
+
+static func jealousy_for_choice(style: String, tier: int) -> int:
+	var row: Array = JEALOUSY_BY_STYLE.get(style, [])
+	return int(row[clampi(tier, 0, 3)]) if not row.is_empty() else 0
+
+
+static func outcome_for_score(score: int) -> String:
+	if score < 0:
+		return "bad"
+	if score < 5:
+		return "okay"
+	if score < 10:
+		return "good"
+	return "great"
+
+
+func _on_date_choice(npc: NPCData, choice: Dictionary) -> void:
+	if not _in_dialogue or _active == null or npc != _active.npc:
+		return
+	var style := str(choice.get("date_style", ""))
+	if not DATE_SCORE_BY_STYLE.has(style):
+		return
+	var tier := AffectionManager.get_jealousy_tier(npc.npc_id)
+	var points := score_for_choice(style, tier)
+	_date_score += points
+	_date_choice_count += 1
+	AffectionManager.change_jealousy(npc.npc_id, jealousy_for_choice(style, tier))
+	_last_reaction = "[Placeholder: %s / jealousy tier %d / score %d]" % [style, tier, points]
+
+
+func get_placeholder_reaction() -> String:
+	return _last_reaction if not _last_reaction.is_empty() else "[Placeholder: date reaction]"
+
+
+func get_placeholder_outcome() -> String:
+	var outcome := outcome_for_score(_date_score)
+	return "[Placeholder: %s date / affection %d]" % [outcome, int(OUTCOME_AFFECTION[outcome])]
 
 
 # Rests period by period until the date's period (at most a day).
@@ -274,7 +402,14 @@ func _finish(completed: bool) -> void:
 		flags[date.get_completed_flag()] = true
 		for flag in date.flags_to_set:
 			flags[flag] = true
-		AffectionManager.change(date.npc.npc_id, date.attraction_change)
+		var outcome := outcome_for_score(_date_score) if _date_choice_count > 0 else ""
+		last_date_score = _date_score
+		last_date_outcome = outcome
+		# Repeating a date always scores again, but never farms individual
+		# dialogue-choice affection. Successful completion prevents daily decay.
+		AffectionManager.mark_date_completed(date.npc.npc_id, _date_day)
+		var gain: int = int(OUTCOME_AFFECTION[outcome]) if not outcome.is_empty() else date.attraction_change
+		AffectionManager.change(date.npc.npc_id, gain)
 		_use_up_period()
 	_active = null
 	await _fade_to(0.0)
@@ -324,6 +459,8 @@ func _find_actor(npc_id: StringName) -> NPCInteractable:
 func _on_conversation_started(npc: NPCData) -> void:
 	if npc == null:
 		return
+	_conversation_day = GameManager.get_day()
+	_conversation_period = GameManager.get_period()
 	var flags: Dictionary = NPCManager.get_npc_state(npc.npc_id)["flags"]
 	for date in get_dates_for(npc.npc_id):
 		flags[date.get_available_flag()] = can_ask(date)
@@ -335,9 +472,19 @@ func _on_conversation_finished(npc: NPCData) -> void:
 		_finish(true)
 
 
-func _on_scene_requested(_npc: NPCData, scene_id: String) -> void:
-	if scene_id.begins_with(SCENE_PREFIX):
-		accept(get_date(StringName(scene_id.trim_prefix(SCENE_PREFIX))))
+func _on_scene_requested(npc: NPCData, scene_id: String) -> void:
+	if npc == null or not scene_id.begins_with(SCENE_PREFIX):
+		return
+	# Format "date:<date_id>:<period>" is emitted by ask-out dialogue.
+	var parts := scene_id.trim_prefix(SCENE_PREFIX).split(":")
+	var date := get_date(StringName(parts[0]))
+	if date == null or date.npc == null or date.npc.npc_id != npc.npc_id:
+		return
+	if parts.size() >= 2 and parts[1].is_valid_int():
+		book_next_period(date, int(parts[1]), _conversation_day, _conversation_period)
+	else:
+		# Legacy ask-out scenes still book the next allowed slot.
+		accept(date)
 
 
 # --- Fade ---

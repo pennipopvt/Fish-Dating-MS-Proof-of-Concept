@@ -20,6 +20,8 @@ var current_state: Fish_State = Fish_State.NOT:
 var hooked_fish: FishData = null
 
 var casts: int = 0
+# True between starting a cast and reporting its outcome or abandonment.
+var _cast_unresolved: bool = false
 var progress: float = 0
 var bite_time: float = 0
 
@@ -54,11 +56,6 @@ var last_scroll_ms: int = -100000
 # Dash settings live on FishData, so every species can behave differently.
 var _miss_dash_tween: Tween
 
-# The Spyglass identifies only the fish that has already bitten.
-var _identity_layer: CanvasLayer
-var _identity_icon: TextureRect
-var _identity_label: Label
-
 #band-aid fix to avoid accidentally requeueing interact when exiting since exit and interact are the same input
 var press_delay: float = 0.10
 var delay_time = 0
@@ -92,7 +89,6 @@ var delay_time = 0
 func _ready() -> void:
 	# Allow multiple short reel clicks to overlap rather than restarting one voice.
 	reel_sfx.max_polyphony = reel_sound_polyphony
-	_build_identity_hud()
 
 func play_fishing_sound(player: AudioStreamPlayer) -> void:
 	if player.stream != null:
@@ -169,13 +165,18 @@ func begin_fishing() -> void:
 		await _lock_fishing_camera()
 		cast_rod()
 	
+# One fishing session consumes exactly one action. Additional casts happen
+# automatically only when the casts-per-action upgrade leaves casts available.
+func has_casts_left() -> bool:
+	return casts < maxi(FishingManager.casts_per_action, 1) and GameManager.can_act()
+
+
 func cast_rod() -> void:
-	# Out of actions for the night: stop recasting (GameManager day clock).
-	if(casts >= FishingManager.max_casts_per_session or not GameManager.can_act()):
+	if not has_casts_left():
 		exit_fishing()
 		return
 	casts += 1
-	_hide_identity_hud()
+	_hide_identity_bubble()
 	current_state = Fish_State.WAITING
 	
 	progress = starting_progress
@@ -190,6 +191,7 @@ func cast_rod() -> void:
 		push_warning("No catchable fish in FishingManager.possible_catches")
 		exit_fishing()
 		return
+	_cast_unresolved = true
 	fishing_line.send(starting_progress)
 	print("Cast #", casts, " will be a ", hooked_fish.fish_id)
 
@@ -238,46 +240,14 @@ func _process(delta: float) -> void:
 		delay_time = clamp(delay_time,0,1)
 
 
-# Small viewport-relative label, created once and shown only after a Spyglass
-# hook. There is no fish-information leak before the fish bites.
-func _build_identity_hud() -> void:
-	_identity_layer = CanvasLayer.new()
-	_identity_layer.layer = 4
-	add_child(_identity_layer)
-	var panel := PanelContainer.new()
-	panel.position = Vector2(7.0, 7.0)
-	_identity_layer.add_child(panel)
-	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", 4)
-	panel.add_child(row)
-	_identity_icon = TextureRect.new()
-	_identity_icon.custom_minimum_size = Vector2(18.0, 18.0)
-	_identity_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	_identity_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	_identity_icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	row.add_child(_identity_icon)
-	_identity_label = Label.new()
-	_identity_label.add_theme_font_size_override("font_size", 9)
-	row.add_child(_identity_label)
-	_identity_layer.hide()
+# The Spyglass shows a compact 9-slice fish icon above the bobber in-world,
+# rather than pinning a status box to the viewport's top-left corner.
+func _show_identity_bubble(caught: FishData) -> void:
+	fishing_line.show_fish_identity(caught)
 
 
-func _show_identity_hud(fish: FishData) -> void:
-	if fish == null or _identity_layer == null:
-		return
-	var label := String(fish.fish_id).replace("_", " ").capitalize()
-	if fish.fish_id == &"test_silas":
-		label = "Silas (Garden Eel)"
-	elif fish.fish_id == &"barracuda":
-		label = "Barracuda"
-	_identity_label.text = label
-	_identity_icon.texture = fish.item_data.sprite if fish.item_data != null else null
-	_identity_layer.show()
-
-
-func _hide_identity_hud() -> void:
-	if _identity_layer != null:
-		_identity_layer.hide()
+func _hide_identity_bubble() -> void:
+	fishing_line.hide_fish_identity()
 
 
 # Knife Bobber: an opening reel opportunity, not a perfect parry. Never send
@@ -308,7 +278,7 @@ func begin_reeling() -> void:
 	fishing_line.update_line_dist(progress)
 	var bobber: BobberData = BobberManager.get_equipped_bobber()
 	if bobber != null and bobber.identifies_fish:
-		_show_identity_hud(hooked_fish)
+		_show_identity_bubble(hooked_fish)
 	if bobber != null and bobber.opening_stun_fraction > 0.0:
 		# Select the attack first. The free stun uses THIS fish's normal
 		# perfect-parry stun duration, not a fixed one-second timer.
@@ -328,6 +298,7 @@ func lose_fish() -> void:
 	play_fishing_sound(lose_sfx)
 	#inform the fishing manager
 	print("Lost ", hooked_fish.fish_id)
+	_cast_unresolved = false
 	FishingManager.lose_fish(hooked_fish)
 	finish_cast()
 	
@@ -401,6 +372,7 @@ func _finish_catch_animation() -> void:
 	if hooked_fish.npc_data == null:
 		catch_fish()
 	else:
+		_cast_unresolved = false
 		FishingManager.catch_fish(hooked_fish, false)
 		create_npc(hooked_fish.npc_data)
 
@@ -410,20 +382,31 @@ func catch_fish() -> void:
 	
 	print("Caught ", hooked_fish.fish_id)
 	
+	_cast_unresolved = false
 	FishingManager.catch_fish(hooked_fish)
 	finish_cast()
 	
 func finish_cast() -> void:
+	_cast_unresolved = false
 	reset_values()
-	
-	if(casts >= FishingManager.max_casts_per_session):
-		exit_fishing()
-	else:
+
+	# At the base value (one cast per action), this exits immediately. An
+	# upgrade to two or more casts automatically chains only that many casts.
+	if has_casts_left():
 		cast_rod()
+	else:
+		exit_fishing()
 	
 func exit_fishing() -> void:
-	if(current_state == Fish_State.FISHING && hooked_fish != null):
-		FishingManager.lose_fish(hooked_fish)
+	if _cast_unresolved:
+		_cast_unresolved = false
+		if current_state == Fish_State.FISHING and hooked_fish != null:
+			FishingManager.lose_fish(hooked_fish)
+		else:
+			# Cancelling a cast while waiting for a bite still uses its quota.
+			GameManager.record_fishing_cast()
+	# Any incomplete batch is charged when a fishing session ends.
+	GameManager.finish_fishing_session()
 	#reset everything upon exit
 	reset_values()
 	current_state = Fish_State.NOT
@@ -444,7 +427,7 @@ func reset_values() -> void:
 	progress = 0
 	bite_time = 0
 	fishing_progress.value = 0
-	_hide_identity_hud()
+	_hide_identity_bubble()
 	fishing_line.close()
 	state_timer = 0
 	fish_esc_rate = 0

@@ -62,8 +62,35 @@ func check_for_recruitment(finished_npc: NPCData) -> void:
 		return
 
 	# Acceptance is permanent for this session, even before a house exists.
-	FishingManager.remove_recruited_catch(caught_fish)
-	_enqueue_accepted_actor(caught_actor)
+	_finalize_recruitment(caught_actor, caught_fish)
+
+
+# Developer shortcuts must use the same catch-pool and housing path as regular
+# recruitment. Returns false instead of creating duplicate NPCs.
+func recruit_actor_for_debug(actor: NPCInteractable, fish: FishData) -> bool:
+	if not _actor_valid(actor) or actor.npc == null or fish == null or fish.npc_data == null:
+		return false
+	if actor.scene_file_path != fish.npc_data.resource_path:
+		return false
+	var flags: Dictionary = NPCManager.get_npc_state(actor.npc.npc_id)["flags"]
+	if flags.get(&"Recruited", false):
+		return false
+	flags[&"Recruited"] = true
+	if npc == actor and listening:
+		listening = false
+		npc = null
+		pending_fish = null
+	_finalize_recruitment(actor, fish)
+	return true
+
+
+func _finalize_recruitment(actor: NPCInteractable, fish: FishData) -> void:
+	if not _actor_valid(actor) or actor.npc == null:
+		return
+	FishingManager.remove_recruited_catch(fish)
+	ShopManager.gifts_unlocked = true
+	AffectionManager.on_recruited(actor.npc.npc_id)
+	_enqueue_accepted_actor(actor)
 
 
 

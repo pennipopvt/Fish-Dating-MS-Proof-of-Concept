@@ -5,7 +5,10 @@ extends SceneTree
 # godot --headless --path . -s res://tests/silas_fish_sprite_test.gd
 
 const FISHING_SCENE: PackedScene = preload("res://scenes/fishing_controller.tscn")
-const SILAS: FishData = preload("res://resources/fish/test_silas.tres")
+const SILAS: FishData = preload("res://resources/fish/silas.tres")
+const SILAS_NPC: PackedScene = preload("res://prefabs/silas.tscn")
+const SILAS_IDLE: Texture2D = preload("res://sprites/characters/silas_idle.png")
+const SILAS_CAUGHT: Texture2D = preload("res://sprites/characters/silas_caught.png")
 const EASY: FishData = preload("res://resources/fish/easy_test_fish.tres")
 var failures := 0
 
@@ -13,6 +16,15 @@ func _initialize() -> void:
 	call_deferred("_run")
 
 func _run() -> void:
+	var silas_actor := SILAS_NPC.instantiate()
+	var silas_sprite := silas_actor.get_node_or_null("Sprite") as AnimatedSprite2D
+	_expect(silas_sprite != null, "Silas has an animated world sprite")
+	if silas_sprite != null and silas_sprite.sprite_frames != null:
+		var idle := silas_sprite.sprite_frames.get_frame_texture(&"default", 0) as AtlasTexture
+		_expect(idle != null and idle.atlas == SILAS_IDLE, "Silas idle uses silas_idle.png")
+		_expect(silas_sprite.sprite_frames.get_frame_texture(&"on_caught", 0) == SILAS_CAUGHT, "Silas caught pose uses silas_caught.png")
+	silas_actor.free()
+
 	var controller := FISHING_SCENE.instantiate()
 	get_root().add_child(controller)
 	var line: Node2D = controller.get_node("FishingLine")

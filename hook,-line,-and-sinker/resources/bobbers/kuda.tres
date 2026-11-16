@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="BobberData" format=3 uid="uid://bvwfvlyloc42u"]
+
+[ext_resource type="Script" uid="uid://5ptfbw63am0s" path="res://resources/bobber_data.gd" id="1"]
+[ext_resource type="Texture2D" uid="uid://dgh6q5j2wgmq" path="res://sprites/bobbers/bobber_knife.png" id="2"]
+
+[resource]
+script = ExtResource("1")
+bobber_id = &"barracuda"
+display_name = "Barracuda's Knife"
+sprite = ExtResource("2")
+source_npc_id = &"barracuda"
+opening_stun_fraction = 0.5
+ability_description = "Ambush: when a fish bites, it starts stunned for half its usual stun duration."

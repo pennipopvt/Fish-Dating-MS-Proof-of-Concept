@@ -42,6 +42,8 @@ enum RequirementType {
 
 var progress: int = 0
 var completed: bool = false
+# Requirements can be complete without their unlock being claimed in the terminal.
+var claimed: bool = false
 ## Unix time of completion, 0 if not completed.
 var completed_at: int = 0
 

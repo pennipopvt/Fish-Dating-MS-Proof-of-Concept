@@ -37,6 +37,12 @@ func interact(_player: Node2D) -> void:
 	if npc == null:
 		push_warning("NPCInteractable needs npc assigned.")
 		return
+	# An appointment is started by meeting the NPC, not from the calendar.
+	# This is only available before the first action of the booked period.
+	var due_date := DateManager.get_ready_booking_for_npc(npc.npc_id)
+	if due_date != null:
+		DateManager.start_date(due_date)
+		return
 	var player := _player as Player
 	if player != null and player.held_item != null:
 		var path := NPCManager.get_gift_encounter_path(npc, player.held_item)

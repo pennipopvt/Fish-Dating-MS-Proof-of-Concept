@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="DateData" format=3]
+
+[ext_resource type="Script" path="res://resources/date_data.gd" id="1_date"]
+[ext_resource type="Resource" path="res://resources/npcs/kuda.tres" id="2_npc"]
+[ext_resource type="PackedScene" path="res://prefabs/ship.tscn" id="3_ship"]
+
+[resource]
+script = ExtResource("1_date")
+date_id = &"kuda_ship"
+display_name = "Boat date with Kuda"
+npc = ExtResource("2_npc")
+location_id = &"beach"
+venue_scene = ExtResource("3_ship")
+venue_position = Vector2(2400, 140)
+dialogue_json = "res://dialogue/kuda_date_ship.json"
+periods = 0
+when = 1
+jump_clock = false
+required_flags = Array[StringName]([&"Recruited", &"barracuda_route_complete"])
+repeatable = true

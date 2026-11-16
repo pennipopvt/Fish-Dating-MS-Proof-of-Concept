@@ -18,6 +18,7 @@ const STRONGER_REEL_ID: StringName = &"stronger_reel"
 const REINFORCED_LINE_ID: StringName = &"reinforced_line"
 const HARD_BAIT_UPGRADE_ID: StringName = &"hard_fish_bait"
 const YELLOW_BAIT_UPGRADE_ID: StringName = &"yellow_bait"
+const EXTRA_CAST_UPGRADE_ID: StringName = &"increase_casts"
 
 @export var possible_catches: Array[FishData] = []
 @export var current_storage: Array[ItemData] = []
@@ -37,11 +38,13 @@ var reel_tension_reduction: float = 0.0
 var miss_tension_reduction: float = 0.0
 
 @export_category("Fishing Stats")
-@export var max_casts_per_session: int = 3
-var _starting_max_casts_per_session: int = 3
+# A fishing session is exactly one action, with this many consecutive casts.
+# Starts at one; the Increase Casts upgrade can add more to that action.
+@export_range(1, 20, 1) var casts_per_action: int = 1
+var _starting_casts_per_action: int = 1
 
 func _ready() -> void:
-	_starting_max_casts_per_session = max_casts_per_session
+	_starting_casts_per_action = maxi(casts_per_action, 1)
 	reset_session_upgrades()
 
 # One canonical reset for session-only equipment/bait. Dev tools call this
@@ -53,7 +56,7 @@ func reset_session_upgrades() -> void:
 	reel_progress_bonus = 0.0
 	reel_tension_reduction = 0.0
 	miss_tension_reduction = 0.0
-	max_casts_per_session = _starting_max_casts_per_session
+	casts_per_action = _starting_casts_per_action
 	equipped_bait = _find_bait(BASIC_BAIT_ID)
 	bait_changed.emit(equipped_bait)
 	upgrades_changed.emit()
@@ -122,11 +125,19 @@ func shop_reward_reinforced_line(amount: int) -> void:
 	upgrades_changed.emit()
 
 
+func shop_reward_upgrade_casts(amount: int) -> void:
+	if amount <= 0 or has_upgrade(EXTRA_CAST_UPGRADE_ID):
+		return
+	owned_upgrade_ids.append(EXTRA_CAST_UPGRADE_ID)
+	shop_reward_add_casts(amount)
+
+
 func shop_reward_add_casts(amount: int) -> void:
 	if amount <= 0:
 		return
 
-	max_casts_per_session += amount
+	casts_per_action += amount
+	upgrades_changed.emit()
 
 func equip_bait(bait: BaitData) -> void:
 	if bait == null or not available_baits.has(bait) or not unlocked_bait_ids.has(bait.bait_id):

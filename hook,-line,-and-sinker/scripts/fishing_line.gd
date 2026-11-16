@@ -1,5 +1,8 @@
 extends Line2D
 
+const SPEECH_BUBBLE_SCENE: PackedScene = preload("res://prefabs/ui/speech_bubble.tscn")
+var _identity_bubble: SpeechBubble
+
 ## Horizontal distance at zero reel progress (pixels left from rod).
 @export_range(1.0, 600.0, 1.0) var max_horizontal_distance: float = 340.0
 ## Distance from rod when the fish breaches the surface.
@@ -97,7 +100,35 @@ func _ready() -> void:
 	ripple_tell.animation_finished.connect(_on_ripple_animation_finished)
 	ripple_tell.hide()
 	bobber.hide()
+	_identity_bubble = SPEECH_BUBBLE_SCENE.instantiate() as SpeechBubble
+	add_child(_identity_bubble)
+	_identity_bubble.hide()
 	hide()
+
+# Spyglass: show only after a bite, positioned over the bobber's waterline.
+# The bubble belongs to the fishing line so it follows the fish and camera.
+func show_fish_identity(caught: FishData) -> void:
+	if caught == null or _identity_bubble == null:
+		return
+	var icon: Texture2D = caught.item_data.sprite if caught.item_data != null else fish.texture
+	_identity_bubble.set_content(icon)
+	_update_identity_bubble_position()
+	_identity_bubble.show()
+
+
+func hide_fish_identity() -> void:
+	if _identity_bubble != null:
+		_identity_bubble.hide()
+
+
+func _update_identity_bubble_position() -> void:
+	if _identity_bubble == null:
+		return
+	_identity_bubble.position = (
+		bobber_water_position
+		+ Vector2(-_identity_bubble.size.x * 0.5, -_identity_bubble.size.y - 9.0)
+	).round()
+
 
 func _on_bobber_equipped(data: BobberData) -> void:
 	bobber.texture = data.sprite if data != null else null
@@ -148,10 +179,12 @@ func hide_fish_for_catch() -> void:
 	bobber.hide()
 	fish.hide()
 	ripple_tell.hide()
+	hide_fish_identity()
 	# Hide the line itself during the airborne catch sequence.
 	hide()
 
 func close() -> void:
+	hide_fish_identity()
 	bobber.hide()
 	set_stunned(false)
 	ripple_tell.hide()
@@ -209,6 +242,8 @@ func update_ripple_position() -> void:
 	bobber_water_position = surface_position
 	if bobber.visible:
 		bobber.position = (surface_position + Vector2(0, sin(bobber_float_time * TAU * bobber_float_speed) * bobber_float_amplitude)).round()
+	if _identity_bubble != null and _identity_bubble.visible:
+		_update_identity_bubble_position()
 
 # Fish sprite is centered: its position marks its midpoint.
 # Catch as soon as that midpoint reaches the ripple's water surface.

@@ -35,6 +35,7 @@ func _ready() -> void:
 	_build()
 	ChallengeManager.challenge_progressed.connect(_on_challenge_changed)
 	ChallengeManager.challenge_completed.connect(_on_challenge_changed)
+	ChallengeManager.challenge_claimed.connect(_on_challenge_changed)
 	ChallengeManager.progress_reset.connect(refresh)
 	visibility_changed.connect(_on_visibility_changed)
 	refresh()
@@ -108,7 +109,7 @@ func _build() -> void:
 
 	_list = VBoxContainer.new()
 	_list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_list.add_theme_constant_override("separation", 2 * S)
+	_list.add_theme_constant_override("separation", 4 * S)
 	scroll.add_child(_list)
 
 
@@ -117,11 +118,15 @@ func _make_row(challenge: ChallengeData) -> Control:
 	var secret := challenge.hidden and not done
 
 	var row := PanelContainer.new()
-	row.self_modulate = Color("def4e2") if done else Color.WHITE
+	row.self_modulate = Color("def4e2") if challenge.claimed else Color.WHITE
 
+	var pad := MarginContainer.new()
+	for side in ["margin_left", "margin_right", "margin_top", "margin_bottom"]:
+		pad.add_theme_constant_override(side, 4 * S)
+	row.add_child(pad)
 	var columns := HBoxContainer.new()
-	columns.add_theme_constant_override("separation", 5 * S)
-	row.add_child(columns)
+	columns.add_theme_constant_override("separation", 6 * S)
+	pad.add_child(columns)
 
 	# Icon: color when done, greyed out (or custom locked art) when not.
 	var icon := TextureRect.new()
@@ -174,20 +179,27 @@ func _make_row(challenge: ChallengeData) -> Control:
 
 	if not secret and challenge.reward_text != "":
 		var reward := PixelUI.label(
-			("Unlocked: " if done else "Reward: ") + challenge.reward_text,
+			("Claimed: " if challenge.claimed else "Claim to unlock: " if done else "Reward: ") + challenge.reward_text,
 			&"", Color("745600") if done else Color("45646a")
 		)
 		reward.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		text.add_child(reward)
 
-	# Right side: unlock date.
-	if done:
-		var date := PixelUI.label(
-			"Unlocked\n" + _format_date(challenge.completed_at), &"DimLabel"
+	# Completing the objective does not unlock its reward until claimed.
+	if done and not challenge.claimed:
+		var claim := Button.new()
+		claim.text = "CLAIM"
+		claim.custom_minimum_size = Vector2(90, 48)
+		claim.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		claim.pressed.connect(func() -> void:
+			ChallengeManager.claim(challenge)
+			refresh()
 		)
-		date.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-		date.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-		columns.add_child(date)
+		columns.add_child(claim)
+	elif challenge.claimed:
+		var claimed := PixelUI.label("CLAIMED", &"DimLabel")
+		claimed.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		columns.add_child(claimed)
 
 	return row
 
