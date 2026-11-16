@@ -128,9 +128,11 @@ func hide_fish_identity() -> void:
 func _update_identity_bubble_position() -> void:
 	if _identity_bubble == null:
 		return
-	_identity_bubble.position = Vector2(
-		fish.position.x - _identity_bubble.size.x * 0.5,
-		water_surface_y - _identity_bubble.size.y - 6.0
+	# Anchor to the same waterline point as the bobber / ripple, not the
+	# underwater fish, which may be hundreds of pixels away horizontally.
+	_identity_bubble.position = (
+		bobber_water_position
+		+ Vector2(-_identity_bubble.size.x * 0.5, -_identity_bubble.size.y - 6.0)
 	).round()
 
 
