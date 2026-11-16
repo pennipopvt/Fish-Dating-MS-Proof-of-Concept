@@ -18,7 +18,9 @@ const FONT := PixelUI.FONT_SMALL
 const FONT_BOLD := PixelUI.FONT_SMALL_BOLD
 const FONT_SIZE := 8
 const LINE_HEIGHT := 9
-const ICON_SIZE := 16
+# Notification icons use an 8x8 glyph centered inside a 16x16 slot.
+const ICON_SLOT_SIZE := 16
+const ICON_SIZE := 8
 const PADDING := 3   # inside the 2-px frame
 const GAP := 3       # between icon and text
 const TAIL := 3
@@ -47,7 +49,7 @@ func _ready() -> void:
 		ceili(FONT.get_string_size(subtitle, HORIZONTAL_ALIGNMENT_LEFT, -1, FONT_SIZE).x),
 		ceili(FONT_BOLD.get_string_size(title, HORIZONTAL_ALIGNMENT_LEFT, -1, FONT_SIZE).x)
 	)
-	var inner := Vector2i(_icon_space() + text_width, maxi(ICON_SIZE, LINE_HEIGHT * 2))
+	var inner := Vector2i(_icon_space() + text_width, maxi(ICON_SLOT_SIZE, LINE_HEIGHT * 2))
 	_size = inner + Vector2i.ONE * (PADDING + 2) * 2
 
 	_rest_y = position.y
@@ -99,8 +101,14 @@ func _draw() -> void:
 	var content_h := _size.y - (PADDING + 2) * 2
 
 	if _icon() != null:
-		var icon_y := content.y + (content_h - ICON_SIZE) / 2
-		draw_texture_rect(_icon(), Rect2(content.x, icon_y, ICON_SIZE, ICON_SIZE), false)
+		# Keep the icon's frame consistent with other 16px UI slots while
+		# rendering the graphic itself at the standard 8px size.
+		var slot_y := content.y + (content_h - ICON_SLOT_SIZE) / 2
+		var slot := Rect2(content.x, slot_y, ICON_SLOT_SIZE, ICON_SLOT_SIZE)
+		_box(Rect2i(slot.position, slot.size), PixelUI.CYAN_DARK)
+		draw_rect(slot.grow(-1), PixelUI.INSET)
+		var icon_pos := slot.position + Vector2.ONE * ((ICON_SLOT_SIZE - ICON_SIZE) / 2)
+		draw_texture_rect(_icon(), Rect2(icon_pos, Vector2.ONE * ICON_SIZE), false)
 
 	var text_x := content.x + _icon_space()
 	var text_y := content.y + (content_h - LINE_HEIGHT * 2) / 2
@@ -118,7 +126,7 @@ func _icon() -> Texture2D:
 # Width taken by the icon column: always for challenges (as before), none
 # for text-only notices.
 func _icon_space() -> int:
-	return ICON_SIZE + GAP if challenge != null else 0
+	return ICON_SLOT_SIZE + GAP if challenge != null else 0
 
 
 # Filled rect with its four corner pixels left out.
