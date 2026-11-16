@@ -88,18 +88,27 @@ func _ready() -> void:
 	var world_notice := terminal.get_node("UnclaimedAchievementNotice") as PanelContainer
 	_expect(world_notice != null and world_notice.visible,
 		"A persistent exclamation bubble appears above the physical terminal")
-	_expect(world_notice.get_theme_stylebox("panel") is StyleBoxTexture,
-		"The persistent notification uses the terminal's nine-slice border")
+	_expect(world_notice.custom_minimum_size == Vector2(16, 16)
+		and world_notice.get_theme_stylebox("panel") is StyleBoxFlat,
+		"The world exclamation fits in a 16x16 bubble with a slim border")
+	_expect((world_notice.get_child(0) as Label).text == "!",
+		"The world claim notification contains only the exclamation")
 	shop.call("_select_page", ShopMenu.Page.CHALLENGES)
-	_expect((shop.get("_challenge_notification") as PanelContainer).visible,
-		"The Challenges tab also displays its nine-slice alert")
+	var tab_notice := shop.get("_challenge_notification") as PanelContainer
+	var challenge_tab_icon := shop.get_node("TerminalRoot/NavTabs/ChallengesTab/Icon") as TextureRect
+	_expect(tab_notice.visible and tab_notice.get_theme_stylebox("panel") is StyleBoxFlat,
+		"The Challenges tab shows its slim exclamation notification")
+	_expect(not challenge_tab_icon.visible,
+		"The standard Challenges tab icon is hidden while a claim is ready")
+	_expect((tab_notice.get_child(0) as Label).text == "!",
+		"The Challenges badge displays only an exclamation")
 	shop.call("_on_order_pressed")
 	_expect(hot.claimed and ChallengeManager.get_claimable_count() == 0,
 		"Claiming in the Challenges tab marks the achievement claimed")
 	_expect(not ShopManager.is_trade_locked(SCARF),
 		"Claiming Hot Streak unlocks its scarf trade")
-	_expect(not world_notice.visible and not (shop.get("_challenge_notification") as PanelContainer).visible,
-		"Notifications disappear after all claims have been collected")
+	_expect(not world_notice.visible and not tab_notice.visible and challenge_tab_icon.visible,
+		"Claim badges disappear and the standard tab icon returns after collection")
 
 	ChallengeManager.reset_all()
 	FishingManager.reset_session_upgrades()

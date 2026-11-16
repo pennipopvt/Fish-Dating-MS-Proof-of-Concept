@@ -4,7 +4,7 @@ extends Node
 #   godot --headless --path . res://tests/schedule_ui_test.tscn
 # Schedule uses 4 x 9 action slots; no booking control appears in the terminal.
 # Greeting/bye is free, meaningful NPC dialogue costs an action, and the
-# spyglass bubble shares the terminal's authored nine-slice artwork.
+# spyglass bubble uses a slim pixel-art frame instead of the terminal nine-slice.
 
 const SHOP_SCENE: PackedScene = preload("res://prefabs/shop_menu.tscn")
 const BUBBLE_SCENE: PackedScene = preload("res://prefabs/ui/speech_bubble.tscn")
@@ -77,10 +77,17 @@ func _ready() -> void:
 
 	var bubble := BUBBLE_SCENE.instantiate() as SpeechBubble
 	add_child(bubble)
-	_expect(bubble.texture == TERMINAL_TEXTURE, "Speech bubble reuses the terminal nine-slice texture")
-	_expect(bubble.get_node_or_null("TailOutline") != null, "Bubble has a pointed tail")
+	_expect(bubble.get_theme_stylebox("panel") is StyleBoxFlat,
+		"Spyglass uses the slimmer pixel-art bubble frame")
+	_expect(bubble.size == Vector2(32, 32),
+		"Spyglass thumbnail bubble is compact and stays 32x32")
+	_expect(bubble.get_node_or_null("TailOutline") != null,
+		"Other speech bubbles can still use a pointed tail")
 	bubble.set_content(TERMINAL_TEXTURE)
-	_expect((bubble.get_node("Icon") as TextureRect).visible, "Spyglass fish thumbnail is supported")
+	var fish_icon := bubble.get_node("Icon") as TextureRect
+	_expect(fish_icon.visible and fish_icon.position == Vector2(4, 4)
+		and fish_icon.size == Vector2(24, 24),
+		"Spyglass fish image is centered with 4px padding")
 	bubble.queue_free()
 
 	print("schedule_ui_test: %s" % ("PASS" if _failed == 0 else "%d FAILED" % _failed))

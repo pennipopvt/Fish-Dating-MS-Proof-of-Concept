@@ -128,11 +128,15 @@ func _setup_challenge_notification() -> void:
 	_challenge_notification.name = "ChallengeNoticeBubble"
 	_challenge_notification.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_challenge_notification.custom_minimum_size = Vector2(30, 30)
-	_challenge_notification.position = Vector2(33, 6)
-	_challenge_notification.add_theme_stylebox_override("panel", TERMINAL_FRAME)
+	# Replace, rather than overlap, the Challenges tab's regular picture.
+	# Keep the badge centered in the 48px icon area when it is active.
+	_challenge_notification.position = Vector2(21, 21)
+	_challenge_notification.add_theme_stylebox_override("panel", PixelUI.notification_bubble_style(PixelUI.SCALE))
 	var notice_label := Label.new()
 	notice_label.text = "!"
-	notice_label.theme_type_variation = &"TitleLabel"
+	notice_label.add_theme_font_override("font", PixelUI.FONT_SMALL_BOLD)
+	notice_label.add_theme_font_size_override("font_size", 15)
+	notice_label.add_theme_color_override("font_color", PixelUI.CYAN)
 	notice_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	notice_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	notice_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -142,8 +146,14 @@ func _setup_challenge_notification() -> void:
 
 
 func _update_challenge_notification() -> void:
-	if is_instance_valid(_challenge_notification):
-		_challenge_notification.visible = ChallengeManager.get_claimable_count() > 0
+	if not is_instance_valid(_challenge_notification):
+		return
+	var needs_claim := ChallengeManager.get_claimable_count() > 0
+	_challenge_notification.visible = needs_claim
+	# Never show both the ! bubble and the ordinary Challenges image.
+	var normal_icon := _challenges_tab.get_node_or_null("Icon") as TextureRect
+	if normal_icon != null:
+		normal_icon.visible = not needs_claim
 
 
 func _unhandled_input(event: InputEvent) -> void:

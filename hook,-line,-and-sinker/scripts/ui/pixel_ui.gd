@@ -50,6 +50,19 @@ static func box(fill: Color, border: Color, padding: int = 3, highlight := Color
 	return style
 
 
+# Slim, one-art-pixel outline for small world icons and notification bubbles.
+# Set scale=3 for controls drawn in the 3x terminal UI.
+static func notification_bubble_style(scale: int = 1) -> StyleBoxFlat:
+	var pixel_scale := maxi(scale, 1)
+	var frame := StyleBoxFlat.new()
+	frame.bg_color = WINDOW
+	frame.border_color = CYAN_DARK
+	frame.set_border_width_all(pixel_scale)
+	frame.set_content_margin_all(pixel_scale * 2)
+	frame.anti_aliasing = false
+	return frame
+
+
 # A flat bar segment (progress bars), outlined in ink.
 static func bar(fill: Color) -> StyleBoxTexture:
 	var style := box(fill, fill, 0)

@@ -21,7 +21,7 @@ const LINE_HEIGHT := 9
 # Notification icons use an 8x8 glyph centered inside a 16x16 slot.
 const ICON_SLOT_SIZE := 16
 const ICON_SIZE := 8
-const PADDING := 3   # inside the 2-px frame
+const PADDING := 3   # inside the slim 1-px frame
 const GAP := 3       # between icon and text
 const TAIL := 3
 
@@ -50,7 +50,7 @@ func _ready() -> void:
 		ceili(FONT_BOLD.get_string_size(title, HORIZONTAL_ALIGNMENT_LEFT, -1, FONT_SIZE).x)
 	)
 	var inner := Vector2i(_icon_space() + text_width, maxi(ICON_SLOT_SIZE, LINE_HEIGHT * 2))
-	_size = inner + Vector2i.ONE * (PADDING + 2) * 2
+	_size = inner + Vector2i.ONE * (PADDING + 1) * 2
 
 	_rest_y = position.y
 	_play()
@@ -83,11 +83,9 @@ func _draw() -> void:
 	var left := -(w / 2)
 	var top := -TAIL - h
 
-	# Frame: ink outline, cyan border, window fill. Corners cut.
-	_box(Rect2i(left, top, w, h), PixelUI.INK)
-	_box(Rect2i(left + 1, top + 1, w - 2, h - 2), PixelUI.CYAN_DARK)
-	draw_rect(Rect2(left + 2, top + 2, w - 4, h - 4), PixelUI.WINDOW)
-	draw_rect(Rect2(left + 2, top + 2, w - 4, 1), Color("1d3442"))  # top highlight
+	# One-pixel border instead of the old bulky double outline.
+	_box(Rect2i(left, top, w, h), PixelUI.CYAN_DARK)
+	draw_rect(Rect2(left + 1, top + 1, w - 2, h - 2), PixelUI.WINDOW)
 
 	# Tail pointing down at the terminal; its top row opens into the border.
 	for row in TAIL + 1:
@@ -97,19 +95,22 @@ func _draw() -> void:
 		if half > 0:
 			draw_rect(Rect2(-half, y, half * 2 + 1, 1), PixelUI.CYAN_DARK)
 
-	var content := Vector2i(left, top) + Vector2i.ONE * (PADDING + 2)
-	var content_h := _size.y - (PADDING + 2) * 2
+	var content := Vector2i(left, top) + Vector2i.ONE * (PADDING + 1)
+	var content_h := _size.y - (PADDING + 1) * 2
 
-	if _icon() != null:
-		# Keep the icon's frame consistent with other 16px UI slots while
-		# rendering the graphic itself at the standard 8px size.
+	if challenge != null:
+		# Only a small centered exclamation, never the challenge's separate
+		# artwork. This matches the persistent terminal claim badge.
 		var slot_y := content.y + (content_h - ICON_SLOT_SIZE) / 2
 		var slot := Rect2i(content.x, slot_y, ICON_SLOT_SIZE, ICON_SLOT_SIZE)
 		_box(slot, PixelUI.CYAN_DARK)
 		draw_rect(Rect2(content.x + 1, slot_y + 1, ICON_SLOT_SIZE - 2, ICON_SLOT_SIZE - 2), PixelUI.INSET)
-		var inset := (ICON_SLOT_SIZE - ICON_SIZE) / 2
-		var icon_pos := Vector2(content.x + inset, slot_y + inset)
-		draw_texture_rect(_icon(), Rect2(icon_pos, Vector2(ICON_SIZE, ICON_SIZE)), false)
+		var mark := "!"
+		var mark_width := FONT_BOLD.get_string_size(mark, HORIZONTAL_ALIGNMENT_LEFT, -1, FONT_SIZE).x
+		var baseline := slot_y + (ICON_SLOT_SIZE - FONT_BOLD.get_height(FONT_SIZE)) * 0.5 + FONT_BOLD.get_ascent(FONT_SIZE)
+		draw_string(FONT_BOLD,
+			Vector2(content.x + (ICON_SLOT_SIZE - mark_width) * 0.5, baseline),
+			mark, HORIZONTAL_ALIGNMENT_LEFT, -1, FONT_SIZE, PixelUI.CYAN)
 
 	var text_x := content.x + _icon_space()
 	var text_y := content.y + (content_h - LINE_HEIGHT * 2) / 2
@@ -120,12 +121,7 @@ func _draw() -> void:
 		HORIZONTAL_ALIGNMENT_LEFT, -1, FONT_SIZE, PixelUI.TEXT)
 
 
-func _icon() -> Texture2D:
-	return challenge.icon if challenge != null else null
-
-
-# Width taken by the icon column: always for challenges (as before), none
-# for text-only notices.
+# Width taken by the exclamation column; none for text-only notices.
 func _icon_space() -> int:
 	return ICON_SLOT_SIZE + GAP if challenge != null else 0
 
