@@ -10,7 +10,7 @@ const SUNSET_START: float = 5.0 / 9.0
 const NIGHT_START: float = 2.0 / 3.0
 # 320x180 native sky pixels. Bodies travel BELOW the visible frame rather
 # than becoming transparent while still up in the sky.
-const MOON_RISE_START: float = 11.0 / 18.0
+const MOON_RISE_START: float = SUNSET_START
 const SKY_LEFT_X: float = 28.0
 const SKY_RIGHT_X: float = 292.0
 const SUN_BELOW_SCREEN_Y: float = 215.0
