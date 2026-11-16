@@ -135,7 +135,7 @@ func _setup_challenge_notification() -> void:
 	var notice_label := Label.new()
 	notice_label.text = "!"
 	notice_label.add_theme_font_override("font", PixelUI.FONT_SMALL_BOLD)
-	notice_label.add_theme_font_size_override("font_size", 18)
+	notice_label.add_theme_font_size_override("font_size", 15)
 	notice_label.add_theme_color_override("font_color", PixelUI.CYAN)
 	notice_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	notice_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
