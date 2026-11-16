@@ -4,16 +4,36 @@
 [ext_resource type="Resource" path="res://resources/items/flounder.tres" id="2_item"]
 [ext_resource type="Script" path="res://resources/fish_escape_state.gd" id="3_attack"]
 
-[sub_resource type="Resource" id="DefaultAttack"]
+[sub_resource type="Resource" id="BuriedLunge"]
 script = ExtResource("3_attack")
-state_name = "Default"
-escape_rate = 0.1
-state_length = 5.0
-state_probability = 1.0
+state_name = "Buried Lunge"
+escape_rate = 0.18
+state_length = 0.38
+state_probability = 0.70
+pre_windup_duration = 0.75
+windup_duration = 0.28
+counter_window = 0.14
+close_early_window = 0.08
+close_late_window = 0.12
+
+[sub_resource type="Resource" id="SuddenAmbush"]
+script = ExtResource("3_attack")
+state_name = "Sudden Ambush"
+escape_rate = 0.24
+state_length = 0.32
+state_probability = 0.30
+pre_windup_duration = 0.95
+windup_duration = 0.20
+counter_window = 0.12
+close_early_window = 0.06
+close_late_window = 0.10
 
 [resource]
 script = ExtResource("1_fish")
 fish_id = &"flounder"
 item_data = ExtResource("2_item")
 hooked_sprite_width = 38.0
-states = Array[ExtResource("3_attack")]([SubResource("DefaultAttack")])
+miss_tension_gain = 0.13
+attack_tension_multiplier = 1.40
+miss_dash_duration = 0.24
+states = Array[ExtResource("3_attack")]([SubResource("BuriedLunge"), SubResource("SuddenAmbush")])
