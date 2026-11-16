@@ -15,5 +15,5 @@ state_probability = 1.0
 script = ExtResource("1_fish")
 fish_id = &"porgy"
 item_data = ExtResource("2_item")
-hooked_sprite_width = 36.0
+hooked_sprite_width = 18.0
 states = Array[ExtResource("3_attack")]([SubResource("DefaultAttack")])
