@@ -4,16 +4,37 @@
 [ext_resource type="Resource" path="res://resources/items/goby.tres" id="2_item"]
 [ext_resource type="Script" path="res://resources/fish_escape_state.gd" id="3_attack"]
 
-[sub_resource type="Resource" id="DefaultAttack"]
+[sub_resource type="Resource" id="QuickJitter"]
 script = ExtResource("3_attack")
-state_name = "Default"
-escape_rate = 0.1
-state_length = 5.0
-state_probability = 1.0
+state_name = "Quick Jitter"
+escape_rate = 0.08
+state_length = 0.26
+state_probability = 0.55
+pre_windup_duration = 0.16
+windup_duration = 0.22
+counter_window = 0.12
+close_early_window = 0.07
+close_late_window = 0.10
+
+[sub_resource type="Resource" id="DelayedJitter"]
+script = ExtResource("3_attack")
+state_name = "Delayed Jitter"
+escape_rate = 0.11
+state_length = 0.29
+state_probability = 0.45
+pre_windup_duration = 0.20
+windup_duration = 0.70
+counter_window = 0.12
+close_early_window = 0.09
+close_late_window = 0.10
 
 [resource]
 script = ExtResource("1_fish")
 fish_id = &"goby"
 item_data = ExtResource("2_item")
 hooked_sprite_width = 30.0
-states = Array[ExtResource("3_attack")]([SubResource("DefaultAttack")])
+miss_tension_gain = 0.065
+attack_tension_multiplier = 1.0
+miss_dash_duration = 0.20
+miss_dash_speed_multiplier = 3.25
+states = Array[ExtResource("3_attack")]([SubResource("QuickJitter"), SubResource("DelayedJitter")])
