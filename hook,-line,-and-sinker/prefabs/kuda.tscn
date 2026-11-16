@@ -1,7 +1,7 @@
 [gd_scene format=3]
 
 [ext_resource type="Script" path="res://scripts/npc_interactable.gd" id="1_script"]
-[ext_resource type="Resource" path="res://resources/npcs/barracuda.tres" id="2_npc"]
+[ext_resource type="Resource" path="res://resources/npcs/kuda.tres" id="2_npc"]
 [ext_resource type="PackedScene" path="res://prefabs/interact_prompt.tscn" id="3_prompt"]
 [ext_resource type="Texture2D" uid="uid://btn7uh1qk00jp" path="res://sprites/characters/kuda_idle.png" id="4_sprite"]
 

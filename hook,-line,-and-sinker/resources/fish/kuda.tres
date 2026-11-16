@@ -3,8 +3,8 @@
 [ext_resource type="Script" uid="uid://d2iidpvp5wrw7" path="res://resources/fish_data.gd" id="1_fish"]
 [ext_resource type="Script" uid="uid://yvmtx3kcsond" path="res://resources/item_data.gd" id="2_item"]
 [ext_resource type="Script" uid="uid://cur8k0lqp6jxh" path="res://resources/fish_escape_state.gd" id="3_attack"]
-[ext_resource type="PackedScene" path="res://prefabs/barracuda.tscn" id="4_npc"]
-[ext_resource type="Texture2D" uid="uid://bt80yvxeajar3" path="res://sprites/fish/barracuda_placeholder.png" id="5_sprite"]
+[ext_resource type="PackedScene" path="res://prefabs/kuda.tscn" id="4_npc"]
+[ext_resource type="Texture2D" uid="uid://bt80yvxeajar3" path="res://sprites/fish/kuda_placeholder.png" id="5_sprite"]
 
 [sub_resource type="Resource" id="FishItem"]
 script = ExtResource("2_item")
