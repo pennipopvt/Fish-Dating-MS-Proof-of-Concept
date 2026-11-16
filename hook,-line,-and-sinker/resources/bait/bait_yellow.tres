@@ -8,11 +8,15 @@ script = ExtResource("1")
 bait_id = &"bait_yellow"
 display_name = "Yellow Bait"
 icon = ExtResource("2")
-description = "A bright lure that Silas is especially curious about. Greatly increases the chance of hooking him while he's still in the pond."
+description = "Attracts bottom-dwelling fish like goby and flounder, and curious garden eels like Silas."
 catch_weights = Dictionary[StringName, float]({
-&"barracuda": 0.2,
-&"easy_test_fish": 1.0,
-&"hard_test_fish": 0.65,
-&"test_silas": 5.0
+&"barracuda": 0.20,
+&"mullet": 0.70,
+&"porgy": 0.70,
+&"needlefish": 0.25,
+&"tuna": 0.10,
+&"goby": 7.00,
+&"flounder": 6.00,
+&"test_silas": 5.00
 })
-default_weight = 0.6
+default_weight = 0.0

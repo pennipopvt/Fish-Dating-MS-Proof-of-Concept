@@ -7,8 +7,8 @@ signal quota_completed(cycle: int)
 signal quota_failed(cycle: int)
 
 const CYCLE_DAYS: int = 3
-const EASY_FISH_ID: StringName = &"placeholder_fish_a"
-const HARD_FISH_ID: StringName = &"placeholder_fish_b"
+const MULLET_ID: StringName = &"mullet"
+const PORGY_ID: StringName = &"porgy"
 
 var week: int = 1 # Backwards-compatible index: each contract is a 3-day cycle.
 var deadline_day: int = CYCLE_DAYS
@@ -32,12 +32,12 @@ static func deadline_for_cycle(cycle: int) -> int:
 
 
 static func targets_for_cycle(cycle: int) -> Array[Dictionary]:
-	# Escalating temporary playtest numbers; replace with authored contracts
+	# Provisional species-specific targets; decide the contract rotation together
 	# once we can evaluate how much time dating competes with fishing.
 	var difficulty := maxi(0, cycle - 1)
 	return [
-		{"item_id": EASY_FISH_ID, "label": "Common fish", "target": 5 + difficulty * 2},
-		{"item_id": HARD_FISH_ID, "label": "Hard fish", "target": 1 + difficulty},
+		{"item_id": MULLET_ID, "label": "Mullet", "target": 5 + difficulty * 2},
+		{"item_id": PORGY_ID, "label": "Porgy", "target": 1 + difficulty},
 	]
 
 
