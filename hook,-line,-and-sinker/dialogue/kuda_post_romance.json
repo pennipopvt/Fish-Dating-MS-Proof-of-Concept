@@ -4,14 +4,14 @@
   "nodes": {
     "greeting": {
       "lines": [
-        "[Placeholder: Kuda greeting]"
+        "Hey."
       ],
       "choices": [
         {
-          "text": "Schedule a date",
-          "next": "where",
+          "text": "Want to go out on the boat?",
+          "next": "ship_when",
           "required_flags": [
-            "date_ok_kuda_beach"
+            "date_ok_kuda_ship"
           ]
         },
         {
@@ -21,74 +21,16 @@
         }
       ]
     },
-    "where": {
-      "lines": [
-        "[Placeholder: date location choice]"
-      ],
-      "choices": [
-        {
-          "text": "Beach date",
-          "next": "beach_when",
-          "required_flags": [
-            "date_ok_kuda_beach"
-          ]
-        },
-        {
-          "text": "Boat date",
-          "next": "ship_when",
-          "required_flags": [
-            "date_ok_kuda_ship"
-          ]
-        },
-        {
-          "text": "Never mind",
-          "next": "goodbye"
-        }
-      ]
-    },
-    "beach_when": {
-      "lines": [
-        "[Placeholder: choose time]"
-      ],
-      "choices": [
-        {
-          "text": "Next morning",
-          "spoken_text": "[Placeholder: next morning]",
-          "next": "confirmed",
-          "effects": {
-            "request_scene": "date:kuda_beach:0"
-          }
-        },
-        {
-          "text": "Next afternoon",
-          "spoken_text": "[Placeholder: next afternoon]",
-          "next": "confirmed",
-          "effects": {
-            "request_scene": "date:kuda_beach:1"
-          }
-        },
-        {
-          "text": "Next night",
-          "spoken_text": "[Placeholder: next night]",
-          "next": "confirmed",
-          "effects": {
-            "request_scene": "date:kuda_beach:2"
-          }
-        },
-        {
-          "text": "Cancel",
-          "next": "goodbye"
-        }
-      ]
-    },
     "ship_when": {
       "lines": [
-        "[Placeholder: choose time]"
+        "A boat ride, huh?",
+        "Heh. Not a bad idea.",
+        "When?"
       ],
       "choices": [
         {
           "text": "Next morning",
-          "spoken_text": "[Placeholder: next morning]",
+          "spoken_text": "How about next morning?",
           "next": "confirmed",
           "effects": {
             "request_scene": "date:kuda_ship:0"
@@ -96,7 +38,7 @@
         },
         {
           "text": "Next afternoon",
-          "spoken_text": "[Placeholder: next afternoon]",
+          "spoken_text": "How about next afternoon?",
           "next": "confirmed",
           "effects": {
             "request_scene": "date:kuda_ship:1"
@@ -104,7 +46,7 @@
         },
         {
           "text": "Next night",
-          "spoken_text": "[Placeholder: next night]",
+          "spoken_text": "How about next night?",
           "next": "confirmed",
           "effects": {
             "request_scene": "date:kuda_ship:2"
@@ -118,12 +60,12 @@
     },
     "confirmed": {
       "lines": [
-        "[Placeholder: date agreed]"
+        "Alright. Don't be late."
       ]
     },
     "goodbye": {
       "lines": [
-        "[Placeholder: goodbye]"
+        "Later."
       ]
     }
   }

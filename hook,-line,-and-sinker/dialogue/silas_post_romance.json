@@ -9,7 +9,7 @@
       "choices": [
         {
           "text": "Want to go on a date?",
-          "next": "where",
+          "next": "beach_when",
           "required_flags": [
             "date_ok_silas_beach"
           ]
@@ -21,34 +21,9 @@
         }
       ]
     },
-    "where": {
-      "lines": [
-        "A date? Oh! I'd like that.",
-        "Where were you thinking?"
-      ],
-      "choices": [
-        {
-          "text": "Let's go to the beach.",
-          "next": "beach_when",
-          "required_flags": [
-            "date_ok_silas_beach"
-          ]
-        },
-        {
-          "text": "What about a boat ride?",
-          "next": "ship_when",
-          "required_flags": [
-            "date_ok_silas_ship"
-          ]
-        },
-        {
-          "text": "Actually, never mind.",
-          "next": "goodbye"
-        }
-      ]
-    },
     "beach_when": {
       "lines": [
+        "A date? Oh! I'd like that.",
         "The beach sounds nice! When should we go?"
       ],
       "choices": [
@@ -74,42 +49,6 @@
           "next": "confirmed",
           "effects": {
             "request_scene": "date:silas_beach:2"
-          }
-        },
-        {
-          "text": "Maybe another time.",
-          "next": "goodbye"
-        }
-      ]
-    },
-    "ship_when": {
-      "lines": [
-        "Out on the water again? That sounds lovely.",
-        "When should we go?"
-      ],
-      "choices": [
-        {
-          "text": "Next morning",
-          "spoken_text": "How about next morning?",
-          "next": "confirmed",
-          "effects": {
-            "request_scene": "date:silas_ship:0"
-          }
-        },
-        {
-          "text": "Next afternoon",
-          "spoken_text": "How about next afternoon?",
-          "next": "confirmed",
-          "effects": {
-            "request_scene": "date:silas_ship:1"
-          }
-        },
-        {
-          "text": "Next night",
-          "spoken_text": "How about next night?",
-          "next": "confirmed",
-          "effects": {
-            "request_scene": "date:silas_ship:2"
           }
         },
         {

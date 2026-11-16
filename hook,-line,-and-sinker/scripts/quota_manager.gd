@@ -3,15 +3,15 @@ extends Node
 # Prototype FISH CO. employment contract. Quotas are inventory submissions,
 # not a catch counter: surrendered fish cannot also buy upgrades or gifts.
 signal quota_changed
-signal quota_completed(week: int)
-signal quota_failed(week: int)
+signal quota_completed(cycle: int)
+signal quota_failed(cycle: int)
 
-const WEEK_DAYS: int = 7
-const EASY_FISH_ID: StringName = &"placeholder_fish_a"
-const HARD_FISH_ID: StringName = &"placeholder_fish_b"
+const CYCLE_DAYS: int = 3
+const MULLET_ID: StringName = &"mullet"
+const PORGY_ID: StringName = &"porgy"
 
-var week: int = 1
-var deadline_day: int = WEEK_DAYS
+var week: int = 1 # Backwards-compatible index: each contract is a 3-day cycle.
+var deadline_day: int = CYCLE_DAYS
 var requirements: Array[Dictionary] = []
 var delivered: Dictionary = {}
 var failed: bool = false
@@ -19,32 +19,32 @@ var _failure_layer: CanvasLayer = null
 
 
 func _ready() -> void:
-	_start_week(1)
+	_start_cycle(1)
 	GameManager.day_started.connect(_on_day_started)
 
 
-static func week_for_day(day: int) -> int:
-	return maxi(1, floori(float(maxi(1, day) - 1) / float(WEEK_DAYS)) + 1)
+static func cycle_for_day(day: int) -> int:
+	return maxi(1, floori(float(maxi(1, day) - 1) / float(CYCLE_DAYS)) + 1)
 
 
-static func deadline_for_week(for_week: int) -> int:
-	return maxi(1, for_week) * WEEK_DAYS
+static func deadline_for_cycle(cycle: int) -> int:
+	return maxi(1, cycle) * CYCLE_DAYS
 
 
-static func targets_for_week(for_week: int) -> Array[Dictionary]:
-	# Escalating temporary playtest numbers; replace with authored contracts
+static func targets_for_cycle(cycle: int) -> Array[Dictionary]:
+	# Provisional species-specific targets; decide the contract rotation together
 	# once we can evaluate how much time dating competes with fishing.
-	var difficulty := maxi(0, for_week - 1)
+	var difficulty := maxi(0, cycle - 1)
 	return [
-		{"item_id": EASY_FISH_ID, "label": "Common fish", "target": 5 + difficulty * 2},
-		{"item_id": HARD_FISH_ID, "label": "Hard fish", "target": 1 + difficulty},
+		{"item_id": MULLET_ID, "label": "Mullet", "target": 5 + difficulty * 2},
+		{"item_id": PORGY_ID, "label": "Porgy", "target": 1 + difficulty},
 	]
 
 
-func _start_week(for_week: int) -> void:
-	week = maxi(1, for_week)
-	deadline_day = deadline_for_week(week)
-	requirements = targets_for_week(week)
+func _start_cycle(cycle: int) -> void:
+	week = maxi(1, cycle)
+	deadline_day = deadline_for_cycle(week)
+	requirements = targets_for_cycle(week)
 	delivered.clear()
 	failed = false
 	quota_changed.emit()
@@ -96,13 +96,13 @@ func _on_day_started(day: int) -> void:
 	if failed or day <= deadline_day:
 		return
 	# Due at the END of night on the displayed deadline day. The player can
-	# still submit during day 7; failure happens when day 8 begins.
+	# still submit on deadline days 3, 6, 9...; failure occurs the next morning.
 	if not is_complete():
 		failed = true
 		quota_failed.emit(week)
 		_show_failure()
 		return
-	_start_week(week_for_day(day))
+	_start_cycle(cycle_for_day(day))
 
 
 func reset_run() -> void:
@@ -110,7 +110,7 @@ func reset_run() -> void:
 		_failure_layer.queue_free()
 	_failure_layer = null
 	get_tree().paused = false
-	_start_week(1)
+	_start_cycle(1)
 
 
 func _show_failure() -> void:
@@ -151,7 +151,7 @@ func _show_failure() -> void:
 	body.add_child(title)
 
 	var message := PixelUI.label(
-		"WEEK %d QUOTA INCOMPLETE\n\nEMPLOYMENT TERMINATED.\nYOUR RUN HAS ENDED." % week,
+		"CONTRACT %d QUOTA INCOMPLETE\n\nEMPLOYMENT TERMINATED.\nYOUR RUN HAS ENDED." % week,
 		&"TitleLabel"
 	)
 	message.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER

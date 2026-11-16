@@ -102,11 +102,15 @@ func _ready() -> void:
 	bobber.hide()
 	_identity_bubble = SPEECH_BUBBLE_SCENE.instantiate() as SpeechBubble
 	add_child(_identity_bubble)
+	# The Spyglass identity marker is a floating icon-only bubble, not
+	# dialogue, so hide the shared scene's speech-tail pieces.
+	_identity_bubble.get_node("TailOutline").hide()
+	_identity_bubble.get_node("TailFill").hide()
 	_identity_bubble.hide()
 	hide()
 
-# Spyglass: show only after a bite, positioned over the bobber's waterline.
-# The bubble belongs to the fishing line so it follows the fish and camera.
+# Spyglass: show only after a bite, above the hooked fish's position.
+# Keep it just above the water surface so the opaque water doesn't obscure it.
 func show_fish_identity(caught: FishData) -> void:
 	if caught == null or _identity_bubble == null:
 		return
@@ -124,9 +128,11 @@ func hide_fish_identity() -> void:
 func _update_identity_bubble_position() -> void:
 	if _identity_bubble == null:
 		return
+	# Anchor to the same waterline point as the bobber / ripple, not the
+	# underwater fish, which may be hundreds of pixels away horizontally.
 	_identity_bubble.position = (
 		bobber_water_position
-		+ Vector2(-_identity_bubble.size.x * 0.5, -_identity_bubble.size.y - 9.0)
+		+ Vector2(-_identity_bubble.size.x * 0.5, -_identity_bubble.size.y - 6.0)
 	).round()
 
 

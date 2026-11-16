@@ -153,6 +153,11 @@ func _show_player_choice(choice: Dictionary) -> void:
 func _complete_pending_choice() -> void:
 	var choice := _pending_choice
 	_pending_choice = {}
+	# Preserve the jealousy tier from when Penni chose her answer. DateManager
+	# may change jealousy in choice_resolved, before the response node appears.
+	var reaction_tier := -1
+	if choice.has("date_style") and current_npc != null:
+		reaction_tier = AffectionManager.get_jealousy_tier(current_npc.npc_id)
 	if bool(choice.get("spends_action", true)):
 		_conversation_costs_action = true
 	# Affection goes through AffectionManager (tone or exact number, first pick only).
@@ -160,7 +165,7 @@ func _complete_pending_choice() -> void:
 		AffectionManager.on_choice_picked(current_npc, str(choice.get("_key", "")), choice)
 	_apply_json_effects(choice.get("effects", {}), false)
 	choice_resolved.emit(current_npc, choice)
-	_enter_node(str(choice["next"]))
+	_enter_node(str(choice["next"]), reaction_tier)
 
 func _apply_json_effects(effects: Variant, include_attraction: bool = true) -> void:
 	if not effects is Dictionary or current_npc == null:
@@ -195,7 +200,7 @@ func _choice_available(choice: Dictionary) -> bool:
 			return false
 	return true
 
-func _enter_node(id: String) -> void:
+func _enter_node(id: String, reaction_tier: int = -1) -> void:
 	var nodes: Dictionary = _graph["nodes"]
 	if not nodes.has(id):
 		push_error("Dialogue JSON missing node: " + id)
@@ -211,7 +216,13 @@ func _enter_node(id: String) -> void:
 	_choice_defs.clear()
 	_choice_greyed.clear()
 	line_index = 0
-	for raw_line in node.get("lines", []):
+	# Variant responses change only the text, never the choice or graph path.
+	# Other dialogue nodes continue to use their ordinary lines unchanged.
+	var lines_to_show: Array = node.get("lines", [])
+	if node.has("jealousy_lines") and current_npc != null:
+		var tier := reaction_tier if reaction_tier >= 0 else AffectionManager.get_jealousy_tier(current_npc.npc_id)
+		lines_to_show = DialogueJsonLoader.lines_for_jealousy_tier(node, tier)
+	for raw_line in lines_to_show:
 		var line := DialogueLineData.new()
 		if raw_line is String:
 			line.text = _format_date_placeholder(raw_line)

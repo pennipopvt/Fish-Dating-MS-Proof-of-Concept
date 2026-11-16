@@ -207,8 +207,9 @@ func _on_day_started(day: int) -> void:
 		if int(state.get(LAST_DATE_KEY, -1)) == day - 1:
 			continue
 		var decay: int = DAILY_DECAY_BY_TIER[get_jealousy_tier(npc_id)]
+		# Affection changes remain hidden from the player; only the underlying
+		# relationship state changes. Don't announce daily decay numerically.
 		change(npc_id, -decay)
-		show_message("AFFECTION -%d" % decay, "%s missed a date yesterday" % _display_name(npc_id))
 	# Departures take place at the beginning of a day, never during dialogue.
 	_check_leaving()
 
@@ -248,7 +249,7 @@ func leave(npc_id: StringName) -> void:
 		RecruitmentHandler.waiting_npcs.erase(actor)
 		_jump_into_ocean(actor)
 	print("[Affection] %s went back to the sea" % npc_name)
-	show_message("AFFECTION BELOW 0", "%s went back to the sea" % npc_name)
+	show_message("DEPARTURE", "%s went back to the sea" % npc_name)
 	npc_left.emit(npc_id)
 
 

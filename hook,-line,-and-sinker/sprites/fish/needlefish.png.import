@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://d0032vsmhkhhj"
-path="res://.godot/imported/icon_quota.svg-28c3dab7988aa3be2b78757114dc3ab1.ctex"
+uid="uid://drvokgt7xjnk7"
+path="res://.godot/imported/needlefish.png-8cad1dfa1c4f2b221093b6a504af3e03.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://sprites/ui/icon_quota.svg"
-dest_files=["res://.godot/imported/icon_quota.svg-28c3dab7988aa3be2b78757114dc3ab1.ctex"]
+source_file="res://sprites/fish/needlefish.png"
+dest_files=["res://.godot/imported/needlefish.png-8cad1dfa1c4f2b221093b6a504af3e03.ctex"]
 
 [params]
 
@@ -38,6 +38,3 @@ process/hdr_as_srgb=false
 process/hdr_clamp_exposure=false
 process/size_limit=0
 detect_3d/compress_to=1
-svg/scale=1.0
-editor/scale_with_editor_scale=false
-editor/convert_colors_with_editor_theme=false

@@ -31,7 +31,12 @@
     "ending": {
       "lines": [
         "Y-you're so pretty.",
-        "Hah... and really soft..."
+        "Hah... and really soft...",
+        "This feels crazy...",
+        {
+          "speaker": "player",
+          "text": "Keep going."
+        }
       ]
     }
   }

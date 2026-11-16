@@ -10,8 +10,8 @@ const STATUE_TRADE: TradeData = preload("res://resources/trades/statue_gift.tres
 const SPYGLASS_ITEM: ItemData = preload("res://resources/items/spyglass.tres")
 const NECKLACE_ITEM: ItemData = preload("res://resources/items/pearl_necklace_item.tres")
 const STATUE_ITEM: ItemData = preload("res://resources/items/statue.tres")
-const HARD_FISH: ItemData = preload("res://resources/items/hard_test_fish_item.tres")
-const EASY_FISH: ItemData = preload("res://resources/items/easy_test_fish_item.tres")
+const HARD_FISH: ItemData = preload("res://resources/items/tuna.tres")
+const EASY_FISH: ItemData = preload("res://resources/items/mullet.tres")
 const SILAS: NPCData = preload("res://resources/npcs/silas.tres")
 
 const SPYGLASS_ART: Texture2D = preload("res://sprites/gifts/gift_spyglass.png")
