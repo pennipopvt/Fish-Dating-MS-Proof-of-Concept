@@ -24,16 +24,9 @@ const SCENE_PREFIX := "date:"
 const LOCATION_GROUP := &"date_locations"
 const FADE_DURATION := 0.5
 const PERIOD_COUNT := 3
-# Three choices, ordered from high-risk/high-score to low-risk/repair.
-# At jealousy tiers 0 and 1 the first (bold) response scores highest.
-# Playful and reassuring choices score less, but both reduce jealousy.
-# At higher jealousy the bold choice backfires; the safe choices help recover.
-# Four tiers: 0-24, 25-49, 50-74, 75-100. Numbers are playtest placeholders.
-const DATE_SCORE_BY_STYLE := {
-	"bold": [6, 5, -4, -6],
-	"playful": [3, 2, 0, -2],
-	"reassure": [1, 1, 1, 1],
-}
+# Choices retain their date_style tags (bold, playful, reassure). Each NPCData
+# stores its own score for each style at jealousy tiers 0-3 (0-24, 25-49,
+# 50-74, 75-100). Jealousy deltas are shared for now; tune independently.
 const JEALOUSY_BY_STYLE := {
 	"bold": [0, 2, 5, 8],
 	"playful": [-3, -5, -6, -8],
@@ -334,9 +327,10 @@ func start_date(date: DateData) -> void:
 
 # A date exposes the same three choices on every scene and jealousy tier.
 # The current tier changes their score/reaction rather than hiding choices.
-static func score_for_choice(style: String, tier: int) -> int:
-	var row: Array = DATE_SCORE_BY_STYLE.get(style, [])
-	return int(row[clampi(tier, 0, 3)]) if not row.is_empty() else 0
+static func score_for_choice(style: String, tier: int, npc: NPCData = null) -> int:
+	# Retain a default profile for older callers that do not pass an NPC.
+	var profile := npc if npc != null else NPCData.new()
+	return profile.date_score_for_style(style, tier)
 
 
 static func jealousy_for_choice(style: String, tier: int) -> int:
@@ -358,10 +352,10 @@ func _on_date_choice(npc: NPCData, choice: Dictionary) -> void:
 	if not _in_dialogue or _active == null or npc != _active.npc:
 		return
 	var style := str(choice.get("date_style", ""))
-	if not DATE_SCORE_BY_STYLE.has(style):
+	if not (style in ["bold", "playful", "reassure"]):
 		return
 	var tier := AffectionManager.get_jealousy_tier(npc.npc_id)
-	var points := score_for_choice(style, tier)
+	var points := score_for_choice(style, tier, npc)
 	_date_score += points
 	_date_choice_count += 1
 	AffectionManager.change_jealousy(npc.npc_id, jealousy_for_choice(style, tier))

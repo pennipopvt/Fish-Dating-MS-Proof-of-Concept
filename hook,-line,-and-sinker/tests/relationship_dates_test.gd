@@ -51,21 +51,59 @@ func _ready() -> void:
 					_expect(not choice.has("required_flags") and not choice.has("forbidden_flags"),
 						"All three date choices remain available at any jealousy tier")
 
+	# The same date_style choice means different things to different NPCs.
 	for tier in range(4):
-		_expect(DateManager.score_for_choice("reassure", tier) >= 1,
-			"Reassurance is score-safe at jealousy tier %d" % tier)
+		_expect(DateManager.score_for_choice("reassure", tier, SILAS) >= 1,
+			"Silas reassurance is score-safe at tier %d" % tier)
+		_expect(DateManager.score_for_choice("reassure", tier, KUDA) >= 1,
+			"Kuda reassurance is score-safe at tier %d" % tier)
 	for tier in [0, 1]:
-		var bold_score: int = DateManager.score_for_choice("bold", tier)
-		var playful_score: int = DateManager.score_for_choice("playful", tier)
-		var safe_score: int = DateManager.score_for_choice("reassure", tier)
-		_expect(bold_score > playful_score and playful_score > safe_score,
-			"At low jealousy, the first bold choice scores most; playful scores more than reassuring")
+		var silas_playful := DateManager.score_for_choice("playful", tier, SILAS)
+		var silas_reassure := DateManager.score_for_choice("reassure", tier, SILAS)
+		var silas_bold := DateManager.score_for_choice("bold", tier, SILAS)
+		_expect(silas_playful > silas_reassure and silas_reassure > silas_bold,
+			"Silas prefers playful, then reassurance, then bold at low jealousy")
+		var kuda_bold := DateManager.score_for_choice("bold", tier, KUDA)
+		var kuda_playful := DateManager.score_for_choice("playful", tier, KUDA)
+		var kuda_reassure := DateManager.score_for_choice("reassure", tier, KUDA)
+		_expect(kuda_bold > kuda_playful and kuda_playful > kuda_reassure,
+			"Kuda prefers bold, then playful, then reassurance at low jealousy")
 		_expect(DateManager.jealousy_for_choice("playful", tier) < 0,
-			"Second choice reduces jealousy at low tiers")
+			"Playful choices reduce jealousy at low tiers")
 		_expect(DateManager.jealousy_for_choice("reassure", tier) < DateManager.jealousy_for_choice("playful", tier),
-			"Third choice reduces jealousy even more")
-	_expect(DateManager.score_for_choice("bold", 0) > 0, "Bold choices work at low jealousy")
-	_expect(DateManager.score_for_choice("bold", 3) < 0, "Bold choices backfire at high jealousy")
+			"Reassurance reduces jealousy even more")
+	for tier in [2, 3]:
+		_expect(DateManager.score_for_choice("reassure", tier, SILAS) >
+			DateManager.score_for_choice("playful", tier, SILAS),
+			"Reassurance is Silas's favorite response when jealousy is high")
+		_expect(DateManager.score_for_choice("bold", tier, SILAS) < 0,
+			"Bold responses backfire on jealous Silas")
+	_expect(DateManager.score_for_choice("bold", 0, KUDA) > 0, "Bold choices work on Kuda at low jealousy")
+	_expect(DateManager.score_for_choice("bold", 3, KUDA) < 0, "Bold choices backfire on Kuda at high jealousy")
+	_expect(DateManager.score_for_choice("invalid", 0, SILAS) == 0, "Unknown date style gives no score")
+	_expect(SILAS.date_score_for_style("playful", 0) != KUDA.date_score_for_style("playful", 0),
+		"Character score preferences differ in NPCData")
+
+	# Silas's finished beach draft converges after each of its three responses.
+	var beach_graph := DialogueJsonLoader.read_graph("res://dialogue/silas_date_beach.json")
+	_expect(not beach_graph.is_empty(), "Silas beach draft parses")
+	if not beach_graph.is_empty():
+		var beach_nodes: Dictionary = beach_graph["nodes"]
+		_expect(not str(beach_nodes["start"]["lines"][0]).begins_with("[Placeholder"),
+			"Silas beach date no longer opens with placeholder text")
+		for phase in range(1, 5):
+			var destination := "choice_%d" % (phase + 1) if phase < 4 else "ending"
+			for choice in beach_nodes["choice_%d" % phase]["choices"]:
+				var reaction: Dictionary = beach_nodes[str(choice["next"])]
+				_expect(str(reaction.get("next", "")) == destination,
+					"Every choice at step %d rejoins the shared date" % phase)
+				_expect(not str(reaction["lines"][0]).contains("{{date_reaction}}"),
+					"Silas beach date has authored reactions rather than generic placeholders")
+		var closing_lines: Array = beach_nodes["ending"]["lines"]
+		var last_line: Variant = closing_lines.back()
+		_expect(last_line is Dictionary and last_line.get("speaker", "") == "player",
+			"Silas beach date ends with Penni's reply")
+
 	_expect(DateManager.outcome_for_score(-1) == "bad", "Negative total yields a bad date")
 	_expect(DateManager.outcome_for_score(2) == "okay", "Low total yields an okay date")
 	_expect(DateManager.outcome_for_score(8) == "good", "Middle total yields a good date")
@@ -91,8 +129,8 @@ func _ready() -> void:
 	DateManager.call("_on_date_choice", SILAS, {"date_style": "reassure"})
 	_expect(AffectionManager.get_jealousy(SILAS.npc_id) == 64,
 		"Reassurance repairs jealousy during a date")
-	_expect(int(DateManager.get("_date_score")) == 3,
-		"Jealousy tier two applies the appropriate score")
+	_expect(int(DateManager.get("_date_score")) == 5,
+		"Jealousy tier two uses Silas\u0027s reassuring score")
 	_expect(DateManager.get_placeholder_reaction().contains("tier 2"),
 		"Date response shows the current jealousy tier in its placeholder")
 	DateManager.set("_active", null)

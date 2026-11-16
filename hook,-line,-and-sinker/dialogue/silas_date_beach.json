@@ -3,198 +3,222 @@
   "nodes": {
     "start": {
       "lines": [
-        "[Placeholder: date introduction]"
+        "Oh, wow...",
+        "I've seen this beach from the water before, but...",
+        "It's a lot different being up here.",
+        "The sand feels so strange under my feet."
       ],
       "next": "choice_1"
     },
     "choice_1": {
-      "lines": [
-        "[Placeholder: date decision 1]"
-      ],
+      "lines": [],
       "choices": [
         {
-          "text": "[Bold/flirty choice]",
-          "spoken_text": "[Placeholder: bold response]",
+          "text": "Well, I think you look pretty cute standing on it.",
           "date_style": "bold",
           "grey_when_picked": false,
           "next": "reaction_1_bold"
         },
         {
-          "text": "[Playful choice]",
-          "spoken_text": "[Placeholder: playful response]",
+          "text": "Aren't you always burying yourself in the sand?",
           "date_style": "playful",
           "grey_when_picked": false,
           "next": "reaction_1_playful"
         },
         {
-          "text": "[Reassuring choice]",
-          "spoken_text": "[Placeholder: reassure response]",
+          "text": "We can stay closer to the water if you want.",
           "date_style": "reassure",
           "grey_when_picked": false,
           "next": "reaction_1_reassure"
         }
       ]
     },
-    "reaction_1_reassure": {
+    "reaction_1_bold": {
       "lines": [
-        "{{date_reaction}}"
+        "O-oh! Um... thank you.",
+        "I guess having legs isn't so bad..."
       ],
       "next": "choice_2"
     },
-    "reaction_1_bold": {
+    "reaction_1_playful": {
       "lines": [
-        "{{date_reaction}}"
+        "Th-that's different!",
+        "I'm usually in the sand, not standing on it!",
+        "And I didn't have feet before..."
+      ],
+      "next": "choice_2"
+    },
+    "reaction_1_reassure": {
+      "lines": [
+        "No, it's okay!",
+        "I want to see more of it."
       ],
       "next": "choice_2"
     },
     "choice_2": {
       "lines": [
-        "[Placeholder: date decision 2]"
+        "Oh! Look at this!",
+        "I used to see shells like these all the time underwater.",
+        "They look so different in the sunlight...",
+        "Do people just... take these home?"
       ],
       "choices": [
         {
-          "text": "[Bold/flirty choice]",
-          "spoken_text": "[Placeholder: bold response]",
+          "text": "I could keep one to remember our date.",
           "date_style": "bold",
           "grey_when_picked": false,
           "next": "reaction_2_bold"
         },
         {
-          "text": "[Playful choice]",
-          "spoken_text": "[Placeholder: playful response]",
+          "text": "Only the really expensive ones. That one's probably worth a fortune.",
           "date_style": "playful",
           "grey_when_picked": false,
           "next": "reaction_2_playful"
         },
         {
-          "text": "[Reassuring choice]",
-          "spoken_text": "[Placeholder: reassure response]",
+          "text": "Yeah! You should take it home if you like it.",
           "date_style": "reassure",
           "grey_when_picked": false,
           "next": "reaction_2_reassure"
         }
       ]
     },
-    "reaction_2_reassure": {
+    "reaction_2_bold": {
       "lines": [
-        "{{date_reaction}}"
+        "Really?",
+        "Then... I think I want one too."
       ],
       "next": "choice_3"
     },
-    "reaction_2_bold": {
+    "reaction_2_playful": {
       "lines": [
-        "{{date_reaction}}"
+        "W-what? Really?",
+        "...You're messing with me, aren't you?"
+      ],
+      "next": "choice_3"
+    },
+    "reaction_2_reassure": {
+      "lines": [
+        "I think I will!",
+        "Maybe I'll put it by my window."
       ],
       "next": "choice_3"
     },
     "choice_3": {
       "lines": [
-        "[Placeholder: date decision 3]"
+        "You know...",
+        "When I first came up here, I thought I'd just look around for a little while.",
+        "I didn't really think I'd end up staying.",
+        "And now I've got a house, and all this stuff, and...",
+        "Well, you."
       ],
       "choices": [
         {
-          "text": "[Bold/flirty choice]",
-          "spoken_text": "[Placeholder: bold response]",
+          "text": "I'm pretty glad you stayed. It makes taking you on dates a lot easier.",
           "date_style": "bold",
           "grey_when_picked": false,
           "next": "reaction_3_bold"
         },
         {
-          "text": "[Playful choice]",
-          "spoken_text": "[Placeholder: playful response]",
+          "text": "And here I thought you only stayed for the spyglass.",
           "date_style": "playful",
           "grey_when_picked": false,
           "next": "reaction_3_playful"
         },
         {
-          "text": "[Reassuring choice]",
-          "spoken_text": "[Placeholder: reassure response]",
+          "text": "I'm really happy you're here, Silas.",
           "date_style": "reassure",
           "grey_when_picked": false,
           "next": "reaction_3_reassure"
         }
       ]
     },
-    "reaction_3_reassure": {
+    "reaction_3_bold": {
       "lines": [
-        "{{date_reaction}}"
+        "Hehe... yeah.",
+        "I'm glad I stayed too."
       ],
       "next": "choice_4"
     },
-    "reaction_3_bold": {
+    "reaction_3_playful": {
       "lines": [
-        "{{date_reaction}}"
+        "Well, the spyglass is pretty great...",
+        "But I guess there are some other reasons too."
+      ],
+      "next": "choice_4"
+    },
+    "reaction_3_reassure": {
+      "lines": [
+        "Oh...",
+        "That means a lot, Penni.",
+        "I'm really happy too."
       ],
       "next": "choice_4"
     },
     "choice_4": {
       "lines": [
-        "[Placeholder: date decision 4]"
+        "Can we sit down for a little bit?",
+        "I used to watch people sitting on the beach all the time.",
+        "I never really understood what they were doing...",
+        "But I think I'm starting to get it."
       ],
       "choices": [
         {
-          "text": "[Bold/flirty choice]",
-          "spoken_text": "[Placeholder: bold response]",
+          "text": "You can lean on me if you want.",
           "date_style": "bold",
           "grey_when_picked": false,
           "next": "reaction_4_bold"
         },
         {
-          "text": "[Playful choice]",
-          "spoken_text": "[Placeholder: playful response]",
+          "text": "Look at you. You're becoming a real beach person.",
           "date_style": "playful",
           "grey_when_picked": false,
           "next": "reaction_4_playful"
         },
         {
-          "text": "[Reassuring choice]",
-          "spoken_text": "[Placeholder: reassure response]",
+          "text": "Sometimes it's nice to just sit and do nothing.",
           "date_style": "reassure",
           "grey_when_picked": false,
           "next": "reaction_4_reassure"
         }
       ]
     },
-    "reaction_4_reassure": {
+    "reaction_4_bold": {
       "lines": [
-        "{{date_reaction}}"
+        "O-oh! Really?",
+        "Um... okay.",
+        "This is nice..."
       ],
       "next": "ending"
     },
-    "reaction_4_bold": {
+    "reaction_4_playful": {
       "lines": [
-        "{{date_reaction}}"
+        "A beach person?",
+        "Hehe... I guess I am!",
+        "That's a little weird to think about."
+      ],
+      "next": "ending"
+    },
+    "reaction_4_reassure": {
+      "lines": [
+        "Yeah...",
+        "I think I like that.",
+        "Especially when I'm not alone."
       ],
       "next": "ending"
     },
     "ending": {
       "lines": [
-        "{{date_outcome}}"
+        "Hey, Penni?",
+        "Thanks for bringing me here.",
+        "I know it's just the beach, but...",
+        "I had a really nice time with you.",
+        "Maybe we can come back again sometime?",
+        {
+          "speaker": "player",
+          "text": "I'd like that."
+        }
       ]
-    },
-    "reaction_1_playful": {
-      "lines": [
-        "{{date_reaction}}"
-      ],
-      "next": "choice_2"
-    },
-    "reaction_2_playful": {
-      "lines": [
-        "{{date_reaction}}"
-      ],
-      "next": "choice_3"
-    },
-    "reaction_3_playful": {
-      "lines": [
-        "{{date_reaction}}"
-      ],
-      "next": "choice_4"
-    },
-    "reaction_4_playful": {
-      "lines": [
-        "{{date_reaction}}"
-      ],
-      "next": "ending"
     }
   }
 }
