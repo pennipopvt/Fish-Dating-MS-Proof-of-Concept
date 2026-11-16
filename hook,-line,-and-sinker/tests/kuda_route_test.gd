@@ -101,7 +101,7 @@ func _run() -> void:
     _expect(scene_configs.has("silas_house"), "Silas's existing scene remains available")
 
     # Remove only recruited Barracuda from catch choices.
-    FishingManager.possible_catches = [FISH, preload("res://resources/fish/easy_test_fish.tres")]
+    FishingManager.possible_catches = [FISH, preload("res://resources/fish/mullet.tres")]
     FishingManager.remove_recruited_catch(FISH)
     _expect(not FishingManager.possible_catches.has(FISH), "Recruitment removes Barracuda from the catch pool")
     _expect(FishingManager.possible_catches.size() == 1, "Recruitment leaves regular fish untouched")
