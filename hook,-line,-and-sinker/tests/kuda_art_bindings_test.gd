@@ -3,8 +3,8 @@ extends SceneTree
 # godot --headless --path . -s res://tests/kuda_art_bindings_test.gd
 # Guard against old, deleted barracuda art paths being reintroduced.
 
-const KUDA_SCENE: PackedScene = preload("res://prefabs/barracuda.tscn")
-const KUDA_DATA: NPCData = preload("res://resources/npcs/barracuda.tres")
+const KUDA_SCENE: PackedScene = preload("res://prefabs/kuda.tscn")
+const KUDA_DATA: NPCData = preload("res://resources/npcs/kuda.tres")
 const KUDA_IDLE: Texture2D = preload("res://sprites/characters/kuda_idle.png")
 const KUDA_PORTRAIT: Texture2D = preload("res://sprites/characters/kuda_portrait.png")
 var failures := 0

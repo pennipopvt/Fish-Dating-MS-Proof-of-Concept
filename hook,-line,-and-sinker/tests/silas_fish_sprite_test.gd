@@ -5,7 +5,7 @@ extends SceneTree
 # godot --headless --path . -s res://tests/silas_fish_sprite_test.gd
 
 const FISHING_SCENE: PackedScene = preload("res://scenes/fishing_controller.tscn")
-const SILAS: FishData = preload("res://resources/fish/test_silas.tres")
+const SILAS: FishData = preload("res://resources/fish/silas.tres")
 const EASY: FishData = preload("res://resources/fish/easy_test_fish.tres")
 var failures := 0
 

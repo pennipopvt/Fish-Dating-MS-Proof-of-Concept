@@ -3,8 +3,8 @@ extends Node
 # godot --headless --path . res://tests/relationship_dates_test.tscn
 # Shared 4-step date templates, 4 jealousy tiers, scores, decay and Kuda route.
 
-const SILAS = preload("res://resources/npcs/test_npc.tres")
-const KUDA = preload("res://resources/npcs/barracuda.tres")
+const SILAS = preload("res://resources/npcs/silas.tres")
+const KUDA = preload("res://resources/npcs/kuda.tres")
 var failures := 0
 
 

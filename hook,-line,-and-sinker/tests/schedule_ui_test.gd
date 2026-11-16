@@ -8,7 +8,7 @@ extends Node
 
 const SHOP_SCENE: PackedScene = preload("res://prefabs/shop_menu.tscn")
 const BUBBLE_SCENE: PackedScene = preload("res://prefabs/ui/speech_bubble.tscn")
-const SILAS: NPCData = preload("res://resources/npcs/test_npc.tres")
+const SILAS: NPCData = preload("res://resources/npcs/silas.tres")
 const TERMINAL_TEXTURE: Texture2D = preload("res://sprites/ui/ui_background_3x.png")
 var _failed := 0
 

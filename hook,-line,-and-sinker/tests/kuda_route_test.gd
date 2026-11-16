@@ -1,29 +1,29 @@
 extends SceneTree
 
 # Run from the Godot project root:
-# godot --headless --path . -s res://tests/barracuda_route_test.gd
+# godot --headless --path . -s res://tests/kuda_route_test.gd
 #
 # Checks the resource hookups, dialogue graphs, recruitment retry conditions,
 # gift choice, attack profile, shop availability and catch-pool removal.
 # The actual illustrated transition still needs an in-game visual playtest.
 
-const FISH: FishData = preload("res://resources/fish/barracuda.tres")
-const NPC: NPCData = preload("res://resources/npcs/barracuda.tres")
-const NPC_SCENE: PackedScene = preload("res://prefabs/barracuda.tscn")
-const GIFT: ItemData = preload("res://resources/items/barracuda_scarf.tres")
+const FISH: FishData = preload("res://resources/fish/kuda.tres")
+const NPC: NPCData = preload("res://resources/npcs/kuda.tres")
+const NPC_SCENE: PackedScene = preload("res://prefabs/kuda.tscn")
+const GIFT: ItemData = preload("res://resources/items/kuda_scarf.tres")
 const WRONG_GIFT: ItemData = preload("res://resources/items/spyglass.tres")
-const TRADE: TradeData = preload("res://resources/trades/barracuda_scarf.tres")
+const TRADE: TradeData = preload("res://resources/trades/kuda_scarf.tres")
 const SHOP_SCENE: PackedScene = preload("res://scenes/shop_manager.tscn")
 
 const GRAPHS := [
-    "res://dialogue/barracuda_first_catch.json",
-    "res://dialogue/barracuda_second_catch.json",
-    "res://dialogue/barracuda_casual.json",
-    "res://dialogue/barracuda_gift_correct.json",
-    "res://dialogue/barracuda_gift_wrong.json",
-    "res://dialogue/barracuda_invitation.json",
-    "res://dialogue/barracuda_house_scene.json",
-    "res://dialogue/barracuda_after_scene.json"
+    "res://dialogue/kuda_first_catch.json",
+    "res://dialogue/kuda_second_catch.json",
+    "res://dialogue/kuda_casual.json",
+    "res://dialogue/kuda_gift_correct.json",
+    "res://dialogue/kuda_gift_wrong.json",
+    "res://dialogue/kuda_invitation.json",
+    "res://dialogue/kuda_house_scene.json",
+    "res://dialogue/kuda_after_scene.json"
 ]
 
 var failures: int = 0
@@ -71,27 +71,27 @@ func _run() -> void:
     for path in GRAPHS:
         _expect(not DialogueJsonLoader.read_graph(path).is_empty(), "Valid dialogue graph: " + path)
 
-    var first_graph: Dictionary = DialogueJsonLoader.read_graph("res://dialogue/barracuda_first_catch.json")
+    var first_graph: Dictionary = DialogueJsonLoader.read_graph("res://dialogue/kuda_first_catch.json")
     _expect(first_graph["nodes"]["decision"]["choices"].size() == 3, "Three first-catch choices")
     _expect(first_graph["nodes"]["flirt_reply"].has("lines"), "Flirting path is present")
     _expect(first_graph["nodes"]["penni_confident"].get("effects", {}).get("set_flags", []).has("Recruited"), "Only winning path recruits")
-    var retry_graph: Dictionary = DialogueJsonLoader.read_graph("res://dialogue/barracuda_second_catch.json")
+    var retry_graph: Dictionary = DialogueJsonLoader.read_graph("res://dialogue/kuda_second_catch.json")
     _expect(retry_graph["nodes"]["decision"]["choices"].size() == 3, "Second catch repeats recruitment choices")
     _expect(NPC.gift_completed_flag == &"barracuda_scarf_complete", "Scarf has own gift completion flag")
 
-    _expect(NPCManager.get_encounter_json_path(NPC).ends_with("barracuda_first_catch.json"), "First catch uses first meeting")
+    _expect(NPCManager.get_encounter_json_path(NPC).ends_with("kuda_first_catch.json"), "First catch uses first meeting")
     var flags: Dictionary = NPCManager.get_npc_state(NPC.npc_id)["flags"]
     flags[&"barracuda_met"] = true
-    _expect(NPCManager.get_encounter_json_path(NPC).ends_with("barracuda_second_catch.json"), "Failed recruitment uses special second catch")
+    _expect(NPCManager.get_encounter_json_path(NPC).ends_with("kuda_second_catch.json"), "Failed recruitment uses special second catch")
     flags[&"Recruited"] = true
-    _expect(NPCManager.get_encounter_json_path(NPC).ends_with("barracuda_casual.json"), "Recruited NPC uses casual hints")
-    _expect(NPCManager.get_gift_encounter_path(NPC, GIFT).ends_with("barracuda_gift_correct.json"), "Correct gift routes to acceptance dialogue")
-    _expect(NPCManager.get_gift_encounter_path(NPC, WRONG_GIFT).ends_with("barracuda_gift_wrong.json"), "Wrong gift routes to hint dialogue")
+    _expect(NPCManager.get_encounter_json_path(NPC).ends_with("kuda_casual.json"), "Recruited NPC uses casual hints")
+    _expect(NPCManager.get_gift_encounter_path(NPC, GIFT).ends_with("kuda_gift_correct.json"), "Correct gift routes to acceptance dialogue")
+    _expect(NPCManager.get_gift_encounter_path(NPC, WRONG_GIFT).ends_with("kuda_gift_wrong.json"), "Wrong gift routes to hint dialogue")
     flags[&"barracuda_scarf_complete"] = true
-    _expect(NPCManager.get_encounter_json_path(NPC).ends_with("barracuda_invitation.json"), "Correct gift unlocks invitation")
+    _expect(NPCManager.get_encounter_json_path(NPC).ends_with("kuda_invitation.json"), "Correct gift unlocks invitation")
     _expect(NPCManager.get_gift_encounter_path(NPC, GIFT).is_empty(), "Completed gift cannot be consumed twice")
     flags[&"barracuda_invitation_accepted"] = true
-    _expect(NPCManager.get_encounter_json_path(NPC).ends_with("barracuda_casual.json"), "After invitation NPC returns to casual dialogue")
+    _expect(NPCManager.get_encounter_json_path(NPC).ends_with("kuda_casual.json"), "After invitation NPC returns to casual dialogue")
 
     var scene_controller_script := load("res://scripts/illustration_scene_controller.gd") as GDScript
     var scene_configs: Dictionary = scene_controller_script.get_script_constant_map().get("SCENES", {})

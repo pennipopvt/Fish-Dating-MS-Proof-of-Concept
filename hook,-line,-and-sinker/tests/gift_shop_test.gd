@@ -12,7 +12,7 @@ const NECKLACE_ITEM: ItemData = preload("res://resources/items/pearl_necklace_it
 const STATUE_ITEM: ItemData = preload("res://resources/items/statue.tres")
 const HARD_FISH: ItemData = preload("res://resources/items/hard_test_fish_item.tres")
 const EASY_FISH: ItemData = preload("res://resources/items/easy_test_fish_item.tres")
-const SILAS: NPCData = preload("res://resources/npcs/test_npc.tres")
+const SILAS: NPCData = preload("res://resources/npcs/silas.tres")
 
 const SPYGLASS_ART: Texture2D = preload("res://sprites/gifts/gift_spyglass.png")
 const NECKLACE_ART: Texture2D = preload("res://sprites/gifts/gift_necklace.png")
