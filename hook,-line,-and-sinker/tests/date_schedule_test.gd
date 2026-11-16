@@ -13,13 +13,18 @@ func _ready() -> void:
 	GameManager.reset_clock()
 
 	var beach := DateManager.get_date(&"silas_beach")
-	var boat := DateManager.get_date(&"silas_ship")
-	_expect(beach != null and boat != null, "Silas date resources are present")
+	var boat := DateManager.get_date(&"kuda_ship")
+	_expect(beach != null and boat != null, "Silas beach and Kuda boat dates are present")
 	if beach == null or boat == null:
 		get_tree().quit(1)
 		return
 
-	var flags: Dictionary = NPCManager.get_npc_state(&"test_npc")["flags"]
+	_expect(DateManager.get_date(&"silas_ship") == null and DateManager.get_date(&"kuda_beach") == null,
+		"Only one date is registered for each character")
+	var kuda_flags: Dictionary = NPCManager.get_npc_state(boat.npc.npc_id)["flags"]
+	kuda_flags[&"Recruited"] = true
+	kuda_flags[&"barracuda_route_complete"] = true
+	var flags: Dictionary = NPCManager.get_npc_state(beach.npc.npc_id)["flags"]
 	flags[&"Recruited"] = true
 	_expect(not DateManager.can_ask(beach), "Date is locked until first romance scene")
 	flags[&"silas_route_complete"] = true
@@ -34,9 +39,9 @@ func _ready() -> void:
 	_expect(DateManager.describe_booking(beach) == "Day 1 Afternoon",
 		"Calendar shows the day and period chosen in conversation")
 	_expect(not DateManager.can_book_at(boat, 1, GameManager.Times.AFTERNOON),
-		"NPCs cannot be double-booked at the same time")
-	_expect(not DateManager.can_book_at(boat, 1, GameManager.Times.NIGHT),
-		"Same NPC cannot hold two bookings")
+		"Different NPCs cannot be booked in the same period")
+	_expect(DateManager.can_book_at(boat, 1, GameManager.Times.NIGHT),
+		"Kuda can book a different free period while Silas has a date")
 
 	GameManager.rest()
 	_expect(DateManager.is_booking_ready(beach), "Date becomes ready at first afternoon action")

@@ -32,7 +32,10 @@ func _ready() -> void:
 
 	for npc in [SILAS, KUDA]:
 		var dates := DateManager.get_dates_for(npc.npc_id)
-		_expect(dates.size() == 2, "%s has beach and boat date resources" % npc.display_name)
+		_expect(dates.size() == 1, "%s has exactly one date resource" % npc.display_name)
+		if dates.size() == 1:
+			var expected_id := &"silas_beach" if npc == SILAS else &"kuda_ship"
+			_expect(dates[0].date_id == expected_id, "%s keeps only their distinct venue" % npc.display_name)
 		for date in dates:
 			var graph := DialogueJsonLoader.read_graph(date.dialogue_json)
 			_expect(not graph.is_empty(), "%s date JSON parses" % date.display_name)
@@ -147,7 +150,7 @@ func _ready() -> void:
 	AffectionManager.call("_on_day_started", 3)
 	_expect(AffectionManager.get_affection(KUDA.npc_id) == before,
 		"A completed date prevents an entire day's affection decay")
-	AffectionManager.call("_on_date_missed", DateManager.get_date(&"kuda_beach"))
+	AffectionManager.call("_on_date_missed", DateManager.get_date(&"kuda_ship"))
 	_expect(AffectionManager.get_jealousy(KUDA.npc_id) == 90,
 		"Missing Kuda's appointment raises jealousy")
 	_expect(NPCManager.get_encounter_json_path(KUDA) == "res://dialogue/kuda_post_romance.json",
