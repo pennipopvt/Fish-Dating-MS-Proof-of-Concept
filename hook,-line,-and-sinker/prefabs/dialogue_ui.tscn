@@ -4,7 +4,7 @@
 [ext_resource type="Texture2D" uid="uid://b4koaria87fbv" path="res://sprites/placeholders/portrait.svg" id="2_portrait"]
 [ext_resource type="Texture2D" uid="uid://ca1xd1qpk4ajr" path="res://sprites/placeholders/portrait_player.svg" id="3_player"]
 [ext_resource type="Texture2D" uid="uid://vu47883rgrp5" path="res://sprites/characters/penni/penni_portrait.png" id="4_ln1m7"]
-[ext_resource type="Texture2D" uid="uid://cv7xybodbo8pe" path="res://sprites/characters/kuda.png" id="5_ln1m7"]
+[ext_resource type="Texture2D" uid="uid://j2t1f35vluti" path="res://sprites/characters/kuda_portrait.png" id="5_ln1m7"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_choice_focus"]
 draw_center = false
