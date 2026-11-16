@@ -6,9 +6,9 @@ extends SceneTree
 # Confirm that the recruitment flag (not the catch itself) removes the
 # corresponding NPC fish from all future casts and bait odds.
 
-const SILAS: FishData = preload("res://resources/fish/test_silas.tres")
-const NORMAL_FISH: FishData = preload("res://resources/fish/easy_test_fish.tres")
-const NPC_SCENE: PackedScene = preload("res://prefabs/test_npc.tscn")
+const SILAS: FishData = preload("res://resources/fish/silas.tres")
+const NORMAL_FISH: FishData = preload("res://resources/fish/mullet.tres")
+const NPC_SCENE: PackedScene = preload("res://prefabs/silas.tscn")
 
 var failures: int = 0
 

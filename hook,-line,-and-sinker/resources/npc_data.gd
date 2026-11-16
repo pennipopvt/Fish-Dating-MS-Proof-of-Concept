@@ -9,6 +9,27 @@ extends Resource
 @export var house: Texture2D
 @export var porn_sprite: Texture2D # Optional illustrated adult-scene background.
 
+# Scores for bold / playful / reassuring answers at jealousy tiers 0, 1, 2, 3.
+# Edit these arrays on each NPC resource to express their personality.
+@export_group("Date Personality (Jealousy Tiers 0-3)")
+@export var date_bold_scores: Array[int] = [6, 5, -4, -6]
+@export var date_playful_scores: Array[int] = [3, 2, 0, -2]
+@export var date_reassure_scores: Array[int] = [1, 1, 1, 1]
+
+
+func date_score_for_style(style: String, jealousy_tier: int) -> int:
+	var scores: Array[int] = []
+	match style:
+		"bold":
+			scores = date_bold_scores
+		"playful":
+			scores = date_playful_scores
+		"reassure":
+			scores = date_reassure_scores
+		_:
+			return 0
+	return scores[clampi(jealousy_tier, 0, scores.size() - 1)] if not scores.is_empty() else 0
+
 @export_group("JSON Encounter Rules (first matching rule wins)")
 @export var encounter_rules: Array[EncounterRuleData] = []
 

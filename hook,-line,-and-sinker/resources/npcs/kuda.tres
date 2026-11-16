@@ -1,0 +1,55 @@
+[gd_resource type="Resource" script_class="NPCData" format=3 uid="uid://ly4h7n7wbqqi"]
+
+[ext_resource type="Script" uid="uid://vn5y8742mwkg" path="res://resources/npc_flag_data.gd" id="1_ic437"]
+[ext_resource type="Script" uid="uid://cus4an4jfkhwc" path="res://resources/npc_data.gd" id="1_npc"]
+[ext_resource type="Script" uid="uid://bh6g5wfjnt8fm" path="res://resources/encounter_rule_data.gd" id="2_rule"]
+[ext_resource type="Script" uid="uid://ejskb8h4mfwk" path="res://resources/npc_dialogue_rule_data.gd" id="3_kuwgt"]
+[ext_resource type="Texture2D" uid="uid://bv41gk34hgl5s" path="res://sprites/placeholders/placeholderhousegood.png" id="4_house"]
+[ext_resource type="Resource" uid="uid://b4fcc4cial7fn" path="res://resources/items/kuda_scarf.tres" id="5_gift"]
+[ext_resource type="Texture2D" uid="uid://j2t1f35vluti" path="res://sprites/characters/kuda_portrait.png" id="6_2m545"]
+
+[ext_resource type="Texture2D" path="res://sprites/porn/kuda.png" id="7_kuda_scene"]
+
+[sub_resource type="Resource" id="Rule_invitation"]
+script = ExtResource("2_rule")
+json_path = "res://dialogue/kuda_invitation.json"
+required_flags = Array[StringName]([&"Recruited", &"barracuda_scarf_complete"])
+forbidden_flags = Array[StringName]([&"barracuda_invitation_accepted", &"barracuda_route_complete"])
+
+[sub_resource type="Resource" id="Rule_post_romance"]
+script = ExtResource("2_rule")
+json_path = "res://dialogue/kuda_post_romance.json"
+required_flags = Array[StringName]([&"Recruited", &"barracuda_route_complete"])
+
+[sub_resource type="Resource" id="Rule_casual"]
+script = ExtResource("2_rule")
+json_path = "res://dialogue/kuda_casual.json"
+required_flags = Array[StringName]([&"Recruited"])
+
+[sub_resource type="Resource" id="Rule_retry"]
+script = ExtResource("2_rule")
+json_path = "res://dialogue/kuda_second_catch.json"
+required_flags = Array[StringName]([&"barracuda_met"])
+forbidden_flags = Array[StringName]([&"Recruited"])
+
+[sub_resource type="Resource" id="Rule_first"]
+script = ExtResource("2_rule")
+json_path = "res://dialogue/kuda_first_catch.json"
+forbidden_flags = Array[StringName]([&"Recruited"])
+
+[resource]
+script = ExtResource("1_npc")
+npc_id = &"barracuda"
+display_name = "Kuda"
+portrait = ExtResource("6_2m545")
+porn_sprite = ExtResource("7_kuda_scene")
+date_bold_scores = Array[int]([6, 5, -4, -6])
+date_playful_scores = Array[int]([3, 2, 0, -2])
+date_reassure_scores = Array[int]([1, 1, 1, 1])
+house = ExtResource("4_house")
+encounter_rules = Array[ExtResource("2_rule")]([SubResource("Rule_invitation"), SubResource("Rule_post_romance"), SubResource("Rule_casual"), SubResource("Rule_retry"), SubResource("Rule_first")])
+desired_gift = ExtResource("5_gift")
+correct_gift_json = "res://dialogue/kuda_gift_correct.json"
+incorrect_gift_json_pool = Array[String](["res://dialogue/kuda_gift_wrong.json"])
+gift_completed_flag = &"barracuda_scarf_complete"
+dialogue_json_path = "res://dialogue/kuda_first_catch.json"

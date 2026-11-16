@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://tests/terminal_shop_challenges_test.gd" id="1_test"]
+
+[node name="TerminalShopChallengeTest" type="Node"]
+script = ExtResource("1_test")

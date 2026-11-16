@@ -9,6 +9,8 @@
 [ext_resource type="Texture2D" uid="uid://be2mehv3j2ohp" path="res://sprites/ui/icon_collection.png" id="7_collection_icon"]
 [ext_resource type="Texture2D" uid="uid://cy6m4p32euy7d" path="res://sprites/ui/icon_challenges.png" id="8_challenge_icon"]
 [ext_resource type="Texture2D" path="res://sprites/ui/ui_background_3x.png" id="9_boot_frame"]
+[ext_resource type="Texture2D" path="res://sprites/ui/icon_schedule.png" id="10_schedule_icon"]
+[ext_resource type="Texture2D" path="res://sprites/ui/icon_quota.png" id="11_quota_icon"]
 
 [node name="ShopMenu" type="CanvasLayer" unique_id=21315034]
 process_mode = 3
@@ -41,34 +43,67 @@ mouse_filter = 2
 
 [node name="NavTabs" type="VBoxContainer" parent="TerminalRoot" unique_id=845387299]
 layout_mode = 0
-offset_left = 51.0
+offset_left = 42.0
 offset_top = 12.0
-offset_right = 141.0
-offset_bottom = 612.0
+offset_right = 132.0
+offset_bottom = 870.0
 theme = ExtResource("2_theme")
-theme_override_constants/separation = 9
+theme_override_constants/separation = 12
 
-[node name="UpgradesTab" type="Button" parent="TerminalRoot/NavTabs" unique_id=471544707]
+[node name="QuotaTab" type="Button" parent="TerminalRoot/NavTabs"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(90, 216)
+custom_minimum_size = Vector2(90, 78)
 clip_contents = true
 layout_mode = 2
-tooltip_text = "upgrades"
+tooltip_text = "3-day fish quota"
 toggle_mode = true
 
-[node name="Icon" type="TextureRect" parent="TerminalRoot/NavTabs/UpgradesTab" unique_id=2143776163]
+[node name="Icon" type="TextureRect" parent="TerminalRoot/NavTabs/QuotaTab"]
 texture_filter = 1
 layout_mode = 0
-offset_left = 9.0
-offset_top = 9.0
-offset_right = 57.0
-offset_bottom = 57.0
+offset_left = 12.0
+offset_top = 12.0
+offset_right = 60.0
+offset_bottom = 60.0
+mouse_filter = 2
+texture = ExtResource("11_quota_icon")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="VerticalTitle" type="Label" parent="TerminalRoot/NavTabs/QuotaTab"]
+layout_mode = 0
+offset_left = 21.0
+offset_top = 200.0
+offset_right = 195.0
+offset_bottom = 232.0
+rotation = -1.5707964
+theme_type_variation = &"TitleLabel"
+theme_override_font_sizes/font_size = 27
+text = "QUOTA"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="ShopTab" type="Button" parent="TerminalRoot/NavTabs" unique_id=471544707]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(90, 78)
+clip_contents = true
+layout_mode = 2
+tooltip_text = "shop"
+toggle_mode = true
+
+[node name="Icon" type="TextureRect" parent="TerminalRoot/NavTabs/ShopTab" unique_id=2143776163]
+texture_filter = 1
+layout_mode = 0
+offset_left = 12.0
+offset_top = 12.0
+offset_right = 60.0
+offset_bottom = 60.0
 mouse_filter = 2
 texture = ExtResource("4_upgrade_icon")
 expand_mode = 1
 stretch_mode = 5
 
-[node name="VerticalTitle" type="Label" parent="TerminalRoot/NavTabs/UpgradesTab" unique_id=1609800718]
+[node name="VerticalTitle" type="Label" parent="TerminalRoot/NavTabs/ShopTab" unique_id=1609800718]
 layout_mode = 0
 offset_left = 21.000015
 offset_top = 199.0
@@ -77,46 +112,13 @@ offset_bottom = 232.0
 rotation = -1.5707964
 theme_type_variation = &"TitleLabel"
 theme_override_font_sizes/font_size = 27
-text = "UPGRADES"
-horizontal_alignment = 1
-vertical_alignment = 1
-
-[node name="GiftsTab" type="Button" parent="TerminalRoot/NavTabs" unique_id=1320023177]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(90, 66)
-clip_contents = true
-layout_mode = 2
-tooltip_text = "gifts"
-toggle_mode = true
-
-[node name="Icon" type="TextureRect" parent="TerminalRoot/NavTabs/GiftsTab" unique_id=1339411846]
-texture_filter = 1
-layout_mode = 0
-offset_left = 9.0
-offset_top = 9.0
-offset_right = 57.0
-offset_bottom = 57.0
-mouse_filter = 2
-texture = ExtResource("5_gift_icon")
-expand_mode = 1
-stretch_mode = 5
-
-[node name="VerticalTitle" type="Label" parent="TerminalRoot/NavTabs/GiftsTab" unique_id=1944682948]
-layout_mode = 0
-offset_left = 21.000015
-offset_top = 199.0
-offset_right = 201.00002
-offset_bottom = 232.0
-rotation = -1.5707964
-theme_type_variation = &"TitleLabel"
-theme_override_font_sizes/font_size = 27
-text = "GIFTS"
+text = "SHOP"
 horizontal_alignment = 1
 vertical_alignment = 1
 
 [node name="StorageTab" type="Button" parent="TerminalRoot/NavTabs" unique_id=879580532]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(90, 66)
+custom_minimum_size = Vector2(90, 78)
 clip_contents = true
 layout_mode = 2
 tooltip_text = "storage"
@@ -125,10 +127,10 @@ toggle_mode = true
 [node name="Icon" type="TextureRect" parent="TerminalRoot/NavTabs/StorageTab" unique_id=1857474765]
 texture_filter = 1
 layout_mode = 0
-offset_left = 9.0
-offset_top = 9.0
-offset_right = 57.0
-offset_bottom = 57.0
+offset_left = 12.0
+offset_top = 12.0
+offset_right = 60.0
+offset_bottom = 60.0
 mouse_filter = 2
 texture = ExtResource("6_storage_icon")
 expand_mode = 1
@@ -149,7 +151,7 @@ vertical_alignment = 1
 
 [node name="CollectionTab" type="Button" parent="TerminalRoot/NavTabs" unique_id=89272909]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(90, 66)
+custom_minimum_size = Vector2(90, 78)
 clip_contents = true
 layout_mode = 2
 tooltip_text = "collection"
@@ -158,10 +160,10 @@ toggle_mode = true
 [node name="Icon" type="TextureRect" parent="TerminalRoot/NavTabs/CollectionTab" unique_id=1557686522]
 texture_filter = 1
 layout_mode = 0
-offset_left = 9.0
-offset_top = 9.0
-offset_right = 57.0
-offset_bottom = 57.0
+offset_left = 12.0
+offset_top = 12.0
+offset_right = 60.0
+offset_bottom = 60.0
 mouse_filter = 2
 texture = ExtResource("7_collection_icon")
 expand_mode = 1
@@ -182,7 +184,7 @@ vertical_alignment = 1
 
 [node name="ChallengesTab" type="Button" parent="TerminalRoot/NavTabs" unique_id=490205985]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(90, 66)
+custom_minimum_size = Vector2(90, 78)
 clip_contents = true
 layout_mode = 2
 tooltip_text = "challenges"
@@ -191,10 +193,10 @@ toggle_mode = true
 [node name="Icon" type="TextureRect" parent="TerminalRoot/NavTabs/ChallengesTab" unique_id=671309702]
 texture_filter = 1
 layout_mode = 0
-offset_left = 9.0
-offset_top = 9.0
-offset_right = 57.0
-offset_bottom = 57.0
+offset_left = 12.0
+offset_top = 12.0
+offset_right = 60.0
+offset_bottom = 60.0
 mouse_filter = 2
 texture = ExtResource("8_challenge_icon")
 expand_mode = 1
@@ -210,6 +212,39 @@ rotation = -1.5707964
 theme_type_variation = &"TitleLabel"
 theme_override_font_sizes/font_size = 27
 text = "CHALLENGES"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="ScheduleTab" type="Button" parent="TerminalRoot/NavTabs"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(90, 78)
+clip_contents = true
+layout_mode = 2
+tooltip_text = "schedule"
+toggle_mode = true
+
+[node name="Icon" type="TextureRect" parent="TerminalRoot/NavTabs/ScheduleTab"]
+texture_filter = 1
+layout_mode = 0
+offset_left = 12.0
+offset_top = 12.0
+offset_right = 60.0
+offset_bottom = 60.0
+mouse_filter = 2
+texture = ExtResource("10_schedule_icon")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="VerticalTitle" type="Label" parent="TerminalRoot/NavTabs/ScheduleTab"]
+layout_mode = 0
+offset_left = 21.0
+offset_top = 199.0
+offset_right = 237.0
+offset_bottom = 232.0
+rotation = -1.5707964
+theme_type_variation = &"TitleLabel"
+theme_override_font_sizes/font_size = 27
+text = "SCHEDULE"
 horizontal_alignment = 1
 vertical_alignment = 1
 
@@ -240,9 +275,9 @@ axis_stretch_vertical = 1
 
 [node name="Margin" type="MarginContainer" parent="TerminalRoot/Panel" unique_id=1371121174]
 layout_mode = 2
-theme_override_constants/margin_left = 27
+theme_override_constants/margin_left = 36
 theme_override_constants/margin_top = 22
-theme_override_constants/margin_right = 27
+theme_override_constants/margin_right = 36
 theme_override_constants/margin_bottom = 22
 
 [node name="Layout" type="VBoxContainer" parent="TerminalRoot/Panel/Margin" unique_id=1809883411]
@@ -305,6 +340,27 @@ layout_mode = 2
 theme_type_variation = &"DimLabel"
 text = "Permanent fishing improvements"
 
+[node name="ShopCategories" type="HBoxContainer" parent="TerminalRoot/Panel/Margin/Layout/Body/Left"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+theme_override_constants/separation = 18
+
+[node name="ShopUpgrades" type="Button" parent="TerminalRoot/Panel/Margin/Layout/Body/Left/ShopCategories"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(225, 66)
+layout_mode = 2
+toggle_mode = true
+text = "UPGRADES"
+
+[node name="ShopGifts" type="Button" parent="TerminalRoot/Panel/Margin/Layout/Body/Left/ShopCategories"]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(225, 66)
+layout_mode = 2
+toggle_mode = true
+text = "GIFTS"
+
 [node name="GridScroll" type="ScrollContainer" parent="TerminalRoot/Panel/Margin/Layout/Body/Left" unique_id=1772307838]
 layout_mode = 2
 size_flags_vertical = 3
@@ -313,9 +369,33 @@ horizontal_scroll_mode = 0
 [node name="ItemGrid" type="GridContainer" parent="TerminalRoot/Panel/Margin/Layout/Body/Left/GridScroll" unique_id=1213167026]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_constants/h_separation = 12
-theme_override_constants/v_separation = 12
+theme_override_constants/h_separation = 18
+theme_override_constants/v_separation = 18
 columns = 4
+
+[node name="ChallengeView" type="VBoxContainer" parent="TerminalRoot/Panel/Margin/Layout/Body/Left"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/separation = 15
+
+[node name="QuotaView" type="VBoxContainer" parent="TerminalRoot/Panel/Margin/Layout/Body/Left"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/separation = 18
+
+[node name="ScheduleDays" type="HBoxContainer" parent="TerminalRoot/Panel/Margin/Layout/Body/Left"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/separation = 12
 
 [node name="MiddleDivider" type="VSeparator" parent="TerminalRoot/Panel/Margin/Layout/Body" unique_id=1645277931]
 layout_mode = 2
@@ -324,7 +404,7 @@ layout_mode = 2
 custom_minimum_size = Vector2(500, 0)
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_constants/separation = 12
+theme_override_constants/separation = 18
 
 [node name="PreviewFrame" type="PanelContainer" parent="TerminalRoot/Panel/Margin/Layout/Body/Details" unique_id=839892416]
 custom_minimum_size = Vector2(0, 310)
@@ -369,7 +449,7 @@ autowrap_mode = 3
 [node name="OrderButton" type="Button" parent="TerminalRoot/Panel/Margin/Layout/Body/Details" unique_id=164678316]
 unique_name_in_owner = true
 visible = false
-custom_minimum_size = Vector2(0, 52)
+custom_minimum_size = Vector2(0, 60)
 layout_mode = 2
 text = "ORDER"
 
@@ -389,6 +469,6 @@ size_flags_horizontal = 3
 
 [node name="CloseButton" type="Button" parent="TerminalRoot/Panel/Margin/Layout/Footer" unique_id=1721751483]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(156, 52)
+custom_minimum_size = Vector2(156, 60)
 layout_mode = 2
 text = "CLOSE"

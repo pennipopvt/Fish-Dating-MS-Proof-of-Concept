@@ -15,7 +15,7 @@ var bobbers: Array[BobberData] = [
 	preload("res://resources/bobbers/default.tres"),
 	# Registered for future rewards, but starts locked.
 	preload("res://resources/bobbers/silas.tres"),
-	preload("res://resources/bobbers/barracuda.tres"),
+	preload("res://resources/bobbers/kuda.tres"),
 ]
 var unlocked_ids: Array[StringName] = []
 var equipped_id: StringName = DEFAULT_ID

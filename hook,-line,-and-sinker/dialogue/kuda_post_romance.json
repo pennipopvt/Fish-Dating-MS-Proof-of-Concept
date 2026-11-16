@@ -1,0 +1,72 @@
+{
+  "entry": "greeting",
+  "free_greeting": true,
+  "nodes": {
+    "greeting": {
+      "lines": [
+        "Hey."
+      ],
+      "choices": [
+        {
+          "text": "Want to go out on the boat?",
+          "next": "ship_when",
+          "required_flags": [
+            "date_ok_kuda_ship"
+          ]
+        },
+        {
+          "text": "See you later!",
+          "next": "goodbye",
+          "spends_action": false
+        }
+      ]
+    },
+    "ship_when": {
+      "lines": [
+        "A boat ride, huh?",
+        "Heh. Not a bad idea.",
+        "When?"
+      ],
+      "choices": [
+        {
+          "text": "Next morning",
+          "spoken_text": "How about next morning?",
+          "next": "confirmed",
+          "effects": {
+            "request_scene": "date:kuda_ship:0"
+          }
+        },
+        {
+          "text": "Next afternoon",
+          "spoken_text": "How about next afternoon?",
+          "next": "confirmed",
+          "effects": {
+            "request_scene": "date:kuda_ship:1"
+          }
+        },
+        {
+          "text": "Next night",
+          "spoken_text": "How about next night?",
+          "next": "confirmed",
+          "effects": {
+            "request_scene": "date:kuda_ship:2"
+          }
+        },
+        {
+          "text": "Cancel",
+          "next": "goodbye"
+        }
+      ]
+    },
+    "confirmed": {
+      "lines": [
+        "Alright. Don't be late."
+      ]
+    },
+    "goodbye": {
+      "lines": [
+        "Later."
+      ]
+    }
+  }
+}

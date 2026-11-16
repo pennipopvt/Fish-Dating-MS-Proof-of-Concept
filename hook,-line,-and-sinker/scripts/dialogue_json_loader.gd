@@ -33,6 +33,21 @@ static func read_graph(path: String) -> Dictionary:
 		if not node.get("lines", []) is Array or not node.get("choices", []) is Array:
 			push_error("Invalid lines or choices at dialogue node: " + str(id))
 			return {}
+		# Optional response alternatives for jealousy tiers 1, 2 and 3.
+		# Tier 0 remains the ordinary "lines" array.
+		if node.has("jealousy_lines"):
+			var variants: Variant = node["jealousy_lines"]
+			if not variants is Dictionary:
+				push_error("Invalid jealousy lines at dialogue node: " + str(id))
+				return {}
+			for tier in variants:
+				if not str(tier) in ["1", "2", "3"] or not variants[tier] is Array or variants[tier].is_empty():
+					push_error("Invalid jealousy tier variant at dialogue node: " + str(id))
+					return {}
+				for line in variants[tier]:
+					if not line is String and not (line is Dictionary and line.has("text")):
+						push_error("Invalid jealousy dialogue line at node: " + str(id))
+						return {}
 		if node.has("next") and not nodes.has(str(node["next"])):
 			push_error("Missing next dialogue node at: " + str(id))
 			return {}
@@ -73,3 +88,13 @@ static func _valid_effects(value: Variant) -> bool:
 	if value.has("request_scene") and (not value["request_scene"] is String or value["request_scene"].is_empty()):
 		return false
 	return true
+
+# Resolve the requested jealousy tier, falling back to ordinary dialogue.
+# This does not alter the graph or the options the player can pick.
+static func lines_for_jealousy_tier(node: Dictionary, tier: int) -> Array:
+	var variants: Variant = node.get("jealousy_lines", {})
+	if variants is Dictionary and variants.has(str(clampi(tier, 0, 3))):
+		var alternate: Variant = variants[str(clampi(tier, 0, 3))]
+		if alternate is Array:
+			return alternate
+	return node.get("lines", [])

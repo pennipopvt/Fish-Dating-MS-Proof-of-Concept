@@ -7,8 +7,8 @@ extends SceneTree
 
 const FishingManagerScript = preload("res://scripts/fishing_manager.gd")
 const BobberManagerScript = preload("res://scripts/bobber_manager.gd")
-const EASY_FISH: FishData = preload("res://resources/fish/easy_test_fish.tres")
-const SILAS_FISH: FishData = preload("res://resources/fish/test_silas.tres")
+const EASY_FISH: FishData = preload("res://resources/fish/mullet.tres")
+const SILAS_FISH: FishData = preload("res://resources/fish/silas.tres")
 
 var failures: int = 0
 

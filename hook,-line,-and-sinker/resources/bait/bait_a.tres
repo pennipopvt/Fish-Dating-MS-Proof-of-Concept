@@ -6,13 +6,17 @@
 [resource]
 script = ExtResource("1_bait")
 bait_id = &"bait_a"
-display_name = "Easy Fish Bait"
+display_name = "Blue Bait"
 icon = ExtResource("2_icon")
-description = "A gentle lure that attracts easy fish. Hard fish very rarely bite."
+description = "Attracts calmer fish like mullet and porgy. Strong or aggressive fish rarely bite."
 catch_weights = Dictionary[StringName, float]({
 &"barracuda": 0.12,
-&"easy_test_fish": 10.0,
-&"hard_test_fish": 0.35,
-&"test_silas": 0.3
+&"mullet": 8.00,
+&"porgy": 6.00,
+&"needlefish": 0.40,
+&"tuna": 0.08,
+&"goby": 0.80,
+&"flounder": 0.45,
+&"test_silas": 0.30
 })
-default_weight = 0.3
+default_weight = 0.0

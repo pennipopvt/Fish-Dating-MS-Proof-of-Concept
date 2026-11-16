@@ -1,0 +1,41 @@
+[gd_resource type="Resource" script_class="FishData" format=3]
+
+[ext_resource type="Script" path="res://resources/fish_data.gd" id="1_fish"]
+[ext_resource type="Resource" path="res://resources/items/needlefish.tres" id="2_item"]
+[ext_resource type="Script" path="res://resources/fish_escape_state.gd" id="3_attack"]
+
+[sub_resource type="Resource" id="SnapStrike"]
+script = ExtResource("3_attack")
+state_name = "Snap Strike"
+escape_rate = 0.19
+state_length = 0.27
+state_probability = 0.60
+pre_windup_duration = 0.12
+windup_duration = 0.23
+counter_window = 0.11
+close_early_window = 0.06
+close_late_window = 0.11
+
+[sub_resource type="Resource" id="RapidDash"]
+script = ExtResource("3_attack")
+state_name = "Rapid Dash"
+escape_rate = 0.24
+state_length = 0.30
+state_probability = 0.40
+pre_windup_duration = 0.10
+windup_duration = 0.18
+counter_window = 0.10
+close_early_window = 0.05
+close_late_window = 0.10
+
+[resource]
+script = ExtResource("1_fish")
+fish_id = &"needlefish"
+item_data = ExtResource("2_item")
+hooked_sprite_width = 38.0
+reel_tension_gain = 0.012
+miss_tension_gain = 0.07
+attack_tension_multiplier = 0.85
+miss_dash_duration = 0.18
+miss_dash_speed_multiplier = 4.25
+states = Array[ExtResource("3_attack")]([SubResource("SnapStrike"), SubResource("RapidDash")])

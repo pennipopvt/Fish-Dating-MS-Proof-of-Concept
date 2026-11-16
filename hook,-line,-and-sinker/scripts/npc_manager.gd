@@ -12,6 +12,7 @@ func get_npc_state(npc_id: StringName) -> Dictionary:
 	if not npc_states.has(npc_id):
 		npc_states[npc_id] = {
 			"attraction": START_ATTRACTION,
+			"jealousy": 0,
 			"flags": {}
 		}
 
