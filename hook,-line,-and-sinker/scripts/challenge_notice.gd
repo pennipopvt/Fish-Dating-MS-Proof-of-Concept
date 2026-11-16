@@ -104,11 +104,12 @@ func _draw() -> void:
 		# Keep the icon's frame consistent with other 16px UI slots while
 		# rendering the graphic itself at the standard 8px size.
 		var slot_y := content.y + (content_h - ICON_SLOT_SIZE) / 2
-		var slot := Rect2(content.x, slot_y, ICON_SLOT_SIZE, ICON_SLOT_SIZE)
-		_box(Rect2i(slot.position, slot.size), PixelUI.CYAN_DARK)
-		draw_rect(slot.grow(-1), PixelUI.INSET)
-		var icon_pos := slot.position + Vector2.ONE * ((ICON_SLOT_SIZE - ICON_SIZE) / 2)
-		draw_texture_rect(_icon(), Rect2(icon_pos, Vector2.ONE * ICON_SIZE), false)
+		var slot := Rect2i(content.x, slot_y, ICON_SLOT_SIZE, ICON_SLOT_SIZE)
+		_box(slot, PixelUI.CYAN_DARK)
+		draw_rect(Rect2(content.x + 1, slot_y + 1, ICON_SLOT_SIZE - 2, ICON_SLOT_SIZE - 2), PixelUI.INSET)
+		var inset := (ICON_SLOT_SIZE - ICON_SIZE) / 2
+		var icon_pos := Vector2(content.x + inset, slot_y + inset)
+		draw_texture_rect(_icon(), Rect2(icon_pos, Vector2(ICON_SIZE, ICON_SIZE)), false)
 
 	var text_x := content.x + _icon_space()
 	var text_y := content.y + (content_h - LINE_HEIGHT * 2) / 2
