@@ -7,6 +7,7 @@ const KUDA_SCENE: PackedScene = preload("res://prefabs/kuda.tscn")
 const KUDA_DATA: NPCData = preload("res://resources/npcs/kuda.tres")
 const KUDA_IDLE: Texture2D = preload("res://sprites/characters/kuda_idle.png")
 const KUDA_PORTRAIT: Texture2D = preload("res://sprites/characters/kuda_portrait.png")
+const KUDA_SCENE_ART: Texture2D = preload("res://sprites/porn/kuda.png")
 var failures := 0
 
 
@@ -17,6 +18,7 @@ func _initialize() -> void:
 func _run() -> void:
 	_expect(KUDA_DATA.display_name == "Kuda", "NPC still displays the name Kuda")
 	_expect(KUDA_DATA.portrait == KUDA_PORTRAIT, "Dialogue uses the new Kuda portrait")
+	_expect(KUDA_DATA.porn_sprite == KUDA_SCENE_ART, "Kuda uses his new intimate-scene illustration")
 	var actor := KUDA_SCENE.instantiate()
 	_expect(actor is NPCInteractable, "Kuda scene instantiates as an interactable NPC")
 	if actor is NPCInteractable:
