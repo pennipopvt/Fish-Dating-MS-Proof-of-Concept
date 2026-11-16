@@ -44,24 +44,24 @@ func _ready() -> void:
 		deliver(recovered)
 
 
-# A persistent nine-slice message bubble, using the SAME authored border as
-# terminal UI. Unlike the brief popup, it remains until rewards are claimed.
+# A small persistent exclamation badge, shown until all rewards are claimed.
+# The slim pixel frame matches Spyglass without the terminal's heavy border.
 func _build_claim_notice() -> void:
 	_claim_notice = PanelContainer.new()
 	_claim_notice.name = "UnclaimedAchievementNotice"
-	_claim_notice.custom_minimum_size = Vector2(30, 30)
-	_claim_notice.position = notice_offset + Vector2(-15, -34)
+	_claim_notice.custom_minimum_size = Vector2(16, 16)
+	_claim_notice.position = notice_offset + Vector2(-8, -20)
 	_claim_notice.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_claim_notice.z_as_relative = false
 	_claim_notice.z_index = 20
 	_claim_notice.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	_claim_notice.add_theme_stylebox_override("panel", preload("res://resources/ui/terminal_border.tres"))
+	_claim_notice.add_theme_stylebox_override("panel", PixelUI.notification_bubble_style())
 	var mark := Label.new()
 	mark.text = "!"
 	mark.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	mark.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	mark.add_theme_font_override("font", PixelUI.FONT_SMALL_BOLD)
-	mark.add_theme_font_size_override("font_size", 18)
+	mark.add_theme_font_size_override("font_size", 8)
 	mark.add_theme_color_override("font_color", PixelUI.CYAN)
 	mark.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_claim_notice.add_child(mark)
