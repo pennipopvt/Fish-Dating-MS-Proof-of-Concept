@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://b606v6feem3is"
-path="res://.godot/imported/eel_idle.png-6d3da7520b00cf8a247c2adb00f2d8c4.ctex"
+uid="uid://daxobsglior74"
+path="res://.godot/imported/silas_caught.png-4d7ee9bb6d728c21623b1628c3cddc2a.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://sprites/characters/eel_idle.png"
-dest_files=["res://.godot/imported/eel_idle.png-6d3da7520b00cf8a247c2adb00f2d8c4.ctex"]
+source_file="res://sprites/characters/silas_caught.png"
+dest_files=["res://.godot/imported/silas_caught.png-4d7ee9bb6d728c21623b1628c3cddc2a.ctex"]
 
 [params]
 

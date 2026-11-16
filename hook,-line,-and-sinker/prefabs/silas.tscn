@@ -3,8 +3,8 @@
 [ext_resource type="Script" uid="uid://cnc4vwj4wlink" path="res://scripts/npc_interactable.gd" id="1_mm00h"]
 [ext_resource type="Resource" uid="uid://cpv5vnhg17vg8" path="res://resources/npcs/silas.tres" id="2_60jjg"]
 [ext_resource type="PackedScene" uid="uid://d4fhg8uyom630" path="res://prefabs/interact_prompt.tscn" id="3_deqfb"]
-[ext_resource type="Texture2D" uid="uid://b606v6feem3is" path="res://sprites/characters/eel_idle.png" id="4_gxaed"]
-[ext_resource type="Texture2D" uid="uid://daxobsglior74" path="res://sprites/characters/eel_caught.png" id="5_ie5e3"]
+[ext_resource type="Texture2D" uid="uid://b606v6feem3is" path="res://sprites/characters/silas_idle.png" id="4_gxaed"]
+[ext_resource type="Texture2D" uid="uid://daxobsglior74" path="res://sprites/characters/silas_caught.png" id="5_ie5e3"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_npc"]
 size = Vector2(26.83334, 31.000008)
