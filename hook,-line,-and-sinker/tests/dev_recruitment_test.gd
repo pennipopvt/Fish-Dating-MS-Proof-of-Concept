@@ -4,8 +4,8 @@ extends Node
 # godot --headless --path . res://tests/dev_recruitment_test.tscn
 # Tests the F9 shortcut's real recruitment path for Silas and Kuda.
 
-const SILAS_FISH: FishData = preload("res://resources/fish/test_silas.tres")
-const KUDA_FISH: FishData = preload("res://resources/fish/barracuda.tres")
+const SILAS_FISH: FishData = preload("res://resources/fish/silas.tres")
+const KUDA_FISH: FishData = preload("res://resources/fish/kuda.tres")
 
 var failures: int = 0
 

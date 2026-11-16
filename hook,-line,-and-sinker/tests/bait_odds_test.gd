@@ -7,7 +7,7 @@ extends SceneTree
 const FishingManagerScript = preload("res://scripts/fishing_manager.gd")
 const FISH_A: FishData = preload("res://resources/fish/easy_test_fish.tres")
 const FISH_B: FishData = preload("res://resources/fish/hard_test_fish.tres")
-const SILAS: FishData = preload("res://resources/fish/test_silas.tres")
+const SILAS: FishData = preload("res://resources/fish/silas.tres")
 const BAIT_A: BaitData = preload("res://resources/bait/bait_a.tres")
 const BAIT_B: BaitData = preload("res://resources/bait/bait_b.tres")
 const YELLOW: BaitData = preload("res://resources/bait/bait_yellow.tres")

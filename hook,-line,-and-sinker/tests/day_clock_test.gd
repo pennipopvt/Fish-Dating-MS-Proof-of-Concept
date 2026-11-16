@@ -79,7 +79,7 @@ func _test_night_blocks_actions() -> void:
 	DialogueManager.conversation_finished.emit(null)
 	_expect_clock(1, GameManager.Times.NIGHT, 0, "more actions at spent night change nothing")
 	_expect(_spends_time("res://prefabs/dock.tscn"), "dock costs time (blocked at spent night)")
-	_expect(_spends_time("res://prefabs/test_npc.tscn"), "NPC talk costs time (blocked at spent night)")
+	_expect(_spends_time("res://prefabs/silas.tscn"), "NPC talk costs time (blocked at spent night)")
 	_expect(not _spends_time("res://prefabs/bed.tscn"), "bed is free (usable at spent night)")
 	_expect(not _spends_time("res://prefabs/bait_box.tscn"), "bait menu is free")
 
