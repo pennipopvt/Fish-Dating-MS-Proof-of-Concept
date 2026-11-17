@@ -8,7 +8,7 @@ class_name DivingCombat
 signal finished(won: bool, fish: DivingWildFish)
 signal parried(result: StringName)
 
-enum Phase { WARNING, WINDUP, ATTACK, DASH, STUN }
+enum Phase { WARNING, WINDUP, ATTACK, DASH, RECOVERY, STUN }
 
 # These lengths are in the same world pixels as the diving net and fish.
 # A cast reaches ~110px, but a hooked fish gets additional line slack before
@@ -16,6 +16,12 @@ enum Phase { WARNING, WINDUP, ATTACK, DASH, STUN }
 @export_range(6.0, 40.0, 1.0) var catch_distance: float = 14.0
 @export_range(2.0, 20.0, 0.5) var reel_pixels_per_scroll: float = 7.0
 @export_range(20.0, 120.0, 1.0) var fight_slack: float = 65.0
+
+# Keep the stagger behavior and tuning from revised-fishing.
+@export_range(1.0, 100.0, 1.0) var close_stagger_gain: float = 24.0
+@export_range(1.0, 100.0, 1.0) var perfect_stagger_gain: float = 48.0
+@export_range(0.0, 15.0, 0.5) var stagger_decay_per_second: float = 2.0
+@export_range(1.0, 3.0, 0.05) var stun_reel_multiplier: float = 1.5
 
 const TENSION_RECOVERY := 0.20
 const RECOVERY_DELAY := 0.10
@@ -34,6 +40,7 @@ var line_distance: float = 0.0
 var max_line_distance: float = 175.0
 var progress: float = 0.0
 var tension: float = 0.0
+var stagger: float = 0.0
 var reel_open: bool = false
 var free_reel: bool = false
 var counter_locked: bool = false
@@ -62,6 +69,7 @@ func begin(wild: DivingWildFish, data: FishData, initial_distance: float, net_ra
 	line_distance = clampf(initial_distance, catch_distance, max_line_distance)
 	_update_progress_from_distance()
 	tension = 0.0
+	stagger = 0.0
 	recovery_timer = 0.0
 	reel_open = false
 	free_reel = false
@@ -78,6 +86,8 @@ func step(delta: float) -> void:
 	if not is_active():
 		return
 	feedback_time = maxf(0.0, feedback_time - delta)
+	if phase != Phase.STUN:
+		stagger = maxf(0.0, stagger - stagger_decay_per_second * delta)
 	if reel_open and not free_reel and attack != null and (phase == Phase.ATTACK or phase == Phase.WINDUP):
 		# An ordinary parry lets the fish continue resisting reeling,
 		# exactly as it does in the original fishing controller.
@@ -98,7 +108,7 @@ func step(delta: float) -> void:
 			if line_distance >= max_line_distance or tension >= 1.0:
 				_finish(false)
 			else:
-				_start_warning()
+				_start_recovery()
 		return
 	if phase == Phase.ATTACK:
 		attack_elapsed += delta
@@ -113,7 +123,15 @@ func step(delta: float) -> void:
 			_start_windup()
 		Phase.WINDUP:
 			_start_attack()
-		Phase.ATTACK, Phase.STUN:
+		Phase.ATTACK:
+			if reel_open:
+				_start_recovery()
+			else:
+				_fail_parry()
+		Phase.RECOVERY:
+			_start_warning()
+		Phase.STUN:
+			stagger = 0.0
 			_start_warning()
 	if is_active() and line_distance >= max_line_distance:
 		_finish(false)
@@ -214,25 +232,56 @@ func _attempt_parry() -> void:
 
 
 func _perfect_parry() -> void:
-	tension = 0.0
-	recovery_timer = 0.0
-	phase = Phase.STUN
-	phase_time = maxf(attack.stun_duration, 0.1)
+	# A perfect parry is NOT a stun or automatic catch. It earns an
+	# ordinary contested reel opening and builds more stagger.
 	reel_open = true
-	free_reel = true
-	feedback = "PERFECT PARRY!"
+	free_reel = false
+	feedback = "PERFECT PARRY  +STAGGER"
 	feedback_time = 0.9
 	FishingManager.parry_resolved.emit(&"perfect")
 	parried.emit(&"perfect")
+	_add_stagger(perfect_stagger_gain)
 
 
 func _close_parry() -> void:
 	reel_open = true
 	free_reel = false
-	feedback = "PARRY! REEL NOW"
+	feedback = "PARRY  +STAGGER"
 	feedback_time = 0.9
 	FishingManager.parry_resolved.emit(&"close")
 	parried.emit(&"close")
+	_add_stagger(close_stagger_gain)
+
+
+func _add_stagger(amount: float) -> void:
+	if not is_active() or phase == Phase.STUN:
+		return
+	stagger = clampf(stagger + amount, 0.0, maxf(fish_data.stagger_resistance, 1.0))
+	if stagger >= maxf(fish_data.stagger_resistance, 1.0):
+		_start_stagger_break()
+
+
+func _start_stagger_break() -> void:
+	# Only a full meter earns the true stun: clear tension and reel freely.
+	phase = Phase.STUN
+	phase_time = maxf(attack.stun_duration, 0.2)
+	counter_locked = true
+	tension = 0.0
+	recovery_timer = 0.0
+	reel_open = true
+	free_reel = true
+	feedback = "STAGGER BREAK!  REEL!"
+	feedback_time = 1.0
+
+
+func _start_recovery() -> void:
+	# As in revised-fishing, fish briefly rests after an attack or dash.
+	# Reeling is allowed, but adds normal tension.
+	phase = Phase.RECOVERY
+	phase_time = maxf(attack.recovery_duration, 1.0)
+	counter_locked = true
+	reel_open = true
+	free_reel = false
 
 
 func _fail_parry() -> void:
@@ -269,7 +318,8 @@ func _update_progress_from_distance() -> void:
 func _reel() -> void:
 	# Use real underwater pixels instead of adding 10% to an arbitrary bar.
 	# The existing stronger-reel upgrade contributes its same additive 1%.
-	var gain: float = reel_pixels_per_scroll + FishingManager.reel_progress_bonus * _line_span()
+	var multiplier: float = stun_reel_multiplier if phase == Phase.STUN else 1.0
+	var gain: float = (reel_pixels_per_scroll + FishingManager.reel_progress_bonus * _line_span()) * multiplier
 	line_distance = maxf(catch_distance, line_distance - gain)
 	_update_progress_from_distance()
 	if not free_reel:
@@ -295,7 +345,9 @@ func phase_title() -> String:
 		Phase.DASH:
 			return "FISH DASHES AWAY"
 		Phase.STUN:
-			return "STUNNED  -  REEL!"
+			return "STAGGERED  -  FREE REEL!"
+		Phase.RECOVERY:
+			return "FISH RECOVERING  -  REEL!"
 	return ""
 
 
@@ -306,7 +358,7 @@ func hint() -> String:
 		return "Watch the ring  •  scroll 3 times quickly to parry"
 	if phase == Phase.WINDUP:
 		return "Wait for the flash  •  late windup can parry"
-	return "SCROLL DOWN 3x NOW  •  perfect timing stuns"
+	return "SCROLL DOWN 3x NOW  •  parries build stagger"
 
 
 func telegraph_fraction() -> float:
