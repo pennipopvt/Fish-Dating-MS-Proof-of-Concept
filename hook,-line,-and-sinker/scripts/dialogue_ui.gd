@@ -14,6 +14,8 @@ const LISTENING_MODULATE := Color(0.5, 0.5, 0.55)
 const ADVANCE_ACTION := &"Interact"
 # Choices picked before (no more affection from them): grey, still pickable.
 const PICKED_CHOICE_COLOR := Color(0.55, 0.55, 0.6)
+const SILAS_FISH_SPRITE: Texture2D = preload("res://sprites/fish/silas_eel.png")
+const PENNI_IDLE_SHEET: Texture2D = preload("res://sprites/characters/penni/penni_idle.png")
 
 # Shown when an NPC has no portrait assigned yet.
 @export var placeholder_portrait: Texture2D
@@ -30,6 +32,44 @@ const PICKED_CHOICE_COLOR := Color(0.55, 0.55, 0.6)
 var _npc: NPCData = null
 var _opened_frame := -1
 var _illustration_mode := false
+var _underwater_mode := false
+var _land_layer: int = 10
+var _npc_land_offsets: Vector4
+var _player_land_offsets: Vector4
+var _swimming_penni_sprite: AtlasTexture
+
+# The exact same dialogue box, choice buttons, and conversation manager are
+# used on land and underwater. Only the art and portrait framing change.
+func set_underwater_mode(enabled: bool) -> void:
+	_underwater_mode = enabled
+	if not is_node_ready():
+		return
+	layer = 40 if enabled else _land_layer
+	_player_portrait.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST if enabled else CanvasItem.TEXTURE_FILTER_INHERIT
+	_npc_portrait.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST if enabled else CanvasItem.TEXTURE_FILTER_INHERIT
+	if enabled:
+		# Large, clear pixel sprites instead of oversized portrait paintings.
+		_player_portrait.offset_left = 70.0
+		_player_portrait.offset_top = -700.0
+		_player_portrait.offset_right = 670.0
+		_player_portrait.offset_bottom = -100.0
+		_npc_portrait.offset_left = -730.0
+		_npc_portrait.offset_top = -720.0
+		_npc_portrait.offset_right = -110.0
+		_npc_portrait.offset_bottom = -100.0
+	else:
+		_restore_portrait_offsets(_player_portrait, _player_land_offsets)
+		_restore_portrait_offsets(_npc_portrait, _npc_land_offsets)
+	if DialogueManager.is_active and visible:
+		_refresh()
+
+
+func _restore_portrait_offsets(view: TextureRect, values: Vector4) -> void:
+	view.offset_left = values.x
+	view.offset_top = values.y
+	view.offset_right = values.z
+	view.offset_bottom = values.w
+
 
 # Illustration scenes reuse the dialogue box, but suppress both portraits.
 func set_illustration_mode(enabled: bool) -> void:
@@ -40,6 +80,18 @@ func set_illustration_mode(enabled: bool) -> void:
 
 
 func _ready() -> void:
+	_land_layer = layer
+	_player_land_offsets = Vector4(
+		_player_portrait.offset_left, _player_portrait.offset_top,
+		_player_portrait.offset_right, _player_portrait.offset_bottom
+	)
+	_npc_land_offsets = Vector4(
+		_npc_portrait.offset_left, _npc_portrait.offset_top,
+		_npc_portrait.offset_right, _npc_portrait.offset_bottom
+	)
+	_swimming_penni_sprite = AtlasTexture.new()
+	_swimming_penni_sprite.atlas = PENNI_IDLE_SHEET
+	_swimming_penni_sprite.region = Rect2(0, 0, 32, 32)
 	hide()
 	add_to_group(&"modal_ui")
 	DialogueManager.dialogue_requested.connect(start)
@@ -131,12 +183,12 @@ func _refresh() -> void:
 func _show_line(line: DialogueLineData) -> void:
 	var is_player := line.speaker == DialogueLineData.Speaker.PLAYER
 
-	_name_label.text = PLAYER_NAME if is_player else _npc.display_name
+	_name_label.text = PLAYER_NAME if is_player else DialogueManager.get_current_speaker_name()
 	_name_label.add_theme_color_override(
 		"font_color",
 		PLAYER_NAME_COLOR if is_player else NPC_NAME_COLOR
 	)
-	_player_portrait.texture = player_portrait
+	_player_portrait.texture = _swimming_penni_sprite if _underwater_mode else player_portrait
 	_npc_portrait.texture = _get_portrait(line)
 
 	# Light up whoever is speaking; dim the listener.
@@ -172,6 +224,21 @@ func _show_choices() -> void:
 # Expressions are reserved for future portrait sets;
 # every line uses the NPC's base portrait for now.
 func _get_portrait(_line: DialogueLineData) -> Texture2D:
+	if _underwater_mode:
+		if _npc.npc_id == &"test_npc":
+			return SILAS_FISH_SPRITE
+		# Future underwater NPCs automatically use their fishing species art.
+		for fish in FishingManager.possible_catches:
+			if fish != null and fish.npc_data != null and fish.item_data != null:
+				var character: NPCInteractable = null
+				if fish.npc_data.can_instantiate():
+					# PackedScene metadata can be resolved without spawning.
+					var state: SceneState = fish.npc_data.get_state()
+					for index in range(state.get_node_property_count(0)):
+						if state.get_node_property_name(0, index) == &"npc":
+							var npc_data: NPCData = state.get_node_property_value(0, index) as NPCData
+							if npc_data != null and npc_data.npc_id == _npc.npc_id:
+								return fish.item_data.sprite
 	if _npc.portrait != null:
 		return _npc.portrait
 
