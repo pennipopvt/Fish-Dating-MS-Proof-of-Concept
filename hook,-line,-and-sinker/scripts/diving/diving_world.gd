@@ -1,4 +1,5 @@
 extends Node2D
+class_name DivingWorld
 
 signal surface_requested(with_silas: bool)
 
