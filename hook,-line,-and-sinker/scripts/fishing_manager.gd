@@ -189,6 +189,10 @@ func get_random_catch() -> FishData:
 		if fish.fish_id == SILAS_FISH_ID:
 			silas = fish
 			continue
+		# Keep the introductory mystery focused on Silas: other NPCs only
+		# enter the pool after the first Silas catch.
+		if fish.npc_data != null and not _silas_already_caught():
+			continue
 		eligible.append(fish)
 	if silas != null and not _silas_already_caught():
 		if total_casts >= FIRST_SILAS_CAST:
