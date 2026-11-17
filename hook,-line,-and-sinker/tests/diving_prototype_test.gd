@@ -87,19 +87,52 @@ func _run() -> void:
 		"Fish is not automatically caught on projectile impact")
 	_check(world.get_node("../../../HUD/CombatPanel").visible,
 		"Combat panel appears only after the net latches")
+	var initial_distance: float = combat.line_distance
+	var initial_progress: float = combat.progress
+	_check(initial_distance > combat.catch_distance + combat.reel_pixels_per_scroll * 2.0,
+		"Fish begins visibly farther than the net landing distance")
+	_check(world.get_node("../../../HUD/CombatPanel/CombatStagger") is ProgressBar,
+		"Revised-fishing stagger meter is visible underwater")
 	combat.call("_start_windup")
 	combat.call("_start_attack")
 	combat.reel_scroll()
 	combat.reel_scroll()
 	combat.reel_scroll()
-	_check(int(combat.phase) == DivingCombat.Phase.STUN and combat.free_reel,
-		"Three fast scrolls in the perfect window stun the hooked fish")
-	combat.progress = 0.95
+	_check(combat.is_active() and combat.reel_open and not combat.free_reel,
+		"One perfect parry opens contested reeling without an automatic stun or catch")
+	_check(is_equal_approx(combat.stagger, combat.perfect_stagger_gain),
+		"Perfect parry raises stagger but needs additional pressure to break the fish")
+	_check(is_equal_approx(combat.line_distance, initial_distance)
+		and is_equal_approx(combat.progress, initial_progress),
+		"Parrying alone doesn't move the fish or fill the catch progress bar")
+
 	combat.reel_scroll()
+	world.call("_sync_combat_fish", 0.016)
+	_check(combat.is_active() and combat.line_distance < initial_distance,
+		"One earned reel pulls the fish closer but does not catch it from far away")
+	_check(is_equal_approx(
+		first_fish.position.distance_to(player.position), combat.line_distance
+	), "Fish's visible position matches the actual catch distance")
+
+	# The next authored attack can be parried to fill the species' meter.
+	combat.call("_start_warning")
+	combat.call("_start_windup")
+	combat.call("_start_attack")
+	combat.reel_scroll()
+	combat.reel_scroll()
+	combat.reel_scroll()
+	_check(combat.phase == DivingCombat.Phase.STUN and combat.free_reel,
+		"Enough perfect parries fill mullet stagger and earn the free-reel stun")
+
+	var pulls: int = 0
+	while combat.is_active() and pulls < 25:
+		combat.reel_scroll()
+		pulls += 1
+	_check(pulls > 1, "Even after stagger break, the fish needs several actual reel pulls")
 	_check(not combat.is_active() and not net.is_busy(),
-		"Winning the encounter releases the projectile")
+		"Winning at close range releases the net projectile")
 	_check(int(world.call("_total_catches")) == before + 1,
-		"Only winning combat adds a fish to storage")
+		"Only winning combat by pulling the fish in adds it to storage")
 	_check(wild_fish.size() == 7, "Caught fish disappears from the lagoon")
 
 	# An escaped fish remains physically present for future exploration.
