@@ -18,7 +18,6 @@ const FISH_GOBY: Texture2D = preload("res://sprites/fish/goby.png")
 const FISH_FLOUNDER: Texture2D = preload("res://sprites/fish/flounder.png")
 const FISH_NEEDLE: Texture2D = preload("res://sprites/fish/needlefish.png")
 const FISH_TUNA: Texture2D = preload("res://sprites/fish/tuna.png")
-const PIXEL_FONT: Font = preload("res://fonts/pixel_operator(1)/PixelOperator.ttf")
 
 const SEA_SIZE := Vector2(920.0, 530.0)
 const SEA_BOUNDS := Rect2(Vector2(16.0, 30.0), Vector2(888.0, 460.0))
@@ -33,11 +32,12 @@ const REACH: float = 44.0
 @onready var camera: Camera2D = $Camera2D
 @onready var player_sprite: Sprite2D = $Player
 @onready var silas_sprite: Sprite2D = $Silas
-@onready var location_label: Label = $CanvasLayer/HUD/Location
-@onready var catch_label: Label = $CanvasLayer/HUD/CatchCount
-@onready var story_label: Label = $CanvasLayer/HUD/StoryHint
-@onready var prompt_label: Label = $CanvasLayer/HUD/Prompt
-@onready var toast_label: Label = $CanvasLayer/HUD/Toast
+@onready var location_label: Label = $"../../../HUD/Location"
+@onready var catch_label: Label = $"../../../HUD/CatchCount"
+@onready var story_label: Label = $"../../../HUD/StoryHint"
+@onready var prompt_label: Label = $"../../../HUD/Prompt"
+@onready var toast_label: Label = $"../../../HUD/Toast"
+@onready var hud_footer: Panel = $"../../../HUD/FooterBack"
 
 var _embedded_in_world: bool = false
 var _underwater: bool = true
@@ -66,14 +66,13 @@ func _ready() -> void:
 	player_sprite.texture = PLAYER_IDLE
 	player_sprite.hframes = 2
 	player_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	player_sprite.scale = Vector2(0.78, 0.78)
+	player_sprite.scale = Vector2.ONE
 	silas_sprite.position = SILAS_BURROW + Vector2(0, -16)
 	silas_sprite.texture = SILAS_FISH
 	silas_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	_set_silas_fish_sprite()
 	camera.position = player_sprite.position
 	_set_camera_bounds(true)
-	_make_ui_pixels()
 	DialogueManager.conversation_finished.connect(_on_diving_conversation_finished)
 	DialogueManager.choice_resolved.connect(_on_diving_choice_resolved)
 	# The integrated island owns a DialogueUI already. For running the
@@ -126,19 +125,6 @@ func _return_to_surface(with_silas: bool) -> void:
 		_go_shore(with_silas)
 
 
-func _make_ui_pixels() -> void:
-	var all_labels: Array[Label] = [
-		location_label, catch_label, story_label, prompt_label,
-		toast_label
-	]
-	for label in all_labels:
-		label.add_theme_font_override("font", PIXEL_FONT)
-	location_label.add_theme_font_size_override("font_size", 12)
-	catch_label.add_theme_font_size_override("font_size", 10)
-	story_label.add_theme_font_size_override("font_size", 9)
-	prompt_label.add_theme_font_size_override("font_size", 10)
-	toast_label.add_theme_font_size_override("font_size", 10)
-
 func _set_silas_fish_sprite() -> void:
 	silas_sprite.texture = SILAS_FISH
 	var width: float = float(SILAS_FISH.get_width())
@@ -183,9 +169,13 @@ func _process(delta: float) -> void:
 	_talk_cooldown = maxf(0.0, _talk_cooldown - delta)
 	_toast_time = maxf(0.0, _toast_time - delta)
 	_net_flash_time = maxf(0.0, _net_flash_time - delta)
-	toast_label.visible = _toast_time > 0.0 and not DialogueManager.is_active
+	var is_talking: bool = DialogueManager.is_active
+	toast_label.visible = _toast_time > 0.0 and not is_talking
+	story_label.visible = not is_talking
+	prompt_label.visible = not is_talking
+	hud_footer.visible = not is_talking
 
-	if not DialogueManager.is_active:
+	if not is_talking:
 		_move_player(delta)
 
 	if _underwater:
