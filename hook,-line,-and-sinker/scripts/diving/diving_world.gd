@@ -25,11 +25,11 @@ const REACH: float = 44.0
 # Turn this off once you have painted/placed actual lagoon scenery in the
 # LevelArt or ForegroundArt nodes. It hides placeholder terrain and reefs.
 
-@onready var _entry_point: Vector2 = $Points/Entry.position
-@onready var _surface_point: Vector2 = $Points/SurfaceExit.position
-@onready var _silas_burrow: Vector2 = $Points/SilasBurrow.position
-@onready var _tangled_net: Vector2 = $Points/TangledNet.position
-@onready var _glowing_garden: Vector2 = $Points/ShellGarden.position
+@onready var _entry_point: Vector2 = to_local(($Points/Entry as Marker2D).global_position)
+@onready var _surface_point: Vector2 = to_local(($Points/SurfaceExit as Marker2D).global_position)
+@onready var _silas_burrow: Vector2 = to_local(($Points/SilasBurrow as Marker2D).global_position)
+@onready var _tangled_net: Vector2 = to_local(($Points/TangledNet as Marker2D).global_position)
+@onready var _glowing_garden: Vector2 = to_local(($Points/ShellGarden as Marker2D).global_position)
 @onready var camera: Camera2D = $Camera2D
 @onready var player_sprite: Sprite2D = $Player
 @onready var silas_sprite: Sprite2D = $Silas
@@ -170,7 +170,7 @@ func _spawn_fish() -> void:
 		if art == null or spawn.species.states.is_empty():
 			continue
 		var fish: DivingWildFish = WILD_FISH_SCRIPT.new() as DivingWildFish
-		fish.setup(spawn.species.fish_id, art, spawn.position, SEA_BOUNDS, spawn.random_seed)
+		fish.setup(spawn.species.fish_id, art, to_local(spawn.global_position), SEA_BOUNDS, spawn.random_seed)
 		add_child(fish)
 		_wild_fish.append(fish)
 
