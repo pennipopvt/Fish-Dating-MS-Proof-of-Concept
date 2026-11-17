@@ -39,5 +39,6 @@ miss_tension_gain = 0.18
 attack_tension_multiplier = 2.0
 miss_dash_duration = 0.35
 miss_dash_speed_multiplier = 2.0
+stagger_resistance = 150.0
 states = Array[ExtResource("3_r7p2w")]([SubResource("HeavyPull"), SubResource("DeepSurge")])
 metadata/_custom_type_script = "uid://d2iidpvp5wrw7"
