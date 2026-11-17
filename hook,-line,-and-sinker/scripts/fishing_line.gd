@@ -18,16 +18,18 @@ var pos: Vector2
 var tell_phase: int = 0
 var tell_progress: float = 0.0
 @onready var ripple_tell: AnimatedSprite2D = $RippleTell
-@onready var bobber: Sprite2D = $Bobber
+@onready var lure_sprite: Sprite2D = $LureFish
+var _reserve_sprites: Array[Sprite2D] = []
+var _default_lure_scale: Vector2 = Vector2.ONE
 @export_range(0.0, 2.0, 0.25) var bobber_float_amplitude: float = 1.0
 @export_range(0.1, 5.0, 0.1) var bobber_float_speed: float = 1.5
 var bobber_float_time: float = 0.0
 var bobber_water_position: Vector2 = Vector2.ZERO
 
 func _process(delta: float) -> void:
-	if bobber.visible and visible:
+	if lure_sprite.visible and visible:
 		bobber_float_time += delta
-		bobber.position = (bobber_water_position + Vector2(0, sin(bobber_float_time * TAU * bobber_float_speed) * bobber_float_amplitude)).round()
+		lure_sprite.position = (bobber_water_position + Vector2(0, sin(bobber_float_time * TAU * bobber_float_speed) * bobber_float_amplitude)).round()
 
 var current_ripple_animation: StringName = &""
 var counter_flash_time: float = 0.0
@@ -83,7 +85,9 @@ func set_tension(amount: float) -> void:
 
 func _ready() -> void:
 	_default_fish_scale = fish.scale
+	_default_lure_scale = lure_sprite.scale
 	FishingManager.fish_hooked.connect(hook)
+	FishingManager.team_changed.connect(_refresh_team_visuals)
 	set_tension(0.0)
 	# Separate broad translucent line creates a visible glow without a shader.
 	stun_glow = Line2D.new()
@@ -95,11 +99,10 @@ func _ready() -> void:
 	stun_glow.visible = false
 	add_child(stun_glow)
 	stun_glow.points = points
-	BobberManager.equipped_changed.connect(_on_bobber_equipped)
-	_on_bobber_equipped(BobberManager.get_equipped_bobber())
+	_refresh_team_visuals()
 	ripple_tell.animation_finished.connect(_on_ripple_animation_finished)
 	ripple_tell.hide()
-	bobber.hide()
+	lure_sprite.hide()
 	_identity_bubble = SPEECH_BUBBLE_SCENE.instantiate() as SpeechBubble
 	add_child(_identity_bubble)
 	# The Spyglass identity marker is a floating icon-only bubble, not
@@ -136,8 +139,36 @@ func _update_identity_bubble_position() -> void:
 	).round()
 
 
-func _on_bobber_equipped(data: BobberData) -> void:
-	bobber.texture = data.sprite if data != null else null
+# The on-line lure is a recruited fish. Reserve party fish wait near the
+# surface by the dock while you're fishing; they aren't bobber upgrades.
+func _refresh_team_visuals() -> void:
+	for sprite in _reserve_sprites:
+		if is_instance_valid(sprite):
+			sprite.queue_free()
+	_reserve_sprites.clear()
+	var lure: FishData = FishingManager.get_lure_companion()
+	lure_sprite.texture = lure.item_data.sprite if lure != null and lure.item_data != null else null
+	lure_sprite.scale = _default_lure_scale
+	if lure_sprite.texture != null:
+		lure_sprite.scale = Vector2.ONE * (14.0 / maxf(float(lure_sprite.texture.get_width()), 1.0))
+	lure_sprite.visible = visible and fish != null and not fish.visible and lure_sprite.texture != null
+	for member in FishingManager.party:
+		if member == null or member == lure or member.item_data == null or member.item_data.sprite == null:
+			continue
+		var visual := Sprite2D.new()
+		visual.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		visual.texture = member.item_data.sprite
+		visual.scale = Vector2.ONE * (15.0 / maxf(float(visual.texture.get_width()), 1.0))
+		visual.z_index = 8
+		add_child(visual)
+		_reserve_sprites.append(visual)
+	_position_reserves()
+
+
+func _position_reserves() -> void:
+	for i in range(_reserve_sprites.size()):
+		# Sit to the right of the hooked fish, by the dock, at the surface.
+		_reserve_sprites[i].position = (bobber_water_position + Vector2(25.0 + 18.0 * i, 10.0)).round()
 
 
 func send(initial_progress: float = 0.0) -> void:
@@ -148,8 +179,9 @@ func send(initial_progress: float = 0.0) -> void:
 	show()
 	update_ripple_position()
 	bobber_float_time = 0.0
-	bobber.position = bobber_water_position
-	bobber.show()
+	lure_sprite.position = bobber_water_position
+	lure_sprite.visible = lure_sprite.texture != null
+	_position_reserves()
 	if stun_glow != null:
 		stun_glow.visible = stunned_line
 	fish.hide()
@@ -157,7 +189,7 @@ func send(initial_progress: float = 0.0) -> void:
 #idk how to listen for signals in godot tbh but this would trigger by signal ill adjust later
 func hook(item: FishData) -> void:
 	# The bite pulls the bobber under immediately; keep telegraphs clear.
-	bobber.hide()
+	lure_sprite.hide()
 	if item == null or item.item_data == null:
 		fish.hide()
 		return
@@ -182,7 +214,7 @@ func get_fish_texture() -> Texture2D:
 	return fish.texture
 
 func hide_fish_for_catch() -> void:
-	bobber.hide()
+	lure_sprite.hide()
 	fish.hide()
 	ripple_tell.hide()
 	hide_fish_identity()
@@ -191,7 +223,7 @@ func hide_fish_for_catch() -> void:
 
 func close() -> void:
 	hide_fish_identity()
-	bobber.hide()
+	lure_sprite.hide()
 	set_stunned(false)
 	ripple_tell.hide()
 	current_ripple_animation = &""
@@ -246,8 +278,9 @@ func update_ripple_position() -> void:
 	var surface_position: Vector2 = start.lerp(tip, fraction).round()
 	ripple_tell.position = surface_position
 	bobber_water_position = surface_position
-	if bobber.visible:
-		bobber.position = (surface_position + Vector2(0, sin(bobber_float_time * TAU * bobber_float_speed) * bobber_float_amplitude)).round()
+	if lure_sprite.visible:
+		lure_sprite.position = (surface_position + Vector2(0, sin(bobber_float_time * TAU * bobber_float_speed) * bobber_float_amplitude)).round()
+	_position_reserves()
 	if _identity_bubble != null and _identity_bubble.visible:
 		_update_identity_bubble_position()
 
