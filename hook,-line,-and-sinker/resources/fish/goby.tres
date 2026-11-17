@@ -37,4 +37,5 @@ miss_tension_gain = 0.065
 attack_tension_multiplier = 1.0
 miss_dash_duration = 0.20
 miss_dash_speed_multiplier = 3.25
+stagger_resistance = 65.0
 states = Array[ExtResource("3_attack")]([SubResource("QuickJitter"), SubResource("DelayedJitter")])
