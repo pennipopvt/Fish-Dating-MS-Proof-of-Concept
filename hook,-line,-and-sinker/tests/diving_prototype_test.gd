@@ -6,6 +6,7 @@ extends SceneTree
 # Headless integration checks for the diving branch's separate vertical slice.
 const PROTOTYPE: PackedScene = preload("res://scenes/diving_prototype.tscn")
 const SILAS_FISH: Texture2D = preload("res://sprites/fish/silas_eel.png")
+const PENNI_PORTRAIT: Texture2D = preload("res://sprites/characters/penni/penni_portrait.png")
 const SILAS_BURROW := Vector2(385.0, 258.0)
 const TANGLED_NET := Vector2(411.0, 250.0)
 const SURFACE_POINT := Vector2(78.0, 92.0)
@@ -21,6 +22,15 @@ func _run() -> void:
 	await process_frame
 	var world: Node2D = prototype.get_node("SubViewportContainer/SubViewport/Lagoon")
 	var player: Sprite2D = world.get_node("Player")
+	var viewport_container: SubViewportContainer = prototype.get_node("SubViewportContainer")
+	var pixel_viewport: SubViewport = prototype.get_node("SubViewportContainer/SubViewport")
+	var hud: Control = prototype.get_node("HUD")
+	_check(pixel_viewport.size == Vector2i(320, 180) and viewport_container.stretch_shrink == 6,
+		"Lagoon world uses the same 320x180 pixel grid as the island")
+	_check(hud.get_parent() == prototype and hud.has_node("Location"),
+		"Diving HUD renders outside the pixel viewport for readable typography")
+	_check(is_equal_approx(player.scale.x, 1.0) and is_equal_approx(player.scale.y, 1.0),
+		"Penni is at the original game's full character scale")
 	var silas: Sprite2D = world.get_node("Silas")
 	var wild_fish: Array = world.get("_wild_fish")
 	var dialogue: DialogueUI = world.get("_standalone_dialogue_ui") as DialogueUI
@@ -50,6 +60,8 @@ func _run() -> void:
 	if dialogue != null:
 		_check((dialogue.get_node("NPCPortrait") as TextureRect).texture == SILAS_FISH,
 			"Dialogue shows Silas's fish sprite, not the humanoid portrait")
+		_check((dialogue.get_node("PlayerPortrait") as TextureRect).texture == PENNI_PORTRAIT,
+			"Penni uses her ORIGINAL dialogue portrait underwater")
 	_finish_dialogue()
 	world.call("_try_catch", TANGLED_NET)
 	_check(bool(world.get("_net_cleared")), "Player can free Silas's tangled burrow")
