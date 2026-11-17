@@ -160,22 +160,62 @@ func _run() -> void:
 	_check(int(world.call("_total_catches")) == before + 1,
 		"Escaped fish are never added to storage")
 
-	# Find and talk to the eel before rescuing him.
+	# Silas first asks to be pulled free; simply speaking to him or
+	# clicking the tangled net must not recruit him.
 	player.position = silas_burrow + Vector2(0, -14)
 	world.call("_talk_to_silas")
-	_check(bool(world.get("_silas_met")), "Talking eel reveal starts underwater")
+	_check(bool(world.get("_silas_met")), "Talking eel asks to be pulled out")
+	_check(not bool(world.get("_net_cleared")) and not bool(world.get("_silas_following")),
+		"Silas is still trapped after the first conversation")
 	_check(DialogueManager.is_active and DialogueManager.get_current_speaker_name() == "???",
 		"Shared dialogue manager preserves Silas's mysterious introduction")
 	if dialogue != null:
-		_check((dialogue.get_node("NPCPortrait") as TextureRect).texture == SILAS_FISH,
-			"Dialogue shows Silas's fish sprite, not the humanoid portrait")
+		var npc_portrait: TextureRect = dialogue.get_node("NPCPortrait") as TextureRect
+		_check(npc_portrait.texture == SILAS_FISH,
+			"Dialogue shows the actual eel sprite, not the humanoid portrait")
+		_check(npc_portrait.flip_h,
+			"Underwater fish portraits face Penni")
 		_check((dialogue.get_node("PlayerPortrait") as TextureRect).texture == PENNI_PORTRAIT,
-			"Penni uses her ORIGINAL dialogue portrait underwater")
+			"Penni retains her original dialogue portrait")
 	_finish_dialogue()
-	world.call("_try_catch", tangled_net)
-	_check(bool(world.get("_net_cleared")), "Player can free Silas's tangled burrow")
+	var trapped_eel: DivingWildFish = world.get("_silas_rescue_target") as DivingWildFish
+	_check(trapped_eel != null and trapped_eel.trapped and not silas.visible,
+		"After the help request, a stationary Silas fish becomes net-catchable")
+	_check(wild_fish.has(trapped_eel) and wild_fish.size() == spawn_group.get_child_count() + 1,
+		"Silas is a special world target, not an automatic collectible")
+
+	# Missed rescue: the fish stays trapped instead of entering storage.
+	player.position = trapped_eel.position + Vector2(-40.0, 0.0)
+	world.call("_try_catch", trapped_eel.position + Vector2(160, 0))
+	net.call("_process", 0.22)
+	_check(net.is_latched() and combat.is_active(),
+		"The actual projectile can hook Silas for parry/reel combat")
+	combat.release()
+	_check(not bool(world.get("_net_cleared")) and not bool(world.get("_silas_following")),
+		"Losing the encounter does not rescue Silas")
+	_check(is_equal_approx(trapped_eel.position.distance_to(silas_burrow + Vector2(0, -16)), 0.0),
+		"A failed rescue puts Silas back at the burrow")
+	_check(int(world.call("_total_catches")) == before + 1,
+		"Silas is never counted as an ordinary fish capture")
+
+	# Winning actually reels him free; the following relationship begins
+	# once his thank-you dialogue finishes.
+	trapped_eel.catch_cooldown = 0.0
+	player.position = trapped_eel.position + Vector2(-40.0, 0.0)
+	world.call("_try_catch", trapped_eel.position + Vector2(160, 0))
+	net.call("_process", 0.22)
+	_check(combat.is_active(), "Silas can be netted again after a failed rescue")
+	combat.call("_start_recovery")
+	combat.line_distance = combat.catch_distance + 1.0
+	combat.reel_scroll()
+	_check(bool(world.get("_net_cleared")), "Reeling Silas all the way in completes his rescue")
+	_check(not bool(world.get("_silas_following")), "Silas thanks you before joining the party")
+	_check(world.get("_silas_rescue_target") == null,
+		"Rescued Silas no longer exists as a separate catchable fish")
+	_check(int(world.call("_total_catches")) == before + 1,
+		"Rescuing a companion never adds him to the inventory")
 	_finish_dialogue()
-	_check(bool(world.get("_silas_following")), "Rescued Silas begins following the player")
+	_check(bool(world.get("_silas_following")), "After being rescued, Silas swims alongside Penni")
 
 	# Silas can conceal the player, making ordinary fish less skittish.
 	world.call("_ask_silas_to_hide")
