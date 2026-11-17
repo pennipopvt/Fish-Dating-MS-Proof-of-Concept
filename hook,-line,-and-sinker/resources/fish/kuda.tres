@@ -48,4 +48,5 @@ miss_tension_gain = 0.14
 attack_tension_multiplier = 1.25
 miss_dash_duration = 0.18
 miss_dash_speed_multiplier = 4.0
+stagger_resistance = 90.0
 states = Array[ExtResource("3_attack")]([SubResource("QuickStrike"), SubResource("Feint")])
