@@ -5,7 +5,7 @@ extends CanvasLayer
 # Tabs and borders are laid out in shop_menu.tscn and styled by terminal_theme.tres.
 # This script only fills in the grid, item details, and actions.
 
-enum Page { QUOTA, SHOP, STORAGE, COLLECTION, CHALLENGES, SCHEDULE }
+enum Page { QUOTA, SHOP, STORAGE, COLLECTION, CHALLENGES, SCHEDULE, TEAM }
 
 const SLOT_SIZE := Vector2(168, 168) # 56 x 56 art pixels at 3x
 const MIN_SLOTS := 12                 # Four columns, three visible rows
@@ -41,6 +41,7 @@ const TABS_HIDDEN_X_OFFSET := 12.0
 @onready var _collection_tab: Button = %CollectionTab
 @onready var _challenges_tab: Button = %ChallengesTab
 @onready var _schedule_tab: Button = %ScheduleTab
+@onready var _team_tab: Button = %TeamTab
 @onready var _preview_frame: PanelContainer = $TerminalRoot/Panel/Margin/Layout/Body/Details/PreviewFrame
 @onready var _details_panel: VBoxContainer = $TerminalRoot/Panel/Margin/Layout/Body/Details
 
@@ -97,7 +98,7 @@ func _ready() -> void:
 	_terminal_panel.hide()
 	_nav_tabs.hide()
 	_opening_frame.hide()
-	_nav_buttons = [_quota_tab, _shop_tab, _storage_tab, _collection_tab, _challenges_tab, _schedule_tab]
+	_nav_buttons = [_quota_tab, _shop_tab, _storage_tab, _collection_tab, _challenges_tab, _schedule_tab, _team_tab]
 	for i in range(_nav_buttons.size()):
 		_nav_buttons[i].pressed.connect(_select_page.bind(i))
 
@@ -114,6 +115,7 @@ func _ready() -> void:
 	ChallengeManager.progress_reset.connect(_on_challenge_reset)
 	FishingManager.storage_changed.connect(_on_inventory_changed)
 	FishingManager.fish_caught.connect(_on_inventory_changed)  # collection/dex, incl. NPC catches
+	FishingManager.team_changed.connect(_on_team_changed)
 	DateManager.bookings_changed.connect(_on_schedule_changed)
 	QuotaManager.quota_changed.connect(_on_quota_changed)
 	GameManager.time_changed.connect(func(_day: int, _period: GameManager.Times) -> void: _on_schedule_changed())
@@ -363,16 +365,20 @@ func _refresh_page() -> void:
 			_collect_storage()
 		Page.COLLECTION:
 			_collect_fish()
+		Page.TEAM:
+			_collect_party()
 		Page.CHALLENGES:
 			_collect_challenges()
 
-	var names := ["QUOTA", "SHOP", "STORAGE", "COLLECTION", "CHALLENGES"]
+	var names := ["QUOTA", "SHOP", "STORAGE", "COLLECTION", "CHALLENGES", "SCHEDULE", "TEAM"]
 	var explanations := [
 		"Mandatory fish deliveries every 3 days",
 		"Fishing improvements and gifts",
 		"Fish and items you currently own",
 		"Fish you have discovered",
-		"Objectives and unlocks"
+		"Objectives and unlocks",
+		"Upcoming plans",
+		"First fish is on the line; all other companions wait by the dock"
 	]
 	_page_title.text = names[_page]
 	_page_hint.text = explanations[_page]
@@ -845,6 +851,10 @@ func _collect_trades() -> void:
 	for trade in ShopManager.trades:
 		if trade == null:
 			continue
+		# Bait is gone in the revised-fishing prototype. Hide the obsolete
+		# bait unlock upgrades, while preserving unrelated reel/line upgrades.
+		if trade.reward_method == &"shop_reward_unlock_hard_bait" or trade.reward_method == &"shop_reward_unlock_yellow_bait":
+			continue
 		var is_upgrade := trade.reward_method != &""
 		var is_gift := trade.reward_item != null and not is_upgrade
 		if _page == Page.SHOP and ((_shop_section == 0 and is_upgrade) or (_shop_section == 1 and is_gift and _has_recruited_npc())):
@@ -879,6 +889,19 @@ func _collect_storage() -> void:
 			"name": _human_name(item.item_id),
 			"icon": item.sprite,
 			"quantity": counts[key]
+		})
+
+
+func _collect_party() -> void:
+	for member in FishingManager.party:
+		if member == null:
+			continue
+		var name := "Silas" if member.fish_id == FishingManager.SILAS_FISH_ID else _human_name(member.fish_id)
+		_entries.append({
+			"kind": "companion",
+			"ref": member,
+			"name": name,
+			"icon": member.item_data.sprite if member.item_data != null else null
 		})
 
 
@@ -1019,6 +1042,8 @@ func _show_details() -> void:
 			_show_storage_details(entry)
 		"fish":
 			_show_fish_details(entry.get("ref") as FishData)
+		"companion":
+			_show_companion_details(entry.get("ref") as FishData)
 		"challenge":
 			_show_challenge_details(entry.get("ref") as ChallengeData)
 
@@ -1100,6 +1125,24 @@ func _make_requirement_row(requirement: TradeRequirement) -> Control:
 	return row
 
 
+func _show_companion_details(member: FishData) -> void:
+	if member == null:
+		return
+	var on_line: bool = FishingManager.get_lure_companion() == member
+	_description.text = "ON THE LINE" if on_line else "WAITING BY THE DOCK"
+	_add_detail_line("LURE: Attracts different species during casts.", DIM_TEXT)
+	if member.fish_id == FishingManager.SILAS_FISH_ID:
+		_add_detail_line("PASSIVE: Spyglass reveals hooked fish while Silas is on the team.", DARK_TEXT)
+		_add_detail_line("ON-LINE COMMAND: Q / Right Click to Hide. Prevent a dash and relieve tension, but skip parry stagger.", DIM_TEXT)
+		_add_detail_line("AFFINITY: Attracts aggressive fish (orange bait profile).", DIM_TEXT)
+	if not on_line:
+		_order_button.show()
+		_order_button.disabled = false
+		_order_button.text = "SET AS LURE"
+	else:
+		_status.text = "ACTIVE LURE"
+
+
 func _show_storage_details(entry: Dictionary) -> void:
 	var amount: int = int(entry.get("quantity", 0))
 	_description.text = "In your storage. You can use these items for trades and gifts."
@@ -1158,6 +1201,12 @@ func _on_order_pressed() -> void:
 	if _entries[_selected_index].get("kind") == "challenge":
 		_claim_challenge(_entries[_selected_index].get("ref") as ChallengeData)
 		return
+	if _entries[_selected_index].get("kind") == "companion":
+		var member: FishData = _entries[_selected_index].get("ref") as FishData
+		if member != null:
+			FishingManager.set_lure_companion(member.fish_id)
+		_refresh_page()
+		return
 	if _entries[_selected_index].get("kind") != "trade":
 		return
 	var trade: TradeData = _entries[_selected_index].get("ref") as TradeData
@@ -1198,4 +1247,9 @@ func _on_inventory_changed(_fish: Variant = null) -> void:
 	if _page == Page.QUOTA:
 		_refresh_quota_page.call_deferred()
 	elif _page == Page.SHOP or _page == Page.STORAGE or _page == Page.COLLECTION:
+		_refresh_page()
+
+
+func _on_team_changed() -> void:
+	if visible and _page == Page.TEAM:
 		_refresh_page()
