@@ -204,6 +204,8 @@ func get_random_catch() -> FishData:
 
 
 func _silas_already_caught() -> bool:
+	if has_companion(SILAS_FISH_ID):
+		return true
 	for fish in catch_dex:
 		if fish != null and fish.fish_id == SILAS_FISH_ID:
 			return true
