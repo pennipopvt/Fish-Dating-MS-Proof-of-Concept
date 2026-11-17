@@ -99,6 +99,10 @@ func _return_to_surface(with_silas: bool) -> void:
 		_dialogue_active = false
 		_choice_active = false
 		dialogue_panel.hide()
+		if with_silas:
+			# Remember his decision across later dives. His fish form still
+			# follows underwater; the island provides his human form on land.
+			_silas_ashore = true
 		surface_requested.emit(with_silas)
 	else:
 		_go_shore(with_silas)
