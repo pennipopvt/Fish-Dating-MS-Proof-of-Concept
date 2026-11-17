@@ -416,7 +416,7 @@ func _begin_combat(fish: DivingWildFish) -> void:
 	if _combat_direction.length_squared() <= 0.01:
 		_combat_direction = Vector2.RIGHT
 	_combat_distance = player_sprite.position.distance_to(fish.position)
-	if _combat.begin(fish, data):
+	if _combat.begin(fish, data, _combat_distance, _net.max_range):
 		_net_flash_time = 0.0
 		combat_panel.show()
 		_update_combat_hud()
@@ -429,17 +429,15 @@ func _get_fish_data(fish_id: StringName) -> FishData:
 	return null
 
 
-func _sync_combat_fish(delta: float) -> void:
+func _sync_combat_fish(_delta: float) -> void:
 	if not _combat.is_active():
 		return
 	var fish: DivingWildFish = _combat.target
-	# The fish is physically present in the lagoon. Successful reels pull
-	# it toward Penni; missed-parry dashes push it back through the water.
-	var distance: float = clampf(_combat_distance + (DivingCombat.START_PROGRESS - _combat.progress) * 65.0, 12.0, 116.0)
-	var destination: Vector2 = player_sprite.position + _combat_direction * distance
-	fish.position = fish.position.move_toward(destination, 200.0 * delta)
+	# Match the original FishingLine.update_line_dist(): the fish's visible
+	# position comes from the SAME distance that governs the catch. No more
+	# distant-looking fish being collected when an unrelated bar fills up.
+	fish.position = player_sprite.position + _combat_direction * _combat.line_distance
 	fish.rotation = sin(_time * 5.0) * (0.14 if _combat.phase == DivingCombat.Phase.WINDUP else 0.05)
-
 
 func _update_combat_hud() -> void:
 	var active: bool = _combat.is_active()
