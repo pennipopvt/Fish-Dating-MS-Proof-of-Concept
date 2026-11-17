@@ -1,16 +1,22 @@
 extends Node
 class_name DivingCombat
 
-# The underwater encounter uses the original FishingController's timing,
-# species-authored FishEscapeState data, 3-scroll strong parry, tension and
-# progress rules. It deliberately has no rod/cast/shore camera dependencies.
+# Uses the original FishingController's species-specific attack phases,
+# three-scroll parries, tension and dash rules. Like FishingLine, catch progress
+# is derived from actual line distance, not a fixed bar that fills regardless
+# of how far away the fish is. No bait, bobber or island camera dependencies.
 signal finished(won: bool, fish: DivingWildFish)
 signal parried(result: StringName)
 
 enum Phase { WARNING, WINDUP, ATTACK, DASH, STUN }
 
-const START_PROGRESS := 0.30
-const REEL_GAIN := 0.10
+# These lengths are in the same world pixels as the diving net and fish.
+# A cast reaches ~110px, but a hooked fish gets additional line slack before
+# it escapes. Short-range fish require fewer pulls than distant fish.
+@export_range(6.0, 40.0, 1.0) var catch_distance: float = 14.0
+@export_range(2.0, 20.0, 0.5) var reel_pixels_per_scroll: float = 7.0
+@export_range(20.0, 120.0, 1.0) var fight_slack: float = 65.0
+
 const TENSION_RECOVERY := 0.20
 const RECOVERY_DELAY := 0.10
 const STRONG_REEL_SCROLLS := 3
@@ -22,7 +28,11 @@ var phase: Phase = Phase.WARNING
 var attack: FishEscapeState
 var phase_time: float = 0.0
 var attack_elapsed: float = 0.0
-var progress: float = START_PROGRESS
+# line_distance is authoritative. The HUD progress is derived from it, and
+# DivingWorld places the hooked fish at exactly that distance each frame.
+var line_distance: float = 0.0
+var max_line_distance: float = 175.0
+var progress: float = 0.0
 var tension: float = 0.0
 var reel_open: bool = false
 var free_reel: bool = false
@@ -34,8 +44,8 @@ var feedback: String = ""
 var feedback_time: float = 0.0
 var _dash_elapsed: float = 0.0
 var _dash_duration: float = 0.0
-var _dash_start_progress: float = 0.0
-var _dash_end_progress: float = 0.0
+var _dash_start_distance: float = 0.0
+var _dash_end_distance: float = 0.0
 var _dash_start_tension: float = 0.0
 var _dash_end_tension: float = 0.0
 
@@ -43,12 +53,14 @@ func is_active() -> bool:
 	return target != null and is_instance_valid(target)
 
 
-func begin(wild: DivingWildFish, data: FishData) -> bool:
+func begin(wild: DivingWildFish, data: FishData, initial_distance: float, net_range: float) -> bool:
 	if is_active() or wild == null or not is_instance_valid(wild) or data == null or data.states.is_empty():
 		return false
 	target = wild
 	fish_data = data
-	progress = START_PROGRESS
+	max_line_distance = maxf(net_range + fight_slack, catch_distance + 1.0)
+	line_distance = clampf(initial_distance, catch_distance, max_line_distance)
+	_update_progress_from_distance()
 	tension = 0.0
 	recovery_timer = 0.0
 	reel_open = false
@@ -67,7 +79,10 @@ func step(delta: float) -> void:
 		return
 	feedback_time = maxf(0.0, feedback_time - delta)
 	if reel_open and not free_reel and attack != null and (phase == Phase.ATTACK or phase == Phase.WINDUP):
-		progress = maxf(0.0, progress - maxf(attack.escape_rate, 0.0) * delta)
+		# An ordinary parry lets the fish continue resisting reeling,
+		# exactly as it does in the original fishing controller.
+		line_distance = minf(max_line_distance, line_distance + maxf(attack.escape_rate, 0.0) * _line_span() * delta)
+		_update_progress_from_distance()
 	if reel_open:
 		if recovery_timer > 0.0:
 			recovery_timer = maxf(0.0, recovery_timer - delta)
@@ -76,10 +91,11 @@ func step(delta: float) -> void:
 	if phase == Phase.DASH:
 		_dash_elapsed += delta
 		var t: float = clampf(_dash_elapsed / maxf(_dash_duration, 0.001), 0.0, 1.0)
-		progress = lerpf(_dash_start_progress, _dash_end_progress, t)
+		line_distance = lerpf(_dash_start_distance, _dash_end_distance, t)
+		_update_progress_from_distance()
 		tension = lerpf(_dash_start_tension, _dash_end_tension, t)
 		if t >= 1.0:
-			if progress <= 0.0 or tension >= 1.0:
+			if line_distance >= max_line_distance or tension >= 1.0:
 				_finish(false)
 			else:
 				_start_warning()
@@ -99,7 +115,7 @@ func step(delta: float) -> void:
 			_start_attack()
 		Phase.ATTACK, Phase.STUN:
 			_start_warning()
-	if is_active() and progress <= 0.0:
+	if is_active() and line_distance >= max_line_distance:
 		_finish(false)
 
 
@@ -229,8 +245,11 @@ func _fail_parry() -> void:
 	phase = Phase.DASH
 	_dash_elapsed = 0.0
 	_dash_duration = maxf(fish_data.miss_dash_duration, 0.05)
-	_dash_start_progress = progress
-	_dash_end_progress = clampf(progress - maxf(attack.escape_rate, 0.0) * fish_data.miss_dash_speed_multiplier * _dash_duration, 0.0, 1.0)
+	_dash_start_distance = line_distance
+	_dash_end_distance = minf(
+		max_line_distance,
+		line_distance + maxf(attack.escape_rate, 0.0) * fish_data.miss_dash_speed_multiplier * _dash_duration * _line_span()
+	)
 	_dash_start_tension = tension
 	_dash_end_tension = clampf(tension + maxf(0.0, fish_data.miss_tension_gain * fish_data.attack_tension_multiplier - FishingManager.miss_tension_reduction), 0.0, 1.0)
 	feedback = "MISSED! FISH DASHES"
@@ -239,18 +258,31 @@ func _fail_parry() -> void:
 	parried.emit(&"miss")
 
 
+func _line_span() -> float:
+	return maxf(max_line_distance - catch_distance, 1.0)
+
+
+func _update_progress_from_distance() -> void:
+	progress = clampf((max_line_distance - line_distance) / _line_span(), 0.0, 1.0)
+
+
 func _reel() -> void:
-	progress = clampf(progress + REEL_GAIN + FishingManager.reel_progress_bonus, 0.0, 1.0)
+	# Use real underwater pixels instead of adding 10% to an arbitrary bar.
+	# The existing stronger-reel upgrade contributes its same additive 1%.
+	var gain: float = reel_pixels_per_scroll + FishingManager.reel_progress_bonus * _line_span()
+	line_distance = maxf(catch_distance, line_distance - gain)
+	_update_progress_from_distance()
 	if not free_reel:
 		var multiplier: float = fish_data.attack_tension_multiplier if phase == Phase.ATTACK else 1.0
 		var amount: float = maxf(0.0, fish_data.reel_tension_gain * multiplier - FishingManager.reel_tension_reduction)
 		tension = clampf(tension + amount, 0.0, 1.0)
 		recovery_timer = RECOVERY_DELAY
-	if progress >= 1.0:
+	# The fish must actually reach Penni. A perfect parry opens free
+	# reeling but never grants capture on its own, however far away it is.
+	if line_distance <= catch_distance:
 		_finish(true)
 	elif tension >= 1.0:
 		_finish(false)
-
 
 func phase_title() -> String:
 	match phase:
