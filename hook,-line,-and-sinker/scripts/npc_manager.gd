@@ -146,5 +146,11 @@ func _unhandled_key_input(event: InputEvent) -> void:
 		var state := get_npc_state(&"test_npc")
 		var flags: Dictionary = state["flags"]
 		flags[&"Recruited"] = true
-		print("[DEV] Silas recruited. Next interaction begins his gift quest.")
+		# F6 bypasses the first conversation; mirror real recruitment so the
+		# revised fishing party / spyglass isn't left in an inconsistent state.
+		var silas_fish: FishData = preload("res://resources/fish/silas.tres")
+		FishingManager.register_recruited_companion(silas_fish)
+		FishingManager.remove_recruited_catch(silas_fish)
+		ShopManager.gifts_unlocked = true
+		print("[DEV] Silas recruited and added to fishing team.")
 		get_viewport().set_input_as_handled()
