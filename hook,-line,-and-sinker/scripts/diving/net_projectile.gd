@@ -14,6 +14,34 @@ enum State { IDLE, OUTBOUND, RETURNING, LATCHED }
 @export_range(60.0, 800.0, 10.0) var retract_speed: float = 370.0
 @export_range(3.0, 20.0, 1.0) var hit_radius: float = 11.0
 
+# Match FishingLine's pale -> amber -> red tension language.
+@export var calm_line_color: Color = Color("#d8e6e4")
+@export var strained_line_color: Color = Color("#efb65a")
+@export var danger_line_color: Color = Color("#ee514d")
+@export var stunned_line_color: Color = Color("#ffe55c")
+@export_range(0.0, 1.0) var strained_threshold: float = 0.55
+var line_tension: float = 0.0
+var line_stunned: bool = false
+
+func set_line_state(tension_amount: float, stunned: bool = false) -> void:
+	var updated_tension: float = clampf(tension_amount, 0.0, 1.0)
+	if not is_equal_approx(updated_tension, line_tension) or stunned != line_stunned:
+		line_tension = updated_tension
+		line_stunned = stunned
+		queue_redraw()
+
+
+func get_line_color() -> Color:
+	if line_stunned:
+		return stunned_line_color
+	if line_tension <= strained_threshold:
+		return calm_line_color.lerp(strained_line_color, line_tension / maxf(strained_threshold, 0.001))
+	return strained_line_color.lerp(
+		danger_line_color,
+		(line_tension - strained_threshold) / maxf(1.0 - strained_threshold, 0.001)
+	)
+
+
 var state: State = State.IDLE
 var tip: Vector2 = Vector2.ZERO
 var direction: Vector2 = Vector2.RIGHT
@@ -51,6 +79,8 @@ func cast_net(origin: Node2D, aim_position: Vector2, fish_in_water: Array[Diving
 	tip = _start
 	_travelled = 0.0
 	_age = 0.0
+	line_tension = 0.0
+	line_stunned = false
 	_latched_fish = null
 	_candidates.clear()
 	_candidates.append_array(fish_in_water)
@@ -123,6 +153,8 @@ func retract() -> void:
 
 func reset_net() -> void:
 	state = State.IDLE
+	line_tension = 0.0
+	line_stunned = false
 	_latched_fish = null
 	_origin = null
 	_candidates.clear()
@@ -141,7 +173,7 @@ func _draw() -> void:
 	var anchor: Vector2 = _get_anchor()
 	var net_center: Vector2 = tip.round()
 	# Reusable cord on cast, on retrieval, and when attached to a fish.
-	draw_line(anchor, net_center, Color(0.63, 0.87, 0.83, 0.82), 1.2, true)
+	draw_line(anchor, net_center, get_line_color(), 1.6, false)
 	if state == State.LATCHED:
 		draw_circle(net_center, 9.0, Color(0.61, 0.95, 0.85, 0.14))
 	draw_arc(net_center, 7.0, 0.0, TAU, 12, Color(0.86, 0.97, 0.91, 0.98), 1.6, true)
