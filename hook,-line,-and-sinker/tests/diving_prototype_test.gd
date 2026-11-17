@@ -41,15 +41,50 @@ func _run() -> void:
 	_check(not bool(world.get("_silas_following")), "Silas is initially independent")
 	_check(not bool(world.get("_silas_met")), "Silas is a hidden talking-fish surprise")
 
-	# Catch an ordinary fish in reach; clicking from far away must not work.
+	# Approaching and clicking no longer catches automatically: it starts
+	# the same three-scroll parry combat, with species-authored attacks.
+	var combat: DivingCombat = world.get_node("Combat") as DivingCombat
 	var first_fish: DivingWildFish = wild_fish[0]
 	var target: Vector2 = first_fish.position
 	var before: int = world.call("_total_catches")
 	world.call("_try_catch", target)
-	_check(int(world.call("_total_catches")) == before, "No long-distance net catches")
+	_check(not combat.is_active() and int(world.call("_total_catches")) == before,
+		"Clicking a distant fish does not start a battle or catch it")
 	player.position = target
 	world.call("_try_catch", target)
-	_check(int(world.call("_total_catches")) == before + 1, "Nearby clicked fish is caught")
+	_check(combat.is_active(), "Clicking a nearby fish engages parry combat")
+	_check(int(world.call("_total_catches")) == before,
+		"Fish is not automatically caught when clicked")
+	_check(world.get_node("../../../HUD/CombatPanel").visible,
+		"Combat panel appears while the fish is engaged")
+	combat.call("_start_windup")
+	combat.call("_start_attack")
+	combat.reel_scroll()
+	combat.reel_scroll()
+	combat.reel_scroll()
+	_check(int(combat.phase) == DivingCombat.Phase.STUN and combat.free_reel,
+		"Three fast scrolls in the perfect window stun the fish")
+	combat.progress = 0.95
+	combat.reel_scroll()
+	_check(not combat.is_active(), "Completing reel progress ends the encounter")
+	_check(int(world.call("_total_catches")) == before + 1,
+		"Only winning the combat adds the fish to storage")
+	_check(wild_fish.size() == 7, "Caught fish disappears from the underwater world")
+
+	# A failed encounter leaves the fish swimming in the world.
+	var second: DivingWildFish = wild_fish[0]
+	player.position = second.position
+	world.call("_try_catch", second.position)
+	_check(combat.is_active(), "Another fish can initiate its own attack")
+	combat.call("_start_windup")
+	combat.reel_scroll()
+	_check(int(combat.phase) == DivingCombat.Phase.DASH,
+		"An early scroll triggers the missed-parry dash")
+	combat.release()
+	_check(not combat.is_active() and second.catch_cooldown > 0.0,
+		"Releasing the battle lets the wild fish escape and be pursued again")
+	_check(int(world.call("_total_catches")) == before + 1,
+		"Escaping fish are never added to storage")
 
 	# Find and talk to the eel before rescuing him.
 	player.position = SILAS_BURROW + Vector2(0, -14)
