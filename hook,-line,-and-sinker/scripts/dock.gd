@@ -16,6 +16,6 @@ func interact(_player: Node2D) -> void:
 		return
 	var main_scene: Node = get_tree().current_scene
 	if main_scene != null and main_scene.has_method("request_dive"):
-		main_scene.request_dive(fisher, self)
+		main_scene.call("request_dive", fisher, self)
 	else:
 		push_warning("Diving entry requires the diving-enabled main scene.")
