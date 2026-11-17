@@ -14,7 +14,8 @@ enum Phase { WARNING, WINDUP, ATTACK, DASH, RECOVERY, STUN }
 # A cast reaches ~110px, but a hooked fish gets additional line slack before
 # it escapes. Short-range fish require fewer pulls than distant fish.
 @export_range(6.0, 40.0, 1.0) var catch_distance: float = 14.0
-@export_range(2.0, 20.0, 0.5) var reel_pixels_per_scroll: float = 7.0
+# Slower, deliberate line retrieval: formerly 7 pixels per scroll.
+@export_range(0.5, 20.0, 0.5) var reel_pixels_per_scroll: float = 2.5
 @export_range(20.0, 120.0, 1.0) var fight_slack: float = 65.0
 
 # Keep the stagger behavior and tuning from revised-fishing.
@@ -22,6 +23,9 @@ enum Phase { WARNING, WINDUP, ATTACK, DASH, RECOVERY, STUN }
 @export_range(1.0, 100.0, 1.0) var perfect_stagger_gain: float = 48.0
 @export_range(0.0, 15.0, 0.5) var stagger_decay_per_second: float = 2.0
 @export_range(1.0, 3.0, 0.05) var stun_reel_multiplier: float = 1.5
+
+# Keep upgrade strength proportional as the base reel distance changes.
+const ORIGINAL_REEL_PIXELS_PER_SCROLL: float = 7.0
 
 const TENSION_RECOVERY := 0.20
 const RECOVERY_DELAY := 0.10
@@ -316,10 +320,11 @@ func _update_progress_from_distance() -> void:
 
 
 func _reel() -> void:
-	# Use real underwater pixels instead of adding 10% to an arbitrary bar.
-	# The existing stronger-reel upgrade contributes its same additive 1%.
-	var multiplier: float = stun_reel_multiplier if phase == Phase.STUN else 1.0
-	var gain: float = (reel_pixels_per_scroll + FishingManager.reel_progress_bonus * _line_span()) * multiplier
+	# Each scroll reels a small physical distance. Scale the upgrade bonus
+	# with the base pull so an upgrade doesn't undo the slower combat pacing.
+	var stun_multiplier: float = stun_reel_multiplier if phase == Phase.STUN else 1.0
+	var upgrade_multiplier: float = 1.0 + FishingManager.reel_progress_bonus * _line_span() / ORIGINAL_REEL_PIXELS_PER_SCROLL
+	var gain: float = reel_pixels_per_scroll * upgrade_multiplier * stun_multiplier
 	line_distance = maxf(catch_distance, line_distance - gain)
 	_update_progress_from_distance()
 	if not free_reel:
