@@ -15,6 +15,7 @@ const ADVANCE_ACTION := &"Interact"
 # Choices picked before (no more affection from them): grey, still pickable.
 const PICKED_CHOICE_COLOR := Color(0.55, 0.55, 0.6)
 const SILAS_FISH_SPRITE: Texture2D = preload("res://sprites/fish/silas_eel.png")
+const KUDA_FISH_SPRITE: Texture2D = preload("res://sprites/fish/kuda_placeholder.png")
 const PENNI_IDLE_SHEET: Texture2D = preload("res://sprites/characters/penni/penni_idle.png")
 
 # Shown when an NPC has no portrait assigned yet.
@@ -227,18 +228,8 @@ func _get_portrait(_line: DialogueLineData) -> Texture2D:
 	if _underwater_mode:
 		if _npc.npc_id == &"test_npc":
 			return SILAS_FISH_SPRITE
-		# Future underwater NPCs automatically use their fishing species art.
-		for fish in FishingManager.possible_catches:
-			if fish != null and fish.npc_data != null and fish.item_data != null:
-				var character: NPCInteractable = null
-				if fish.npc_data.can_instantiate():
-					# PackedScene metadata can be resolved without spawning.
-					var state: SceneState = fish.npc_data.get_state()
-					for index in range(state.get_node_property_count(0)):
-						if state.get_node_property_name(0, index) == &"npc":
-							var npc_data: NPCData = state.get_node_property_value(0, index) as NPCData
-							if npc_data != null and npc_data.npc_id == _npc.npc_id:
-								return fish.item_data.sprite
+		if _npc.npc_id == &"barracuda":
+			return KUDA_FISH_SPRITE
 	if _npc.portrait != null:
 		return _npc.portrait
 
