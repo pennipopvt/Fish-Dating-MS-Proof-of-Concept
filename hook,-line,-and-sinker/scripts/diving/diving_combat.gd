@@ -323,8 +323,8 @@ func _reel() -> void:
 	line_distance = maxf(catch_distance, line_distance - gain)
 	_update_progress_from_distance()
 	if not free_reel:
-		var multiplier: float = fish_data.attack_tension_multiplier if phase == Phase.ATTACK else 1.0
-		var amount: float = maxf(0.0, fish_data.reel_tension_gain * multiplier - FishingManager.reel_tension_reduction)
+		var tension_multiplier: float = fish_data.attack_tension_multiplier if phase == Phase.ATTACK else 1.0
+		var amount: float = maxf(0.0, fish_data.reel_tension_gain * tension_multiplier - FishingManager.reel_tension_reduction)
 		tension = clampf(tension + amount, 0.0, 1.0)
 		recovery_timer = RECOVERY_DELAY
 	# The fish must actually reach Penni. A perfect parry opens free
