@@ -7,9 +7,6 @@ extends SceneTree
 const PROTOTYPE: PackedScene = preload("res://scenes/diving_prototype.tscn")
 const SILAS_FISH: Texture2D = preload("res://sprites/fish/silas_eel.png")
 const PENNI_PORTRAIT: Texture2D = preload("res://sprites/characters/penni/penni_portrait.png")
-const SILAS_BURROW := Vector2(385.0, 258.0)
-const TANGLED_NET := Vector2(411.0, 250.0)
-const SURFACE_POINT := Vector2(78.0, 92.0)
 var failures: int = 0
 
 func _initialize() -> void:
@@ -25,6 +22,19 @@ func _run() -> void:
 	var viewport_container: SubViewportContainer = prototype.get_node("SubViewportContainer")
 	var pixel_viewport: SubViewport = prototype.get_node("SubViewportContainer/SubViewport")
 	var hud: Control = prototype.get_node("HUD")
+	var level_art: Node2D = world.get_node("LevelArt") as Node2D
+	var foreground_art: Node2D = world.get_node("ForegroundArt") as Node2D
+	var spawn_group: Node2D = world.get_node("FishSpawns") as Node2D
+	var locations: Node2D = world.get_node("Points") as Node2D
+	var silas_burrow: Vector2 = (locations.get_node("SilasBurrow") as Marker2D).position
+	var tangled_net: Vector2 = (locations.get_node("TangledNet") as Marker2D).position
+	var surface_point: Vector2 = (locations.get_node("SurfaceExit") as Marker2D).position
+	_check(level_art.get_node_or_null("Terrain") is TileMapLayer and foreground_art != null,
+		"Visual level art and foreground layers are editable in the lagoon scene")
+	_check(spawn_group.get_child_count() == 8 and spawn_group.get_child(0) is DivingFishSpawn,
+		"Fish are controlled by editor-placeable spawn markers")
+	_check(locations.has_node("Entry") and locations.has_node("ShellGarden"),
+		"Story locations and dive entry are editor-placeable markers")
 	_check(pixel_viewport.size == Vector2i(320, 180) and viewport_container.stretch_shrink == 6,
 		"Lagoon world uses the same 320x180 pixel grid as the island")
 	_check(hud.get_parent() == prototype and hud.has_node("Location"),
@@ -37,7 +47,8 @@ func _run() -> void:
 	_check(dialogue != null, "Standalone lagoon opens the same DialogueUI component")
 	_check(dialogue != null and bool(dialogue.get("_underwater_mode")), "Underwater portraits use fish sprite mode")
 	_check(bool(world.get("_underwater")), "Starts in the underwater level")
-	_check(wild_fish.size() == 8, "Wild fish are present with autonomous movement")
+	_check(wild_fish.size() == spawn_group.get_child_count(),
+		"Every configured fish spawn marker creates one autonomous fish")
 	_check(not bool(world.get("_silas_following")), "Silas is initially independent")
 	_check(not bool(world.get("_silas_met")), "Silas is a hidden talking-fish surprise")
 
@@ -109,7 +120,7 @@ func _run() -> void:
 		"Escaped fish are never added to storage")
 
 	# Find and talk to the eel before rescuing him.
-	player.position = SILAS_BURROW + Vector2(0, -14)
+	player.position = silas_burrow + Vector2(0, -14)
 	world.call("_talk_to_silas")
 	_check(bool(world.get("_silas_met")), "Talking eel reveal starts underwater")
 	_check(DialogueManager.is_active and DialogueManager.get_current_speaker_name() == "???",
@@ -120,7 +131,7 @@ func _run() -> void:
 		_check((dialogue.get_node("PlayerPortrait") as TextureRect).texture == PENNI_PORTRAIT,
 			"Penni uses her ORIGINAL dialogue portrait underwater")
 	_finish_dialogue()
-	world.call("_try_catch", TANGLED_NET)
+	world.call("_try_catch", tangled_net)
 	_check(bool(world.get("_net_cleared")), "Player can free Silas's tangled burrow")
 	_finish_dialogue()
 	_check(bool(world.get("_silas_following")), "Rescued Silas begins following the player")
@@ -137,7 +148,7 @@ func _run() -> void:
 	_check(int(world.get("_silas_talks")) >= 2, "Multiple conversations build trust")
 
 	# Only after getting to know him does Silas ask to come ashore.
-	player.position = SURFACE_POINT
+	player.position = surface_point
 	world.call("_try_surface")
 	# Shared UI presents real selectable dialogue choices.
 	_finish_dialogue()
