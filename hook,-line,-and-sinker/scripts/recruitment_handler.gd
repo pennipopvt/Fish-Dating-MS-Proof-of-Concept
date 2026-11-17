@@ -87,6 +87,7 @@ func recruit_actor_for_debug(actor: NPCInteractable, fish: FishData) -> bool:
 func _finalize_recruitment(actor: NPCInteractable, fish: FishData) -> void:
 	if not _actor_valid(actor) or actor.npc == null:
 		return
+	FishingManager.register_recruited_companion(fish)
 	FishingManager.remove_recruited_catch(fish)
 	ShopManager.gifts_unlocked = true
 	AffectionManager.on_recruited(actor.npc.npc_id)
