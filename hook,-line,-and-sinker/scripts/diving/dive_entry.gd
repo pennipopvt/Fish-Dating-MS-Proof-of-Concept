@@ -69,12 +69,12 @@ func _begin_dive(dock: Node2D) -> void:
 	await _close_iris(_normalized_screen_position(_world_player))
 
 	_world_player.hide()
-	_diving_layer.process_mode = Node.PROCESS_MODE_INHERIT
 	_diving_layer.visible = true
 	_lagoon.enter_from_dock()
 	_underwater = true
 	GameManager.diving_session_active = true
 	await _open_iris(_normalized_screen_position(_lagoon.get_node("Player") as Node2D))
+	_diving_layer.process_mode = Node.PROCESS_MODE_INHERIT
 	_transitioning = false
 
 
@@ -104,6 +104,8 @@ func _on_surface_requested(with_silas: bool) -> void:
 	if _transitioning or not _underwater:
 		return
 	_transitioning = true
+	# Freeze underwater movement and net clicks while the circle closes.
+	_diving_layer.process_mode = Node.PROCESS_MODE_DISABLED
 	_surface_from_dive(with_silas)
 
 
