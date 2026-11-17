@@ -12,9 +12,9 @@ extends Resource
 ## existing sprite scale for other fish/resources.
 @export_range(0.0, 128.0, 1.0) var hooked_sprite_width: float = 0.0
 
-## Legacy setting retained so existing fish resources still load. In the
-## parry/dash combat system fish do not drift backward automatically.
-## Per-attack FishEscapeState.escape_rate controls contested pull and dash speed.
+## Continuous pull rate between attacks in diving combat, as a fraction
+## of available net length per second. FishEscapeState.escape_rate separately
+## controls contested attack pulling and missed-parry dash speed.
 @export_range(0.0, 0.2, 0.001) var passive_escape_rate: float = 0.015
 @export_group("Tension")
 ## Tension added per reel scroll (the old scene value was 0.015).
