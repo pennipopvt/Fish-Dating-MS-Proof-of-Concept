@@ -38,6 +38,16 @@ const REACH: float = 44.0
 @onready var prompt_label: Label = $"../../../HUD/Prompt"
 @onready var toast_label: Label = $"../../../HUD/Toast"
 @onready var hud_footer: Panel = $"../../../HUD/FooterBack"
+@onready var _combat: DivingCombat = $Combat
+@onready var combat_panel: Panel = $"../../../HUD/CombatPanel"
+@onready var combat_title: Label = $"../../../HUD/CombatPanel/CombatTitle"
+@onready var combat_status: Label = $"../../../HUD/CombatPanel/CombatStatus"
+@onready var combat_progress: ProgressBar = $"../../../HUD/CombatPanel/CombatProgress"
+@onready var combat_tension: ProgressBar = $"../../../HUD/CombatPanel/CombatTension"
+@onready var combat_feedback: Label = $"../../../HUD/CombatPanel/CombatFeedback"
+@onready var combat_hint: Label = $"../../../HUD/CombatPanel/CombatHint"
+var _combat_direction: Vector2 = Vector2.RIGHT
+var _combat_distance: float = 40.0
 
 var _embedded_in_world: bool = false
 var _underwater: bool = true
@@ -73,6 +83,8 @@ func _ready() -> void:
 	_set_silas_fish_sprite()
 	camera.position = player_sprite.position
 	_set_camera_bounds(true)
+	_combat.finished.connect(_on_combat_finished)
+	combat_panel.hide()
 	DialogueManager.conversation_finished.connect(_on_diving_conversation_finished)
 	DialogueManager.choice_resolved.connect(_on_diving_choice_resolved)
 	# The integrated island owns a DialogueUI already. For running the
@@ -170,18 +182,24 @@ func _process(delta: float) -> void:
 	_toast_time = maxf(0.0, _toast_time - delta)
 	_net_flash_time = maxf(0.0, _net_flash_time - delta)
 	var is_talking: bool = DialogueManager.is_active
-	toast_label.visible = _toast_time > 0.0 and not is_talking
-	story_label.visible = not is_talking
-	prompt_label.visible = not is_talking
-	hud_footer.visible = not is_talking
+	var fighting: bool = _combat.is_active()
+	toast_label.visible = _toast_time > 0.0 and not is_talking and not fighting
+	story_label.visible = not is_talking and not fighting
+	prompt_label.visible = not is_talking and not fighting
+	hud_footer.visible = not is_talking and not fighting
 
-	if not is_talking:
+	if not is_talking and not fighting:
 		_move_player(delta)
+	if fighting:
+		_combat.step(delta)
+		_sync_combat_fish(delta)
+	_update_combat_hud()
 
 	if _underwater:
-		for fish in _wild_fish:
-			if is_instance_valid(fish):
-				fish.swim(delta, player_sprite.position, _veil_time > 0.0)
+		if not _combat.is_active():
+			for fish in _wild_fish:
+				if is_instance_valid(fish):
+					fish.swim(delta, player_sprite.position, _veil_time > 0.0)
 		_update_silas_fish(delta)
 		_maybe_discover_garden()
 		camera.position = camera.position.lerp(player_sprite.position, minf(delta * 5.5, 1.0))
@@ -245,7 +263,7 @@ func _update_silas_fish(delta: float) -> void:
 	silas_sprite.rotation = sin(_time * 3.0) * 0.07
 
 func _maybe_discover_garden() -> void:
-	if _discovered_garden or not _silas_following or DialogueManager.is_active:
+	if _discovered_garden or not _silas_following or DialogueManager.is_active or _combat.is_active():
 		return
 	if player_sprite.position.distance_to(GLOWING_GARDEN) < 45.0:
 		_discovered_garden = true
@@ -256,9 +274,20 @@ func _maybe_discover_garden() -> void:
 		])
 
 func _unhandled_input(event: InputEvent) -> void:
-	# DialogueUI handles advance, player lines and choice buttons exactly as
-	# it does on the island; don't double-consume any of those inputs.
+	# Dialogue UI owns conversation input; diving combat owns scroll-down
+	# while engaged. Movement, net clicks and Silas commands are paused.
 	if DialogueManager.is_active:
+		return
+	if _combat.is_active():
+		if event.is_action_pressed("Reel") or (
+			event is InputEventMouseButton and event.pressed
+			and event.button_index == MOUSE_BUTTON_WHEEL_DOWN
+		):
+			_combat.reel_scroll()
+			get_viewport().set_input_as_handled()
+		elif event is InputEventKey and event.pressed and event.keycode == KEY_ESCAPE:
+			_combat.release()
+			get_viewport().set_input_as_handled()
 		return
 	if event is InputEventKey and event.pressed and not event.echo:
 		if event.keycode == KEY_E or event.keycode == KEY_SPACE:
@@ -273,6 +302,8 @@ func _unhandled_input(event: InputEvent) -> void:
 			get_viewport().set_input_as_handled()
 
 func _interact() -> void:
+	if _combat.is_active():
+		return
 	if not _underwater:
 		if player_sprite.position.distance_to(SHORE_DIVE_POINT) < REACH:
 			_go_underwater()
@@ -365,18 +396,9 @@ func _try_catch(world_mouse: Vector2) -> void:
 			_wild_fish.remove_at(i)
 			continue
 		if fish.is_targeted(world_mouse, player_sprite.position):
-			_caught[fish.fish_name] = int(_caught.get(fish.fish_name, 0)) + 1
-			# Feed the normal world's storage, collection and challenges, too.
-			# The GameManager dive flag prevents each net catch from consuming
-			# another action while the player is still underwater.
-			for data in FishingManager.possible_catches:
-				if data != null and data.fish_id == fish.fish_name:
-					FishingManager.catch_fish(data)
-					break
-			_net_flash_point = fish.position
-			_toast("Caught a %s!  (%d caught)" % [fish.get_display_name(), _total_catches()])
-			_wild_fish.remove_at(i)
-			fish.queue_free()
+			# Clicking within reach engages the same scroll/parry mechanics as
+			# dock fishing; the fish is NOT caught automatically anymore.
+			_begin_combat(fish)
 			return
 	# A near miss is useful feedback. Clicking from across the world should
 	# never teleport a fish into your inventory.
@@ -387,7 +409,100 @@ func _try_catch(world_mouse: Vector2) -> void:
 	if closest < 22.0:
 		_toast("Get closer before casting the net.")
 
+func _begin_combat(fish: DivingWildFish) -> void:
+	if _combat.is_active() or DialogueManager.is_active:
+		return
+	var data: FishData = _get_fish_data(fish.fish_name)
+	if data == null or data.states.is_empty():
+		_toast("This fish doesn't have combat behavior yet.")
+		return
+	_combat_direction = (fish.position - player_sprite.position).normalized()
+	if _combat_direction.length_squared() <= 0.01:
+		_combat_direction = Vector2.RIGHT
+	_combat_distance = player_sprite.position.distance_to(fish.position)
+	if _combat.begin(fish, data):
+		_net_flash_time = 0.0
+		combat_panel.show()
+		_update_combat_hud()
+
+
+func _get_fish_data(fish_id: StringName) -> FishData:
+	for resource in FishingManager.possible_catches:
+		if resource != null and resource.fish_id == fish_id:
+			return resource
+	return null
+
+
+func _sync_combat_fish(delta: float) -> void:
+	if not _combat.is_active():
+		return
+	var fish: DivingWildFish = _combat.target
+	# The fish is physically present in the lagoon. Successful reels pull
+	# it toward Penni; missed-parry dashes push it back through the water.
+	var distance: float = clampf(_combat_distance + (DivingCombat.START_PROGRESS - _combat.progress) * 65.0, 12.0, 116.0)
+	var destination: Vector2 = player_sprite.position + _combat_direction * distance
+	fish.position = fish.position.move_toward(destination, 200.0 * delta)
+	fish.rotation = sin(_time * 5.0) * (0.14 if _combat.phase == DivingCombat.Phase.WINDUP else 0.05)
+
+
+func _update_combat_hud() -> void:
+	var active: bool = _combat.is_active()
+	combat_panel.visible = active
+	if not active:
+		return
+	combat_title.text = "CATCHING  " + _combat.target.get_display_name().to_upper()
+	combat_status.text = _combat.phase_title()
+	combat_progress.value = _combat.progress
+	combat_tension.value = _combat.tension
+	combat_feedback.text = _combat.feedback if _combat.feedback_time > 0.0 else ""
+	combat_hint.text = _combat.hint() + "     |     ESC RELEASE"
+
+
+func _on_combat_finished(won: bool, fish: DivingWildFish) -> void:
+	if fish == null or not is_instance_valid(fish):
+		return
+	fish.rotation = 0.0
+	if won:
+		_caught[fish.fish_name] = int(_caught.get(fish.fish_name, 0)) + 1
+		var resource: FishData = _get_fish_data(fish.fish_name)
+		if resource != null:
+			FishingManager.catch_fish(resource)
+		_net_flash_point = fish.position
+		_net_flash_time = 0.4
+		_toast("Caught %s!  (%d caught)" % [fish.get_display_name(), _total_catches()])
+		_wild_fish.erase(fish)
+		fish.queue_free()
+	else:
+		# The fish escapes alive and can be pursued again after a moment.
+		fish.position += _combat_direction * 23.0
+		fish.catch_cooldown = 1.5
+		_toast("The %s got away!" % fish.get_display_name())
+	combat_panel.hide()
+
+
+func _draw_combat_telegraph() -> void:
+	var fish: DivingWildFish = _combat.target
+	if fish == null or not is_instance_valid(fish):
+		return
+	draw_line(player_sprite.position + Vector2(0.0, -8.0), fish.position, Color(0.69, 0.91, 0.89, 0.75), 1.0)
+	var center: Vector2 = fish.position
+	match _combat.phase:
+		DivingCombat.Phase.WARNING:
+			draw_arc(center, 23.0, 0.0, TAU, 32, Color(0.75, 0.91, 0.95, 0.36), 1.5)
+		DivingCombat.Phase.WINDUP:
+			draw_arc(center, 23.0, -PI / 2, -PI / 2 + TAU * _combat.telegraph_fraction(), 32, Color(1.0, 0.72, 0.28, 0.95), 2.7)
+			draw_arc(center, 26.0, 0.0, TAU, 32, Color(0.96, 0.61, 0.27, 0.25), 1.0)
+		DivingCombat.Phase.ATTACK:
+			draw_arc(center, 25.0, 0.0, TAU, 32, Color(1.0, 0.29, 0.25, 0.9), 2.6)
+		DivingCombat.Phase.STUN:
+			draw_arc(center, 22.0 + sin(_time * 10.0) * 2.0, 0.0, TAU, 32, Color(0.98, 0.92, 0.43, 0.85), 2.0)
+		DivingCombat.Phase.DASH:
+			draw_arc(center, 25.0, 0.0, TAU, 32, Color(0.90, 0.34, 0.27, 0.7), 1.4)
+
+
 func _ask_silas_to_hide() -> void:
+	if _combat.is_active():
+		return
 	if not _underwater or not _silas_following:
 		_toast("You need a companion to hide with.")
 		return
@@ -399,6 +514,8 @@ func _ask_silas_to_hide() -> void:
 	_toast("Silas stirs up a veil of sand. Fish won't notice you so easily!")
 
 func _try_surface() -> void:
+	if _combat.is_active():
+		return
 	if not _silas_following:
 		_return_to_surface(false)
 		return
@@ -555,7 +672,7 @@ func _update_hud() -> void:
 		elif near_silas:
 			prompt_label.text = "[E] TALK TO SILAS"
 		else:
-			prompt_label.text = "WASD MOVE  |  CLICK NET FISH  |  Q SILAS HIDES"
+			prompt_label.text = "WASD MOVE  |  CLICK FISH TO ENGAGE  |  Q SILAS HIDES"
 	else:
 		story_label.text = "A new world to discover together." if _silas_ashore else "The water is waiting."
 		if player_sprite.position.distance_to(SHORE_DIVE_POINT) < REACH:
@@ -568,6 +685,8 @@ func _draw() -> void:
 		_draw_shore()
 	else:
 		_draw_underwater()
+		if _combat.is_active():
+			_draw_combat_telegraph()
 
 func _draw_shore() -> void:
 	draw_rect(Rect2(0, 0, 320, 180), Color("#a7c6cf"))
