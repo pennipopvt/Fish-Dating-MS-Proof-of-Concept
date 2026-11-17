@@ -125,13 +125,10 @@ func _spawn_fish() -> void:
 	for i in range(fish_specs.size()):
 		var spec: Dictionary = fish_specs[i]
 		var fish: DivingWildFish = WILD_FISH_SCRIPT.new() as DivingWildFish
-		fish.setup(
-			spec["id"] as StringName,
-			spec["tex"] as Texture2D,
-			spec["pos"] as Vector2,
-			SEA_BOUNDS,
-			2041 + i * 37
-		)
+		var kind: StringName = spec["id"]
+		var art: Texture2D = spec["tex"]
+		var start: Vector2 = spec["pos"]
+		fish.setup(kind, art, start, SEA_BOUNDS, 2041 + i * 37)
 		add_child(fish)
 		_wild_fish.append(fish)
 
@@ -324,6 +321,10 @@ func _try_catch(world_mouse: Vector2) -> void:
 	if not _net_cleared and world_mouse.distance_to(TANGLED_NET) < 22.0:
 		if player_sprite.position.distance_to(TANGLED_NET) > REACH:
 			_toast("Get a little closer to the tangled net.")
+			return
+		if not _silas_met:
+			# Preserve the talking-fish reveal as the first encounter beat.
+			_talk_to_silas()
 			return
 		_net_cleared = true
 		_start_dialogue("Silas", [
