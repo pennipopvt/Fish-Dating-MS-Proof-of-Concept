@@ -268,8 +268,10 @@ func _attempt_parry() -> void:
 
 
 func _perfect_parry() -> void:
-	# A perfect parry is NOT a stun or automatic catch. It earns an
-	# ordinary contested reel opening and builds more stagger.
+	# Restore the original perfect-parry tension relief while keeping the
+	# revised stagger system: this does not immediately stun/catch a fish.
+	tension = 0.0
+	recovery_timer = 0.0
 	reel_open = true
 	free_reel = false
 	feedback = "PERFECT PARRY  +STAGGER"
