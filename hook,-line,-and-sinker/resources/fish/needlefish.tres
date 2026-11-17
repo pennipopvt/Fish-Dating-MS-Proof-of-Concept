@@ -38,4 +38,5 @@ miss_tension_gain = 0.07
 attack_tension_multiplier = 0.85
 miss_dash_duration = 0.18
 miss_dash_speed_multiplier = 4.25
+stagger_resistance = 95.0
 states = Array[ExtResource("3_attack")]([SubResource("SnapStrike"), SubResource("RapidDash")])
