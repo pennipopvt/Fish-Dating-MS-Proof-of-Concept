@@ -9,6 +9,7 @@ signal surface_requested(with_silas: bool)
 const WILD_FISH_SCRIPT = preload("res://scripts/diving/wild_fish.gd")
 const DIALOGUE_SCENE: PackedScene = preload("res://prefabs/dialogue_ui.tscn")
 const SILAS_NPC: NPCData = preload("res://resources/npcs/silas.tres")
+const SILAS_FISH_DATA: FishData = preload("res://resources/fish/silas.tres")
 const PLAYER_IDLE: Texture2D = preload("res://sprites/characters/penni/penni_idle.png")
 const SILAS_FISH: Texture2D = preload("res://sprites/fish/silas_eel.png")
 const SILAS_HUMAN: Texture2D = preload("res://sprites/characters/silas_idle.png")
@@ -47,7 +48,10 @@ var _combat_distance: float = 40.0
 var _embedded_in_world: bool = false
 var _underwater: bool = true
 var _silas_met: bool = false
+# _net_cleared now means Silas has been reeled free from his burrow.
 var _net_cleared: bool = false
+var _silas_rescue_target: DivingWildFish
+var _silas_wait_position: Vector2 = Vector2.ZERO
 var _silas_following: bool = false
 var _silas_talks: int = 0
 var _silas_ashore: bool = false
@@ -236,9 +240,15 @@ func _move_player(delta: float) -> void:
 		player_sprite.flip_h = false
 
 func _update_silas_fish(delta: float) -> void:
+	# While Silas is a trapped, catchable fish, that actor owns his art. Don't
+	# duplicate him as a second static sprite behind the net battle.
+	if is_instance_valid(_silas_rescue_target):
+		silas_sprite.hide()
+		return
 	silas_sprite.visible = true
 	if not _silas_following:
-		silas_sprite.position = _silas_burrow + Vector2(sin(_time * 1.7) * 1.7, -16.0 + sin(_time * 2.3) * 1.4)
+		var resting: Vector2 = _silas_wait_position if _net_cleared else _silas_burrow + Vector2(0, -16)
+		silas_sprite.position = resting + Vector2(sin(_time * 1.7) * 1.7, sin(_time * 2.3) * 1.4)
 		silas_sprite.flip_h = false
 		return
 	# Keep Silas physically near the player but give him a little room to
@@ -319,22 +329,23 @@ func _talk_to_silas() -> void:
 	if not _silas_met:
 		_silas_met = true
 		_start_dialogue("???", [
-			"Um... excuse me? You can really hear me?",
-			"I didn't think anyone from the surface could understand fish.",
-			"There's a discarded net tangled around my burrow...",
-			"Could you clear it? Get close and click the tangled net."
-		])
+			"H-help! Can you hear me?",
+			"I'm stuck in this old net! Could you help pull me out?",
+			"Throw your net toward me, then reel me close.",
+			"Please... I can't get out of here by myself."
+		], &"silas_rescue_ready")
 		return
 	if not _net_cleared:
 		_start_dialogue("???", [
-			"I can't get far with that net across my burrow.",
-			"Try clicking on the knot beside me when you're nearby."
+			"I'm still caught here...",
+			"Please throw your net toward me and reel me out!",
+			"If I slip away, you can try again. I'll be right here."
 		])
 		return
 	if not _silas_following:
 		_start_dialogue("Silas", [
-			"I've never really explored away from my burrow.",
-			"Do you mind if I tag along?"
+			"Thank you for pulling me out! I'm Silas.",
+			"Could I swim with you? I'd like to get away from this burrow for a while."
 		], &"start_following")
 		return
 	_silas_talks += 1
@@ -368,23 +379,8 @@ func _talk_to_silas() -> void:
 func _try_catch(world_mouse: Vector2) -> void:
 	if _net.is_busy() or _combat.is_active():
 		return
-	# Silas's tangled net is still an interactable story object; only
-	# intercept an actual near-range interaction, not arbitrary clicks.
-	if not _net_cleared and world_mouse.distance_to(_tangled_net) < 22.0 and player_sprite.position.distance_to(_tangled_net) <= REACH:
-		if not _silas_met:
-			_talk_to_silas()
-			return
-		_net_flash_point = _tangled_net
-		_net_flash_time = 0.36
-		_net_cleared = true
-		_start_dialogue("Silas", [
-			"Oh! You got it loose!",
-			"I... I'm Silas, by the way.",
-			"Would it be alright if I swam with you for a while?"
-		], &"start_following")
-		return
-	# A click does NOT target a specific fish. It launches in that direction
-	# and can catch whichever wild fish the projectile physically intersects.
+	# Cast the real net. After Silas calls for help, his trapped fish actor
+	# joins the same projectile collision list as ordinary wild fish.
 	_net.cast_net(player_sprite, world_mouse, _wild_fish)
 
 
@@ -401,7 +397,7 @@ func _on_net_fish_hit(fish: DivingWildFish) -> void:
 func _begin_combat(fish: DivingWildFish) -> void:
 	if _combat.is_active() or DialogueManager.is_active:
 		return
-	var data: FishData = _get_fish_data(fish.fish_name)
+	var data: FishData = SILAS_FISH_DATA if fish == _silas_rescue_target else _get_fish_data(fish.fish_name)
 	if data == null or data.states.is_empty():
 		_toast("This fish doesn't have combat behavior yet.")
 		return
@@ -452,6 +448,31 @@ func _on_combat_finished(won: bool, fish: DivingWildFish) -> void:
 		_update_net_tension()
 		return
 	fish.rotation = 0.0
+	if fish == _silas_rescue_target:
+		# This is a rescue, not an inventory catch or the old fish-to-human
+		# transformation. Only reeling Silas all the way in frees him.
+		if won:
+			_net_cleared = true
+			_silas_rescue_target = null
+			_wild_fish.erase(fish)
+			_silas_wait_position = player_sprite.position + Vector2(24, 9)
+			silas_sprite.position = _silas_wait_position
+			silas_sprite.show()
+			fish.queue_free()
+			_net_flash_point = _silas_wait_position
+			_net_flash_time = 0.4
+			_start_dialogue("Silas", [
+				"You got me out! I thought I'd be stuck there forever...",
+				"I'm Silas, by the way. Thank you for helping me.",
+				"Could I swim with you? I want to see what's out there."
+			], &"start_following")
+		else:
+			# On a failed rescue he remains trapped and can be hooked again.
+			fish.position = _silas_burrow + Vector2(0, -16)
+			fish.catch_cooldown = 1.0
+			_toast("He's still stuck. Try throwing your net again!")
+		_update_net_tension()
+		return
 	if won:
 		_caught[fish.fish_name] = int(_caught.get(fish.fish_name, 0)) + 1
 		var resource: FishData = _get_fish_data(fish.fish_name)
@@ -619,6 +640,8 @@ func _on_diving_conversation_finished(npc: NPCData) -> void:
 	var event: StringName = _dialogue_event
 	_dialogue_event = &""
 	match event:
+		&"silas_rescue_ready":
+			_make_silas_catchable()
 		&"start_following":
 			_silas_following = true
 			_toast("Silas is swimming with you! Press Q to use his concealment.")
@@ -628,6 +651,28 @@ func _on_diving_conversation_finished(npc: NPCData) -> void:
 			if _surface_choice == &"invite":
 				_return_to_surface(true)
 	_surface_choice = &""
+
+func _make_silas_catchable() -> void:
+	if not _silas_met or _net_cleared or is_instance_valid(_silas_rescue_target):
+		return
+	# A dedicated stationary fish actor, using Silas's existing FishData and
+	# eel sprite. Its only purpose is the physical net-and-parry rescue.
+	var rescue: DivingWildFish = WILD_FISH_SCRIPT.new() as DivingWildFish
+	rescue.setup(
+		SILAS_FISH_DATA.fish_id,
+		SILAS_FISH,
+		_silas_burrow + Vector2(0, -16),
+		SEA_BOUNDS,
+		2606
+	)
+	rescue.trapped = true
+	rescue.capture_radius = 15.0
+	add_child(rescue)
+	_silas_rescue_target = rescue
+	_wild_fish.append(rescue)
+	silas_sprite.hide()
+	_toast("Aim your net at the trapped eel and reel him free!")
+
 
 func _total_catches() -> int:
 	var count := 0
@@ -647,7 +692,7 @@ func _update_hud() -> void:
 		if not _silas_met:
 			story_label.text = "There's a voice somewhere to the east..."
 		elif not _net_cleared:
-			story_label.text = "Help the talking eel. Click the tangled net."
+			story_label.text = "Cast your net at the trapped eel and reel him free."
 		elif not _silas_following:
 			story_label.text = "Talk to Silas."
 		elif _silas_talks < 2:
@@ -656,11 +701,11 @@ func _update_hud() -> void:
 			story_label.text = "Silas seems curious about the surface..."
 		var near_surface: bool = player_sprite.position.distance_to(_surface_point) < REACH
 		var near_silas: bool = player_sprite.position.distance_to(silas_sprite.position) < REACH
-		var near_net: bool = not _net_cleared and player_sprite.position.distance_to(_tangled_net) < REACH
+		var near_trapped_eel: bool = _silas_met and not _net_cleared and player_sprite.position.distance_to(_silas_burrow) < REACH + 22.0
 		if near_surface:
 			prompt_label.text = "[E]  RETURN TO SURFACE"
-		elif near_net:
-			prompt_label.text = "LEFT CLICK  CLEAR NET  |  [E] TALK"
+		elif near_trapped_eel:
+			prompt_label.text = "CLICK  CAST NET AT EEL  |  [E] TALK"
 		elif near_silas:
 			prompt_label.text = "[E] TALK TO SILAS"
 		else:
