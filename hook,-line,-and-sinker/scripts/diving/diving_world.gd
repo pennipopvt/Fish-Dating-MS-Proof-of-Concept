@@ -412,7 +412,6 @@ func _begin_combat(fish: DivingWildFish) -> void:
 	if _combat.begin(fish, data, _combat_distance, _net.max_range):
 		_net_flash_time = 0.0
 		_update_net_tension()
-		_update_net_tension()
 
 
 func _get_fish_data(fish_id: StringName) -> FishData:
