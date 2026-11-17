@@ -19,7 +19,7 @@ DivingPrototype                 (full-screen host UI)
 │        │  ├─ Entry            (where Penni enters the lagoon)
 │        │  ├─ SurfaceExit      (where pressing E returns to shore)
 │        │  ├─ SilasBurrow      (Silas's home / initial talk position)
-│        │  ├─ TangledNet       (the first underwater quest)
+│        │  ├─ TangledNet       (decorative snag in Silas's rescue scene)
 │        │  └─ ShellGarden      (Silas's companion discovery)
 │        ├─ FishSpawns          (editable wild-fish placement)
 │        │  ├─ MulletNearSurface
@@ -88,8 +88,7 @@ This is a recommendation, not an existing game requirement.
 Start with a small guided loop inside the larger lagoon:
 - **Safe entrance near the left**, where players practice movement and casting
   on a slow fish.
-- **Silas's burrow in the middle**, visible from the main path; helping him
-  unlocks a friend who follows you.
+- **Silas's burrow in the middle**, visible from the main path; he calls for help and becomes an immobile net target after you speak to him. Players must get within net casting range, land the projectile, and win the reel-and-parry fight to pull him free. Only then does he start following. Keep space clear on one side of his burrow for casting.
 - **A more open fishing space to the right**, with faster species for parry
   practice, plus a reason for Silas to use his concealment ability.
 - **The shell garden just beyond that**, so following Silas naturally rewards
