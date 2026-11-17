@@ -13,12 +13,14 @@ The lagoon is kept alive between dives so the fish you've caught and Silas's con
 ## What to do underwater
 
 1. **Move in four directions** with WASD / arrows. The lagoon is larger than the viewport and the camera follows you.
-2. Approach an ordinary fish and **left-click near it** to throw a net and catch it. Fish wander and flee from your approach. Captures are recorded in the normal FishingManager's storage, dex and challenge systems.
-3. Swim **east** to the garden eel near his burrow; press **E** to discover that he can talk.
-4. Swim beside the **tangled net** near the burrow and **left-click** to untangle it. Silas introduces himself and starts following you.
-5. Swim with Silas, talk to him, catch more fish, and explore the **glowing shell garden** farther east. Press **Q** to ask him to conceal you for five seconds so wild fish don't flee as easily.
-6. When you're ready, return to the illuminated **surface marker** near the start and press **E**. Silas only asks to join you on land once you've gotten to know him. Use the **normal dialogue choice buttons** to invite him or stay together underwater.
-7. If you invite him, the iris brings you back to the **original island dock**, where Silas appears as a human in a little poof animation. His portrait switches from the **fish sprite underwater** to the **human portrait on land**; the existing dialogue interface and NPC recruitment / housing systems handle his life on land.
+2. Approach an ordinary fish and **left-click near it** to **engage a catch encounter**. Catching is no longer instant: Penni stops swimming, a net line connects her to the wild fish, and the original reel/parry timing begins. The fish is still visible in the water, and species have their own movement and attack patterns.
+3. **Scroll down three times quickly during the fish's attack** to parry (the same strong-scroll timing as fishing). Perfect timing stuns the fish and clears tension. A close parry gives a contested reeling opening. **Scroll during the opening to pull the fish closer**; don't overfill the tension bar. Missing a parry makes the fish dash backward, increasing tension. Fill the capture-progress bar to win. Escape or press Esc to release; the fish swims away and can be pursued again.
+4. Successful captures go into the normal FishingManager's storage, collection and challenges, exactly as before. **No fish is stored when merely clicked or hooked.**
+5. Swim **east** to the garden eel near his burrow; press **E** to discover that he can talk.
+6. Swim beside the **tangled net** near the burrow and **left-click** to untangle it. Silas introduces himself and starts following you.
+7. Swim with Silas, talk to him, catch more fish, and explore the **glowing shell garden** farther east. Press **Q** to ask him to conceal you for five seconds so wild fish don't flee as easily.
+8. When you're ready, return to the illuminated **surface marker** near the start and press **E**. Silas only asks to join you on land once you've gotten to know him. Use the **normal dialogue choice buttons** to invite him or stay together underwater.
+9. If you invite him, the iris brings you back to the **original island dock**, where Silas appears as a human in a little poof animation. His portrait switches from the **fish sprite underwater** to the **human portrait on land**; the existing dialogue interface and NPC recruitment / housing systems handle his life on land.
 
 ### Controls
 
@@ -27,7 +29,9 @@ The lagoon is kept alive between dives so the fish you've caught and Silas's con
 | Overworld movement | A / D as before |
 | Dock interact | Space / left-click in the original world |
 | Underwater WASD / arrow keys | Swim freely in four directions |
-| Underwater left-click | Catch a fish within reach, or clear Silas's net |
+| Underwater left-click | Engage a nearby fish in combat, or clear Silas's tangled net |
+| Scroll down in combat | Three rapid ticks to parry the attack, then reel during the opening |
+| Escape in combat | Release the fish (it swims away) |
 | Underwater E / Space | Talk, advance the standard dialogue UI or interact with the surface marker |
 | Q | Silas conceals you once he joins you |
 | Dialogue choice buttons | Invite Silas to land or postpone, using the same UI as land conversations |
@@ -42,10 +46,11 @@ The lagoon is kept alive between dives so the fish you've caught and Silas's con
 - In the water, NPCs display their **fish sprites** (Silas as a garden eel; Kuda as a barracuda) rather than their human portraits. **Penni keeps her original character portrait** in the dialogue UI on land and underwater, with the same layout and positioning. The standard NPC portraits are restored on shore.
 - The initial "???" identity clue and first-land transformation are preserved. Silas's invitation is a regular selectable dialogue choice, not a hardcoded number-key menu. Underwater chat uses free inline dialogue graphs so it does not spend an extra clock action.
 - The overworld Player is busy during a dive so inputs do not trigger fishing or NPC interactions underneath the underwater view.
-- One net capture contributes to the existing catch/storage/collection systems without spending another action. The action clock advances when you leave the water.
+- Ordinary fish have the **same fish-specific FishData/FishEscapeState attacks** they had in the original reel-and-parry system. Normal, perfect, and missed parries, tension recovery, miss dashes, stun duration, and upgrade bonuses are carried into a small underwater combat component. Catch progress affects the fish's actual distance from Penni in the ocean.
+- A **completed combat victory** contributes to existing catch/storage/collection systems without spending another world action; entering combat or losing does not award a fish. The world clock advances when you leave the water.
 - Silas's dive-specific friendship state persists in the lagoon instance while the game is running. On his first visit ashore, a custom first-land conversation runs in the original game's DialogueUI; afterward he joins the usual town NPC/housing flow.
 - The original bait/bobber items and existing fishing controller still exist in the repository. They're not used by the **dock's new diving path**. This experiment does not yet rebalance the old upgrades for underwater net-catching.
-- This is a feel-test of space, proximity and companionship. The net has no complex physics or combat timing yet.
+- The net is a visual tether, rather than a physics-driven rope. The authored fishing attack timing now applies to underwater encounters. This prototype is focused on whether exploration companions plus concentrated reel/parry encounters feel better than instant clicking.
 
 ## Verification
 
