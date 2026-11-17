@@ -127,6 +127,9 @@ func enter_from_dock() -> void:
 
 
 func _return_to_surface(with_silas: bool) -> void:
+	# A throw that missed should not remain stuck midway through its flight
+	# when the underwater scene is hidden until the next dive.
+	_net.reset_net()
 	if _embedded_in_world:
 		_dialogue_event = &""
 		_surface_choice = &""
