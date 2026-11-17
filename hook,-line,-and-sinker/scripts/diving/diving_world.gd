@@ -39,6 +39,7 @@ const REACH: float = 44.0
 @onready var toast_label: Label = $"../../../HUD/Toast"
 @onready var hud_footer: Panel = $"../../../HUD/FooterBack"
 @onready var _combat: DivingCombat = $Combat
+@onready var _net: DivingNetProjectile = $NetProjectile
 @onready var combat_panel: Panel = $"../../../HUD/CombatPanel"
 @onready var combat_title: Label = $"../../../HUD/CombatPanel/CombatTitle"
 @onready var combat_status: Label = $"../../../HUD/CombatPanel/CombatStatus"
@@ -84,6 +85,7 @@ func _ready() -> void:
 	camera.position = player_sprite.position
 	_set_camera_bounds(true)
 	_combat.finished.connect(_on_combat_finished)
+	_net.fish_hit.connect(_on_net_fish_hit)
 	combat_panel.hide()
 	DialogueManager.conversation_finished.connect(_on_diving_conversation_finished)
 	DialogueManager.choice_resolved.connect(_on_diving_choice_resolved)
@@ -373,16 +375,16 @@ func _talk_to_silas() -> void:
 			_start_dialogue("Silas", [extra[(_silas_talks - 4) % extra.size()]])
 
 func _try_catch(world_mouse: Vector2) -> void:
-	_net_flash_point = world_mouse
-	_net_flash_time = 0.36
-	if not _net_cleared and world_mouse.distance_to(TANGLED_NET) < 22.0:
-		if player_sprite.position.distance_to(TANGLED_NET) > REACH:
-			_toast("Get a little closer to the tangled net.")
-			return
+	if _net.is_busy() or _combat.is_active():
+		return
+	# Silas's tangled net is still an interactable story object; only
+	# intercept an actual near-range interaction, not arbitrary clicks.
+	if not _net_cleared and world_mouse.distance_to(TANGLED_NET) < 22.0 and player_sprite.position.distance_to(TANGLED_NET) <= REACH:
 		if not _silas_met:
-			# Preserve the talking-fish reveal as the first encounter beat.
 			_talk_to_silas()
 			return
+		_net_flash_point = TANGLED_NET
+		_net_flash_time = 0.36
 		_net_cleared = true
 		_start_dialogue("Silas", [
 			"Oh! You got it loose!",
@@ -390,24 +392,20 @@ func _try_catch(world_mouse: Vector2) -> void:
 			"Would it be alright if I swam with you for a while?"
 		], &"start_following")
 		return
-	for i in range(_wild_fish.size() - 1, -1, -1):
-		var fish: DivingWildFish = _wild_fish[i]
-		if not is_instance_valid(fish):
-			_wild_fish.remove_at(i)
-			continue
-		if fish.is_targeted(world_mouse, player_sprite.position):
-			# Clicking within reach engages the same scroll/parry mechanics as
-			# dock fishing; the fish is NOT caught automatically anymore.
-			_begin_combat(fish)
-			return
-	# A near miss is useful feedback. Clicking from across the world should
-	# never teleport a fish into your inventory.
-	var closest: float = INF
-	for fish in _wild_fish:
-		if is_instance_valid(fish):
-			closest = minf(closest, fish.position.distance_to(world_mouse))
-	if closest < 22.0:
-		_toast("Get closer before casting the net.")
+	# A click does NOT target a specific fish. It launches in that direction
+	# and can catch whichever wild fish the projectile physically intersects.
+	_net.cast_net(player_sprite, world_mouse, _wild_fish)
+
+
+func _on_net_fish_hit(fish: DivingWildFish) -> void:
+	if fish == null or not is_instance_valid(fish):
+		_net.retract()
+		return
+	_begin_combat(fish)
+	if not _combat.is_active():
+		_net.retract()
+
+
 
 func _begin_combat(fish: DivingWildFish) -> void:
 	if _combat.is_active() or DialogueManager.is_active:
@@ -459,7 +457,11 @@ func _update_combat_hud() -> void:
 
 
 func _on_combat_finished(won: bool, fish: DivingWildFish) -> void:
+	# Release the physical net as soon as the encounter resolves; it must
+	# never remain attached to a caught, escaped, or deleted fish.
+	_net.reset_net()
 	if fish == null or not is_instance_valid(fish):
+		combat_panel.hide()
 		return
 	fish.rotation = 0.0
 	if won:
@@ -484,7 +486,7 @@ func _draw_combat_telegraph() -> void:
 	var fish: DivingWildFish = _combat.target
 	if fish == null or not is_instance_valid(fish):
 		return
-	draw_line(player_sprite.position + Vector2(0.0, -8.0), fish.position, Color(0.69, 0.91, 0.89, 0.75), 1.0)
+	# The latched NetProjectile draws the actual tether in the world.
 	var center: Vector2 = fish.position
 	match _combat.phase:
 		DivingCombat.Phase.WARNING:
@@ -672,7 +674,7 @@ func _update_hud() -> void:
 		elif near_silas:
 			prompt_label.text = "[E] TALK TO SILAS"
 		else:
-			prompt_label.text = "WASD MOVE  |  CLICK FISH TO ENGAGE  |  Q SILAS HIDES"
+			prompt_label.text = "WASD MOVE  |  CLICK TO CAST NET  |  Q SILAS HIDES"
 	else:
 		story_label.text = "A new world to discover together." if _silas_ashore else "The water is waiting."
 		if player_sprite.position.distance_to(SHORE_DIVE_POINT) < REACH:
