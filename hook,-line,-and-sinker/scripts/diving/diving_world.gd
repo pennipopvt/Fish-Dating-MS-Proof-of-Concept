@@ -7,6 +7,8 @@ signal surface_requested(with_silas: bool)
 # systems remain on this branch for comparison; this is an alternate main scene.
 # All distances are in the 320x180 game's small pixel-world coordinates.
 const WILD_FISH_SCRIPT = preload("res://scripts/diving/wild_fish.gd")
+const DIALOGUE_SCENE: PackedScene = preload("res://prefabs/dialogue_ui.tscn")
+const SILAS_NPC: NPCData = preload("res://resources/npcs/silas.tres")
 const PLAYER_IDLE: Texture2D = preload("res://sprites/characters/penni/penni_idle.png")
 const SILAS_FISH: Texture2D = preload("res://sprites/fish/silas_eel.png")
 const SILAS_HUMAN: Texture2D = preload("res://sprites/characters/silas_idle.png")
@@ -36,10 +38,6 @@ const REACH: float = 44.0
 @onready var story_label: Label = $CanvasLayer/HUD/StoryHint
 @onready var prompt_label: Label = $CanvasLayer/HUD/Prompt
 @onready var toast_label: Label = $CanvasLayer/HUD/Toast
-@onready var dialogue_panel: Panel = $CanvasLayer/HUD/DialoguePanel
-@onready var dialogue_name: Label = $CanvasLayer/HUD/DialoguePanel/Speaker
-@onready var dialogue_text: Label = $CanvasLayer/HUD/DialoguePanel/Words
-@onready var dialogue_next: Label = $CanvasLayer/HUD/DialoguePanel/Continue
 
 var _embedded_in_world: bool = false
 var _underwater: bool = true
@@ -58,11 +56,9 @@ var _talk_cooldown: float = 0.0
 var _net_flash_time: float = 0.0
 var _net_flash_point: Vector2 = Vector2.ZERO
 var _toast_time: float = 0.0
-var _dialogue_lines: Array[String] = []
-var _dialogue_index: int = 0
 var _dialogue_event: StringName = &""
-var _dialogue_active: bool = false
-var _choice_active: bool = false
+var _surface_choice: StringName = &""
+var _standalone_dialogue_ui: DialogueUI
 var _shore_transformation_played: bool = false
 
 func _ready() -> void:
@@ -77,8 +73,12 @@ func _ready() -> void:
 	_set_silas_fish_sprite()
 	camera.position = player_sprite.position
 	_set_camera_bounds(true)
-	dialogue_panel.hide()
 	_make_ui_pixels()
+	DialogueManager.conversation_finished.connect(_on_diving_conversation_finished)
+	DialogueManager.choice_resolved.connect(_on_diving_choice_resolved)
+	# The integrated island owns a DialogueUI already. For running the
+	# standalone diving scene directly, add the same reusable UI once.
+	_ensure_standalone_dialogue_ui.call_deferred()
 	_spawn_fish()
 	_update_hud()
 	_toast("A voice somewhere in the reef...")
@@ -88,6 +88,25 @@ func _ready() -> void:
 # conversations, his decision to follow, and ordinary fish already caught.
 func set_embedded_mode(value: bool) -> void:
 	_embedded_in_world = value
+	if value and is_instance_valid(_standalone_dialogue_ui):
+		_standalone_dialogue_ui.queue_free()
+		_standalone_dialogue_ui = null
+
+
+func _ensure_standalone_dialogue_ui() -> void:
+	if _embedded_in_world or is_instance_valid(_standalone_dialogue_ui):
+		return
+	_standalone_dialogue_ui = DIALOGUE_SCENE.instantiate() as DialogueUI
+	get_tree().root.add_child(_standalone_dialogue_ui)
+	_standalone_dialogue_ui.player_portrait = preload("res://sprites/characters/penni/penni_portrait.png")
+	_standalone_dialogue_ui.set_underwater_mode(true)
+
+
+func _set_dialogue_visual_mode(underwater: bool) -> void:
+	# In the normal game, DiveEntry owns this switch on the single dialogue
+	# UI. Standalone diving keeps its own instance of that same component.
+	if is_instance_valid(_standalone_dialogue_ui):
+		_standalone_dialogue_ui.set_underwater_mode(underwater)
 
 
 func enter_from_dock() -> void:
@@ -96,9 +115,8 @@ func enter_from_dock() -> void:
 
 func _return_to_surface(with_silas: bool) -> void:
 	if _embedded_in_world:
-		_dialogue_active = false
-		_choice_active = false
-		dialogue_panel.hide()
+		_dialogue_event = &""
+		_surface_choice = &""
 		if with_silas:
 			# Remember his decision across later dives. His fish form still
 			# follows underwater; the island provides his human form on land.
@@ -111,7 +129,7 @@ func _return_to_surface(with_silas: bool) -> void:
 func _make_ui_pixels() -> void:
 	var all_labels: Array[Label] = [
 		location_label, catch_label, story_label, prompt_label,
-		toast_label, dialogue_name, dialogue_text, dialogue_next
+		toast_label
 	]
 	for label in all_labels:
 		label.add_theme_font_override("font", PIXEL_FONT)
@@ -120,9 +138,6 @@ func _make_ui_pixels() -> void:
 	story_label.add_theme_font_size_override("font_size", 9)
 	prompt_label.add_theme_font_size_override("font_size", 10)
 	toast_label.add_theme_font_size_override("font_size", 10)
-	dialogue_name.add_theme_font_size_override("font_size", 11)
-	dialogue_text.add_theme_font_size_override("font_size", 10)
-	dialogue_next.add_theme_font_size_override("font_size", 8)
 
 func _set_silas_fish_sprite() -> void:
 	silas_sprite.texture = SILAS_FISH
@@ -168,9 +183,9 @@ func _process(delta: float) -> void:
 	_talk_cooldown = maxf(0.0, _talk_cooldown - delta)
 	_toast_time = maxf(0.0, _toast_time - delta)
 	_net_flash_time = maxf(0.0, _net_flash_time - delta)
-	toast_label.visible = _toast_time > 0.0 and not _dialogue_active
+	toast_label.visible = _toast_time > 0.0 and not DialogueManager.is_active
 
-	if not _dialogue_active:
+	if not DialogueManager.is_active:
 		_move_player(delta)
 
 	if _underwater:
@@ -240,7 +255,7 @@ func _update_silas_fish(delta: float) -> void:
 	silas_sprite.rotation = sin(_time * 3.0) * 0.07
 
 func _maybe_discover_garden() -> void:
-	if _discovered_garden or not _silas_following or _dialogue_active:
+	if _discovered_garden or not _silas_following or DialogueManager.is_active:
 		return
 	if player_sprite.position.distance_to(GLOWING_GARDEN) < 45.0:
 		_discovered_garden = true
@@ -251,19 +266,11 @@ func _maybe_discover_garden() -> void:
 		])
 
 func _unhandled_input(event: InputEvent) -> void:
+	# DialogueUI handles advance, player lines and choice buttons exactly as
+	# it does on the island; don't double-consume any of those inputs.
+	if DialogueManager.is_active:
+		return
 	if event is InputEventKey and event.pressed and not event.echo:
-		if _dialogue_active:
-			if _choice_active:
-				if event.keycode == KEY_1 or event.keycode == KEY_KP_1:
-					_choose_surface(true)
-					get_viewport().set_input_as_handled()
-				elif event.keycode == KEY_2 or event.keycode == KEY_KP_2:
-					_choose_surface(false)
-					get_viewport().set_input_as_handled()
-			elif event.keycode in [KEY_E, KEY_SPACE, KEY_ENTER]:
-				_advance_dialogue()
-				get_viewport().set_input_as_handled()
-			return
 		if event.keycode == KEY_E or event.keycode == KEY_SPACE:
 			_interact()
 			get_viewport().set_input_as_handled()
@@ -271,7 +278,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			_ask_silas_to_hide()
 			get_viewport().set_input_as_handled()
 	elif event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
-		if _underwater and not _dialogue_active:
+		if _underwater:
 			_try_catch(get_global_mouse_position())
 			get_viewport().set_input_as_handled()
 
@@ -421,20 +428,12 @@ func _try_surface() -> void:
 		"But... I think I want to see it with you."
 	], &"surface_invitation")
 
-func _choose_surface(invite: bool) -> void:
-	_choice_active = false
-	_dialogue_active = false
-	dialogue_panel.hide()
-	if invite:
-		_return_to_surface(true)
-	else:
-		_start_dialogue("Silas", ["That's okay. I'll keep swimming with you."])
 
 func _go_shore(with_silas: bool) -> void:
-	_dialogue_active = false
-	_choice_active = false
-	dialogue_panel.hide()
+	_dialogue_event = &""
+	_surface_choice = &""
 	_underwater = false
+	_set_dialogue_visual_mode(false)
 	_set_camera_bounds(false)
 	player_sprite.position = Vector2(135, 112)
 	player_sprite.rotation = 0.0
@@ -459,9 +458,10 @@ func _go_shore(with_silas: bool) -> void:
 		_toast("Back on shore. Press E at the right-hand dock to dive again.")
 
 func _go_underwater() -> void:
-	_dialogue_active = false
-	dialogue_panel.hide()
+	_dialogue_event = &""
+	_surface_choice = &""
 	_underwater = true
+	_set_dialogue_visual_mode(true)
 	_set_camera_bounds(true)
 	player_sprite.position = SURFACE_POINT + Vector2(42.0, 29.0)
 	camera.position = player_sprite.position
@@ -482,25 +482,42 @@ func _set_camera_bounds(in_sea: bool) -> void:
 	camera.limit_right = int(SEA_SIZE.x) if in_sea else 320
 	camera.limit_bottom = int(SEA_SIZE.y) if in_sea else 180
 
+# This is a lightweight wrapper around the REAL DialogueManager; its normal
+# DialogueUI now renders every underwater conversation and interactive choice.
 func _start_dialogue(speaker: String, lines: Array[String], next_event: StringName = &"") -> void:
-	_dialogue_active = true
-	_choice_active = false
-	_dialogue_lines = lines
-	_dialogue_index = 0
+	if DialogueManager.is_active or lines.is_empty():
+		return
 	_dialogue_event = next_event
-	dialogue_name.text = speaker.to_upper()
-	dialogue_text.text = lines[0] if not lines.is_empty() else ""
-	dialogue_next.text = "E / SPACE  CONTINUE"
-	dialogue_panel.show()
+	_surface_choice = &""
+	var choices: Array[Dictionary] = []
+	if next_event == &"surface_invitation":
+		choices.append({
+			"text": "Come with me!",
+			"spoken_text": "I'd like you to come with me!",
+			"response": "Okay... I'll try. I want to see it with you.",
+			"diving_surface": "invite"
+		})
+		choices.append({
+			"text": "Not yet. We can stay a little longer.",
+			"spoken_text": "You don't have to come up yet.",
+			"response": "That's okay. I'd like to keep swimming together.",
+			"diving_surface": "stay"
+		})
+	DialogueManager.request_inline_conversation(
+		SILAS_NPC, lines, "???" if speaker == "???" else "", choices
+	)
 
-func _advance_dialogue() -> void:
-	if _dialogue_index + 1 < _dialogue_lines.size():
-		_dialogue_index += 1
-		dialogue_text.text = _dialogue_lines[_dialogue_index]
+
+func _on_diving_choice_resolved(npc: NPCData, choice: Dictionary) -> void:
+	if npc != SILAS_NPC or not _underwater:
+		return
+	_surface_choice = StringName(str(choice.get("diving_surface", "")))
+
+
+func _on_diving_conversation_finished(npc: NPCData) -> void:
+	if npc != SILAS_NPC:
 		return
 	var event: StringName = _dialogue_event
-	_dialogue_active = false
-	dialogue_panel.hide()
 	_dialogue_event = &""
 	match event:
 		&"start_following":
@@ -509,12 +526,9 @@ func _advance_dialogue() -> void:
 		&"shore_alone":
 			_return_to_surface(false)
 		&"surface_invitation":
-			_choice_active = true
-			_dialogue_active = true
-			dialogue_name.text = "YOUR ANSWER"
-			dialogue_text.text = "Invite Silas to see the surface?"
-			dialogue_next.text = "1  COME WITH ME         2  NOT YET"
-			dialogue_panel.show()
+			if _surface_choice == &"invite":
+				_return_to_surface(true)
+	_surface_choice = &""
 
 func _total_catches() -> int:
 	var count := 0
