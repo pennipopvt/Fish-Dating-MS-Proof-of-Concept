@@ -36,9 +36,10 @@ The lagoon is kept alive between dives so the fish you've caught and Silas's con
 
 - Existing `scenes/main.tscn` is the entry scene again. `scenes/diving_prototype.tscn` now lives inside its own canvas layer and can still be opened separately for isolated underwater testing.
 - The transition is a reusable aspect-correct circular iris shader, not a generic crossfade.
-- The underwater SubViewport now matches the overworld exactly: `320×180` pixels with `stretch_shrink = 6` and nearest-neighbor sprite rendering.
+- The underwater **world** stays at the original game's `320×180` pixels with `stretch_shrink = 6` and nearest-neighbor sprite rendering. The location/story/catch/prompt **HUD is now a separate full-resolution screen-space overlay**, not text painted into the 320×180 viewport. It uses clear default UI typography and solid contrast backplates, and contextual prompts are hidden while dialogue is open.
+- Penni's world sprite is displayed at the original **1× scale**, matching the normal island character rather than being shrunk to 78%.
 - **All underwater conversations use the existing `DialogueManager` and `DialogueUI`**. The temporary local dialogue panel was deleted. Dialogue text, speaker-name formatting, narration, selection buttons, and advancement are the normal game’s systems.
-- In the water, NPCs display their **fish sprites** (Silas as a garden eel; Kuda as a barracuda) rather than the human portraits. Penni also uses her normal pixel-world idle sprite instead of portrait artwork. Sprite framing and high-resolution dialogue layout return to normal when surfacing.
+- In the water, NPCs display their **fish sprites** (Silas as a garden eel; Kuda as a barracuda) rather than their human portraits. **Penni keeps her original character portrait** in the dialogue UI on land and underwater, with the same layout and positioning. The standard NPC portraits are restored on shore.
 - The initial "???" identity clue and first-land transformation are preserved. Silas's invitation is a regular selectable dialogue choice, not a hardcoded number-key menu. Underwater chat uses free inline dialogue graphs so it does not spend an extra clock action.
 - The overworld Player is busy during a dive so inputs do not trigger fishing or NPC interactions underneath the underwater view.
 - One net capture contributes to the existing catch/storage/collection systems without spending another action. The action clock advances when you leave the water.
