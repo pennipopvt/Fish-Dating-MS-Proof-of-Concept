@@ -46,6 +46,8 @@ const REACH: float = 44.0
 @onready var combat_status: Label = $"../../../HUD/CombatPanel/CombatStatus"
 @onready var combat_progress: ProgressBar = $"../../../HUD/CombatPanel/CombatProgress"
 @onready var combat_tension: ProgressBar = $"../../../HUD/CombatPanel/CombatTension"
+@onready var combat_stagger: ProgressBar = $"../../../HUD/CombatPanel/CombatStagger"
+@onready var combat_distance_label: Label = $"../../../HUD/CombatPanel/CatchLabel"
 @onready var combat_feedback: Label = $"../../../HUD/CombatPanel/CombatFeedback"
 @onready var combat_hint: Label = $"../../../HUD/CombatPanel/CombatHint"
 var _combat_direction: Vector2 = Vector2.RIGHT
@@ -447,7 +449,10 @@ func _update_combat_hud() -> void:
 	combat_title.text = "CATCHING  " + _combat.target.get_display_name().to_upper()
 	combat_status.text = _combat.phase_title()
 	combat_progress.value = _combat.progress
+	combat_distance_label.text = "DISTANCE  %d" % roundi(_combat.line_distance)
 	combat_tension.value = _combat.tension
+	combat_stagger.max_value = maxf(_combat.fish_data.stagger_resistance, 1.0)
+	combat_stagger.value = _combat.stagger
 	combat_feedback.text = _combat.feedback if _combat.feedback_time > 0.0 else ""
 	combat_hint.text = _combat.hint() + "     |     ESC RELEASE"
 
@@ -494,6 +499,8 @@ func _draw_combat_telegraph() -> void:
 			draw_arc(center, 25.0, 0.0, TAU, 32, Color(1.0, 0.29, 0.25, 0.9), 2.6)
 		DivingCombat.Phase.STUN:
 			draw_arc(center, 22.0 + sin(_time * 10.0) * 2.0, 0.0, TAU, 32, Color(0.98, 0.92, 0.43, 0.85), 2.0)
+		DivingCombat.Phase.RECOVERY:
+			draw_arc(center, 23.0, 0.0, TAU, 32, Color(0.38, 0.82, 0.78, 0.55), 1.4)
 		DivingCombat.Phase.DASH:
 			draw_arc(center, 25.0, 0.0, TAU, 32, Color(0.90, 0.34, 0.27, 0.7), 1.4)
 
