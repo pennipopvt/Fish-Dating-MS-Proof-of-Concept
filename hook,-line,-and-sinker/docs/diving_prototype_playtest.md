@@ -54,6 +54,16 @@ The lagoon is kept alive between dives so the fish you've caught and Silas's con
 - The original bait/bobber items and existing fishing controller still exist in the repository. They're not used by the **dock's new diving path**. This experiment does not yet rebalance the old upgrades for underwater net-catching.
 - The net is a visual tether, rather than a physics-driven rope. The authored fishing attack timing now applies to underwater encounters. This prototype is focused on whether exploration companions plus concentrated reel/parry encounters feel better than instant clicking.
 
+## Editing the underwater level in Godot
+
+See [underwater level design](underwater_level_design.md) for the Godot scene hierarchy and hands-on editing guide. The lagoon's **920×530 world pixels** are visible through a **320×180 camera**. The fish spawn points and the story markers are now actual scene nodes; select and move them in `scenes/diving_prototype.tscn`. Add art under `Lagoon/LevelArt` or `Lagoon/ForegroundArt`, and assign a TileSet to `LevelArt/Terrain` when you're ready to paint tiles. Disable `Lagoon.show_prototype_environment` to hide most of the old script-drawn scenery once real art is placed.
+
+**Warning:** obstacles are currently visual only. The diver moves with a rectangular position clamp and does not collide with cave walls or rocks yet; that needs a separate collision-aware movement pass.
+
+## Removed bait and bobber content
+
+The dive build no longer instantiates the old bait box, bobber shelf, or their menus. Bait upgrades and the obsolete extra-casts upgrade are removed from the shop. The `diving` net and combat use no equipped bait or bobber. Legacy scripts and data remain in the repo for compatibility with the original controller, but they are not part of the playable dive loop.
+
 ## Verification
 
 Check the new integrated flow with:
