@@ -1,5 +1,7 @@
 extends Node2D
 
+signal surface_requested(with_silas: bool)
+
 # Self-contained diving vertical slice. The original dock/fishing/romance
 # systems remain on this branch for comparison; this is an alternate main scene.
 # All distances are in the 320x180 game's small pixel-world coordinates.
@@ -38,6 +40,7 @@ const REACH: float = 44.0
 @onready var dialogue_text: Label = $CanvasLayer/HUD/DialoguePanel/Words
 @onready var dialogue_next: Label = $CanvasLayer/HUD/DialoguePanel/Continue
 
+var _embedded_in_world: bool = false
 var _underwater: bool = true
 var _silas_met: bool = false
 var _net_cleared: bool = false
@@ -78,6 +81,27 @@ func _ready() -> void:
 	_spawn_fish()
 	_update_hud()
 	_toast("A voice somewhere in the reef...")
+
+# When used by scenes/main.tscn, the existing dock is the land scene.
+# This underwater instance stays alive between dives, preserving Silas's
+# conversations, his decision to follow, and ordinary fish already caught.
+func set_embedded_mode(value: bool) -> void:
+	_embedded_in_world = value
+
+
+func enter_from_dock() -> void:
+	_go_underwater()
+
+
+func _return_to_surface(with_silas: bool) -> void:
+	if _embedded_in_world:
+		_dialogue_active = false
+		_choice_active = false
+		dialogue_panel.hide()
+		surface_requested.emit(with_silas)
+	else:
+		_go_shore(with_silas)
+
 
 func _make_ui_pixels() -> void:
 	var all_labels: Array[Label] = [
@@ -340,6 +364,13 @@ func _try_catch(world_mouse: Vector2) -> void:
 			continue
 		if fish.is_targeted(world_mouse, player_sprite.position):
 			_caught[fish.fish_name] = int(_caught.get(fish.fish_name, 0)) + 1
+			# Feed the normal world's storage, collection and challenges, too.
+			# The GameManager dive flag prevents each net catch from consuming
+			# another action while the player is still underwater.
+			for data in FishingManager.possible_catches:
+				if data != null and data.fish_id == fish.fish_name:
+					FishingManager.catch_fish(data)
+					break
 			_net_flash_point = fish.position
 			_toast("Caught a %s!  (%d caught)" % [fish.get_display_name(), _total_catches()])
 			_wild_fish.remove_at(i)
@@ -367,10 +398,10 @@ func _ask_silas_to_hide() -> void:
 
 func _try_surface() -> void:
 	if not _silas_following:
-		_go_shore(false)
+		_return_to_surface(false)
 		return
 	if _silas_ashore:
-		_go_shore(true)
+		_return_to_surface(true)
 		return
 	if _silas_talks < 2:
 		_start_dialogue("Silas", [
@@ -390,7 +421,7 @@ func _choose_surface(invite: bool) -> void:
 	_dialogue_active = false
 	dialogue_panel.hide()
 	if invite:
-		_go_shore(true)
+		_return_to_surface(true)
 	else:
 		_start_dialogue("Silas", ["That's okay. I'll keep swimming with you."])
 
@@ -469,7 +500,7 @@ func _advance_dialogue() -> void:
 			_silas_following = true
 			_toast("Silas is swimming with you! Press Q to use his concealment.")
 		&"shore_alone":
-			_go_shore(false)
+			_return_to_surface(false)
 		&"surface_invitation":
 			_choice_active = true
 			_dialogue_active = true
