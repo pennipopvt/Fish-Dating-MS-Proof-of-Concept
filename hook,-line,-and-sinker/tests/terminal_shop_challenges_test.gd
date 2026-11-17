@@ -32,11 +32,12 @@ func _ready() -> void:
 		"Quota tab uses the supplied 16x16 PNG")
 	_expect(schedule_icon.texture == SCHEDULE_ICON and SCHEDULE_ICON.get_size() == Vector2(16, 16),
 		"Schedule tab uses the supplied 16x16 PNG")
-	_expect((shop.get("_nav_buttons") as Array).size() == 6,
-		"Six terminal tabs remain after merging gifts and upgrades")
+	_expect((shop.get("_nav_buttons") as Array).size() == 7,
+		"Team is the seventh terminal tab")
 	var nav := shop.get_node("TerminalRoot/NavTabs") as VBoxContainer
 	_expect(nav.get_child(1).name == "ShopTab", "Shop is the second outer tab")
-	_expect(nav.get_child_count() == 6, "There is no standalone Gifts tab")
+	_expect(nav.get_child_count() == 7 and nav.get_child(6).name == "TeamTab",
+		"Team tab replaces bait/bobber menus; gifts remain under Shop")
 	shop.call("_select_page", ShopMenu.Page.SHOP)
 	_expect(not (shop.get("_shop_gifts") as Button).visible,
 		"Gifts are hidden before the first NPC is recruited")
