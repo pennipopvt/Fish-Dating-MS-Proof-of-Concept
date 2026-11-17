@@ -96,7 +96,15 @@ func _ready() -> void:
 	hide()
 	add_to_group(&"modal_ui")
 	DialogueManager.dialogue_requested.connect(start)
+	DialogueManager.conversation_finished.connect(_on_manager_conversation_finished)
 	_box.gui_input.connect(_on_box_gui_input)
+
+
+func _on_manager_conversation_finished(npc: NPCData) -> void:
+	# Close synchronously so another conversation can start on the next
+	# interaction, including when the diver talks to Silas repeatedly.
+	if visible and _npc == npc:
+		_close()
 
 
 func _process(_delta: float) -> void:
