@@ -35,4 +35,5 @@ item_data = ExtResource("2_item")
 hooked_sprite_width = 18.0
 miss_tension_gain = 0.06
 attack_tension_multiplier = 0.85
+stagger_resistance = 78.0
 states = Array[ExtResource("3_attack")]([SubResource("ShortNip"), SubResource("QuickNip")])
