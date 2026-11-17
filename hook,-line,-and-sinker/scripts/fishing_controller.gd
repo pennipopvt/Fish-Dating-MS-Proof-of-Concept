@@ -475,8 +475,8 @@ func _reel_during_opening() -> void:
 	if hooked_fish == null:
 		return
 	play_fishing_sound(reel_sfx)
-	var multiplier: float = stun_reel_multiplier if attack_phase == AttackPhase.STUN else 1.0
-	progress = clampf(progress + (reel_gain + FishingManager.reel_progress_bonus) * multiplier, 0.0, 1.0)
+	var progress_multiplier: float = stun_reel_multiplier if attack_phase == AttackPhase.STUN else 1.0
+	progress = clampf(progress + (reel_gain + FishingManager.reel_progress_bonus) * progress_multiplier, 0.0, 1.0)
 	if not free_reel:
 		# The line subtracts a fixed amount after fish-specific tension.
 		# Clamp at zero so a reduction never generates negative tension.
