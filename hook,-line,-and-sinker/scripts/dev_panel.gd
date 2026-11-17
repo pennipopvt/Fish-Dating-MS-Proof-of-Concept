@@ -806,7 +806,7 @@ const TAB_TITLES := {
 	"Items": "Give Items",
 	"Progress": "Upgrades & Challenges",
 	"Flags": "NPCs",
-	"Fishing": "Fishing & Bobbers",
+	"Fishing": "Fishing & Diving",
 }
 const INFO_TITLES := {
 	"World": "World & Time",
@@ -1255,7 +1255,7 @@ func _build_fishing_tab() -> void:
 			controller.set("casts", 0)
 			_say("Casts refilled"))
 
-	_add_bobber_and_bait(box)
+	# Legacy bait/bobber cheats are hidden in diving mode.
 
 
 func _add_bobber_and_bait(box: VBoxContainer) -> void:
