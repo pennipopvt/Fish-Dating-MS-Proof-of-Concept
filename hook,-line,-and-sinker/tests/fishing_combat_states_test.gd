@@ -1,138 +1,137 @@
 extends SceneTree
 
-# Regression test for the FISH CO. parry combat state machine.
-# Run from the Godot project folder:
+# Revised fishing smoke/regression tests:
 # godot --headless --path . -s res://tests/fishing_combat_states_test.gd
 
 const COMBAT_SCENE: PackedScene = preload("res://scenes/fishing_controller.tscn")
-var failures: int = 0
-
+const SILAS: FishData = preload("res://resources/fish/silas.tres")
+const KUDA: FishData = preload("res://resources/fish/kuda.tres")
+var failures := 0
 
 func _initialize() -> void:
-	call_deferred("_test_combat")
+	call_deferred("_run")
 
 
-func _test_combat() -> void:
-	var combat: Node2D = COMBAT_SCENE.instantiate() as Node2D
+func _run() -> void:
+	# Back up autoload state; all fish-party state is session-only.
+	var original_pool: Array[FishData] = FishingManager.possible_catches.duplicate()
+	var original_dex: Array[FishData] = FishingManager.catch_dex.duplicate()
+	var original_party: Array[FishData] = FishingManager.party.duplicate()
+	var original_lure: StringName = FishingManager.lure_fish_id
+	var original_casts: int = FishingManager.total_casts
+	FishingManager.party.clear()
+	FishingManager.lure_fish_id = &""
+	FishingManager.catch_dex.clear()
+	FishingManager.total_casts = 1
+	_expect(FishingManager.get_random_catch() != SILAS, "Silas cannot appear before introductory cast")
+	FishingManager.total_casts = 6
+	_expect(FishingManager.get_random_catch() == SILAS, "Sixth cast guarantees Silas")
+	FishingManager.register_recruited_companion(SILAS)
+	_expect(FishingManager.has_spyglass(), "Recruited Silas grants passive spyglass")
+	_expect(FishingManager.get_lure_companion() == SILAS, "First recruited fish is active lure")
+	FishingManager.register_recruited_companion(KUDA)
+	FishingManager.set_lure_companion(KUDA.fish_id)
+	_expect(FishingManager.get_lure_companion() == KUDA and FishingManager.has_spyglass(),
+		"Spyglass persists with Silas in reserve")
+	FishingManager.set_lure_companion(SILAS.fish_id)
+
+	var combat := COMBAT_SCENE.instantiate()
 	get_root().add_child(combat)
+	var line := combat.get_node("FishingLine")
+	_expect(line.has_node("LureFish") and line.has_node("StaggerBar"), "Line shows active lure and stagger meter")
+	line.call("send", 0.70)
+	_expect((line.get_node("LureFish") as Sprite2D).texture == SILAS.item_data.sprite,
+		"Silas's fish sprite replaces the bobber on the line")
+
 	var attack := FishEscapeState.new()
-	attack.state_name = "state_machine_test"
-	attack.escape_rate = 0.3
-	attack.state_length = 1.0
-	attack.windup_duration = 0.45
+	attack.state_name = "test"
+	attack.escape_rate = 0.12
 	attack.pre_windup_duration = 0.20
+	attack.windup_duration = 0.45
+	attack.counter_window = 0.16
+	attack.close_late_window = 0.18
+	attack.recovery_duration = 0.40
 	attack.stun_duration = 0.60
-	# Legacy attack tension settings intentionally differ from FishData.
-	attack.miss_tension_gain = 0.02
-	attack.counter_tension_relief = 0.25
-
-	var test_fish := FishData.new()
-	test_fish.fish_id = &"combat_test"
-	test_fish.attack_tension_multiplier = 1.0
-	test_fish.reel_tension_gain = 0.03
-	test_fish.miss_tension_gain = 0.18
-	# Deliberately use non-default values to prove combat reads FishData,
-	# not old FishingController properties.
-	test_fish.miss_dash_duration = 0.25
-	test_fish.miss_dash_speed_multiplier = 4.0
-	test_fish.states.append(attack)
-	combat.set("hooked_fish", test_fish)
-	# Fish_State.FISHING is 2; bypass FishingManager to isolate combat.
-	combat.set("current_state", 2)
-	combat.set("progress", 0.60)
-	combat.get_node("FishingLine").call("send", 0.60)
-
-	# On hook, the very first phase is pre-windup, with scrolls locked.
+	var fish := FishData.new()
+	fish.fish_id = &"combat_test"
+	fish.stagger_resistance = 100.0
+	fish.miss_tension_gain = 0.12
+	fish.states.append(attack)
+	combat.set("hooked_fish", fish)
+	combat.set("current_state", 2) # Fish_State.FISHING
+	combat.set("progress", 0.80)
 	combat.call("start_pre_windup")
-	_expect(int(combat.get("attack_phase")) == 0, "fish immediately enters PRE_WINDUP")
-	combat.call("attempt_counter")
-	_expect(int(combat.get("attack_phase")) == 0 and not combat.get("reel_open"), "pre-windup scroll is ignored")
-	combat.set("tension", 0.45)
-	combat.call("recover_tension", 0.50)
-	_expect(is_equal_approx(combat.get("tension"), 0.45), "tension persists with scrolling locked during pre-windup")
+	_expect(int(combat.get("attack_phase")) == 0, "Starts in PRE_WINDUP")
 	combat.call("update_attack_cycle", 0.21)
-	_expect(int(combat.get("attack_phase")) == 1, "pre-windup advances into WINDUP")
-	combat.call("recover_tension", 0.50)
-	_expect(is_equal_approx(combat.get("tension"), 0.45), "tension persists while scrolling is locked in windup")
-	combat.call("update_attack_cycle", 0.46)
-	_expect(int(combat.get("attack_phase")) == 2, "windup advances into ATTACK")
+	_expect(int(combat.get("attack_phase")) == 1, "Transitions to WINDUP")
+	combat.call("begin_attack")
+	combat.set("tension", 0.45)
+	combat.call("_perfect_parry")
+	_expect(int(combat.get("attack_phase")) == 2 and not combat.get("free_reel"),
+		"One perfect parry no longer automatically stuns")
+	_expect(is_equal_approx(combat.get("stagger"), 48.0),
+		"Perfect parry builds substantial stagger")
+	_expect(is_equal_approx(combat.get("tension"), 0.45),
+		"Perfect parry does not instantly erase line tension")
+	combat.call("update_attack_cycle", 0.40)
+	_expect(int(combat.get("attack_phase")) == 4 and combat.get("reel_open"),
+		"Successful parry leads to standard reeling during RECOVERY")
 
-	# A miss: one dash with distance speed * dash boost * duration.
-	var before_dash: float = combat.get("progress")
-	var before_dash_tension: float = combat.get("tension")
-	combat.call("_fail_parry")
-	_expect(int(combat.get("attack_phase")) == 3 and not combat.get("reel_open"), "miss locks input in DASH")
-	_expect(is_equal_approx(combat.get("phase_time"), test_fish.miss_dash_duration), "dash duration comes from hooked FishData")
-	_expect(is_equal_approx(combat.get("tension"), before_dash_tension), "miss does not add all tension instantly")
-	var expected_dash: float = before_dash - attack.escape_rate * test_fish.miss_dash_speed_multiplier * test_fish.miss_dash_duration
-	var dash_tween: Tween = combat.get("_miss_dash_tween")
-	dash_tween.kill()  # Advance deterministically without waiting for wall time.
-	var final_dash_tension: float = minf(1.0, before_dash_tension + test_fish.miss_tension_gain * test_fish.attack_tension_multiplier)
-	combat.call("_update_miss_dash", (before_dash + expected_dash) * 0.5)
-	combat.call("_update_miss_dash_tension", (before_dash_tension + final_dash_tension) * 0.5)
-	_expect(combat.get("tension") > before_dash_tension, "tension visibly rises during the dash")
-	var halfway_tension: float = combat.get("tension")
-	combat.call("recover_tension", 0.50)
-	_expect(is_equal_approx(combat.get("tension"), halfway_tension), "tension cannot recover during dash")
-	combat.call("_update_miss_dash", expected_dash)
-	combat.call("_update_miss_dash_tension", final_dash_tension)
-	_expect(is_equal_approx(combat.get("tension"), final_dash_tension), "dash ends with exactly one miss tension penalty")
-	combat.call("_on_miss_dash_finished")
-	_expect(is_equal_approx(combat.get("progress"), expected_dash), "dash distance equals boosted move speed times dash duration")
-	_expect(int(combat.get("attack_phase")) == 0 and not combat.get("reel_open"), "dash immediately returns to locked PRE_WINDUP")
-	combat.call("recover_tension", 0.50)
-	_expect(is_equal_approx(combat.get("tension"), final_dash_tension), "dash tension carries into next pre-windup")
-
-	# A close parry permits contested reeling and fish movement.
+	combat.call("start_pre_windup")
 	combat.call("start_windup")
 	combat.call("begin_attack")
 	combat.call("_close_parry")
-	_expect(combat.get("reel_open") and not combat.get("free_reel"), "close parry enables contested reeling")
-	var before_fight: float = combat.get("progress")
-	combat.call("_process", 0.10)
-	_expect(is_equal_approx(combat.get("progress"), before_fight - 0.03), "close-parry fish pulls away at escape speed")
-	var before_reeling_tension: float = combat.get("tension")
-	combat.call("_reel_during_opening")
-	_expect(combat.get("progress") > before_fight - 0.03 and combat.get("tension") > before_reeling_tension, "player can reel against fish and tension builds")
-	# In ATTACK the fish's attack multiplier applies to its own reel tension.
-	var expected_reel_tension: float = before_reeling_tension + test_fish.reel_tension_gain * test_fish.attack_tension_multiplier
-	_expect(is_equal_approx(combat.get("tension"), expected_reel_tension), "reeling uses this fish's own tension gain")
-	combat.set("recovery_timer", 0.0)
-	combat.call("recover_tension", 0.02)
-	_expect(combat.get("tension") < expected_reel_tension, "tension recovers once the player has a reel opening")
-	combat.call("update_attack_cycle", 1.1)
-	_expect(int(combat.get("attack_phase")) == 0 and not combat.get("reel_open"), "finished close-parry attack immediately restarts PRE_WINDUP")
-
-	# Perfect parry freezes fish movement and makes reeling tension-free.
+	_expect(combat.get("stagger") > 70.0 and int(combat.get("attack_phase")) == 2,
+		"Normal parry adds smaller stagger, without stunning")
+	combat.call("start_pre_windup")
 	combat.call("start_windup")
 	combat.call("begin_attack")
-	combat.set("tension", 0.30)
 	combat.call("_perfect_parry")
-	_expect(int(combat.get("attack_phase")) == 4 and combat.get("free_reel"), "perfect parry enters STUN/free reeling")
-	_expect(is_zero_approx(combat.get("tension")), "perfect stun immediately clears all tension")
-	_expect(is_zero_approx((combat.get_node("TensionBar") as Range).value), "perfect stun clears the displayed tension bar")
-	var before_stun: float = combat.get("progress")
-	combat.call("_process", 0.10)
-	_expect(is_equal_approx(combat.get("progress"), before_stun), "fish cannot pull during STUN")
-	var before_free_reel: float = combat.get("tension")
+	_expect(int(combat.get("attack_phase")) == 5 and combat.get("free_reel"),
+		"Full stagger meter triggers a stun and free reeling")
+	_expect(is_zero_approx(combat.get("tension")), "Stagger break clears tension")
+	var progress_before: float = combat.get("progress")
 	combat.call("_reel_during_opening")
-	_expect(combat.get("progress") > before_stun and is_zero_approx(combat.get("tension")), "perfect reeling adds zero tension")
-	combat.call("update_attack_cycle", 0.70)
-	_expect(int(combat.get("attack_phase")) == 0 and not combat.get("reel_open"), "stun ends at next locked PRE_WINDUP")
+	_expect(combat.get("progress") > progress_before + float(combat.get("reel_gain")),
+		"Stunned reeling gains more distance per scroll")
+	combat.call("update_attack_cycle", 0.61)
+	_expect(int(combat.get("attack_phase")) == 0 and is_zero_approx(combat.get("stagger")),
+		"Stun ends by resetting stagger and restarting windup")
 
-	# The attack MUST dash immediately when its parry grace expires, not
-	# several seconds later at the end of its state_length animation.
+	# Failed attacks still dash, but lead to a brief reeling opportunity.
+	combat.set("progress", 0.80)
+	combat.set("tension", 0.10)
+	combat.call("start_pre_windup")
 	combat.call("start_windup")
 	combat.call("begin_attack")
-	combat.call("update_attack_cycle", 0.15)
-	_expect(int(combat.get("attack_phase")) == 2, "still in attack while perfect window is open")
-	combat.call("update_attack_cycle", 0.20)
-	_expect(int(combat.get("attack_phase")) == 3 and not combat.get("reel_open"), "unparried fish immediately dashes at grace-window expiry")
-	var final_dash: Tween = combat.get("_miss_dash_tween")
-	final_dash.kill()
+	combat.call("_fail_parry")
+	_expect(int(combat.get("attack_phase")) == 3 and not combat.get("reel_open"),
+		"Miss starts the short locked dash")
+	(combat.get("_miss_dash_tween") as Tween).kill()
+	combat.call("_on_miss_dash_finished")
+	_expect(int(combat.get("attack_phase")) == 4 and combat.get("reel_open"),
+		"Dash returns to normal reeling instead of immediately relocking")
+
+	# Silas's command replaces a parry and relieves tension without stagger.
+	combat.call("start_pre_windup")
+	combat.call("start_windup")
+	combat.set("tension", 0.60)
+	combat.set("stagger", 0.0)
+	combat.call("_command_lure")
+	_expect(is_equal_approx(combat.get("tension"), 0.30),
+		"Silas's Hide reduces tension")
+	_expect(is_zero_approx(combat.get("stagger")) and combat.get("reel_open"),
+		"Command resolves the attack but earns no parry stagger")
+	_expect(combat.get("counter_locked"), "Command and parry are mutually exclusive")
 
 	combat.queue_free()
-	print("FAILED: %d" % failures if failures > 0 else "All fishing combat state checks passed")
+	FishingManager.possible_catches = original_pool
+	FishingManager.catch_dex = original_dex
+	FishingManager.party = original_party
+	FishingManager.lure_fish_id = original_lure
+	FishingManager.total_casts = original_casts
+	FishingManager.team_changed.emit()
+	print("FAILED: %d" % failures if failures > 0 else "Revised fishing combat checks passed")
 	quit(1 if failures > 0 else 0)
 
 
