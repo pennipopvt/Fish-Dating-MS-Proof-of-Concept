@@ -31,6 +31,7 @@ var stagger: float = 0.0
 @export var perfect_stagger_gain: float = 48.0
 @export var stagger_decay_per_second: float = 2.0
 @export var stun_reel_multiplier: float = 2.8
+@export_range(0.1, 1.0, 0.05) var short_dash_scale: float = 0.55
 @export var silas_hide_tension_relief: float = 0.30
 var state_timer: float = 0
 var fish_esc_rate: float = 0
@@ -744,7 +745,7 @@ func _fail_parry() -> void:
 	# the dash, multiplied by the dash duration. This is in progress units.
 	var dash_duration: float = hooked_fish.miss_dash_duration
 	var dash_speed: float = maxf(active_attack.escape_rate, 0.0) * hooked_fish.miss_dash_speed_multiplier
-	var dash_target: float = clampf(progress - dash_speed * dash_duration, 0.0, 1.0)
+	var dash_target: float = clampf(progress - dash_speed * dash_duration * short_dash_scale, 0.0, 1.0)
 	# This fish's miss penalty builds over the dash, never upfront.
 	var starting_tension: float = tension
 	var miss_tension: float = maxf(0.0, hooked_fish.miss_tension_gain * hooked_fish.attack_tension_multiplier - FishingManager.miss_tension_reduction)
