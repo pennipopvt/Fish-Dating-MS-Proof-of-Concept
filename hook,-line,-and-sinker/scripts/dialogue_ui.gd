@@ -14,7 +14,6 @@ const LISTENING_MODULATE := Color(0.5, 0.5, 0.55)
 const ADVANCE_ACTION := &"Interact"
 # Choices picked before (no more affection from them): grey, still pickable.
 const PICKED_CHOICE_COLOR := Color(0.55, 0.55, 0.6)
-const PENNI_IDLE_SHEET: Texture2D = preload("res://sprites/characters/penni/penni_idle.png")
 
 # Shown when an NPC has no portrait assigned yet.
 @export var placeholder_portrait: Texture2D
@@ -35,7 +34,6 @@ var _underwater_mode := false
 var _land_layer: int = 10
 var _npc_land_offsets: Vector4
 var _player_land_offsets: Vector4
-var _swimming_penni_sprite: AtlasTexture
 
 # The exact same dialogue box, choice buttons, and conversation manager are
 # used on land and underwater. Only the art and portrait framing change.
@@ -43,25 +41,18 @@ func set_underwater_mode(enabled: bool) -> void:
 	_underwater_mode = enabled
 	if not is_node_ready():
 		return
+	# Dialogue UI stays identical above and below water; only the NPC's
+	# portrait texture switches to that character's fish form underwater.
 	layer = 40 if enabled else _land_layer
-	_player_portrait.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST if enabled else CanvasItem.TEXTURE_FILTER_PARENT_NODE
-	_npc_portrait.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST if enabled else CanvasItem.TEXTURE_FILTER_PARENT_NODE
-	if enabled:
-		# Large, clear pixel sprites instead of oversized portrait paintings.
-		_player_portrait.offset_left = 70.0
-		_player_portrait.offset_top = -700.0
-		_player_portrait.offset_right = 670.0
-		_player_portrait.offset_bottom = -100.0
-		_npc_portrait.offset_left = -730.0
-		_npc_portrait.offset_top = -720.0
-		_npc_portrait.offset_right = -110.0
-		_npc_portrait.offset_bottom = -100.0
-	else:
-		_restore_portrait_offsets(_player_portrait, _player_land_offsets)
-		_restore_portrait_offsets(_npc_portrait, _npc_land_offsets)
+	_npc_portrait.texture_filter = (
+		CanvasItem.TEXTURE_FILTER_NEAREST if enabled
+		else CanvasItem.TEXTURE_FILTER_PARENT_NODE
+	)
+	# Keep Penni's real portrait, original placement and filtering everywhere.
+	_restore_portrait_offsets(_player_portrait, _player_land_offsets)
+	_restore_portrait_offsets(_npc_portrait, _npc_land_offsets)
 	if DialogueManager.is_active and visible:
 		_refresh()
-
 
 func _restore_portrait_offsets(view: TextureRect, values: Vector4) -> void:
 	view.offset_left = values.x
@@ -88,9 +79,6 @@ func _ready() -> void:
 		_npc_portrait.offset_left, _npc_portrait.offset_top,
 		_npc_portrait.offset_right, _npc_portrait.offset_bottom
 	)
-	_swimming_penni_sprite = AtlasTexture.new()
-	_swimming_penni_sprite.atlas = PENNI_IDLE_SHEET
-	_swimming_penni_sprite.region = Rect2(0, 0, 32, 32)
 	hide()
 	add_to_group(&"modal_ui")
 	DialogueManager.dialogue_requested.connect(start)
@@ -195,7 +183,7 @@ func _show_line(line: DialogueLineData) -> void:
 		"font_color",
 		PLAYER_NAME_COLOR if is_player else NPC_NAME_COLOR
 	)
-	_player_portrait.texture = _swimming_penni_sprite if _underwater_mode else player_portrait
+	_player_portrait.texture = player_portrait
 	_npc_portrait.texture = _get_portrait(line)
 
 	# Light up whoever is speaking; dim the listener.
