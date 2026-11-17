@@ -26,6 +26,12 @@ var progress: float = 0
 var bite_time: float = 0
 
 var tension: float = 0
+var stagger: float = 0.0
+@export var close_stagger_gain: float = 24.0
+@export var perfect_stagger_gain: float = 48.0
+@export var stagger_decay_per_second: float = 2.0
+@export var stun_reel_multiplier: float = 2.8
+@export var silas_hide_tension_relief: float = 0.30
 var state_timer: float = 0
 var fish_esc_rate: float = 0
 var recovery_timer: float = 0
@@ -33,8 +39,9 @@ var recovery_timer: float = 0
 # The chosen FishEscapeState owns the attack properties.
 # Each encounter progresses through mutually exclusive combat states.
 # PRE_WINDUP -> WINDUP -> ATTACK -> PRE_WINDUP
-# Miss -> DASH -> PRE_WINDUP; perfect -> STUN -> PRE_WINDUP.
-enum AttackPhase { PRE_WINDUP, WINDUP, ATTACK, DASH, STUN }
+# Miss -> short DASH -> REEL RECOVERY; parries build stagger, not instant stun.
+# A full stagger bar creates the longer STUN/reel burst.
+enum AttackPhase { PRE_WINDUP, WINDUP, ATTACK, DASH, RECOVERY, STUN }
 
 # Animation hooks: connect these to player/ripple effects without changing combat rules.
 signal parry_resolved(result: StringName)  # &"miss", &"close", &"perfect"
@@ -75,6 +82,7 @@ var delay_time = 0
 @onready var fishing_progress: TextureProgressBar = $FishingProgress
 @onready var tension_bar: TextureProgressBar = $TensionBar
 @onready var fishing_line: Line2D = $FishingLine
+@onready var stagger_bar: ProgressBar = $FishingLine/StaggerBar
 # Assign AudioStream resources on these child players in the Inspector.
 @onready var hook_sfx: AudioStreamPlayer = $HookSfx
 @onready var windup_sfx: AudioStreamPlayer = $WindupSfx
@@ -176,11 +184,14 @@ func cast_rod() -> void:
 		exit_fishing()
 		return
 	casts += 1
+	FishingManager.total_casts += 1
 	_hide_identity_bubble()
 	current_state = Fish_State.WAITING
 	
 	progress = starting_progress
 	tension = 0
+	stagger = 0.0
+	stagger_bar.value = 0.0
 	fishing_line.set_tension(tension)
 	#once a line is cast, set the time itll take for a fish to present itself!!
 	bite_time = randf_range(bite_time_min,bite_time_max)
@@ -208,13 +219,15 @@ func _process(delta: float) -> void:
 		if(hooked_fish == null):
 			#failsafe
 			return
-		# A close parry lets the player reel, but the fish keeps swimming
-		# away at this attack's authored escape speed. No passive drift and
-		# no movement while stunned or dashing.
+		# Parrying creates a reeling opening, but during the attack the
+		# fish still resists. RECOVERY and STUN let you make clean progress.
 		if reel_open and not free_reel and active_attack != null and (attack_phase == AttackPhase.ATTACK or attack_phase == AttackPhase.WINDUP):
 			progress -= maxf(active_attack.escape_rate, 0.0) * delta
 		progress = clampf(progress, 0.0, 1.0)
-
+		if attack_phase != AttackPhase.STUN:
+			stagger = maxf(0.0, stagger - stagger_decay_per_second * delta)
+		stagger_bar.value = stagger
+		stagger_bar.position = fishing_line.bobber_water_position + Vector2(-27.0, -27.0)
 		# Locked phases preserve their tension. The player can only
 		# recover it during an earned reel opening (including STUN).
 		if reel_open:
@@ -250,21 +263,6 @@ func _hide_identity_bubble() -> void:
 	fishing_line.hide_fish_identity()
 
 
-# Knife Bobber: an opening reel opportunity, not a perfect parry. Never send
-# parry_resolved here, so streak challenges cannot count the free stun.
-func _start_opening_stun(duration: float) -> void:
-	attack_phase = AttackPhase.STUN
-	phase_time = maxf(duration, 0.05)
-	fish_esc_rate = 0.0
-	counter_locked = true
-	scroll_streak = 0
-	last_scroll_ms = -100000
-	recovery_timer = 0.0
-	fishing_line.set_stunned(true)
-	fishing_line.set_telegraph(4, 0.0)
-	_set_reel_open(true, true)
-
-
 func begin_reeling() -> void:
 	play_fishing_sound(hook_sfx)
 	current_state = Fish_State.FISHING
@@ -276,18 +274,14 @@ func begin_reeling() -> void:
 	#once we actually get it, we will let the fishing manager know what fish we have
 	FishingManager.hook_fish(hooked_fish)
 	fishing_line.update_line_dist(progress)
-	var bobber: BobberData = BobberManager.get_equipped_bobber()
-	if bobber != null and bobber.identifies_fish:
+	# Silas's permanent spyglass passive is available even when he's in reserve.
+	stagger = 0.0
+	stagger_bar.max_value = maxf(hooked_fish.stagger_resistance, 1.0)
+	stagger_bar.value = 0.0
+	stagger_bar.show()
+	if FishingManager.has_spyglass():
 		_show_identity_bubble(hooked_fish)
-	if bobber != null and bobber.opening_stun_fraction > 0.0:
-		# Select the attack first. The free stun uses THIS fish's normal
-		# perfect-parry stun duration, not a fixed one-second timer.
-		active_attack = select_attack()
-		if active_attack != null:
-			_start_opening_stun(active_attack.stun_duration * bobber.opening_stun_fraction)
-			print("Bobber ambush: ", hooked_fish.fish_id, " (", phase_time, " seconds)")
-			return
-	# Without the Knife, bites still start with the original warning.
+	# Every fish now starts with its normal warning, never a bobber stun.
 	start_pre_windup()
 	print("Found ", hooked_fish.fish_id)
 	print("Fish behavior available: ", hooked_fish.states.size(), " states.")
@@ -425,6 +419,8 @@ func reset_values() -> void:
 	npc_poof.stop()
 	npc_poof.hide()
 	progress = 0
+	stagger = 0.0
+	stagger_bar.hide()
 	bite_time = 0
 	fishing_progress.value = 0
 	_hide_identity_bubble()
@@ -459,6 +455,10 @@ func _unhandled_input(event: InputEvent) -> void:
 		elif attack_phase == AttackPhase.WINDUP or attack_phase == AttackPhase.ATTACK:
 			attempt_counter()
 
+	if event.is_action_pressed("Companion Command") and current_state == Fish_State.FISHING:
+		_command_lure()
+		get_viewport().set_input_as_handled()
+
 	if event.is_action_pressed("Interact") and current_state != Fish_State.NOT and current_state != Fish_State.CATCHING:
 		exit_fishing()
 
@@ -475,7 +475,8 @@ func _reel_during_opening() -> void:
 	if hooked_fish == null:
 		return
 	play_fishing_sound(reel_sfx)
-	progress = clampf(progress + reel_gain + FishingManager.reel_progress_bonus, 0.0, 1.0)
+	var multiplier: float = stun_reel_multiplier if attack_phase == AttackPhase.STUN else 1.0
+	progress = clampf(progress + (reel_gain + FishingManager.reel_progress_bonus) * multiplier, 0.0, 1.0)
 	if not free_reel:
 		# The line subtracts a fixed amount after fish-specific tension.
 		# Clamp at zero so a reduction never generates negative tension.
@@ -556,7 +557,9 @@ func start_windup() -> void:
 func begin_attack() -> void:
 	play_fishing_sound(attack_sfx)
 	attack_phase = AttackPhase.ATTACK
-	phase_time = maxf(active_attack.state_length, 0.05)
+	# Only the authored parry/close window needs an attack phase.
+	# Afterwards the fish returns to normal reeling briefly.
+	phase_time = maxf(active_attack.counter_window + active_attack.close_late_window, 0.05)
 	attack_elapsed = 0.0
 	fish_esc_rate = active_attack.escape_rate
 
@@ -587,13 +590,14 @@ func update_attack_cycle(delta: float) -> void:
 			AttackPhase.WINDUP:
 				begin_attack()
 			AttackPhase.ATTACK:
-				# If no parry was landed by the time the attack ends,
-				# that attack was missed too. Dash, then try again.
 				if reel_open:
-					start_pre_windup()
+					start_recovery()
 				else:
 					_fail_parry()
+			AttackPhase.RECOVERY:
+				start_pre_windup()
 			AttackPhase.STUN:
+				stagger = 0.0
 				start_pre_windup()
 
 	if current_state != Fish_State.FISHING or active_attack == null:
@@ -609,6 +613,8 @@ func update_attack_cycle(delta: float) -> void:
 			fishing_line.set_telegraph(3, clampf(attack_elapsed / maxf(active_attack.state_length, 0.01), 0.0, 1.0))
 		AttackPhase.STUN:
 			fishing_line.set_telegraph(4, 0.0)
+		AttackPhase.RECOVERY:
+			fishing_line.set_telegraph(1, 0.0)
 		AttackPhase.DASH:
 			pass
 
@@ -658,32 +664,76 @@ func attempt_counter() -> bool:
 
 
 func _perfect_parry() -> void:
-	# A perfect parry clears ALL existing tension and lets the player
-	# reel freely while the fish is stunned.
-	tension = 0.0
-	tension_bar.value = tension
-	recovery_timer = 0.0
-	fishing_line.set_tension(tension)
+	# Perfect timing prevents the dash and builds more stagger. Only a full
+	# stagger meter earns the true stun and amplified reeling.
 	fishing_line.flash_parry_result(&"perfect")
 	play_fishing_sound(counter_sfx)
-	attack_phase = AttackPhase.STUN
-	fishing_line.set_stunned(true)
-	phase_time = maxf(active_attack.stun_duration, 0.1)
-	fish_esc_rate = 0.0
-	_set_reel_open(true, true)
+	_set_reel_open(true, false)
 	parry_resolved.emit(&"perfect")
 	FishingManager.parry_resolved.emit(&"perfect")
+	_add_stagger(perfect_stagger_gain)
 	print("PERFECT PARRY: ", active_attack.state_name)
 
 
 func _close_parry() -> void:
-	# The fish keeps pulling (and adding attack tension) during the opening.
 	fishing_line.flash_parry_result(&"close")
 	play_fishing_sound(counter_sfx)
 	_set_reel_open(true, false)
 	parry_resolved.emit(&"close")
 	FishingManager.parry_resolved.emit(&"close")
+	_add_stagger(close_stagger_gain)
 	print("CLOSE PARRY: ", active_attack.state_name)
+
+
+func _add_stagger(amount: float) -> void:
+	if hooked_fish == null or attack_phase == AttackPhase.STUN:
+		return
+	stagger = clampf(stagger + amount, 0.0, maxf(hooked_fish.stagger_resistance, 1.0))
+	stagger_bar.value = stagger
+	if stagger >= maxf(hooked_fish.stagger_resistance, 1.0):
+		_start_stagger_break()
+
+
+func _start_stagger_break() -> void:
+	attack_phase = AttackPhase.STUN
+	phase_time = maxf(active_attack.stun_duration, 0.2)
+	fish_esc_rate = 0.0
+	counter_locked = true
+	tension = 0.0
+	tension_bar.value = 0.0
+	fishing_line.set_tension(0.0)
+	fishing_line.set_stunned(true)
+	fishing_line.set_telegraph(4, 0.0)
+	recovery_timer = 0.0
+	_set_reel_open(true, true)
+	print("STAGGER BREAK: ", hooked_fish.fish_id)
+
+
+func start_recovery() -> void:
+	attack_phase = AttackPhase.RECOVERY
+	phase_time = maxf(active_attack.recovery_duration, 1.0)
+	fish_esc_rate = 0.0
+	counter_locked = true
+	_set_reel_open(true, false)
+	fishing_line.set_telegraph(1, 0.0)
+
+
+func _command_lure() -> void:
+	# Command is an alternative to parrying this attack, not a free bonus.
+	var lure: FishData = FishingManager.get_lure_companion()
+	if lure == null or counter_locked:
+		return
+	if attack_phase != AttackPhase.WINDUP and attack_phase != AttackPhase.ATTACK:
+		return
+	if lure.fish_id == FishingManager.SILAS_FISH_ID:
+		counter_locked = true
+		scroll_streak = 0
+		tension = maxf(0.0, tension - silas_hide_tension_relief)
+		tension_bar.value = tension
+		fishing_line.set_tension(tension)
+		_set_reel_open(true, false)
+		fishing_line.flash_parry_result(&"close")
+		print("SILAS HIDES: tension reduced instead of gaining stagger.")
 
 
 func _fail_parry() -> void:
@@ -738,9 +788,9 @@ func _on_miss_dash_finished() -> void:
 	if progress <= 0.0 or tension >= 1.0:
 		lose_fish()
 		return
-	# The fish immediately starts its next attack sequence: warning,
-	# windup, attack. The player cannot reel until a close/perfect parry.
-	start_pre_windup()
+	# After its short dash, the fish recovers and the player can reel.
+	# This allows a missed parry to hurt without creating an endless lockout.
+	start_recovery()
 
 
 func create_npc(npc: PackedScene) -> void:
