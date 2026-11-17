@@ -10,6 +10,12 @@ func interact(_player: Node2D) -> void:
 	if(fisher == null):
 		return
 	
-	print("fishing time!")
-	if(!fisher.busy) :
-		fisher.fishing_controller.begin_fishing()
+	# In the diving experiment, using the fishing dock is how you enter the
+	# ocean. The normal fishing rod scene remains available for comparison.
+	if fisher.busy:
+		return
+	var main_scene: Node = get_tree().current_scene
+	if main_scene != null and main_scene.has_method("request_dive"):
+		main_scene.request_dive(fisher, self)
+	else:
+		push_warning("Diving entry requires the diving-enabled main scene.")
