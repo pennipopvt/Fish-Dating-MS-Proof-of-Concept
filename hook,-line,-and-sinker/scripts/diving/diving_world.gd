@@ -41,15 +41,6 @@ const REACH: float = 44.0
 @onready var hud_footer: Panel = $"../../../HUD/FooterBack"
 @onready var _combat: DivingCombat = $Combat
 @onready var _net: DivingNetProjectile = $NetProjectile
-@onready var combat_panel: Panel = $"../../../HUD/CombatPanel"
-@onready var combat_title: Label = $"../../../HUD/CombatPanel/CombatTitle"
-@onready var combat_status: Label = $"../../../HUD/CombatPanel/CombatStatus"
-@onready var combat_progress: ProgressBar = $"../../../HUD/CombatPanel/CombatProgress"
-@onready var combat_tension: ProgressBar = $"../../../HUD/CombatPanel/CombatTension"
-@onready var combat_stagger: ProgressBar = $"../../../HUD/CombatPanel/CombatStagger"
-@onready var combat_distance_label: Label = $"../../../HUD/CombatPanel/CatchLabel"
-@onready var combat_feedback: Label = $"../../../HUD/CombatPanel/CombatFeedback"
-@onready var combat_hint: Label = $"../../../HUD/CombatPanel/CombatHint"
 var _combat_direction: Vector2 = Vector2.RIGHT
 var _combat_distance: float = 40.0
 
@@ -89,7 +80,7 @@ func _ready() -> void:
 	_set_camera_bounds(true)
 	_combat.finished.connect(_on_combat_finished)
 	_net.fish_hit.connect(_on_net_fish_hit)
-	combat_panel.hide()
+	_combat.parried.connect(_on_combat_parried)
 	DialogueManager.conversation_finished.connect(_on_diving_conversation_finished)
 	DialogueManager.choice_resolved.connect(_on_diving_choice_resolved)
 	# The integrated island owns a DialogueUI already. For running the
@@ -195,7 +186,7 @@ func _process(delta: float) -> void:
 	if fighting:
 		_combat.step(delta)
 		_sync_combat_fish(delta)
-	_update_combat_hud()
+	_update_net_tension()
 
 	if _underwater:
 		if not _combat.is_active():
@@ -420,8 +411,8 @@ func _begin_combat(fish: DivingWildFish) -> void:
 	_combat_distance = player_sprite.position.distance_to(fish.position)
 	if _combat.begin(fish, data, _combat_distance, _net.max_range):
 		_net_flash_time = 0.0
-		combat_panel.show()
-		_update_combat_hud()
+		_update_net_tension()
+		_update_net_tension()
 
 
 func _get_fish_data(fish_id: StringName) -> FishData:
@@ -441,20 +432,17 @@ func _sync_combat_fish(_delta: float) -> void:
 	fish.position = player_sprite.position + _combat_direction * _combat.line_distance
 	fish.rotation = sin(_time * 5.0) * (0.14 if _combat.phase == DivingCombat.Phase.WINDUP else 0.05)
 
-func _update_combat_hud() -> void:
-	var active: bool = _combat.is_active()
-	combat_panel.visible = active
-	if not active:
-		return
-	combat_title.text = "CATCHING  " + _combat.target.get_display_name().to_upper()
-	combat_status.text = _combat.phase_title()
-	combat_progress.value = _combat.progress
-	combat_distance_label.text = "DISTANCE  %d" % roundi(_combat.line_distance)
-	combat_tension.value = _combat.tension
-	combat_stagger.max_value = maxf(_combat.fish_data.stagger_resistance, 1.0)
-	combat_stagger.value = _combat.stagger
-	combat_feedback.text = _combat.feedback if _combat.feedback_time > 0.0 else ""
-	combat_hint.text = _combat.hint() + "     |     ESC RELEASE"
+# The tether itself is the tension display. Stagger has no permanent
+# visual meter yet; future fish animations will communicate accumulated strain.
+func _update_net_tension() -> void:
+	_net.set_line_state(
+		_combat.tension if _combat.is_active() else 0.0,
+		_combat.is_active() and _combat.phase == DivingCombat.Phase.STUN
+	)
+
+
+func _on_combat_parried(_result: StringName) -> void:
+	_update_net_tension()
 
 
 func _on_combat_finished(won: bool, fish: DivingWildFish) -> void:
@@ -462,7 +450,7 @@ func _on_combat_finished(won: bool, fish: DivingWildFish) -> void:
 	# never remain attached to a caught, escaped, or deleted fish.
 	_net.reset_net()
 	if fish == null or not is_instance_valid(fish):
-		combat_panel.hide()
+		_update_net_tension()
 		return
 	fish.rotation = 0.0
 	if won:
@@ -480,7 +468,7 @@ func _on_combat_finished(won: bool, fish: DivingWildFish) -> void:
 		fish.position += _combat_direction * 23.0
 		fish.catch_cooldown = 1.5
 		_toast("The %s got away!" % fish.get_display_name())
-	combat_panel.hide()
+	_update_net_tension()
 
 
 func _draw_combat_telegraph() -> void:
