@@ -20,7 +20,6 @@
 [ext_resource type="AudioStream" uid="uid://b2tmfm2vymnd" path="res://sounds/sfx/lose.wav" id="14_xlio7"]
 [ext_resource type="AudioStream" uid="uid://by5vwj80vigdx" path="res://sounds/sfx/catch.wav" id="14_yi17m"]
 [ext_resource type="AudioStream" uid="uid://clnvbbxytf36" path="res://sounds/sfx/land.wav" id="15_2xahb"]
-[ext_resource type="Texture2D" uid="uid://6jyqmi5motc2" path="res://sprites/bobbers/bobber_default.png" id="bobber_default"]
 [ext_resource type="Texture2D" uid="uid://dv81fkdnukh65" path="res://sprites/characters/poof.png" id="npc_poof_sheet"]
 
 [sub_resource type="Gradient" id="Gradient_nshyg"]
@@ -419,11 +418,20 @@ position = Vector2(-115.5, 5)
 scale = Vector2(0.005826272, 0.005826272)
 texture = ExtResource("5_nshyg")
 
-[node name="Bobber" type="Sprite2D" parent="FishingLine" unique_id=211134826]
+[node name="LureFish" type="Sprite2D" parent="FishingLine" unique_id=211134826]
 visible = false
 z_index = 9
 texture_filter = 1
-texture = ExtResource("bobber_default")
+
+[node name="StaggerBar" type="ProgressBar" parent="FishingLine"]
+visible = false
+z_index = 11
+offset_right = 54.0
+offset_bottom = 6.0
+mouse_filter = 2
+max_value = 100.0
+show_percentage = false
+self_modulate = Color(0.55, 0.83, 0.98, 1)
 
 [node name="RippleTell" type="AnimatedSprite2D" parent="FishingLine" unique_id=1885188316]
 z_index = 10
