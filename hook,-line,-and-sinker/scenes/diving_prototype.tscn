@@ -1,21 +1,9 @@
-[gd_scene load_steps=6 format=3]
+[gd_scene load_steps=5 format=3]
 
 [ext_resource type="Script" path="res://scripts/diving/diving_world.gd" id="1_world"]
 [ext_resource type="Texture2D" path="res://sprites/characters/penni/penni_idle.png" id="2_player"]
 [ext_resource type="Texture2D" path="res://sprites/fish/silas_eel.png" id="3_silas"]
 [ext_resource type="AudioStream" path="res://sounds/FROM THE SEA 2026-10-30 03_02_51.mp3" id="4_music"]
-
-[sub_resource type="StyleBoxFlat" id="DialogueStyle"]
-bg_color = Color(0.062, 0.15, 0.19, 0.96)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(0.53, 0.83, 0.78, 0.94)
-corner_radius_top_left = 3
-corner_radius_top_right = 3
-corner_radius_bottom_right = 3
-corner_radius_bottom_left = 3
 
 [node name="DivingPrototype" type="Control"]
 layout_mode = 3
@@ -130,44 +118,6 @@ offset_bottom = 178.0
 theme_override_colors/font_color = Color(0.96, 0.98, 0.88, 1)
 text = "WASD MOVE | LEFT CLICK CATCH | E TALK"
 horizontal_alignment = 1
-
-[node name="DialoguePanel" type="Panel" parent="SubViewportContainer/SubViewport/Lagoon/CanvasLayer/HUD"]
-visible = false
-mouse_filter = 2
-offset_left = 7.0
-offset_top = 110.0
-offset_right = 313.0
-offset_bottom = 176.0
-theme_override_styles/panel = SubResource("DialogueStyle")
-
-[node name="Speaker" type="Label" parent="SubViewportContainer/SubViewport/Lagoon/CanvasLayer/HUD/DialoguePanel"]
-mouse_filter = 2
-offset_left = 9.0
-offset_top = 4.0
-offset_right = 292.0
-offset_bottom = 17.0
-theme_override_colors/font_color = Color(0.91, 0.86, 0.62, 1)
-text = "SILAS"
-
-[node name="Words" type="Label" parent="SubViewportContainer/SubViewport/Lagoon/CanvasLayer/HUD/DialoguePanel"]
-mouse_filter = 2
-offset_left = 9.0
-offset_top = 18.0
-offset_right = 295.0
-offset_bottom = 53.0
-theme_override_colors/font_color = Color(0.94, 0.98, 0.93, 1)
-text = "I wonder what's above the water..."
-autowrap_mode = 3
-
-[node name="Continue" type="Label" parent="SubViewportContainer/SubViewport/Lagoon/CanvasLayer/HUD/DialoguePanel"]
-mouse_filter = 2
-offset_left = 12.0
-offset_top = 53.0
-offset_right = 294.0
-offset_bottom = 64.0
-theme_override_colors/font_color = Color(0.72, 0.9, 0.81, 1)
-text = "E / SPACE  CONTINUE"
-horizontal_alignment = 2
 
 [node name="Music" type="AudioStreamPlayer" parent="."]
 stream = ExtResource("4_music")
