@@ -31,5 +31,9 @@ extends Resource
 ## Multiplier on the selected attack's escape_rate during a miss dash.
 @export_range(1.0, 8.0, 0.25) var miss_dash_speed_multiplier: float = 3.0
 
+@export_group("Stagger")
+## Parry pressure needed to break the fish. Different species resist differently.
+@export_range(20.0, 300.0, 1.0) var stagger_resistance: float = 100.0
+
 @export_group("Attacks")
 @export var states: Array[FishEscapeState] = []
