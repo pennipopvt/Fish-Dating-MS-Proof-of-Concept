@@ -14,8 +14,6 @@ const LISTENING_MODULATE := Color(0.5, 0.5, 0.55)
 const ADVANCE_ACTION := &"Interact"
 # Choices picked before (no more affection from them): grey, still pickable.
 const PICKED_CHOICE_COLOR := Color(0.55, 0.55, 0.6)
-const SILAS_FISH_SPRITE: Texture2D = preload("res://sprites/fish/silas_eel.png")
-const KUDA_FISH_SPRITE: Texture2D = preload("res://sprites/fish/kuda_placeholder.png")
 const PENNI_IDLE_SHEET: Texture2D = preload("res://sprites/characters/penni/penni_idle.png")
 
 # Shown when an NPC has no portrait assigned yet.
@@ -234,10 +232,7 @@ func _show_choices() -> void:
 # every line uses the NPC's base portrait for now.
 func _get_portrait(_line: DialogueLineData) -> Texture2D:
 	if _underwater_mode:
-		if _npc.npc_id == &"test_npc":
-			return SILAS_FISH_SPRITE
-		if _npc.npc_id == &"barracuda":
-			return KUDA_FISH_SPRITE
+		return _npc.underwater_sprite if _npc.underwater_sprite != null else placeholder_portrait
 	if _npc.portrait != null:
 		return _npc.portrait
 
