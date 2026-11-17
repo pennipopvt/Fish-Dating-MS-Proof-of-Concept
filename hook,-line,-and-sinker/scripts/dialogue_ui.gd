@@ -48,6 +48,9 @@ func set_underwater_mode(enabled: bool) -> void:
 		CanvasItem.TEXTURE_FILTER_NEAREST if enabled
 		else CanvasItem.TEXTURE_FILTER_PARENT_NODE
 	)
+	# Underwater fish portraits sit to Penni's right. Flip only their fish
+	# form so they're looking toward her; human portraits stay unchanged.
+	_npc_portrait.flip_h = enabled and _npc != null and _npc.underwater_sprite != null
 	# Keep Penni's real portrait, original placement and filtering everywhere.
 	_restore_portrait_offsets(_player_portrait, _player_land_offsets)
 	_restore_portrait_offsets(_npc_portrait, _npc_land_offsets)
@@ -185,6 +188,7 @@ func _show_line(line: DialogueLineData) -> void:
 	)
 	_player_portrait.texture = player_portrait
 	_npc_portrait.texture = _get_portrait(line)
+	_npc_portrait.flip_h = _underwater_mode and _npc != null and _npc.underwater_sprite != null
 
 	# Light up whoever is speaking; dim the listener.
 	_player_portrait.modulate = (
