@@ -845,6 +845,9 @@ func _collect_trades() -> void:
 	for trade in ShopManager.trades:
 		if trade == null:
 			continue
+		# Safety gate: the diving loop has no bait or extra fishing casts.
+		if trade.reward_method in [&"shop_reward_unlock_hard_bait", &"shop_reward_unlock_yellow_bait", &"shop_reward_upgrade_casts", &"shop_reward_add_casts"]:
+			continue
 		var is_upgrade := trade.reward_method != &""
 		var is_gift := trade.reward_item != null and not is_upgrade
 		if _page == Page.SHOP and ((_shop_section == 0 and is_upgrade) or (_shop_section == 1 and is_gift and _has_recruited_npc())):
