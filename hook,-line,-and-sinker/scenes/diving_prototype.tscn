@@ -1,4 +1,4 @@
-[gd_scene load_steps=18 format=3]
+[gd_scene load_steps=19 format=3]
 
 [ext_resource type="Script" path="res://scripts/diving/diving_world.gd" id="1_world"]
 [ext_resource type="Script" path="res://scripts/diving/diving_combat.gd" id="combat_script"]
@@ -29,6 +29,13 @@ corner_radius_bottom_left = 8
 
 [sub_resource type="StyleBoxFlat" id="ProgressFill"]
 bg_color = Color(0.40, 0.84, 0.75, 1)
+corner_radius_top_left = 4
+corner_radius_bottom_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+
+[sub_resource type="StyleBoxFlat" id="StaggerFill"]
+bg_color = Color(0.96, 0.74, 0.37, 1)
 corner_radius_top_left = 4
 corner_radius_bottom_left = 4
 corner_radius_top_right = 4
@@ -304,7 +311,7 @@ anchor_left = 0.20
 anchor_top = 1.0
 anchor_right = 0.80
 anchor_bottom = 1.0
-offset_top = -266.0
+offset_top = -291.0
 offset_bottom = -20.0
 mouse_filter = 2
 theme_override_styles/panel = SubResource("HUDCard")
@@ -339,7 +346,7 @@ offset_right = 158.0
 offset_bottom = 103.0
 theme_override_font_sizes/font_size = 17
 theme_override_colors/font_color = Color(0.87, 0.95, 0.96, 1)
-text = "CATCH PROGRESS"
+text = "NET DISTANCE"
 
 [node name="CombatProgress" type="ProgressBar" parent="HUD/CombatPanel"]
 layout_mode = 1
@@ -375,13 +382,35 @@ show_percentage = false
 max_value = 1.0
 theme_override_styles/fill = SubResource("TensionFill")
 
+[node name="StaggerLabel" type="Label" parent="HUD/CombatPanel"]
+layout_mode = 1
+offset_left = 24.0
+offset_top = 144.0
+offset_right = 165.0
+offset_bottom = 168.0
+theme_override_font_sizes/font_size = 17
+theme_override_colors/font_color = Color(0.91, 0.94, 0.95, 1)
+text = "FISH STAGGER"
+
+[node name="CombatStagger" type="ProgressBar" parent="HUD/CombatPanel"]
+layout_mode = 1
+anchor_right = 1.0
+offset_left = 185.0
+offset_top = 148.0
+offset_right = -24.0
+offset_bottom = 170.0
+mouse_filter = 2
+show_percentage = false
+max_value = 100.0
+theme_override_styles/fill = SubResource("StaggerFill")
+
 [node name="CombatFeedback" type="Label" parent="HUD/CombatPanel"]
 layout_mode = 1
 anchor_right = 1.0
 offset_left = 24.0
-offset_top = 143.0
+offset_top = 178.0
 offset_right = -24.0
-offset_bottom = 181.0
+offset_bottom = 214.0
 theme_override_font_sizes/font_size = 24
 theme_override_colors/font_color = Color(1, 0.91, 0.63, 1)
 text = "Get ready!"
@@ -391,9 +420,9 @@ horizontal_alignment = 1
 layout_mode = 1
 anchor_right = 1.0
 offset_left = 24.0
-offset_top = 194.0
+offset_top = 223.0
 offset_right = -24.0
-offset_bottom = 229.0
+offset_bottom = 261.0
 theme_override_font_sizes/font_size = 18
 theme_override_colors/font_color = Color(0.81, 0.92, 0.94, 1)
 text = "SCROLL DOWN 3x TO PARRY • ESC TO RELEASE"
