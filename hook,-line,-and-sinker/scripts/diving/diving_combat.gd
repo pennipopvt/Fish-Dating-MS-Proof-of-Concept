@@ -17,10 +17,9 @@ enum Phase { WARNING, WINDUP, ATTACK, DASH, RECOVERY, STUN }
 # Slower, deliberate line retrieval: formerly 7 pixels per scroll.
 @export_range(0.5, 20.0, 0.5) var reel_pixels_per_scroll: float = 2.5
 @export_range(20.0, 120.0, 1.0) var fight_slack: float = 65.0
-# Species determine pull speed through their escape_rate. During the normal
-# swim/recovery phases they resist at this fraction of contested attack speed;
-# the fish pauses only while winding up or attempting its attack.
-@export_range(0.1, 1.5, 0.05) var passive_pull_multiplier: float = 0.4
+# Use each species' passive_escape_rate for its continual tug on the net
+# between attacks. Contested parried attacks use the faster authored escape_rate.
+@export_range(0.0, 4.0, 0.05) var passive_pull_multiplier: float = 1.5
 
 # Keep the stagger behavior and tuning from revised-fishing.
 @export_range(1.0, 100.0, 1.0) var close_stagger_gain: float = 24.0
@@ -100,17 +99,17 @@ func step(delta: float) -> void:
 	# motionless. Its authored escape_rate determines the physical pull speed.
 	# It pauses during WINDUP and during the unresolved attack itself. After
 	# a parry it resumes pulling, contesting your reels; STUN stops it.
-	var pull_multiplier: float = 0.0
+	var pull_rate: float = 0.0
 	match phase:
 		Phase.WARNING, Phase.RECOVERY:
-			pull_multiplier = passive_pull_multiplier
+			pull_rate = maxf(fish_data.passive_escape_rate, 0.0) * passive_pull_multiplier
 		Phase.ATTACK:
 			if reel_open and not free_reel:
-				pull_multiplier = 1.0
-	if pull_multiplier > 0.0 and attack != null:
+				pull_rate = maxf(attack.escape_rate, 0.0)
+	if pull_rate > 0.0 and attack != null:
 		line_distance = minf(
 			max_line_distance,
-			line_distance + maxf(attack.escape_rate, 0.0) * _line_span() * pull_multiplier * delta
+			line_distance + pull_rate * _line_span() * delta
 		)
 		_update_progress_from_distance()
 		# Breaking the maximum length means the fish escaped, regardless
