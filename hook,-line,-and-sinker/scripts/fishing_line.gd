@@ -167,8 +167,12 @@ func _refresh_team_visuals() -> void:
 
 func _position_reserves() -> void:
 	for i in range(_reserve_sprites.size()):
-		# Sit to the right of the hooked fish, by the dock, at the surface.
-		_reserve_sprites[i].position = (bobber_water_position + Vector2(25.0 + 18.0 * i, 10.0)).round()
+		# Reserve members wait in shallow water immediately left of the dock,
+		# near the rod rather than following the cast out to the hooked fish.
+		_reserve_sprites[i].position = Vector2(
+			get_point_position(0).x - 30.0 - 18.0 * i,
+			water_surface_y + 10.0
+		).round()
 
 
 func send(initial_progress: float = 0.0) -> void:
