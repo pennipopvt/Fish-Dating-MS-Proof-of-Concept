@@ -26,5 +26,6 @@ fish_id = &"test_silas"
 item_data = SubResource("Resource_nm365")
 npc_data = ExtResource("2_g34ht")
 hooked_sprite_width = 18.0
+stagger_resistance = 75.0
 states = Array[ExtResource("2_boabf")]([SubResource("Resource_g34ht")])
 metadata/_custom_type_script = "uid://d2iidpvp5wrw7"
