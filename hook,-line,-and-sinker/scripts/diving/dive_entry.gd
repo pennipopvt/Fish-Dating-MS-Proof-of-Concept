@@ -17,6 +17,7 @@ const IRIS_OPEN_RADIUS: float = 2.6
 @onready var _lagoon: DivingWorld = $DivingLayer/DivingPrototype/SubViewportContainer/SubViewport/Lagoon
 @onready var _iris: ColorRect = $TransitionLayer/Iris
 @onready var _music: AudioStreamPlayer2D = $AudioStreamPlayer2D
+@onready var _dialogue_ui: DialogueUI = $CanvasLayer/DialogueUI
 
 var _iris_material: ShaderMaterial
 var _underwater: bool = false
@@ -70,6 +71,7 @@ func _begin_dive(dock: Node2D) -> void:
 
 	_world_player.hide()
 	_diving_layer.visible = true
+	_dialogue_ui.set_underwater_mode(true)
 	_lagoon.enter_from_dock()
 	_underwater = true
 	GameManager.diving_session_active = true
@@ -113,6 +115,7 @@ func _surface_from_dive(with_silas: bool) -> void:
 	await _close_iris(_normalized_screen_position(_lagoon.get_node("Player") as Node2D))
 	_diving_layer.visible = false
 	_diving_layer.process_mode = Node.PROCESS_MODE_DISABLED
+	_dialogue_ui.set_underwater_mode(false)
 	_world_player.global_position = _shore_return_position
 	_world_player.show()
 	_world_player.animator.rotation = 0.0
