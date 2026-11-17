@@ -36,4 +36,5 @@ hooked_sprite_width = 38.0
 miss_tension_gain = 0.13
 attack_tension_multiplier = 1.40
 miss_dash_duration = 0.24
+stagger_resistance = 112.0
 states = Array[ExtResource("3_attack")]([SubResource("BuriedLunge"), SubResource("SuddenAmbush")])
