@@ -1027,8 +1027,8 @@ func _show_details() -> void:
 	_preview.texture = null
 
 	if _entries.is_empty():
-		_item_name.text = "NOTHING HERE YET"
-		_description.text = "No entries are available for this page."
+		_item_name.text = "NO COMPANIONS YET" if _page == Page.TEAM else "NOTHING HERE YET"
+		_description.text = "Catch and recruit Silas to start your fishing team." if _page == Page.TEAM else "No entries are available for this page."
 		return
 
 	var entry: Dictionary = _entries[_selected_index]
