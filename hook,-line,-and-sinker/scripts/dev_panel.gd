@@ -466,6 +466,7 @@ func _reset_all() -> void:
 	_storage_changed()
 	FishingManager.catch_dex.clear()
 	FishingManager.catch_lifetime.clear()
+	FishingManager.reset_team_for_debug()
 	_reset_upgrades()
 	ChallengeManager.reset_all()
 	QuotaManager.reset_run()
@@ -806,7 +807,7 @@ const TAB_TITLES := {
 	"Items": "Give Items",
 	"Progress": "Upgrades & Challenges",
 	"Flags": "NPCs",
-	"Fishing": "Fishing & Bobbers",
+	"Fishing": "Fishing & Team",
 }
 const INFO_TITLES := {
 	"World": "World & Time",
@@ -1255,7 +1256,7 @@ func _build_fishing_tab() -> void:
 			controller.set("casts", 0)
 			_say("Casts refilled"))
 
-	_add_bobber_and_bait(box)
+	# Bait and bobber editors are intentionally hidden in revised fishing.
 
 
 func _add_bobber_and_bait(box: VBoxContainer) -> void:
