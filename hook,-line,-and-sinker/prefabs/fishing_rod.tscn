@@ -25,6 +25,6 @@ width = 1.0
 default_color = Color(1, 1, 1, 1)
 antialiased = false
 
-[node name="Bait" type="Sprite2D" parent="."]
+[node name="CastLureFish" type="Sprite2D" parent="."]
 visible = false
 texture_filter = 1
