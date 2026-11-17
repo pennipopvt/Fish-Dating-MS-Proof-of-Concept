@@ -255,7 +255,7 @@ func phase_title() -> String:
 		Phase.WARNING:
 			return "Fish preparing to attack"
 		Phase.WINDUP:
-			return "WINDUP  -  scroll quickly to parry"
+			return "WINDUP  -  watch the orange ring"
 		Phase.ATTACK:
 			return "ATTACK  -  parry now!"
 		Phase.DASH:
@@ -269,8 +269,10 @@ func hint() -> String:
 	if reel_open:
 		return "SCROLL DOWN TO PULL CLOSER" if free_reel else "SCROLL DOWN TO REEL  •  WATCH TENSION"
 	if phase == Phase.WARNING or phase == Phase.DASH:
-		return "Watch for the windup  •  3 fast scrolls to parry"
-	return "Scroll DOWN 3 times quickly  •  Perfect timing stuns"
+		return "Watch the ring  •  scroll 3 times quickly to parry"
+	if phase == Phase.WINDUP:
+		return "Wait for the flash  •  late windup can parry"
+	return "SCROLL DOWN 3x NOW  •  perfect timing stuns"
 
 
 func telegraph_fraction() -> float:
