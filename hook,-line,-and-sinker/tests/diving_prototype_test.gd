@@ -85,14 +85,19 @@ func _run() -> void:
 		"Swept projectile collision latches to the fish and starts combat")
 	_check(int(world.call("_total_catches")) == before,
 		"Fish is not automatically caught on projectile impact")
-	_check(world.get_node("../../../HUD/CombatPanel").visible,
-		"Combat panel appears only after the net latches")
+	_check(not hud.has_node("CombatPanel"),
+		"Underwater combat uses no large panel or progress bars")
+	_check(net.is_latched(), "Tension feedback stays on the actual attached net")
 	var initial_distance: float = combat.line_distance
 	var initial_progress: float = combat.progress
 	_check(initial_distance > combat.catch_distance + combat.reel_pixels_per_scroll * 2.0,
 		"Fish begins visibly farther than the net landing distance")
-	_check(world.get_node("../../../HUD/CombatPanel/CombatStagger") is ProgressBar,
-		"Revised-fishing stagger meter is visible underwater")
+	_check(not hud.has_node("CombatStagger"),
+		"Stagger is retained internally without a visible bar")
+	combat.tension = 0.72
+	world.call("_update_net_tension")
+	_check(net.get_line_color().r > net.calm_line_color.r,
+		"Raised tension visibly warms the net's color")
 	combat.call("_start_windup")
 	combat.call("_start_attack")
 	combat.reel_scroll()
@@ -100,6 +105,9 @@ func _run() -> void:
 	combat.reel_scroll()
 	_check(combat.is_active() and combat.reel_open and not combat.free_reel,
 		"One perfect parry opens contested reeling without an automatic stun or catch")
+	world.call("_update_net_tension")
+	_check(is_zero_approx(combat.tension) and net.get_line_color().is_equal_approx(net.calm_line_color),
+		"Perfect parry clears tension and restores the pale net line")
 	_check(is_equal_approx(combat.stagger, combat.perfect_stagger_gain),
 		"Perfect parry raises stagger but needs additional pressure to break the fish")
 	_check(is_equal_approx(combat.line_distance, initial_distance)
