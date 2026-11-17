@@ -9,6 +9,7 @@ signal parry_resolved(result: StringName)
 signal upgrades_changed
 # Any add/remove in current_storage (catches, trades, deliveries).
 signal storage_changed
+signal team_changed
 
 # Upgrade ownership, unlocks and equipped bait are session-only for now.
 const HARD_BAIT_ID: StringName = &"bait_b"
@@ -19,6 +20,20 @@ const REINFORCED_LINE_ID: StringName = &"reinforced_line"
 const HARD_BAIT_UPGRADE_ID: StringName = &"hard_fish_bait"
 const YELLOW_BAIT_UPGRADE_ID: StringName = &"yellow_bait"
 const EXTRA_CAST_UPGRADE_ID: StringName = &"increase_casts"
+
+# Revised fishing: recruited NPC fish are the party, not bait/bobber equipment.
+# The first party member is always the active lure; everyone else is reserve.
+const SILAS_FISH_ID: StringName = &"test_silas"
+const SILAS_NPC_ID: StringName = &"test_npc"
+const FIRST_SILAS_CAST: int = 6
+const SILAS_LURE_WEIGHTS := {
+	&"barracuda": 3.5, &"mullet": 0.6, &"porgy": 0.5,
+	&"needlefish": 7.0, &"tuna": 5.0, &"goby": 0.1,
+	&"flounder": 0.3, &"test_silas": 0.2
+}
+var total_casts: int = 0
+var party: Array[FishData] = []
+var lure_fish_id: StringName = &""
 
 @export var possible_catches: Array[FishData] = []
 @export var current_storage: Array[ItemData] = []
@@ -164,7 +179,105 @@ func remove_recruited_catch(recruited_fish: FishData) -> void:
 # Get a random fish from the current pool, weighted by the equipped bait.
 # Returns null if the pool has no catchable fish.
 func get_random_catch() -> FishData:
-	return pick_catch(possible_catches, equipped_bait)
+	# Silas cannot appear accidentally before the introductory sixth cast.
+	# If that encounter is lost, the next cast tries again until he's caught.
+	var eligible: Array[FishData] = []
+	var silas: FishData = null
+	for fish in possible_catches:
+		if fish == null:
+			continue
+		if fish.fish_id == SILAS_FISH_ID:
+			silas = fish
+			continue
+		eligible.append(fish)
+	if silas != null and not _silas_already_caught():
+		if total_casts >= FIRST_SILAS_CAST:
+			return silas
+	else:
+		if silas != null:
+			eligible.append(silas)
+	return _pick_lure_catch(eligible)
+
+
+func _silas_already_caught() -> bool:
+	for fish in catch_dex:
+		if fish != null and fish.fish_id == SILAS_FISH_ID:
+			return true
+	return false
+
+
+func _pick_lure_catch(pool: Array[FishData]) -> FishData:
+	var lure: FishData = get_lure_companion()
+	# In the solo tutorial there is no bait: all other species are equally likely.
+	if lure == null or lure.fish_id != SILAS_FISH_ID:
+		return pick_catch(pool, null)
+	var total := 0.0
+	var weights: Dictionary[FishData, float] = {}
+	for fish in pool:
+		if fish == null or fish.states.is_empty():
+			continue
+		var weight: float = float(SILAS_LURE_WEIGHTS.get(fish.fish_id, 1.0))
+		if weight > 0.0:
+			weights[fish] = weights.get(fish, 0.0) + weight
+			total += weight
+	if total <= 0.0:
+		return null
+	var roll: float = randf() * total
+	for fish in weights:
+		roll -= weights[fish]
+		if roll <= 0.0:
+			return fish
+	return weights.keys().back()
+
+
+func register_recruited_companion(fish: FishData) -> void:
+	if fish == null or fish.npc_data == null:
+		return
+	for member in party:
+		if member.fish_id == fish.fish_id:
+			return
+	party.append(fish)
+	if lure_fish_id == &"":
+		lure_fish_id = fish.fish_id
+	team_changed.emit()
+
+
+func get_lure_companion() -> FishData:
+	for member in party:
+		if member != null and member.fish_id == lure_fish_id:
+			return member
+	return null
+
+
+func has_companion(id: StringName) -> bool:
+	for member in party:
+		if member != null and member.fish_id == id:
+			return true
+	return false
+
+
+func has_spyglass() -> bool:
+	return has_companion(SILAS_FISH_ID)
+
+
+func set_lure_companion(id: StringName) -> bool:
+	for member in party:
+		if member != null and member.fish_id == id:
+			if lure_fish_id == id:
+				return true
+			lure_fish_id = id
+			party.erase(member)
+			party.push_front(member)
+			team_changed.emit()
+			return true
+	return false
+
+
+func reset_team_for_debug() -> void:
+	party.clear()
+	lure_fish_id = &""
+	total_casts = 0
+	team_changed.emit()
 
 # Chance of each fish in the current pool with this bait (null = no bait).
 func get_bait_odds(bait: BaitData) -> Dictionary[FishData, float]:
