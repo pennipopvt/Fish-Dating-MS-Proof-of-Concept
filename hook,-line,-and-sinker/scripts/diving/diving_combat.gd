@@ -17,6 +17,10 @@ enum Phase { WARNING, WINDUP, ATTACK, DASH, RECOVERY, STUN }
 # Slower, deliberate line retrieval: formerly 7 pixels per scroll.
 @export_range(0.5, 20.0, 0.5) var reel_pixels_per_scroll: float = 2.5
 @export_range(20.0, 120.0, 1.0) var fight_slack: float = 65.0
+# Species determine pull speed through their escape_rate. During the normal
+# swim/recovery phases they resist at this fraction of contested attack speed;
+# the fish pauses only while winding up or attempting its attack.
+@export_range(0.1, 1.5, 0.05) var passive_pull_multiplier: float = 0.4
 
 # Keep the stagger behavior and tuning from revised-fishing.
 @export_range(1.0, 100.0, 1.0) var close_stagger_gain: float = 24.0
@@ -92,11 +96,28 @@ func step(delta: float) -> void:
 	feedback_time = maxf(0.0, feedback_time - delta)
 	if phase != Phase.STUN:
 		stagger = maxf(0.0, stagger - stagger_decay_per_second * delta)
-	if reel_open and not free_reel and attack != null and (phase == Phase.ATTACK or phase == Phase.WINDUP):
-		# An ordinary parry lets the fish continue resisting reeling,
-		# exactly as it does in the original fishing controller.
-		line_distance = minf(max_line_distance, line_distance + maxf(attack.escape_rate, 0.0) * _line_span() * delta)
+	# The hooked fish fights the net between attacks rather than hovering
+	# motionless. Its authored escape_rate determines the physical pull speed.
+	# It pauses during WINDUP and during the unresolved attack itself. After
+	# a parry it resumes pulling, contesting your reels; STUN stops it.
+	var pull_multiplier: float = 0.0
+	match phase:
+		Phase.WARNING, Phase.RECOVERY:
+			pull_multiplier = passive_pull_multiplier
+		Phase.ATTACK:
+			if reel_open and not free_reel:
+				pull_multiplier = 1.0
+	if pull_multiplier > 0.0 and attack != null:
+		line_distance = minf(
+			max_line_distance,
+			line_distance + maxf(attack.escape_rate, 0.0) * _line_span() * pull_multiplier * delta
+		)
 		_update_progress_from_distance()
+		# Breaking the maximum length means the fish escaped, regardless
+		# of which part of the attack cycle it was in.
+		if line_distance >= max_line_distance:
+			_finish(false)
+			return
 	if reel_open:
 		if recovery_timer > 0.0:
 			recovery_timer = maxf(0.0, recovery_timer - delta)
@@ -142,11 +163,19 @@ func step(delta: float) -> void:
 
 
 func reel_scroll() -> void:
-	if not is_active() or phase == Phase.WARNING or phase == Phase.DASH:
+	if not is_active():
+		return
+	# Prewindup is a locked, resisting phase: scrolling neither reels
+	# nor triggers a parry. Once the windup begins, scrolling too soon
+	# is a missed parry and immediately causes the fish's dash.
+	if phase == Phase.WARNING or phase == Phase.DASH:
+		return
+	if phase == Phase.WINDUP:
+		_fail_parry()
 		return
 	if reel_open:
 		_reel()
-	elif phase == Phase.WINDUP or phase == Phase.ATTACK:
+	elif phase == Phase.ATTACK:
 		_attempt_parry()
 
 
@@ -196,6 +225,10 @@ func _start_warning() -> void:
 func _start_windup() -> void:
 	phase = Phase.WINDUP
 	phase_time = maxf(attack.windup_duration, 0.05)
+	# The fish braces for the upcoming attack and stops moving outward.
+	# Reeling stays locked until the parry actually succeeds.
+	reel_open = false
+	free_reel = false
 
 
 func _start_attack() -> void:
@@ -207,13 +240,13 @@ func _start_attack() -> void:
 func _attempt_parry() -> void:
 	if attack == null or counter_locked:
 		return
-	var perfect: bool = false
-	var close: bool = false
-	if phase == Phase.WINDUP:
-		close = phase_time <= attack.close_early_window
-	elif phase == Phase.ATTACK:
-		perfect = attack_elapsed <= attack.counter_window
-		close = not perfect and attack_elapsed <= attack.counter_window + attack.close_late_window
+	# Only the actual attack is parryable. Even late windup input is a
+	# miss, so the player must read the attack rather than pre-scroll.
+	if phase != Phase.ATTACK:
+		_fail_parry()
+		return
+	var perfect: bool = attack_elapsed <= attack.counter_window
+	var close: bool = not perfect and attack_elapsed <= attack.counter_window + attack.close_late_window
 	if not close and not perfect:
 		_fail_parry()
 		return
@@ -342,9 +375,9 @@ func _reel() -> void:
 func phase_title() -> String:
 	match phase:
 		Phase.WARNING:
-			return "Fish preparing to attack"
+			return "FISH PULLING AWAY  -  WAIT"
 		Phase.WINDUP:
-			return "WINDUP  -  watch the orange ring"
+			return "WINDUP  -  DON'T SCROLL"
 		Phase.ATTACK:
 			return "ATTACK  -  parry now!"
 		Phase.DASH:
@@ -352,18 +385,20 @@ func phase_title() -> String:
 		Phase.STUN:
 			return "STAGGERED  -  FREE REEL!"
 		Phase.RECOVERY:
-			return "FISH RECOVERING  -  REEL!"
+			return "FISH PULLING  -  REEL!"
 	return ""
 
 
 func hint() -> String:
-	if reel_open:
-		return "SCROLL DOWN TO PULL CLOSER" if free_reel else "SCROLL DOWN TO REEL  •  WATCH TENSION"
-	if phase == Phase.WARNING or phase == Phase.DASH:
-		return "Watch the ring  •  scroll 3 times quickly to parry"
+	if phase == Phase.WARNING:
+		return "FISH IS PULLING  •  WAIT FOR THE ATTACK"
 	if phase == Phase.WINDUP:
-		return "Wait for the flash  •  late windup can parry"
-	return "SCROLL DOWN 3x NOW  •  parries build stagger"
+		return "DON'T SCROLL YET  •  EARLY INPUT CAUSES DASH"
+	if phase == Phase.DASH:
+		return "FISH DASHING  •  WAIT FOR RECOVERY"
+	if reel_open:
+		return "SCROLL TO REEL FREELY" if free_reel else "SCROLL TO REEL  •  FISH PULLS BACK"
+	return "SCROLL DOWN 3x NOW  •  PARRY THE ATTACK"
 
 
 func telegraph_fraction() -> float:
