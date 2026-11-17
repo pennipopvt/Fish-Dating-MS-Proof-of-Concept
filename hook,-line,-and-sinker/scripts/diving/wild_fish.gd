@@ -8,6 +8,8 @@ var swim_speed: float = 20.0
 var capture_radius: float = 13.0
 var flee_radius: float = 58.0
 var catch_cooldown: float = 0.0
+# A rescued NPC may be trapped in place until the net battle is completed.
+var trapped: bool = false
 var region: Rect2 = Rect2(24, 35, 860, 430)
 var home: Vector2 = Vector2.ZERO
 var _rng := RandomNumberGenerator.new()
@@ -37,6 +39,11 @@ func swim(delta: float, player_position: Vector2, concealed: bool) -> void:
 		return
 	catch_cooldown = maxf(0.0, catch_cooldown - delta)
 	_t += delta
+	if trapped:
+		# Leave the fish at its burrow until the player reels it free. During
+		# combat, DivingWorld moves the hooked fish along the attached line.
+		_sprite.position.y = sin(_t * 2.2) * 0.7
+		return
 	_wander_timer -= delta
 	var distance: float = position.distance_to(player_position)
 	var danger_distance: float = 18.0 if concealed else flee_radius
