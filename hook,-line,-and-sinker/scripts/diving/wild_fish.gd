@@ -7,6 +7,7 @@ var fish_name: StringName = &""
 var swim_speed: float = 20.0
 var capture_radius: float = 13.0
 var flee_radius: float = 58.0
+var catch_cooldown: float = 0.0
 var region: Rect2 = Rect2(24, 35, 860, 430)
 var home: Vector2 = Vector2.ZERO
 var _rng := RandomNumberGenerator.new()
@@ -34,6 +35,7 @@ func setup(kind: StringName, art: Texture2D, starting_position: Vector2, bounds:
 func swim(delta: float, player_position: Vector2, concealed: bool) -> void:
 	if _sprite == null:
 		return
+	catch_cooldown = maxf(0.0, catch_cooldown - delta)
 	_t += delta
 	_wander_timer -= delta
 	var distance: float = position.distance_to(player_position)
@@ -58,7 +60,7 @@ func swim(delta: float, player_position: Vector2, concealed: bool) -> void:
 	rotation = clampf(direction.y * 0.15, -0.20, 0.20)
 
 func is_targeted(world_mouse: Vector2, player_position: Vector2) -> bool:
-	return world_mouse.distance_to(position) <= capture_radius + 7.0 and player_position.distance_to(position) <= 45.0
+	return catch_cooldown <= 0.0 and world_mouse.distance_to(position) <= capture_radius + 7.0 and player_position.distance_to(position) <= 45.0
 
 func get_display_name() -> String:
 	return String(fish_name).capitalize()
