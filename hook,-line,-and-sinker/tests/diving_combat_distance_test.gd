@@ -26,7 +26,10 @@ func _run() -> void:
 		"Each scroll now reels only 2.5 world pixels instead of seven")
 	_check(is_equal_approx(combat.max_line_distance, 175.0), "Fish has authored escape slack beyond cast range")
 	_check(is_equal_approx(TUNA.stagger_resistance, 150.0), "Tuna uses its revised-fishing stagger resistance")
+	combat.tension = 0.6
 	_perfect_parry(combat)
+	_check(is_zero_approx(combat.tension),
+		"Perfect parry clears built-up tension even without staggering the fish")
 	_check(combat.is_active() and not combat.free_reel and combat.phase == DivingCombat.Phase.ATTACK,
 		"One perfect parry does NOT stun or automatically catch distant fish")
 	_check(is_equal_approx(combat.line_distance, 105.0) and combat.progress == far_progress,
