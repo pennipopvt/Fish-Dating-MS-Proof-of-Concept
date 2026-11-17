@@ -21,6 +21,7 @@ func _run() -> void:
 		"DivingLayer/DivingPrototype/SubViewportContainer/SubViewport/Lagoon"
 	) as DivingWorld
 	var iris: ColorRect = main.get_node("TransitionLayer/Iris") as ColorRect
+	var dialogue_ui: DialogueUI = main.get_node("CanvasLayer/DialogueUI") as DialogueUI
 
 	_check(not dive_layer.visible, "Game starts on the original island")
 	_check(not iris.visible, "Iris is not visible during ordinary gameplay")
@@ -34,6 +35,8 @@ func _run() -> void:
 	_check(bool(lagoon.get("_embedded_in_world")), "Diving scene uses real island as its shore")
 	_check(GameManager.diving_session_active, "Catching fish underwater does not spend additional actions")
 	_check(not iris.visible, "Circular transition opens fully underwater")
+	_check(bool(dialogue_ui.get("_underwater_mode")) and dialogue_ui.layer > dive_layer.layer,
+		"Existing dialogue UI switches to fish sprites above the underwater world")
 
 	# Surface without Silas and ensure the normal island and its clock return.
 	lagoon.call("_return_to_surface", false)
@@ -41,6 +44,7 @@ func _run() -> void:
 	_check(not dive_layer.visible and not bool(main.get("_underwater")), "Surface returns to island")
 	_check(not player.busy and player.visible, "Normal overworld movement restored")
 	_check(not GameManager.diving_session_active, "Diving action state clears on return")
+	_check(not bool(dialogue_ui.get("_underwater_mode")), "Land dialogue portraits and layout are restored")
 	_check(GameManager.get_actions_left() == actions_before - 1, "One completed dive costs one action")
 
 	# The same lagoon is preserved across a second jump.
