@@ -58,6 +58,65 @@ func _run() -> void:
 	_check(not combat.is_active() and pulls >= 6 and pulls <= 8,
 		"Even a nearby fish now needs several slower reel scrolls")
 
+	# Phase behavior: the fish constantly pulls away between attacks.
+	_check(combat.begin(fish, TUNA, 80.0, 110.0),
+		"New fight starts with a resisting prewindup")
+	var warning_start: float = combat.line_distance
+	var expected_passive_pull: float = TUNA.passive_escape_rate * combat.passive_pull_multiplier * (
+		combat.max_line_distance - combat.catch_distance
+	)
+	combat.step(0.10)
+	_check(combat.phase == DivingCombat.Phase.WARNING and combat.line_distance > warning_start,
+		"Fish pulls away even while prewindup reeling is locked")
+	_check(is_equal_approx(combat.line_distance - warning_start, expected_passive_pull * 0.10),
+		"Passive pull uses this fish's authored passive escape rate")
+	var prewindup_distance: float = combat.line_distance
+	combat.reel_scroll()
+	_check(combat.phase == DivingCombat.Phase.WARNING
+		and is_equal_approx(combat.line_distance, prewindup_distance),
+		"Scrolling during prewindup does not reel or parry")
+
+	# Windup is a short pause, but scrolling too early triggers a dash.
+	combat.call("_start_windup")
+	var windup_distance: float = combat.line_distance
+	combat.step(0.08)
+	_check(combat.phase == DivingCombat.Phase.WINDUP
+		and is_equal_approx(combat.line_distance, windup_distance),
+		"Fish stops pulling while preparing its attack")
+	combat.reel_scroll()
+	_check(combat.phase == DivingCombat.Phase.DASH and not combat.reel_open,
+		"Any scroll during windup fails the parry and starts the dash")
+	combat.step(TUNA.miss_dash_duration)
+	_check(combat.phase == DivingCombat.Phase.RECOVERY and combat.tension > 0.0,
+		"After the missed dash, combat returns to a reeling recovery")
+	var recovery_distance: float = combat.line_distance
+	combat.step(0.10)
+	_check(combat.line_distance > recovery_distance,
+		"Fish keeps pulling away while player can reel during recovery")
+	var after_recovery_pull: float = combat.line_distance
+	combat.reel_scroll()
+	_check(combat.line_distance < after_recovery_pull,
+		"Recovery still allows contested reeling")
+
+	# The actual attack is a deliberate stationary parry moment, then
+	# the fish resumes resisting immediately once parried.
+	combat.call("_start_warning")
+	combat.call("_start_windup")
+	combat.call("_start_attack")
+	var attack_distance: float = combat.line_distance
+	combat.step(0.03)
+	_check(is_equal_approx(combat.line_distance, attack_distance),
+		"Fish holds steady during unresolved attack/parry timing")
+	for i in range(3):
+		combat.reel_scroll()
+	_check(combat.reel_open and combat.phase == DivingCombat.Phase.ATTACK,
+		"Successful attack parry opens contested reeling")
+	var parried_distance: float = combat.line_distance
+	combat.step(0.03)
+	_check(combat.line_distance > parried_distance,
+		"Fish pulls again after successful parry rather than waiting motionless")
+	combat.release()
+
 	combat.queue_free()
 	fish.queue_free()
 	print("FAILED: %d" % failures if failures > 0 else "Diving physical catch progression tests passed")
