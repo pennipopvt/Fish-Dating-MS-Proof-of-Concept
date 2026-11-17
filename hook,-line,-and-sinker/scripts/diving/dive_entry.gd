@@ -1,0 +1,226 @@
+extends Control
+
+# Keeps the existing island as the real overworld. Only the dock's fishing
+# interaction changes: jump -> circular iris -> persistent diving lagoon.
+const SILAS_SCENE: PackedScene = preload("res://prefabs/silas.tscn")
+const SILAS_FISH_DATA: FishData = preload("res://resources/fish/silas.tres")
+const RIPPLE: Texture2D = preload("res://sprites/environment/medium_ripple_a.png")
+const POOF_SHEET: Texture2D = preload("res://sprites/characters/poof.png")
+const DIVE_DURATION: float = 0.43
+const IRIS_DURATION: float = 0.52
+const IRIS_OPEN_RADIUS: float = 2.6
+
+@onready var _world: Node2D = $SubViewportContainer/SubViewport/World
+@onready var _world_player: Player = $SubViewportContainer/SubViewport/World/Player
+@onready var _diving_layer: CanvasLayer = $DivingLayer
+@onready var _diving_scene: Control = $DivingLayer/DivingPrototype
+@onready var _lagoon: Node2D = $DivingLayer/DivingPrototype/SubViewportContainer/SubViewport/Lagoon
+@onready var _iris: ColorRect = $TransitionLayer/Iris
+@onready var _music: AudioStreamPlayer2D = $AudioStreamPlayer2D
+
+var _iris_material: ShaderMaterial
+var _underwater: bool = false
+var _transitioning: bool = false
+var _shore_return_position: Vector2 = Vector2(56.0, 112.0)
+var _silas_actor: NPCInteractable
+var _silas_recruited: bool = false
+
+
+func _ready() -> void:
+	_diving_layer.hide()
+	_diving_layer.process_mode = Node.PROCESS_MODE_DISABLED
+	_iris.hide()
+	_iris.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_iris_material = (_iris.material as ShaderMaterial).duplicate() as ShaderMaterial
+	_iris.material = _iris_material
+	_set_iris_radius(IRIS_OPEN_RADIUS)
+	_lagoon.set_embedded_mode(true)
+	_lagoon.surface_requested.connect(_on_surface_requested)
+	# Both scenes currently use the same theme. Keep one copy playing.
+	(_diving_scene.get_node("Music") as AudioStreamPlayer).stop()
+	DialogueManager.conversation_finished.connect(_on_reveal_conversation_finished)
+
+
+# Called by Dock.interact using the real world Player and Dock instances.
+func request_dive(fisher: Player, dock: Node2D) -> void:
+	if _transitioning or _underwater or fisher != _world_player:
+		return
+	if not GameManager.can_act() or DialogueManager.is_active or GameManager.is_modal_ui_open():
+		return
+	_transitioning = true
+	_world_player.busy = true
+	_shore_return_position = dock.global_position + Vector2(21.0, 11.0)
+	_begin_dive(dock)
+
+
+func _begin_dive(dock: Node2D) -> void:
+	var jump_start: Vector2 = _world_player.global_position
+	var landing: Vector2 = dock.global_position + Vector2(-11.0, 46.0)
+	_world_player.animator.play(&"walk_l")
+	var jump: Tween = create_tween()
+	jump.tween_method(
+		_update_dive_jump.bind(jump_start, landing),
+		0.0, 1.0, DIVE_DURATION
+	).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	await jump.finished
+	_spawn_splash(landing)
+	# Use the real camera-transformed position of the impact, not a fixed
+	# screen center: this is where the black circle must close around.
+	await _close_iris(_normalized_screen_position(_world_player))
+
+	_world_player.hide()
+	_diving_layer.process_mode = Node.PROCESS_MODE_INHERIT
+	_diving_layer.show()
+	_lagoon.enter_from_dock()
+	_underwater = true
+	GameManager.diving_session_active = true
+	await _open_iris(_normalized_screen_position(_lagoon.get_node("Player") as Node2D))
+	_transitioning = false
+
+
+func _update_dive_jump(t: float, start: Vector2, landing: Vector2) -> void:
+	# A readable leap above the dock before splashing below its waterline.
+	_world_player.global_position = start.lerp(landing, t) + Vector2(0.0, -29.0 * sin(PI * t))
+	_world_player.animator.rotation = -0.25 * sin(PI * t)
+
+
+func _spawn_splash(at: Vector2) -> void:
+	_world_player.animator.rotation = 0.0
+	var splash := Sprite2D.new()
+	splash.texture = RIPPLE
+	splash.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	splash.z_index = 20
+	splash.global_position = at
+	splash.scale = Vector2(0.7, 0.35)
+	_world.add_child(splash)
+	var tween: Tween = create_tween()
+	tween.set_parallel(true)
+	tween.tween_property(splash, "scale", Vector2(1.55, 0.7), 0.37)
+	tween.tween_property(splash, "modulate:a", 0.0, 0.37)
+	tween.chain().tween_callback(splash.queue_free)
+
+
+func _on_surface_requested(with_silas: bool) -> void:
+	if _transitioning or not _underwater:
+		return
+	_transitioning = true
+	_surface_from_dive(with_silas)
+
+
+func _surface_from_dive(with_silas: bool) -> void:
+	await _close_iris(_normalized_screen_position(_lagoon.get_node("Player") as Node2D))
+	_diving_layer.hide()
+	_diving_layer.process_mode = Node.PROCESS_MODE_DISABLED
+	_world_player.global_position = _shore_return_position
+	_world_player.show()
+	_world_player.animator.rotation = 0.0
+	_world_player.animator.play(&"idle_l")
+	_underwater = false
+	GameManager.diving_session_active = false
+	# A full dive spends one normal-world action, not one per net capture.
+	GameManager.spend_actions(1)
+
+	var reveal_silas: bool = with_silas and not _silas_recruited and not is_instance_valid(_silas_actor)
+	if reveal_silas:
+		_place_silas_on_dock()
+	await _open_iris(_normalized_screen_position(_world_player))
+	if reveal_silas:
+		await _show_silas_transformation()
+	_transitioning = false
+	_world_player.busy = false
+
+
+func _place_silas_on_dock() -> void:
+	_silas_actor = SILAS_SCENE.instantiate() as NPCInteractable
+	_world.add_child(_silas_actor)
+	_silas_actor.global_position = _shore_return_position + Vector2(33.0, 0.0)
+	var human: AnimatedSprite2D = _silas_actor.get_node("Sprite") as AnimatedSprite2D
+	human.hide()
+
+
+func _show_silas_transformation() -> void:
+	if not is_instance_valid(_silas_actor):
+		return
+	# Show the same four-frame poof sprite as the original catch sequence,
+	# but this time it happens because Silas CHOSE to accompany Penni.
+	var frames := SpriteFrames.new()
+	frames.add_animation(&"transform")
+	frames.set_animation_loop(&"transform", false)
+	frames.set_animation_speed(&"transform", 12.0)
+	for i in range(4):
+		var cutout := AtlasTexture.new()
+		cutout.atlas = POOF_SHEET
+		cutout.region = Rect2(float(i * 32), 0.0, 32.0, 32.0)
+		frames.add_frame(&"transform", cutout)
+	var poof := AnimatedSprite2D.new()
+	poof.sprite_frames = frames
+	poof.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	poof.z_index = 25
+	_world.add_child(poof)
+	poof.global_position = _silas_actor.global_position + Vector2(0, -14)
+	poof.play(&"transform")
+	await poof.animation_finished
+	poof.queue_free()
+	if not is_instance_valid(_silas_actor):
+		return
+	(_silas_actor.get_node("Sprite") as AnimatedSprite2D).show()
+	# Reuse the original game's dialogue portrait/UI while giving the new
+	# diving encounter its own first-on-land lines (not the caught-fish story).
+	DialogueManager.request_conversation(
+		_silas_actor.npc, "res://dialogue/silas_surface_reveal.json"
+	)
+
+
+func _on_reveal_conversation_finished(npc: NPCData) -> void:
+	if npc == null or npc.npc_id != &"test_npc" or _silas_recruited:
+		return
+	if not is_instance_valid(_silas_actor):
+		return
+	# The same recruitment/housing mechanism as the original fishing game.
+	# This removes Silas from the ordinary catch pool and enables his town
+	# interactions after he agrees to live above water.
+	if RecruitmentHandler.recruit_actor_for_debug(_silas_actor, SILAS_FISH_DATA):
+		_silas_recruited = true
+
+
+func _normalized_screen_position(actor: Node2D) -> Vector2:
+	# Both the island and diving area render into separate 320x180 viewports
+	# which fill the same display. Normalizing canvas coordinates maps the
+	# actual splash/player position to the iris's fullscreen ColorRect UV.
+	var point: Vector2 = actor.get_global_transform_with_canvas().origin
+	var view_size: Vector2 = Vector2(actor.get_viewport().get_visible_rect().size)
+	return Vector2(
+		clampf(point.x / maxf(view_size.x, 1.0), 0.0, 1.0),
+		clampf(point.y / maxf(view_size.y, 1.0), 0.0, 1.0)
+	)
+
+
+func _close_iris(at: Vector2) -> void:
+	_configure_iris(at)
+	_iris.show()
+	await _animate_iris(IRIS_OPEN_RADIUS, 0.0)
+
+
+func _open_iris(at: Vector2) -> void:
+	_configure_iris(at)
+	await _animate_iris(0.0, IRIS_OPEN_RADIUS)
+	_iris.hide()
+
+
+func _configure_iris(at: Vector2) -> void:
+	var view_size: Vector2 = get_viewport_rect().size
+	_iris_material.set_shader_parameter("center_uv", at)
+	_iris_material.set_shader_parameter(
+		"aspect_ratio", view_size.x / maxf(view_size.y, 1.0)
+	)
+
+
+func _animate_iris(start_radius: float, end_radius: float) -> void:
+	_set_iris_radius(start_radius)
+	var tween: Tween = create_tween()
+	tween.tween_method(_set_iris_radius, start_radius, end_radius, IRIS_DURATION).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	await tween.finished
+
+
+func _set_iris_radius(value: float) -> void:
+	_iris_material.set_shader_parameter("radius", value)
