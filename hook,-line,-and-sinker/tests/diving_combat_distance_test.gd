@@ -22,6 +22,8 @@ func _run() -> void:
 	_check(combat.begin(fish, TUNA, 105.0, 110.0), "Tuna engages at a distant net impact")
 	var far_progress: float = combat.progress
 	_check(is_equal_approx(combat.line_distance, 105.0), "Real distance comes from net impact")
+	_check(is_equal_approx(combat.reel_pixels_per_scroll, 2.5),
+		"Each scroll now reels only 2.5 world pixels instead of seven")
 	_check(is_equal_approx(combat.max_line_distance, 175.0), "Fish has authored escape slack beyond cast range")
 	_check(is_equal_approx(TUNA.stagger_resistance, 150.0), "Tuna uses its revised-fishing stagger resistance")
 	_perfect_parry(combat)
@@ -34,6 +36,8 @@ func _run() -> void:
 
 	for i in range(5):
 		combat.reel_scroll()
+	_check(is_equal_approx(combat.line_distance, 92.5),
+		"Five normal scrolls pull a far fish only 12.5 world pixels")
 	_check(combat.is_active() and combat.line_distance > combat.catch_distance,
 		"Five actual reel pulls still cannot catch a far-away tuna")
 	_check(combat.progress > far_progress and combat.progress < 1.0,
@@ -51,8 +55,8 @@ func _run() -> void:
 	while combat.is_active() and pulls < 12:
 		combat.reel_scroll()
 		pulls += 1
-	_check(not combat.is_active() and pulls >= 2 and pulls <= 4,
-		"Close fish requires physically reeling the remaining distance")
+	_check(not combat.is_active() and pulls >= 6 and pulls <= 8,
+		"Even a nearby fish now needs several slower reel scrolls")
 
 	combat.queue_free()
 	fish.queue_free()
