@@ -460,6 +460,8 @@ func _go_underwater() -> void:
 	_underwater = true
 	_set_camera_bounds(true)
 	player_sprite.position = SURFACE_POINT + Vector2(42.0, 29.0)
+	camera.position = player_sprite.position
+	camera.reset_smoothing()
 	_set_silas_fish_sprite()
 	if _silas_following:
 		silas_sprite.position = player_sprite.position + Vector2(-26, 14)
