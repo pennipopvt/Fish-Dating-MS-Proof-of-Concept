@@ -55,7 +55,9 @@ func begin(wild: DivingWildFish, data: FishData) -> bool:
 	free_reel = false
 	feedback = "Get ready!"
 	feedback_time = 0.9
-	FishingManager.hook_fish(data)
+	# Avoid emitting the island rod's hook signal: its FishingLine is
+	# still subscribed even while the player is underwater. Combat works
+	# directly from this FishData; the catch signal fires only on victory.
 	_start_warning()
 	return true
 
