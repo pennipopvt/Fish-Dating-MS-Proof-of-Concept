@@ -12,23 +12,24 @@ const SILAS_NPC: NPCData = preload("res://resources/npcs/silas.tres")
 const PLAYER_IDLE: Texture2D = preload("res://sprites/characters/penni/penni_idle.png")
 const SILAS_FISH: Texture2D = preload("res://sprites/fish/silas_eel.png")
 const SILAS_HUMAN: Texture2D = preload("res://sprites/characters/silas_idle.png")
-const FISH_MULLET: Texture2D = preload("res://sprites/fish/mullet.png")
-const FISH_PORGY: Texture2D = preload("res://sprites/fish/porgy.png")
-const FISH_GOBY: Texture2D = preload("res://sprites/fish/goby.png")
-const FISH_FLOUNDER: Texture2D = preload("res://sprites/fish/flounder.png")
-const FISH_NEEDLE: Texture2D = preload("res://sprites/fish/needlefish.png")
-const FISH_TUNA: Texture2D = preload("res://sprites/fish/tuna.png")
+# Wild fish species, art, and spawn positions now live on FishSpawns marker
+# nodes in diving_prototype.tscn instead of being hardcoded in this script.
 
 const SEA_SIZE := Vector2(920.0, 530.0)
 const SEA_BOUNDS := Rect2(Vector2(16.0, 30.0), Vector2(888.0, 460.0))
-const SURFACE_POINT := Vector2(78.0, 92.0)
-const SILAS_BURROW := Vector2(385.0, 258.0)
-const TANGLED_NET := Vector2(411.0, 250.0)
-const GLOWING_GARDEN := Vector2(670.0, 213.0)
 const SHORE_DIVE_POINT := Vector2(251.0, 111.0)
 const SWIM_SPEED: float = 78.0
 const REACH: float = 44.0
 
+@export var show_prototype_environment: bool = true
+# Turn this off once you have painted/placed actual lagoon scenery in the
+# LevelArt or ForegroundArt nodes. It hides placeholder terrain and reefs.
+
+@onready var _entry_point: Vector2 = $Points/Entry.position
+@onready var _surface_point: Vector2 = $Points/SurfaceExit.position
+@onready var _silas_burrow: Vector2 = $Points/SilasBurrow.position
+@onready var _tangled_net: Vector2 = $Points/TangledNet.position
+@onready var _glowing_garden: Vector2 = $Points/ShellGarden.position
 @onready var camera: Camera2D = $Camera2D
 @onready var player_sprite: Sprite2D = $Player
 @onready var silas_sprite: Sprite2D = $Silas
@@ -73,12 +74,12 @@ var _standalone_dialogue_ui: DialogueUI
 var _shore_transformation_played: bool = false
 
 func _ready() -> void:
-	player_sprite.position = Vector2(122.0, 123.0)
+	player_sprite.position = _entry_point
 	player_sprite.texture = PLAYER_IDLE
 	player_sprite.hframes = 2
 	player_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	player_sprite.scale = Vector2.ONE
-	silas_sprite.position = SILAS_BURROW + Vector2(0, -16)
+	silas_sprite.position = _silas_burrow + Vector2(0, -16)
 	silas_sprite.texture = SILAS_FISH
 	silas_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	_set_silas_fish_sprite()
@@ -159,23 +160,17 @@ func _set_silas_human_sprite() -> void:
 	silas_sprite.visible = true
 
 func _spawn_fish() -> void:
-	var fish_specs: Array[Dictionary] = [
-		{"id": &"mullet", "tex": FISH_MULLET, "pos": Vector2(208, 138)},
-		{"id": &"porgy", "tex": FISH_PORGY, "pos": Vector2(278, 197)},
-		{"id": &"goby", "tex": FISH_GOBY, "pos": Vector2(320, 314)},
-		{"id": &"mullet", "tex": FISH_MULLET, "pos": Vector2(476, 149)},
-		{"id": &"flounder", "tex": FISH_FLOUNDER, "pos": Vector2(543, 356)},
-		{"id": &"needlefish", "tex": FISH_NEEDLE, "pos": Vector2(600, 155)},
-		{"id": &"porgy", "tex": FISH_PORGY, "pos": Vector2(758, 309)},
-		{"id": &"tuna", "tex": FISH_TUNA, "pos": Vector2(814, 180)}
-	]
-	for i in range(fish_specs.size()):
-		var spec: Dictionary = fish_specs[i]
+	# Every fish starts from an editor-placeable FishSpawns marker. Designers
+	# can move, add, duplicate or delete markers without rewriting code.
+	for child in $FishSpawns.get_children():
+		var spawn: DivingFishSpawn = child as DivingFishSpawn
+		if spawn == null or spawn.species == null or spawn.species.item_data == null:
+			continue
+		var art: Texture2D = spawn.species.item_data.sprite
+		if art == null or spawn.species.states.is_empty():
+			continue
 		var fish: DivingWildFish = WILD_FISH_SCRIPT.new() as DivingWildFish
-		var kind: StringName = spec["id"]
-		var art: Texture2D = spec["tex"]
-		var start: Vector2 = spec["pos"]
-		fish.setup(kind, art, start, SEA_BOUNDS, 2041 + i * 37)
+		fish.setup(spawn.species.fish_id, art, spawn.position, SEA_BOUNDS, spawn.random_seed)
 		add_child(fish)
 		_wild_fish.append(fish)
 
@@ -250,7 +245,7 @@ func _move_player(delta: float) -> void:
 func _update_silas_fish(delta: float) -> void:
 	silas_sprite.visible = true
 	if not _silas_following:
-		silas_sprite.position = SILAS_BURROW + Vector2(sin(_time * 1.7) * 1.7, -16.0 + sin(_time * 2.3) * 1.4)
+		silas_sprite.position = _silas_burrow + Vector2(sin(_time * 1.7) * 1.7, -16.0 + sin(_time * 2.3) * 1.4)
 		silas_sprite.flip_h = false
 		return
 	# Keep Silas physically near the player but give him a little room to
@@ -270,7 +265,7 @@ func _update_silas_fish(delta: float) -> void:
 func _maybe_discover_garden() -> void:
 	if _discovered_garden or not _silas_following or DialogueManager.is_active or _combat.is_active():
 		return
-	if player_sprite.position.distance_to(GLOWING_GARDEN) < 45.0:
+	if player_sprite.position.distance_to(_glowing_garden) < 45.0:
 		_discovered_garden = true
 		_start_dialogue("Silas", [
 			"Wait... look at the light coming from those shells.",
@@ -315,7 +310,7 @@ func _interact() -> void:
 		else:
 			_toast("The ocean is to the right. Swim again at the dock.")
 		return
-	if player_sprite.position.distance_to(SURFACE_POINT) < REACH:
+	if player_sprite.position.distance_to(_surface_point) < REACH:
 		_try_surface()
 		return
 	if player_sprite.position.distance_to(silas_sprite.position) < REACH:
@@ -382,11 +377,11 @@ func _try_catch(world_mouse: Vector2) -> void:
 		return
 	# Silas's tangled net is still an interactable story object; only
 	# intercept an actual near-range interaction, not arbitrary clicks.
-	if not _net_cleared and world_mouse.distance_to(TANGLED_NET) < 22.0 and player_sprite.position.distance_to(TANGLED_NET) <= REACH:
+	if not _net_cleared and world_mouse.distance_to(_tangled_net) < 22.0 and player_sprite.position.distance_to(_tangled_net) <= REACH:
 		if not _silas_met:
 			_talk_to_silas()
 			return
-		_net_flash_point = TANGLED_NET
+		_net_flash_point = _tangled_net
 		_net_flash_time = 0.36
 		_net_cleared = true
 		_start_dialogue("Silas", [
@@ -575,14 +570,14 @@ func _go_underwater() -> void:
 	_underwater = true
 	_set_dialogue_visual_mode(true)
 	_set_camera_bounds(true)
-	player_sprite.position = SURFACE_POINT + Vector2(42.0, 29.0)
+	player_sprite.position = _entry_point
 	camera.position = player_sprite.position
 	camera.reset_smoothing()
 	_set_silas_fish_sprite()
 	if _silas_following:
 		silas_sprite.position = player_sprite.position + Vector2(-26, 14)
 	else:
-		silas_sprite.position = SILAS_BURROW + Vector2(0, -16)
+		silas_sprite.position = _silas_burrow + Vector2(0, -16)
 	for fish in _wild_fish:
 		if is_instance_valid(fish):
 			fish.show()
@@ -667,9 +662,9 @@ func _update_hud() -> void:
 			story_label.text = "Explore and talk with Silas before leaving."
 		else:
 			story_label.text = "Silas seems curious about the surface..."
-		var near_surface: bool = player_sprite.position.distance_to(SURFACE_POINT) < REACH
+		var near_surface: bool = player_sprite.position.distance_to(_surface_point) < REACH
 		var near_silas: bool = player_sprite.position.distance_to(silas_sprite.position) < REACH
-		var near_net: bool = not _net_cleared and player_sprite.position.distance_to(TANGLED_NET) < REACH
+		var near_net: bool = not _net_cleared and player_sprite.position.distance_to(_tangled_net) < REACH
 		if near_surface:
 			prompt_label.text = "[E]  RETURN TO SURFACE"
 		elif near_net:
@@ -716,52 +711,53 @@ func _draw_shore() -> void:
 
 func _draw_underwater() -> void:
 	draw_rect(Rect2(Vector2.ZERO, SEA_SIZE), Color("#143c58"))
-	for i in range(14):
-		var y: float = float(i) * 37.0
-		draw_rect(Rect2(0, y, SEA_SIZE.x, 38.0), Color(0.08, 0.28 + float(i) * 0.003, 0.39, 0.10))
-	for i in range(22):
-		var top: Vector2 = Vector2(float(i * 52 - 80), 0.0)
-		draw_line(top, top + Vector2(165, 425), Color(0.53, 0.78, 0.79, 0.035), 8.0)
-	draw_rect(Rect2(0, 462, SEA_SIZE.x, 68), Color("#897b66"))
-	draw_rect(Rect2(0, 460, SEA_SIZE.x, 6), Color("#b3a38a"))
-	for i in range(92):
-		var pebble := Vector2(float((i * 127 + 15) % 910), float(468 + (i * 23) % 58))
-		draw_circle(pebble, float(1 + (i % 3)), Color("#756f65"))
-	# Coral gardens and waving eelgrass are placed in the space you swim through.
-	for i in range(26):
-		var bx: float = 18.0 + float((i * 67 + 29) % 880)
-		var by: float = 460.0 - float((i * 19) % 55)
-		var sway: float = sin(_time * 1.5 + float(i)) * 4.0
-		draw_line(Vector2(bx, by + 14), Vector2(bx + sway, by - 20 - float(i % 4) * 5.0), Color("#3b937d"), 2.0)
-		draw_line(Vector2(bx, by), Vector2(bx - 5 + sway, by - 13), Color("#5dab86"), 1.0)
-	for reef_center in [Vector2(240, 365), Vector2(520, 415), Vector2(780, 420)]:
-		draw_circle(reef_center, 39, Color("#345d6a"))
-		draw_circle(reef_center + Vector2(-13, 1), 21, Color("#547178"))
-		draw_circle(reef_center + Vector2(16, -9), 17, Color("#466b73"))
-		for i in range(7):
-			var branch: Vector2 = Vector2(reef_center) + Vector2(-20 + i * 7, 7.0)
-			draw_line(branch, branch + Vector2(sin(_time + i) * 3, -15 - i % 3 * 4), Color("#ce897e"), 2)
+	if show_prototype_environment:
+		for i in range(14):
+			var y: float = float(i) * 37.0
+			draw_rect(Rect2(0, y, SEA_SIZE.x, 38.0), Color(0.08, 0.28 + float(i) * 0.003, 0.39, 0.10))
+		for i in range(22):
+			var top: Vector2 = Vector2(float(i * 52 - 80), 0.0)
+			draw_line(top, top + Vector2(165, 425), Color(0.53, 0.78, 0.79, 0.035), 8.0)
+		draw_rect(Rect2(0, 462, SEA_SIZE.x, 68), Color("#897b66"))
+		draw_rect(Rect2(0, 460, SEA_SIZE.x, 6), Color("#b3a38a"))
+		for i in range(92):
+			var pebble := Vector2(float((i * 127 + 15) % 910), float(468 + (i * 23) % 58))
+			draw_circle(pebble, float(1 + (i % 3)), Color("#756f65"))
+		# Coral gardens and waving eelgrass are placed in the space you swim through.
+		for i in range(26):
+			var bx: float = 18.0 + float((i * 67 + 29) % 880)
+			var by: float = 460.0 - float((i * 19) % 55)
+			var sway: float = sin(_time * 1.5 + float(i)) * 4.0
+			draw_line(Vector2(bx, by + 14), Vector2(bx + sway, by - 20 - float(i % 4) * 5.0), Color("#3b937d"), 2.0)
+			draw_line(Vector2(bx, by), Vector2(bx - 5 + sway, by - 13), Color("#5dab86"), 1.0)
+		for reef_center in [Vector2(240, 365), Vector2(520, 415), Vector2(780, 420)]:
+			draw_circle(reef_center, 39, Color("#345d6a"))
+			draw_circle(reef_center + Vector2(-13, 1), 21, Color("#547178"))
+			draw_circle(reef_center + Vector2(16, -9), 17, Color("#466b73"))
+			for i in range(7):
+				var branch: Vector2 = Vector2(reef_center) + Vector2(-20 + i * 7, 7.0)
+				draw_line(branch, branch + Vector2(sin(_time + i) * 3, -15 - i % 3 * 4), Color("#ce897e"), 2)
 	# The starting surface entrance has a distinct safe pool of light.
-	draw_circle(SURFACE_POINT, 25.0, Color(0.61, 0.87, 0.88, 0.09))
-	draw_arc(SURFACE_POINT, 21.0, 0.0, TAU, 28, Color(0.62, 0.91, 0.88, 0.46), 1.5)
-	draw_line(SURFACE_POINT + Vector2(-6, 7), SURFACE_POINT + Vector2(0, -7), Color("#ddf4dc"), 1.4)
-	draw_line(SURFACE_POINT + Vector2(0, -7), SURFACE_POINT + Vector2(6, 7), Color("#ddf4dc"), 1.4)
+	draw_circle(_surface_point, 25.0, Color(0.61, 0.87, 0.88, 0.09))
+	draw_arc(_surface_point, 21.0, 0.0, TAU, 28, Color(0.62, 0.91, 0.88, 0.46), 1.5)
+	draw_line(_surface_point + Vector2(-6, 7), _surface_point + Vector2(0, -7), Color("#ddf4dc"), 1.4)
+	draw_line(_surface_point + Vector2(0, -7), _surface_point + Vector2(6, 7), Color("#ddf4dc"), 1.4)
 	# Silas's burrow with the knot of abandoned line snagged over it.
-	draw_circle(SILAS_BURROW, 28.0, Color("#485e63"))
-	draw_circle(SILAS_BURROW + Vector2(0, -1), 15.0, Color("#193544"))
-	draw_arc(SILAS_BURROW, 17.0, 0.0, PI, 16, Color("#a69f88"), 2.0)
+	draw_circle(_silas_burrow, 28.0, Color("#485e63"))
+	draw_circle(_silas_burrow + Vector2(0, -1), 15.0, Color("#193544"))
+	draw_arc(_silas_burrow, 17.0, 0.0, PI, 16, Color("#a69f88"), 2.0)
 	if not _net_cleared:
 		for i in range(4):
-			var p: Vector2 = TANGLED_NET + Vector2(-10 + i * 6, -14)
+			var p: Vector2 = _tangled_net + Vector2(-10 + i * 6, -14)
 			draw_line(p, p + Vector2(9 - i * 3, 26), Color("#d3bfa6"), 1)
-		draw_line(TANGLED_NET + Vector2(-12, 0), TANGLED_NET + Vector2(11, 5), Color("#d3bfa6"), 1)
-		draw_circle(TANGLED_NET + Vector2(0, -24), 3.0 + sin(_time * 3.0), Color("#edb98b"))
+		draw_line(_tangled_net + Vector2(-12, 0), _tangled_net + Vector2(11, 5), Color("#d3bfa6"), 1)
+		draw_circle(_tangled_net + Vector2(0, -24), 3.0 + sin(_time * 3.0), Color("#edb98b"))
 	if not _silas_met:
-		draw_circle(SILAS_BURROW + Vector2(0, -44 + sin(_time * 2.0) * 2.0), 3.0, Color("#f1d5a4"))
+		draw_circle(_silas_burrow + Vector2(0, -44 + sin(_time * 2.0) * 2.0), 3.0, Color("#f1d5a4"))
 	# A distant glowing shell garden gives the player something to show Silas.
 	for i in range(10):
 		var a: float = TAU * float(i) / 10.0
-		var shell_position: Vector2 = GLOWING_GARDEN + Vector2(cos(a) * 36, sin(a) * 24)
+		var shell_position: Vector2 = _glowing_garden + Vector2(cos(a) * 36, sin(a) * 24)
 		var pulse: float = 0.34 + 0.22 * sin(_time * 2 + float(i))
 		draw_circle(shell_position, 7.0, Color(0.4, 0.89, 0.9, pulse * 0.5))
 		draw_circle(shell_position, 2.5, Color(0.64, 0.95, 0.86, pulse))
