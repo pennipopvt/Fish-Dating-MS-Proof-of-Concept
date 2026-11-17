@@ -625,7 +625,7 @@ func _draw_underwater() -> void:
 		draw_circle(reef_center + Vector2(-13, 1), 21, Color("#547178"))
 		draw_circle(reef_center + Vector2(16, -9), 17, Color("#466b73"))
 		for i in range(7):
-			var branch := reef_center + Vector2(-20 + i * 7, 7.0)
+			var branch: Vector2 = Vector2(reef_center) + Vector2(-20 + i * 7, 7.0)
 			draw_line(branch, branch + Vector2(sin(_time + i) * 3, -15 - i % 3 * 4), Color("#ce897e"), 2)
 	# The starting surface entrance has a distinct safe pool of light.
 	draw_circle(SURFACE_POINT, 25.0, Color(0.61, 0.87, 0.88, 0.09))
