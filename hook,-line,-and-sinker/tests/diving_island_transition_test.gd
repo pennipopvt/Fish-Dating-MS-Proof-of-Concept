@@ -26,6 +26,17 @@ func _run() -> void:
 	_check(not dive_layer.visible, "Game starts on the original island")
 	_check(not iris.visible, "Iris is not visible during ordinary gameplay")
 	_check(main.get_node_or_null("CanvasLayer/ShopMenu") != null, "Original terminal remains in island scene")
+	_check(main.get_node_or_null("CanvasLayer/BaitMenu") == null
+		and main.get_node_or_null("CanvasLayer/BobberMenu") == null,
+		"Old bait and bobber menus are removed")
+	_check(world.get_node_or_null("BaitBox") == null
+		and world.get_node_or_null("BobberShelf") == null,
+		"Bait box and bobber shelf no longer appear on the island")
+	var obsolete_trade: bool = false
+	for trade in ShopManager.trades:
+		if trade != null and trade.reward_method in [&"shop_reward_unlock_hard_bait", &"shop_reward_unlock_yellow_bait", &"shop_reward_upgrade_casts", &"shop_reward_add_casts"]:
+			obsolete_trade = true
+	_check(not obsolete_trade, "Shop no longer sells bait and obsolete extra casts")
 
 	var actions_before: int = GameManager.get_actions_left()
 	main.call("request_dive", player, dock)
