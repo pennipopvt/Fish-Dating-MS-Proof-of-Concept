@@ -9,6 +9,47 @@ signal scene_requested(npc: NPCData, scene_id: String)
 # Only DateManager consumes date_style choices; normal dialogue is unaffected.
 signal choice_resolved(npc: NPCData, choice: Dictionary)
 
+# Underwater conversations use the same DialogueManager / DialogueUI pipeline
+# as the island, but supply short in-memory JSON-style graphs for contextual
+# fish conversations. They never spend extra world actions during a dive.
+var _requested_inline_graph: Dictionary = {}
+var _requested_inline_alias: String = ""
+var _current_speaker_alias: String = ""
+
+func request_inline_conversation(
+	npc: NPCData, lines: Array[String],
+	speaker_alias: String = "", choices: Array[Dictionary] = []
+) -> void:
+	if npc == null or is_active or lines.is_empty():
+		return
+	var nodes: Dictionary = {"start": {"lines": lines.duplicate()}}
+	if not choices.is_empty():
+		var choice_defs: Array[Dictionary] = []
+		for i in range(choices.size()):
+			var incoming: Dictionary = choices[i]
+			var choice: Dictionary = incoming.duplicate(true)
+			var target: String = "response_%d" % i
+			nodes[target] = {"lines": [str(choice.get("response", ""))]}
+			choice.erase("response")
+			choice["next"] = target
+			choice["spends_action"] = false
+			choice_defs.append(choice)
+		nodes["start"]["choices"] = choice_defs
+	_requested_inline_graph = {
+		"entry": "start", "free_greeting": true, "nodes": nodes
+	}
+	_requested_inline_alias = speaker_alias
+	dialogue_requested.emit(npc)
+	_requested_inline_graph = {}
+	_requested_inline_alias = ""
+
+
+func get_current_speaker_name() -> String:
+	if not _current_speaker_alias.is_empty():
+		return _current_speaker_alias
+	return current_npc.display_name if current_npc != null else ""
+
+
 func request_conversation(npc: NPCData, json_override: String = "", gift_player: Player = null) -> void:
 	if npc != null and not is_active:
 		_requested_json_path = json_override
@@ -46,6 +87,18 @@ var _conversation_costs_action: bool = true
 func start_conversation(npc: NPCData, json_override: String = "") -> void:
 	if is_active or npc == null:
 		return
+	if not _requested_inline_graph.is_empty():
+		current_npc = npc
+		current_dialogue = null
+		_graph = _requested_inline_graph.duplicate(true)
+		_current_speaker_alias = _requested_inline_alias
+		_current_path = "res://dialogue/diving_inline.json"
+		_conversation_costs_action = false
+		is_active = true
+		conversation_started.emit(npc)
+		_enter_node(str(_graph["entry"]))
+		return
+	_current_speaker_alias = ""
 	var path: String = json_override if not json_override.is_empty() else _requested_json_path
 	if path.is_empty() and not npc.encounter_rules.is_empty():
 		path = NPCManager.get_encounter_json_path(npc)
@@ -299,6 +352,7 @@ func end_conversation() -> void:
 	_expected_gift_item_id = &""
 	_scene_after_conversation = ""
 	_current_path = ""
+	_current_speaker_alias = ""
 	_choice_greyed.clear()
 	conversation_finished.emit(finished_npc)
 	if not requested_scene.is_empty():
