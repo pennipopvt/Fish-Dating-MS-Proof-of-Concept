@@ -4,8 +4,8 @@ extends Node2D
 # Visual fishing rod held by the player. Purely cosmetic: it listens to the
 # FishingController's state_changed signal and never changes the fishing rules.
 #  - whips out when fishing starts, flicks back and forward on every cast
-#  - throws the equipped bait on the end of the line along a parabola to where
-#    the controller's bobber floats, then sinks it along the underwater line
+#  - tosses the selected companion fish along a parabola to the waterline.
+#    There is no bait or bobber; the line's LureFish takes over on landing.
 #  - spins the reel while the player scrolls to reel
 #  - keeps a line from the rod tip to the fish while it flies out of the water
 #  - turns the player to face the water and holds the idle pose
@@ -22,8 +22,6 @@ const FishState = FishingControllerScript.Fish_State
 @export_range(0.02, 0.5, 0.01) var flick_duration: float = 0.12
 @export_range(0.05, 1.0, 0.01) var settle_duration: float = 0.2
 @export_range(0.1, 2.0, 0.05) var cast_flight_duration: float = 0.5
-## Time for the bait to sink from the bobber to the end of the line.
-@export_range(0.0, 5.0, 0.05) var bait_sink_duration: float = 1.5
 @export_range(0.0, 0.5, 0.01) var put_away_duration: float = 0.1
 
 @export_group("Poses (degrees, positive = clockwise)")
@@ -40,8 +38,8 @@ const FishState = FishingControllerScript.Fish_State
 ## Slack in the line while the cast flies.
 @export_range(0.0, 20.0, 0.5) var line_sag: float = 4.0
 
-@export_group("Bait")
-@export_range(0.1, 2.0, 0.05) var bait_scale: float = 0.5
+@export_group("Cast Lure")
+@export_range(0.1, 2.0, 0.05) var lure_scale: float = 0.5
 
 @export_group("Reel")
 @export_range(1.0, 60.0, 1.0) var reel_fps: float = 16.0
@@ -52,7 +50,7 @@ const FishState = FishingControllerScript.Fish_State
 @onready var sprite: Sprite2D = $Pivot/Sprite
 @onready var tip: Marker2D = $Pivot/Tip
 @onready var cast_line: Line2D = $CastLine
-@onready var bait: Sprite2D = $Bait
+@onready var lure_visual: Sprite2D = $CastLureFish
 
 var controller: FishingControllerScript
 var fishing_line: Line2D
@@ -65,7 +63,6 @@ var _flight_start: Vector2
 var _flight_end: Vector2
 var _flight_pos: Vector2
 var _flight_t: float = 0.0
-var _sink_tween: Tween
 var _reel_time_left: float = 0.0
 var _reel_frame_time: float = 0.0
 var _catch_line_tween: Tween
@@ -85,14 +82,14 @@ func _ready() -> void:
 	cast_line.clear_points()
 	cast_line.width = fishing_line.width
 	cast_line.width_curve = fishing_line.width_curve
-	bait.top_level = true
-	bait.scale = Vector2.ONE * bait_scale
+	lure_visual.top_level = true
+	lure_visual.scale = Vector2.ONE * lure_scale
 	# Match the draw order of the controller's own line.
 	cast_line.z_as_relative = false
 	cast_line.z_index = _absolute_z(fishing_line)
 
-	FishingManager.bait_changed.connect(_on_bait_changed)
-	_on_bait_changed(FishingManager.equipped_bait)
+	FishingManager.team_changed.connect(_on_team_changed)
+	_on_team_changed()
 	# Deferred: the controller sets bite_time, the line and the catch path
 	# right AFTER changing state; react once that function has finished.
 	controller.state_changed.connect(_on_state_changed, CONNECT_DEFERRED)
@@ -126,9 +123,9 @@ func _on_state_changed(from: int, to: int) -> void:
 			# A bite during the throw: drop the throw and show the real line.
 			_end_flight()
 			fishing_line.show()
-			_hide_bait()
+			_hide_lure()
 		FishState.CATCHING:
-			_hide_bait()
+			_hide_lure()
 			_play_catch_jerk()
 			_start_catch_line()
 		FishState.NOT:
@@ -137,11 +134,11 @@ func _on_state_changed(from: int, to: int) -> void:
 
 func _cast(whip_out: bool) -> void:
 	_end_flight()
-	_hide_bait()
+	_hide_lure()
 	# Hide the controller's line until the cast has landed, and push the
 	# bite back by the length of the throw so a fish can't bite mid-air.
 	fishing_line.hide()
-	var cast_time: float = backswing_duration + flick_duration + cast_flight_duration + bait_sink_duration
+	var cast_time: float = backswing_duration + flick_duration + cast_flight_duration
 	if whip_out:
 		cast_time += whip_out_duration
 	controller.bite_time += cast_time
@@ -174,7 +171,7 @@ func _release_cast() -> void:
 		return
 	_flying = true
 	_flight_start = tip.global_position
-	# Land where the controller's bobber will float.
+	# Land where the selected companion floats on the water surface.
 	_flight_end = fishing_line.to_global(fishing_line.bobber_water_position)
 	cast_line.default_color = fishing_line.default_color
 	# Draw the first frame now so the line never shows stale points.
@@ -196,25 +193,17 @@ func _update_flight(t: float) -> void:
 	# Drawn from the tween itself: Line2D rebuilds on a deferred call, which
 	# still lands before this frame renders.
 	_draw_line_between(tip.global_position, _flight_pos, line_sag * (1.0 - t))
-	_place_bait(_flight_pos)
+	_place_lure(_flight_pos)
 
 
 func _land_cast() -> void:
 	_end_flight()
 	if controller.current_state == FishState.WAITING:
-		# Hang the line nearly straight down from the bobber for the sink.
+		# Hand the fish visual from the flying rod sprite to the on-line
+		# companion. Do not sink a separate bait object anymore.
 		fishing_line.set_slack_drop()
 		fishing_line.show()
-		_sink_bait()
-
-
-# The bait follows the controller's line from the surface down to its end.
-func _sink_bait() -> void:
-	var from: Vector2 = _flight_end
-	var to: Vector2 = _line_end()
-	_place_bait(from)
-	_sink_tween = create_tween()
-	_sink_tween.tween_method(func(t: float) -> void: _place_bait(from.lerp(to, t)), 0.0, 1.0, bait_sink_duration).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+		_hide_lure()
 
 
 func _end_flight() -> void:
@@ -223,8 +212,6 @@ func _end_flight() -> void:
 		_flight_tween.kill()
 	if _catch_line_tween != null and _catch_line_tween.is_running():
 		_catch_line_tween.kill()
-	if _sink_tween != null and _sink_tween.is_running():
-		_sink_tween.kill()
 	cast_line.hide()
 
 
@@ -258,7 +245,7 @@ func _update_catch_line(_t: float) -> void:
 
 func _put_away() -> void:
 	_end_flight()
-	_hide_bait()
+	_hide_lure()
 	_kill_rod_tween()
 	_reel_time_left = 0.0
 	sprite.frame = 0
@@ -301,25 +288,24 @@ func _draw_line_between(from: Vector2, to: Vector2, sag: float) -> void:
 		cast_line.add_point(p)
 
 
-func _place_bait(hang_point: Vector2) -> void:
-	if bait.texture == null:
-		_hide_bait()
+func _place_lure(hang_point: Vector2) -> void:
+	if lure_visual.texture == null:
+		_hide_lure()
 		return
-	bait.global_position = hang_point.round()
-	# Draw at the hooked fish's layer so the water treats the bait the same way.
-	bait.z_as_relative = false
-	bait.z_index = _absolute_z(fishing_line.fish)
-	bait.show()
+	lure_visual.global_position = hang_point.round()
+	lure_visual.z_as_relative = false
+	lure_visual.z_index = _absolute_z(fishing_line.lure_sprite)
+	lure_visual.show()
 
 
-func _hide_bait() -> void:
-	bait.hide()
+func _hide_lure() -> void:
+	lure_visual.hide()
 
 
 func _hide_all() -> void:
 	hide()
 	_end_flight()
-	_hide_bait()
+	_hide_lure()
 	pivot.rotation = 0.0
 	sprite.frame = 0
 
@@ -335,8 +321,13 @@ func _line_end() -> Vector2:
 	return fishing_line.to_global(fishing_line.get_point_position(fishing_line.get_point_count() - 1))
 
 
-func _on_bait_changed(data: BaitData) -> void:
-	bait.texture = data.icon if data != null else null
+func _on_team_changed() -> void:
+	var lure: FishData = FishingManager.get_lure_companion()
+	lure_visual.texture = lure.item_data.sprite if lure != null and lure.item_data != null else null
+	lure_visual.scale = Vector2.ONE * lure_scale
+	if lure_visual.texture != null:
+		lure_visual.scale = Vector2.ONE * (14.0 / maxf(float(lure_visual.texture.get_width()), 1.0))
+
 
 
 static func _absolute_z(node: CanvasItem) -> int:
