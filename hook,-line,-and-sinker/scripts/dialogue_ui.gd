@@ -44,8 +44,8 @@ func set_underwater_mode(enabled: bool) -> void:
 	if not is_node_ready():
 		return
 	layer = 40 if enabled else _land_layer
-	_player_portrait.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST if enabled else CanvasItem.TEXTURE_FILTER_INHERIT
-	_npc_portrait.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST if enabled else CanvasItem.TEXTURE_FILTER_INHERIT
+	_player_portrait.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST if enabled else CanvasItem.TEXTURE_FILTER_PARENT_NODE
+	_npc_portrait.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST if enabled else CanvasItem.TEXTURE_FILTER_PARENT_NODE
 	if enabled:
 		# Large, clear pixel sprites instead of oversized portrait paintings.
 		_player_portrait.offset_left = 70.0
