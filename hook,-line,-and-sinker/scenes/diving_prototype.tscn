@@ -1,0 +1,175 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/diving/diving_world.gd" id="1_world"]
+[ext_resource type="Texture2D" path="res://sprites/characters/penni/penni_idle.png" id="2_player"]
+[ext_resource type="Texture2D" path="res://sprites/fish/silas_eel.png" id="3_silas"]
+[ext_resource type="AudioStream" path="res://sounds/FROM THE SEA 2026-10-30 03_02_51.mp3" id="4_music"]
+
+[sub_resource type="StyleBoxFlat" id="DialogueStyle"]
+bg_color = Color(0.062, 0.15, 0.19, 0.96)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.53, 0.83, 0.78, 0.94)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+
+[node name="DivingPrototype" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="SubViewportContainer" type="SubViewportContainer" parent="."]
+texture_filter = 1
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+stretch = true
+stretch_shrink = 6
+
+[node name="SubViewport" type="SubViewport" parent="SubViewportContainer"]
+disable_3d = true
+handle_input_locally = false
+canvas_item_default_texture_filter = 0
+size = Vector2i(320, 180)
+render_target_update_mode = 4
+
+[node name="Lagoon" type="Node2D" parent="SubViewportContainer/SubViewport"]
+script = ExtResource("1_world")
+
+[node name="Camera2D" type="Camera2D" parent="SubViewportContainer/SubViewport/Lagoon"]
+enabled = true
+position_smoothing_enabled = true
+position_smoothing_speed = 6.0
+limit_left = 0
+limit_top = 0
+limit_right = 920
+limit_bottom = 530
+
+[node name="Player" type="Sprite2D" parent="SubViewportContainer/SubViewport/Lagoon"]
+z_index = 7
+texture_filter = 1
+position = Vector2(122, 123)
+scale = Vector2(0.78, 0.78)
+texture = ExtResource("2_player")
+hframes = 2
+
+[node name="Silas" type="Sprite2D" parent="SubViewportContainer/SubViewport/Lagoon"]
+z_index = 6
+texture_filter = 1
+position = Vector2(385, 242)
+texture = ExtResource("3_silas")
+
+[node name="CanvasLayer" type="CanvasLayer" parent="SubViewportContainer/SubViewport/Lagoon"]
+layer = 10
+
+[node name="HUD" type="Control" parent="SubViewportContainer/SubViewport/Lagoon/CanvasLayer"]
+mouse_filter = 2
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Location" type="Label" parent="SubViewportContainer/SubViewport/Lagoon/CanvasLayer/HUD"]
+mouse_filter = 2
+offset_left = 10.0
+offset_top = 6.0
+offset_right = 192.0
+offset_bottom = 24.0
+theme_override_colors/font_color = Color(0.89, 0.99, 0.89, 1)
+text = "THE SHALLOWS"
+
+[node name="CatchCount" type="Label" parent="SubViewportContainer/SubViewport/Lagoon/CanvasLayer/HUD"]
+mouse_filter = 2
+offset_left = 181.0
+offset_top = 8.0
+offset_right = 309.0
+offset_bottom = 25.0
+theme_override_colors/font_color = Color(0.73, 0.91, 0.92, 1)
+text = "NET CATCHES 0"
+horizontal_alignment = 2
+
+[node name="StoryHint" type="Label" parent="SubViewportContainer/SubViewport/Lagoon/CanvasLayer/HUD"]
+mouse_filter = 2
+offset_left = 10.0
+offset_top = 24.0
+offset_right = 305.0
+offset_bottom = 41.0
+theme_override_colors/font_color = Color(0.84, 0.97, 0.89, 0.89)
+text = "There's a voice somewhere to the east..."
+
+[node name="Toast" type="Label" parent="SubViewportContainer/SubViewport/Lagoon/CanvasLayer/HUD"]
+visible = false
+mouse_filter = 2
+offset_left = 26.0
+offset_top = 44.0
+offset_right = 294.0
+offset_bottom = 67.0
+theme_override_colors/font_color = Color(1, 0.9, 0.64, 1)
+text = "Hello"
+horizontal_alignment = 1
+autowrap_mode = 3
+
+[node name="Prompt" type="Label" parent="SubViewportContainer/SubViewport/Lagoon/CanvasLayer/HUD"]
+mouse_filter = 2
+offset_left = 7.0
+offset_top = 160.0
+offset_right = 313.0
+offset_bottom = 178.0
+theme_override_colors/font_color = Color(0.96, 0.98, 0.88, 1)
+text = "WASD MOVE | LEFT CLICK CATCH | E TALK"
+horizontal_alignment = 1
+
+[node name="DialoguePanel" type="Panel" parent="SubViewportContainer/SubViewport/Lagoon/CanvasLayer/HUD"]
+visible = false
+mouse_filter = 2
+offset_left = 7.0
+offset_top = 110.0
+offset_right = 313.0
+offset_bottom = 176.0
+theme_override_styles/panel = SubResource("DialogueStyle")
+
+[node name="Speaker" type="Label" parent="SubViewportContainer/SubViewport/Lagoon/CanvasLayer/HUD/DialoguePanel"]
+mouse_filter = 2
+offset_left = 9.0
+offset_top = 4.0
+offset_right = 292.0
+offset_bottom = 17.0
+theme_override_colors/font_color = Color(0.91, 0.86, 0.62, 1)
+text = "SILAS"
+
+[node name="Words" type="Label" parent="SubViewportContainer/SubViewport/Lagoon/CanvasLayer/HUD/DialoguePanel"]
+mouse_filter = 2
+offset_left = 9.0
+offset_top = 18.0
+offset_right = 295.0
+offset_bottom = 53.0
+theme_override_colors/font_color = Color(0.94, 0.98, 0.93, 1)
+text = "I wonder what's above the water..."
+autowrap_mode = 3
+
+[node name="Continue" type="Label" parent="SubViewportContainer/SubViewport/Lagoon/CanvasLayer/HUD/DialoguePanel"]
+mouse_filter = 2
+offset_left = 12.0
+offset_top = 53.0
+offset_right = 294.0
+offset_bottom = 64.0
+theme_override_colors/font_color = Color(0.72, 0.9, 0.81, 1)
+text = "E / SPACE  CONTINUE"
+horizontal_alignment = 2
+
+[node name="Music" type="AudioStreamPlayer" parent="."]
+stream = ExtResource("4_music")
+volume_db = -7.0
+autoplay = true
