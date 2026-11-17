@@ -5,6 +5,10 @@ extends SceneTree
 #
 # Headless integration checks for the diving branch's separate vertical slice.
 const PROTOTYPE: PackedScene = preload("res://scenes/diving_prototype.tscn")
+const SILAS_FISH: Texture2D = preload("res://sprites/fish/silas_eel.png")
+const SILAS_BURROW := Vector2(385.0, 258.0)
+const TANGLED_NET := Vector2(411.0, 250.0)
+const SURFACE_POINT := Vector2(78.0, 92.0)
 var failures: int = 0
 
 func _initialize() -> void:
@@ -34,11 +38,11 @@ func _run() -> void:
 	_check(int(world.call("_total_catches")) == before + 1, "Nearby clicked fish is caught")
 
 	# Find and talk to the eel before rescuing him.
-	player.position = world.SILAS_BURROW + Vector2(0, -14)
+	player.position = SILAS_BURROW + Vector2(0, -14)
 	world.call("_talk_to_silas")
 	_check(bool(world.get("_silas_met")), "Talking eel reveal starts underwater")
 	_finish_dialogue(world)
-	world.call("_try_catch", world.TANGLED_NET)
+	world.call("_try_catch", TANGLED_NET)
 	_check(bool(world.get("_net_cleared")), "Player can free Silas's tangled burrow")
 	_finish_dialogue(world)
 	_check(bool(world.get("_silas_following")), "Rescued Silas begins following the player")
@@ -55,7 +59,7 @@ func _run() -> void:
 	_check(int(world.get("_silas_talks")) >= 2, "Multiple conversations build trust")
 
 	# Only after getting to know him does Silas ask to come ashore.
-	player.position = world.SURFACE_POINT
+	player.position = SURFACE_POINT
 	world.call("_try_surface")
 	_finish_dialogue(world)
 	_check(bool(world.get("_choice_active")), "Surface invitation gives an actual choice")
@@ -67,7 +71,7 @@ func _run() -> void:
 
 	world.call("_go_underwater")
 	_check(bool(world.get("_underwater")), "Player can dive back in")
-	_check(silas.texture == world.SILAS_FISH, "Silas returns to his fish sprite underwater")
+	_check(silas.texture == SILAS_FISH, "Silas returns to his fish sprite underwater")
 	_check(bool(world.get("_silas_following")), "Companion relationship persists across dives")
 
 	prototype.queue_free()
