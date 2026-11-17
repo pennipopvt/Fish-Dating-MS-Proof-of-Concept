@@ -1,47 +1,54 @@
-# Diving prototype — playtest guide
+# Diving prototype — integrated island playtest
 
-This is an **experimental alternate game direction** on the `diving` branch, created from `main` (not the revised-fishing branch). It launches into `scenes/diving_prototype.tscn` by default. The original fishing scene and assets still exist in the project; nothing was merged into `main`.
+This experimental work is on the **`diving` branch**, based on `main`. **Nothing was merged into main or revised-fishing.**
 
-## What to try
+## Start from the normal island
 
-1. **Move in four directions** with **WASD** or arrow keys. You begin underwater in a larger scrolling lagoon, not at the original fishing dock.
-2. Look for ordinary fish. They wander around and flee if you rush toward them. **Left-click on a fish when you're close** (roughly 45 world pixels) to throw a quick net and catch it. Clicking a distant fish will not catch it.
-3. Swim **east** toward the small garden eel by a sandy burrow. Press **E** (or Space) when you are close. The fact that he speaks is your first clue that he's unlike ordinary fish.
-4. Swim near the **tangled net** beside his burrow and **left-click** to clear it. He introduces himself as **Silas**, then asks to tag along.
-5. Explore with Silas physically following you. Press **Q** to have him hide you in a veil of sand for five seconds; nearby fish become less skittish. This has a brief cooldown. You can keep catching ordinary fish together.
-6. Stop and talk to Silas a couple more times. Optionally explore the **glowing shell garden** farther east to trigger a shared discovery.
-7. Swim back to the **surface marker** near where you started (left side of the underwater map). Press **E**. After you've talked enough, Silas asks if he can come with you. Use **1** to invite him or **2** to stay underwater with him.
-8. If invited, you surface together. Silas uses his existing **humanoid idle sprite** on shore; in the water, he remains his **garden eel fish sprite**. Walk to the dock on the right and press **E** to dive again.
+Run the Godot project normally (`res://scenes/main.tscn`). The original island, dock, houses, shop, day/night cycle and terminal are still present. Walk to the **fishing dock on the left** and interact exactly as you used to start fishing.
 
-This is intentionally *not* the old parry/reeling system. It tests whether spatial movement, approaching fish, and having Silas alongside you feel better before committing to a full new capture/combat mechanic.
+Instead of casting, **Penni jumps from the dock into the water**. A black circular iris closes around the splash, changes scenes once the screen goes black, then opens around Penni underwater. When you return to the surface marker, a matching iris closes on Penni and reopens back on the actual island.
 
-## Controls
+The lagoon is kept alive between dives so the fish you've caught and Silas's conversations/following progress don't reset each time. A dive costs one world time action when you return, rather than one action per fish caught.
 
-| Control | Action |
+## What to do underwater
+
+1. **Move in four directions** with WASD / arrows. The lagoon is larger than the viewport and the camera follows you.
+2. Approach an ordinary fish and **left-click near it** to throw a net and catch it. Fish wander and flee from your approach. Captures are recorded in the normal FishingManager's storage, dex and challenge systems.
+3. Swim **east** to the garden eel near his burrow; press **E** to discover that he can talk.
+4. Swim beside the **tangled net** near the burrow and **left-click** to untangle it. Silas introduces himself and starts following you.
+5. Swim with Silas, talk to him, catch more fish, and explore the **glowing shell garden** farther east. Press **Q** to ask him to conceal you for five seconds so wild fish don't flee as easily.
+6. When you're ready, return to the illuminated **surface marker** near the start and press **E**. Silas only asks to join you on land once you've gotten to know him. Press **1** to invite him or **2** to stay together underwater.
+7. If you invite him, the iris brings you back to the **original island dock**, where Silas appears as a human in a little poof animation. The existing dialogue interface and NPC recruitment / housing systems handle his life on land.
+
+### Controls
+
+| Input | Meaning |
 | --- | --- |
-| WASD / Arrow keys | Move in four directions |
-| Left click | Throw net at a nearby ordinary fish, or untangle Silas's net |
-| E / Space | Talk to Silas; ascend or dive at the appropriate marker; advance dialogue |
-| Q | Silas's temporary concealment while he's following you underwater |
-| 1 / 2 | Accept or postpone Silas's invitation to come onto land |
+| Overworld movement | A / D as before |
+| Dock interact | Space / left-click in the original world |
+| Underwater WASD / arrow keys | Swim freely in four directions |
+| Underwater left-click | Catch a fish within reach, or clear Silas's net |
+| Underwater E / Space | Talk, continue dialogue or interact with surface marker |
+| Q | Silas conceals you once he joins you |
+| 1 / 2 | Invite Silas to land or postpone |
 
-## Scope and limitations
+## Implementation notes
 
-- The fishing game's normal `scenes/main.tscn` remains untouched. Only the `project.godot` entrypoint changes **on this branch**.
-- This is a **new 2D prototype**, not an overhaul of the full existing fishing and romance systems. The underwater friendship and shore reveal are implemented locally in the new scene, rather than saved or integrated into the existing town NPC manager.
-- Wild fish have simple wandering/fleeing behaviors and disappear when caught. There's no resource economy, complex net physics, or boss combat yet.
-- Silas follows, reacts to exploring, can conceal you, and has a small dialogue/trust progression. His actual underwater sprite is the garden eel; his above-water sprite is his existing humanoid idle art.
-- Visual backgrounds are deliberately rough built-in shapes, with existing sprites for characters and fish. This is a test of *feel*, not final art.
-- The full Godot engine was **not available** in the editing environment, so the scene and test have **not been runtime-verified**. Playtest locally before deciding whether to merge.
+- Existing `scenes/main.tscn` is the entry scene again. `scenes/diving_prototype.tscn` now lives inside its own canvas layer and can still be opened separately for isolated underwater testing.
+- The transition is a reusable aspect-correct circular iris shader, not a generic crossfade.
+- The overworld Player is busy during a dive so inputs do not trigger fishing or NPC interactions underneath the underwater view.
+- One net capture contributes to the existing catch/storage/collection systems without spending another action. The action clock advances when you leave the water.
+- Silas's dive-specific friendship state persists in the lagoon instance while the game is running. On his first visit ashore, a custom first-land conversation runs in the original game's DialogueUI; afterward he joins the usual town NPC/housing flow.
+- The original bait/bobber items and existing fishing controller still exist in the repository. They're not used by the **dock's new diving path**. This experiment does not yet rebalance the old upgrades for underwater net-catching.
+- This is a feel-test of space, proximity and companionship. The net has no complex physics or combat timing yet.
 
-## Technical test
+## Verification
 
-From the `hook,-line,-and-sinker` project folder:
+Check the new integrated flow with:
 
 ```bash
+godot --headless --path . -s res://tests/diving_island_transition_test.gd
 godot --headless --path . -s res://tests/diving_prototype_test.gd
 ```
 
-The test instantiates the alternate scene, checks nearby capture, conversation, net clearing, following, concealment, and the surface transformation.
-
-If you prefer to open the original game on this branch, run `res://scenes/main.tscn` manually in the editor; the normal game scenes/assets are preserved.
+**The tests have been added but not executed in this editing environment, which has no Godot binary.** Please run the project in Godot and report any script/parser warnings or visual issues so they can be corrected before merging.
