@@ -17,6 +17,8 @@ const SUN_BELOW_SCREEN_Y: float = 215.0
 const SUN_ARC_HEIGHT: float = 205.0
 const MOON_BELOW_SCREEN_Y: float = 240.0
 const MOON_ARC_HEIGHT: float = 220.0
+# The surface is the upper edge of the existing World/Water ColorRect.
+const REFLECTION_AT_SURFACE: float = 0.477
 
 @onready var _sky: ColorRect = $Player/Camera2D/Sky/SkyGradient
 @onready var _stars: ColorRect = $Player/Camera2D/Sky/NightStars
@@ -26,6 +28,8 @@ const MOON_ARC_HEIGHT: float = 220.0
 @onready var _moon_glow: ColorRect = $Player/Camera2D/Sky/MoonGlow
 @onready var _ambient: CanvasModulate = $DayNightTint
 @onready var _water: ColorRect = $Water
+@onready var _diver: Player = $Player
+@onready var _underwater_tint: ColorRect = $Player/Camera2D/UnderwaterTint
 
 var _sky_mat: ShaderMaterial
 var _stars_mat: ShaderMaterial
@@ -33,6 +37,7 @@ var _sun_glow_mat: ShaderMaterial
 var _moon_mat: ShaderMaterial
 var _moon_glow_mat: ShaderMaterial
 var _water_mat: ShaderMaterial
+var _tint_mat: ShaderMaterial
 var _transition: Tween
 var _target_progress: float = -1.0
 
@@ -46,6 +51,7 @@ func _ready() -> void:
     _moon_mat = _local_material(_moon)
     _moon_glow_mat = _local_material(_moon_glow)
     _water_mat = _local_material(_water)
+    _tint_mat = _local_material(_underwater_tint)
 
     _target_progress = _clock_progress()
     _apply_immediately(_visual_state(_target_progress))
@@ -66,6 +72,21 @@ func _process(_delta: float) -> void:
         return
     var surface_y: float = _water.get_global_transform_with_canvas().origin.y
     _water_mat.set_shader_parameter("waterline_y", surface_y)
+
+
+func _process(_delta: float) -> void:
+    # Reflection exists at the surface, but dissolves as the original player
+    # swims below it. No second viewport, water clock or duplicate shader.
+    var surface_y: float = _water.global_position.y
+    var depth: float = maxf(0.0, _diver.global_position.y - surface_y)
+    var submerged: float = smoothstep(0.0, 42.0, depth)
+    _water_mat.set_shader_parameter(
+        "reflection_strength", REFLECTION_AT_SURFACE * (1.0 - submerged)
+    )
+    var surface_screen_y: float = _water.get_global_transform_with_canvas().origin.y
+    _water_mat.set_shader_parameter("waterline_y", surface_screen_y)
+    _tint_mat.set_shader_parameter("submersion", submerged)
+    _tint_mat.set_shader_parameter("surface_y_uv", surface_screen_y / 180.0)
 
 
 func _local_material(item: CanvasItem) -> ShaderMaterial:
