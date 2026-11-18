@@ -51,10 +51,26 @@ func _run() -> void:
 	_check(sea.get_node("Points/Entry") is Marker2D
 		and sea.get_node("Points/SurfaceExit") is Marker2D,
 		"Entry and surface return markers persist")
+	_check(guide.map_origin.x == -832.0 and sea.call("_sea_bounds").position.x < -800.0,
+		"Sea swimming bounds extend to the left of the dock")
+	_check(sea.get_node("FishSpawns/FirstFish").position.x < sea.get_node("Points/Entry").position.x,
+		"First fish is left of the dock")
+	_check(sea.get_node("NPCs/Silas").position.x < sea.get_node("FishSpawns/FirstFish").position.x,
+		"Silas appears further left than the first fish")
+	var block_source: TileSetAtlasSource = solids.tile_set.get_source(0) as TileSetAtlasSource
+	_check(block_source.get_tiles_count() == 1 and block_source.texture != null,
+		"One visible 16px block is supplied for sea collision painting")
+	var sky: Control = world.get_node("Sky") as Control
+	_check(sky.get_parent() == world and sky.clip_contents,
+		"Sky belongs to World, not the player camera")
+	world.call("_process", 0.0)
+	_check(absf(sky.global_position.y + sky.size.y - (world.get_node("Water") as ColorRect).global_position.y) < 0.1,
+		"Sky ends exactly at the world waterline")
 	guide.map_size = Vector2(1040, 620)
 	sea.call("_set_camera_bounds", true)
-	_check((player.get_node("Camera2D") as Camera2D).limit_right == 1040,
-		"Map size remains editor-driven")
+	_check((player.get_node("Camera2D") as Camera2D).limit_left == -832
+		and (player.get_node("Camera2D") as Camera2D).limit_right == 272,
+		"Left-hand sea camera limits follow the editor's Map Origin and Map Size")
 	sea.call("_set_camera_bounds", false)
 
 	main.queue_free()

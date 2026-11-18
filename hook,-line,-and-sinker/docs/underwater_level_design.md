@@ -45,7 +45,7 @@ settings from the island TileSet.
 3. On the **first successful hook** of FirstFish, scroll down once.
    The one-time story event breaks the line, pushes the fish away, and
    shows **Help me!** at the right edge of the screen.
-4. Swim right toward the eel near **SeaweedSilas**. The **E** indicator
+4. Swim left toward the eel near **SeaweedSilas**. The **E** indicator
    appears in range. Speak to him using the existing DialogueManager;
    the current dialogue text is a small placeholder.
 5. Left click to net the trapped Silas and finish the normal parry/reel
@@ -90,3 +90,23 @@ godot --headless --path . -s res://tests/sea_level_layout_test.gd
 godot --headless --path . -s res://tests/sea_storyboard_test.gd
 godot --headless --path . -s res://tests/diving_island_transition_test.gd
 ```
+
+## Leftward level, visible collision tile, and anchored sky
+
+The first fish (x=-59), Silas (x=-391) and the rest of the sea are to
+the **left** of the dock (Entry x=55). The editor guide now exposes a
+Map Origin of (-832, 0) and a Map Size of (1024, 530) so the World/Player
+can swim left and the shared camera follows correctly.
+
+The 331 existing rough seabed cells were **mirrored** across the dock
+and **raised 80px** to become visible sooner after the dive. The Solids
+TileMapLayer still has collision layer 2. Its previously chosen upper-left
+atlas tile has been replaced by one unmistakably visible, collidable
+16×16 placeholder block, `sprites/environment/sea_solid_block.svg`.
+When your finished wall sprite is ready, replace that one texture.
+
+The sky is now in World rather than under Player/Camera2D. It is
+vertically anchored to the real y=140 waterline and clips its children
+there, including the sun, moon, and clouds. It still tracks horizontal
+camera panning and retains the original time-of-day animation. The water
+shader extends left across the entire sea.
