@@ -26,18 +26,38 @@ func _run() -> void:
 	var terminal: ShopMenu = main.get_node("CanvasLayer/ShopMenu") as ShopMenu
 	var tabs: VBoxContainer = terminal.get_node("TerminalRoot/NavTabs") as VBoxContainer
 	_check(intro.visible and player.busy and not bool(main.get("_contract_call_finished")),
-		"New game opens on Fish Co contract call before the player can move")
+		"New game opens on Fish Co boat backdrop before the player can move")
+	_check(DialogueManager.is_active and dialogue_ui.visible
+		and DialogueManager.current_npc.npc_id == &"fish_co_operator",
+		"Fish Co call plays through normal DialogueManager and DialogueUI")
+	_check(dialogue_ui.layer > (main.get_node("IntroLayer") as CanvasLayer).layer,
+		"Regular dialogue portraits appear in front of the boat backdrop")
+	_check(not intro.has_node("DialoguePanel"),
+		"No separate custom phone-call dialogue box remains")
+	_check((dialogue_ui.get_node("NPCPortrait") as TextureRect).texture == dialogue_ui.placeholder_portrait,
+		"Fish Co portrait uses a placeholder until the phone sprite is added")
 	_check(tabs.get_node("QuotaTab").visible and not tabs.get_node("ShopTab").visible
 		and not tabs.get_node("StorageTab").visible,
-		"Only quota tab exists visually during the first-minute introduction")
-	_check((intro.get("_pages") as Array).size() == 10,
-		"Full authored phone call is grouped into ten stage speeches")
-	for i in range((intro.get("_pages") as Array).size()):
-		intro.advance()
-	_check(not intro.visible and terminal.visible and not player.busy,
-		"Hang-up immediately reveals quota-only terminal and restores movement")
+		"Only quota tab exists visually during the introductory phone call")
+	var penni_lines: int = 0
+	var fish_co_lines: int = 0
+	var phone_lines: int = 0
+	while DialogueManager.is_active and phone_lines < 20:
+		var line: DialogueLineData = DialogueManager.get_current_line()
+		if line != null:
+			if line.speaker == DialogueLineData.Speaker.PLAYER:
+				penni_lines += 1
+			else:
+				fish_co_lines += 1
+		DialogueManager.advance()
+		phone_lines += 1
+	_check(phone_lines == 10 and penni_lines == 5 and fish_co_lines == 5,
+		"Authored call alternates five Penni and five Fish Co speeches")
+	_check(not DialogueManager.is_active and not dialogue_ui.visible
+		and not intro.visible and terminal.visible and not player.busy,
+		"After the shared conversation ends, the quota-only terminal opens")
 	_check(bool(main.get("_contract_call_finished")),
-		"Contract call is marked complete after it is read")
+		"Contract call is marked complete after the regular dialogue ends")
 	terminal.close()
 
 	_check(not dive_layer.visible, "Game starts on the original island")
