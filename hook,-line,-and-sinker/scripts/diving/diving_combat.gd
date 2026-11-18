@@ -48,6 +48,9 @@ var max_line_distance: float = 175.0
 var progress: float = 0.0
 var tension: float = 0.0
 var stagger: float = 0.0
+# Health affects resistance, not whether the projectile can latch. The player
+# can still catch a healthy fish, but a weakened one pulls/dashes less.
+var health_capture_factor: float = 1.0
 var reel_open: bool = false
 var free_reel: bool = false
 var counter_locked: bool = false
@@ -68,10 +71,11 @@ func is_active() -> bool:
 
 
 func begin(wild: DivingWildFish, data: FishData, initial_distance: float, net_range: float) -> bool:
-	if is_active() or wild == null or not is_instance_valid(wild) or data == null or data.states.is_empty():
+	if is_active() or wild == null or not is_instance_valid(wild) or wild.defeated or data == null or data.states.is_empty():
 		return false
 	target = wild
 	fish_data = data
+	health_capture_factor = lerpf(0.4, 1.0, wild.health_fraction())
 	max_line_distance = maxf(net_range + fight_slack, catch_distance + 1.0)
 	line_distance = clampf(initial_distance, catch_distance, max_line_distance)
 	_update_progress_from_distance()
@@ -107,6 +111,7 @@ func step(delta: float) -> void:
 			if reel_open and not free_reel:
 				pull_rate = maxf(attack.escape_rate, 0.0)
 	if pull_rate > 0.0 and attack != null:
+		pull_rate *= health_capture_factor
 		line_distance = minf(
 			max_line_distance,
 			line_distance + pull_rate * _line_span() * delta
@@ -294,7 +299,7 @@ func _close_parry() -> void:
 func _add_stagger(amount: float) -> void:
 	if not is_active() or phase == Phase.STUN:
 		return
-	stagger = clampf(stagger + amount, 0.0, maxf(fish_data.stagger_resistance, 1.0))
+	stagger = clampf(stagger + amount / maxf(health_capture_factor, 0.1), 0.0, maxf(fish_data.stagger_resistance, 1.0))
 	if stagger >= maxf(fish_data.stagger_resistance, 1.0):
 		_start_stagger_break()
 
@@ -335,10 +340,10 @@ func _fail_parry() -> void:
 	_dash_start_distance = line_distance
 	_dash_end_distance = minf(
 		max_line_distance,
-		line_distance + maxf(attack.escape_rate, 0.0) * fish_data.miss_dash_speed_multiplier * _dash_duration * _line_span()
+		line_distance + maxf(attack.escape_rate, 0.0) * fish_data.miss_dash_speed_multiplier * _dash_duration * _line_span() * health_capture_factor
 	)
 	_dash_start_tension = tension
-	_dash_end_tension = clampf(tension + maxf(0.0, fish_data.miss_tension_gain * fish_data.attack_tension_multiplier - FishingManager.miss_tension_reduction), 0.0, 1.0)
+	_dash_end_tension = clampf(tension + maxf(0.0, fish_data.miss_tension_gain * fish_data.attack_tension_multiplier * health_capture_factor - FishingManager.miss_tension_reduction), 0.0, 1.0)
 	feedback = "MISSED! FISH DASHES"
 	feedback_time = 0.75
 	FishingManager.parry_resolved.emit(&"miss")
@@ -363,7 +368,7 @@ func _reel() -> void:
 	_update_progress_from_distance()
 	if not free_reel:
 		var tension_multiplier: float = fish_data.attack_tension_multiplier if phase == Phase.ATTACK else 1.0
-		var amount: float = maxf(0.0, fish_data.reel_tension_gain * tension_multiplier - FishingManager.reel_tension_reduction)
+		var amount: float = maxf(0.0, fish_data.reel_tension_gain * tension_multiplier * health_capture_factor - FishingManager.reel_tension_reduction)
 		tension = clampf(tension + amount, 0.0, 1.0)
 		recovery_timer = RECOVERY_DELAY
 	# The fish must actually reach Penni. A perfect parry opens free
