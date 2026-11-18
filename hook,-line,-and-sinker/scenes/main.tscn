@@ -65,7 +65,9 @@ layer = 20
 
 [node name="IntroLayer" type="CanvasLayer" parent="."]
 visible = false
-layer = 60
+# Below the existing DialogueUI CanvasLayer (layer 10), so its portraits
+# and standard textbox draw over the boat stage.
+layer = 9
 
 [node name="FishCoIntro" parent="IntroLayer" instance=ExtResource("fish_co_intro")]
 visible = false
