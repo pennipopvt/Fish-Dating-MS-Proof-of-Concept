@@ -51,8 +51,8 @@ func _run() -> void:
 				fish_co_lines += 1
 		DialogueManager.advance()
 		phone_lines += 1
-	_check(phone_lines == 10 and penni_lines == 5 and fish_co_lines == 5,
-		"Authored call alternates five Penni and five Fish Co speeches")
+	_check(phone_lines == 16 and penni_lines == 7 and fish_co_lines == 9,
+		"Each authored line break advances separately while retaining its speaker")
 	_check(not DialogueManager.is_active and not dialogue_ui.visible
 		and not intro.visible and terminal.visible and not player.busy,
 		"After the shared conversation ends, the quota-only terminal opens")
