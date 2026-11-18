@@ -757,9 +757,12 @@ func _go_underwater() -> void:
 	_underwater = true
 	_set_dialogue_visual_mode(true)
 	_set_camera_bounds(true)
-	player_sprite.position = _entry_point
-	camera.position = player_sprite.position
-	camera.reset_smoothing()
+	if _embedded_in_world:
+		(player_sprite as Player).set_swimming(true, _sea_bounds())
+	else:
+		player_sprite.position = _entry_point
+		camera.position = player_sprite.position
+		camera.reset_smoothing()
 	_set_silas_fish_sprite()
 	if _silas_following:
 		silas_sprite.position = player_sprite.position + Vector2(-26, 14)
@@ -771,10 +774,16 @@ func _go_underwater() -> void:
 	_toast("Back underwater. WASD to swim. Left click to use your net.")
 
 func _set_camera_bounds(in_sea: bool) -> void:
-	camera.limit_left = 0
-	camera.limit_top = 0
-	camera.limit_right = roundi(_level_guide.map_size.x) if in_sea else 320
-	camera.limit_bottom = roundi(_level_guide.map_size.y) if in_sea else 180
+	if _embedded_in_world and not in_sea:
+		camera.limit_left = -10000000
+		camera.limit_top = -10000000
+		camera.limit_right = 10000000
+		camera.limit_bottom = 10000000
+	else:
+		camera.limit_left = 0
+		camera.limit_top = 0
+		camera.limit_right = roundi(_level_guide.map_size.x) if in_sea else 320
+		camera.limit_bottom = roundi(_level_guide.map_size.y) if in_sea else 180
 
 # This is a lightweight wrapper around the REAL DialogueManager; its normal
 # DialogueUI now renders every underwater conversation and interactive choice.
@@ -898,16 +907,16 @@ func _update_hud() -> void:
 func _draw() -> void:
 	if _embedded_in_world or _underwater:
 		_draw_underwater()
-	else:
-		_draw_shore()
-		if _combat.is_active():
+		if _underwater and _combat.is_active():
 			_draw_combat_telegraph()
-		if _silas_following and silas_sprite.visible and (
+		if _underwater and _silas_following and silas_sprite.visible and (
 			_battle.is_active() or _battle.health < _battle.stats.max_health
 		):
 			DivingCompanionBattle.draw_health_bar(
 				self, silas_sprite.position + Vector2(0.0, -12.0), _battle.health_ratio()
 			)
+	else:
+		_draw_shore()
 
 func _draw_shore() -> void:
 	draw_rect(Rect2(0, 0, 320, 180), Color("#a7c6cf"))
