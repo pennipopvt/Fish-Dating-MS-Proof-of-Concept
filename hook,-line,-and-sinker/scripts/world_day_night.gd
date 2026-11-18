@@ -64,16 +64,6 @@ func _ready() -> void:
     GameManager.time_changed.connect(_on_time_changed)
 
 
-# The waterline moves through the camera's viewport while Penni dives.
-# Keep the existing reflection shader aligned to its actual screen position,
-# rather than assuming that the surface always sits at screen Y=140.
-func _process(_delta: float) -> void:
-    if not is_instance_valid(_water_mat):
-        return
-    var surface_y: float = _water.get_global_transform_with_canvas().origin.y
-    _water_mat.set_shader_parameter("waterline_y", surface_y)
-
-
 func _process(_delta: float) -> void:
     # Reflection exists at the surface, but dissolves as the original player
     # swims below it. No second viewport, water clock or duplicate shader.
