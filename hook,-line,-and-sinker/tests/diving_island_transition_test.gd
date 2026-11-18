@@ -17,10 +17,8 @@ func _run() -> void:
 	var dock: Node2D = world.get_node("Dock") as Node2D
 	var dock_prompt: InteractPrompt = dock.get_node("InteractPrompt") as InteractPrompt
 	var player: Player = world.get_node("Player") as Player
-	var dive_layer: CanvasLayer = main.get_node("DivingLayer") as CanvasLayer
-	var lagoon: DivingWorld = main.get_node(
-		"DivingLayer/DivingPrototype/SubViewportContainer/SubViewport/Lagoon"
-	) as DivingWorld
+	var diving_hud: Control = main.get_node("DivingHUD") as Control
+	var lagoon: DivingWorld = world.get_node("Lagoon") as DivingWorld
 	var iris: ColorRect = main.get_node("TransitionLayer/Iris") as ColorRect
 	var dialogue_ui: DialogueUI = main.get_node("CanvasLayer/DialogueUI") as DialogueUI
 	var intro: FishCoIntro = main.get_node("IntroLayer/FishCoIntro") as FishCoIntro
@@ -148,7 +146,7 @@ func _run() -> void:
 	_check(GameManager.get_actions_left() == actions_before_decline,
 		"Declining the first dive does not spend time")
 
-	_check(not dive_layer.visible, "Game starts on the original island")
+	_check(not diving_hud.visible, "Game starts on the original island")
 	_check(not iris.visible, "Iris is not visible during ordinary gameplay")
 	_check(main.get_node_or_null("CanvasLayer/ShopMenu") != null, "Original terminal remains in island scene")
 	_check(main.get_node_or_null("CanvasLayer/BaitMenu") == null
@@ -177,17 +175,20 @@ func _run() -> void:
 	_check(not bool(dock.get("_first_dive_prompt")), 
 		"Persistent tutorial dock prompt switches back to proximity-only after Yes")
 	await create_timer(1.7).timeout
-	_check(dive_layer.visible and bool(main.get("_underwater")), "Dock jump leads to underwater scene")
-	_check(bool(lagoon.get("_embedded_in_world")), "Diving scene uses real island as its shore")
+	_check(diving_hud.visible and bool(main.get("_underwater")) and player.swimming,
+		"Dock descent enables swimming in the original World with its existing Player")
+	_check(bool(lagoon.get("_embedded_in_world")) and lagoon.get_parent() == world,
+		"Underwater level is an editable child of the same persistent World")
 	_check(GameManager.diving_session_active, "Catching fish underwater does not spend additional actions")
-	_check(not iris.visible, "Circular transition opens fully underwater")
-	_check(bool(dialogue_ui.get("_underwater_mode")) and dialogue_ui.layer > dive_layer.layer,
-		"Existing dialogue UI switches to fish sprites above the underwater world")
+	_check(not iris.visible, "No iris or black-screen cut is used for the dock dive")
+	_check(bool(dialogue_ui.get("_underwater_mode")),
+		"Existing dialogue UI switches to underwater fish sprite portraits")
 
 	# Surface without Silas and ensure the normal island and its clock return.
 	lagoon.call("_return_to_surface", false)
 	await create_timer(1.3).timeout
-	_check(not dive_layer.visible and not bool(main.get("_underwater")), "Surface returns to island")
+	_check(not diving_hud.visible and not bool(main.get("_underwater")) and not player.swimming,
+		"Surfacing restores land controls without swapping scenes")
 	_check(not player.busy and player.visible, "Normal overworld movement restored")
 	_check(not GameManager.diving_session_active, "Diving action state clears on return")
 	_check(not bool(dialogue_ui.get("_underwater_mode")), "Land dialogue portraits and layout are restored")
@@ -202,7 +203,8 @@ func _run() -> void:
 	DialogueManager.select_choice(0)
 	DialogueManager.advance()
 	await create_timer(1.7).timeout
-	_check(lagoon.get_instance_id() == original_lagoon_id, "Underwater NPCs and catches persist across dives")
+	_check(lagoon.get_instance_id() == original_lagoon_id and lagoon.get_parent() == world,
+		"Same lagoon NPCs and fish remain in World across multiple dives")
 
 	# Silas's land decision requests the same exit instead of switching to
 	# the obsolete standalone prototype's drawn shoreline.
@@ -214,7 +216,7 @@ func _run() -> void:
 	await create_timer(1.8).timeout
 	_check(bool(lagoon.get("_silas_ashore")), "Silas remembers choosing to surface")
 	_check(main.get("_silas_actor") is NPCInteractable, "Human Silas spawns in the original island")
-	_check(not dive_layer.visible, "Island is visible after Silas's transformation")
+	_check(not diving_hud.visible, "Island remains visible after Silas's transformation")
 	if DialogueManager.is_active:
 		DialogueManager.end_conversation()
 		await process_frame
