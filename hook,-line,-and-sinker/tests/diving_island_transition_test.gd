@@ -42,22 +42,56 @@ func _run() -> void:
 	var penni_lines: int = 0
 	var fish_co_lines: int = 0
 	var phone_lines: int = 0
-	while DialogueManager.is_active and phone_lines < 20:
+	var dialogue_text: Array[String] = []
+	while DialogueManager.is_active and phone_lines < 24:
 		var line: DialogueLineData = DialogueManager.get_current_line()
 		if line != null:
+			dialogue_text.append(line.text)
 			if line.speaker == DialogueLineData.Speaker.PLAYER:
 				penni_lines += 1
 			else:
 				fish_co_lines += 1
 		DialogueManager.advance()
 		phone_lines += 1
-	_check(phone_lines == 16 and penni_lines == 7 and fish_co_lines == 9,
-		"Each authored line break advances separately while retaining its speaker")
+	_check(phone_lines == 18 and penni_lines == 8 and fish_co_lines == 10,
+		"Each authored line advances separately while keeping its speaker")
+	_check(dialogue_text.slice(-2) == ["*click*", "...bye."],
+		"Fish Co hangs up before Penni's final goodbye")
+	_check(bool(main.get("_contract_call_finished")) and player.busy,
+		"Contract ending begins the reused radial iris while movement stays locked")
+	await create_timer(1.3).timeout
 	_check(not DialogueManager.is_active and not dialogue_ui.visible
-		and not intro.visible and terminal.visible and not player.busy,
-		"After the shared conversation ends, the quota-only terminal opens")
-	_check(bool(main.get("_contract_call_finished")),
-		"Contract call is marked complete after the regular dialogue ends")
+		and not intro.visible and not terminal.visible and not player.busy,
+		"Iris opens onto the dock without automatically opening the quota terminal")
+	_check(player.global_position.distance_to(dock.global_position + Vector2(22.0, 11.0)) < 1.0,
+		"Penni appears next to the original dock after the radial transition")
+	_check(bool(main.get("_contract_call_finished")) and not iris.visible,
+		"Contract introduction and radial transition have completed")
+	var world_terminal: ShopInteractable = world.get_node("Shop") as ShopInteractable
+	_check(bool(world_terminal.get("_intro_quota_notice"))
+		and world_terminal.get_node("UnclaimedAchievementNotice").visible,
+		"Existing terminal exclamation notice directs the player to review the quota")
+	ShopManager.request_shop()
+	_check(terminal.visible and not bool(world_terminal.get("_intro_quota_notice")),
+		"Opening the existing terminal acknowledges its introductory exclamation")
+	_check(tabs.get_node("QuotaTab").visible and not tabs.get_node("ShopTab").visible,
+		"Only quota tab is available during the dock introduction")
+	var fish_preview: TextureRect = terminal.get_node(
+		"TerminalRoot/Panel/Margin/Layout/Body/Details/PreviewFrame/PreviewIcon"
+	) as TextureRect
+	var quota_title: Label = terminal.get_node(
+		"TerminalRoot/Panel/Margin/Layout/Body/Left/PageHint"
+	) as Label
+	var prize: Label = terminal.get_node(
+		"TerminalRoot/Panel/Margin/Layout/Body/Details/DescriptionLabel"
+	) as Label
+	_check(fish_preview.texture == (FishingManager.possible_catches[0] as FishData).item_data.sprite,
+		"Quota details preview uses the existing mullet sprite")
+	_check(quota_title.text.contains("DAY 3") and prize.text.contains("$400,000"),
+		"Quota prominently shows the three-day deadline and legendary prize")
+	terminal.call("_select_quota_fish", &"porgy")
+	_check(fish_preview.texture == (FishingManager.possible_catches[1] as FishData).item_data.sprite,
+		"Selecting another quota fish updates its details image")
 	terminal.close()
 
 	_check(not dive_layer.visible, "Game starts on the original island")
