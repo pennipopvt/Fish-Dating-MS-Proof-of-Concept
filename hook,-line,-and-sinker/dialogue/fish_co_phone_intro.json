@@ -67,6 +67,14 @@
         {
           "speaker": "npc",
           "text": "Thank you for your time."
+        },
+        {
+          "speaker": "npc",
+          "text": "*click*"
+        },
+        {
+          "speaker": "player",
+          "text": "...bye."
         }
       ]
     }
