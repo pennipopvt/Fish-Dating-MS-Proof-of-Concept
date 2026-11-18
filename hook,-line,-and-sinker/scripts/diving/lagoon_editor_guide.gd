@@ -1,13 +1,14 @@
 @tool
 extends Node2D
+class_name LagoonEditorGuide
 
-# Editor-only map footprint and grid. This is not runtime artwork.
-# The lagoon uses 920x530 world pixels with a 320x180 camera.
+# Single source of truth for lagoon dimensions, with an editor-only footprint
+# and paint grid. Camera and gameplay bounds read this node at runtime.
 @export var map_size: Vector2 = Vector2(920.0, 530.0):
 	set(value):
-		map_size = value
+		map_size = Vector2(maxf(320.0, value.x), maxf(180.0, value.y))
 		queue_redraw()
-@export_range(8, 64, 8) var grid_size: int = 32:
+@export_range(8, 64, 8) var grid_size: int = 16:
 	set(value):
 		grid_size = value
 		queue_redraw()
