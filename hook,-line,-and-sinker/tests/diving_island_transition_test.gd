@@ -15,6 +15,7 @@ func _run() -> void:
 
 	var world: Node2D = main.get_node("SubViewportContainer/SubViewport/World") as Node2D
 	var dock: Node2D = world.get_node("Dock") as Node2D
+	var dock_prompt: InteractPrompt = dock.get_node("InteractPrompt") as InteractPrompt
 	var player: Player = world.get_node("Player") as Player
 	var dive_layer: CanvasLayer = main.get_node("DivingLayer") as CanvasLayer
 	var lagoon: DivingWorld = main.get_node(
@@ -67,6 +68,10 @@ func _run() -> void:
 		"Penni appears next to the original dock after the radial transition")
 	_check(bool(main.get("_contract_call_finished")) and not iris.visible,
 		"Contract introduction and radial transition have completed")
+	_check(not dock_prompt.visible, "Dock interaction cue stays hidden until the first quota call finishes")
+	main.call("request_dive", player, dock)
+	_check(not DialogueManager.is_active and not bool(main.get("_underwater")),
+		"Dock cannot start diving before the first quota is reviewed")
 	var world_terminal: ShopInteractable = world.get_node("Shop") as ShopInteractable
 	_check(bool(world_terminal.get("_intro_quota_notice"))
 		and world_terminal.get_node("UnclaimedAchievementNotice").visible,
@@ -93,6 +98,55 @@ func _run() -> void:
 	_check(fish_preview.texture == (FishingManager.possible_catches[1] as FishData).item_data.sprite,
 		"Selecting another quota fish updates its details image")
 	terminal.close()
+	_check(not bool(main.get("_first_dive_call_finished")),
+		"Closing the first quota page has not yet unlocked diving")
+	main.call("request_dive", player, dock)
+	_check(not bool(main.get("_transitioning")),
+		"Dock interaction does nothing until Fish Co finishes the second call")
+	await process_frame
+	_check(DialogueManager.is_active and DialogueManager.current_npc.npc_id == &"fish_co_operator",
+		"Closing the first quota page triggers the second call through normal dialogue")
+	_check((DialogueManager.get_current_line() as DialogueLineData).text == "*ring ring*",
+		"The second call begins with the ringing phone")
+	main.call("request_dive", player, dock)
+	_check(not bool(main.get("_underwater")) and not bool(main.get("_transitioning")),
+		"Dock cannot start diving while Fish Co is speaking")
+	var second_call_lines: Array[String] = []
+	var second_call_player_lines: int = 0
+	while DialogueManager.is_active and second_call_lines.size() < 15:
+		var current: DialogueLineData = DialogueManager.get_current_line()
+		if current != null:
+			second_call_lines.append(current.text)
+			if current.speaker == DialogueLineData.Speaker.PLAYER:
+				second_call_player_lines += 1
+		DialogueManager.advance()
+	_check(second_call_lines.size() == 8 and second_call_player_lines == 2,
+		"Second Fish Co call has eight separately advanced, correctly attributed lines")
+	_check(second_call_lines[-2] == "*Click*" and second_call_lines[-1] == "Just throw me into the deep end, I guess...",
+		"Fish Co hangs up and Penni gets the last line")
+	_check(bool(main.get("_first_dive_call_finished")) and not player.busy and dock_prompt.visible,
+		"First dive is unlocked, with the normal interaction prompt persistently above the dock")
+	_check(not terminal.visible and tabs.get_node("QuotaTab").visible and not tabs.get_node("ShopTab").visible,
+		"Quota remains the only terminal tab until a dive is actually confirmed")
+
+	# Existing dialogue choice UI: declining must not start the dive or
+	# consume an action, and the same Yes/No prompt is available again.
+	var actions_before_decline: int = GameManager.get_actions_left()
+	main.call("request_dive", player, dock)
+	_check(DialogueManager.is_active and DialogueManager.current_npc.npc_id == &"dock_dive_prompt",
+		"Dock asks Start diving? through the shared DialogueManager")
+	_check((DialogueManager.get_current_line() as DialogueLineData).text == "Start diving?",
+		"Dock confirmation question uses authored dialogue")
+	DialogueManager.advance()
+	_check(DialogueManager.is_awaiting_choice() and DialogueManager.get_choices().size() == 2,
+		"Dock offers exactly Yes and No")
+	DialogueManager.select_choice(1)
+	DialogueManager.advance()
+	_check(not DialogueManager.is_active and not bool(main.get("_transitioning"))
+		and not bool(main.get("_underwater")) and dock_prompt.visible,
+		"Choosing No stays on shore with the interaction cue available")
+	_check(GameManager.get_actions_left() == actions_before_decline,
+		"Declining the first dive does not spend time")
 
 	_check(not dive_layer.visible, "Game starts on the original island")
 	_check(not iris.visible, "Iris is not visible during ordinary gameplay")
@@ -111,9 +165,17 @@ func _run() -> void:
 
 	var actions_before: int = GameManager.get_actions_left()
 	main.call("request_dive", player, dock)
+	_check(DialogueManager.is_active and DialogueManager.current_npc.npc_id == &"dock_dive_prompt",
+		"Dock offers confirmation again after No")
+	DialogueManager.advance()
+	DialogueManager.select_choice(0)
+	DialogueManager.advance()
 	_check(tabs.get_node("ShopTab").visible and tabs.get_node("StorageTab").visible,
-		"Other terminal tabs unlock once Penni begins her first dive")
-	_check(player.busy, "Player input locks during the jump")
+		"Other terminal tabs unlock only after choosing Yes")
+	_check(player.busy and bool(main.get("_transitioning")),
+		"Accepting the dock prompt starts the dive jump and locks player movement")
+	_check(not bool(dock.get("_first_dive_prompt")), 
+		"Persistent tutorial dock prompt switches back to proximity-only after Yes")
 	await create_timer(1.7).timeout
 	_check(dive_layer.visible and bool(main.get("_underwater")), "Dock jump leads to underwater scene")
 	_check(bool(lagoon.get("_embedded_in_world")), "Diving scene uses real island as its shore")
@@ -134,6 +196,11 @@ func _run() -> void:
 	# The same lagoon is preserved across a second jump.
 	var original_lagoon_id: int = lagoon.get_instance_id()
 	main.call("request_dive", player, dock)
+	_check(DialogueManager.is_active and DialogueManager.current_npc.npc_id == &"dock_dive_prompt",
+		"Subsequent dives also use the dock confirmation dialog")
+	DialogueManager.advance()
+	DialogueManager.select_choice(0)
+	DialogueManager.advance()
 	await create_timer(1.7).timeout
 	_check(lagoon.get_instance_id() == original_lagoon_id, "Underwater NPCs and catches persist across dives")
 
