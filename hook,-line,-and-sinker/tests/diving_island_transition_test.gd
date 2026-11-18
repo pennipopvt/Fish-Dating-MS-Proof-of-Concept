@@ -3,6 +3,7 @@ extends SceneTree
 # Integrated dock/underwater regression:
 # godot --headless --path . -s res://tests/diving_island_transition_test.gd
 const MAIN: PackedScene = preload("res://scenes/main.tscn")
+const FISH_CO_PORTRAIT: Texture2D = preload("res://sprites/characters/fish co/fish-co.png")
 var failures: int = 0
 
 func _initialize() -> void:
@@ -32,8 +33,8 @@ func _run() -> void:
 		"Regular dialogue portraits appear in front of the boat backdrop")
 	_check(not intro.has_node("DialoguePanel"),
 		"No separate custom phone-call dialogue box remains")
-	_check((dialogue_ui.get_node("NPCPortrait") as TextureRect).texture == dialogue_ui.placeholder_portrait,
-		"Fish Co portrait uses a placeholder until the phone sprite is added")
+	_check((dialogue_ui.get_node("NPCPortrait") as TextureRect).texture == FISH_CO_PORTRAIT,
+		"Fish Co phone call shows the newly imported operator portrait")
 	_check(tabs.get_node("QuotaTab").visible and not tabs.get_node("ShopTab").visible
 		and not tabs.get_node("StorageTab").visible,
 		"Only quota tab exists visually during the introductory phone call")

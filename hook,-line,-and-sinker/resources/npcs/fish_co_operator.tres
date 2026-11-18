@@ -1,11 +1,11 @@
 [gd_resource type="Resource" script_class="NPCData" format=3]
 
 [ext_resource type="Script" path="res://resources/npc_data.gd" id="npc_script"]
+[ext_resource type="Texture2D" uid="uid://dqnl5r2kigu3c" path="res://sprites/characters/fish co/fish-co.png" id="fish_co_portrait"]
 
 [resource]
 script = ExtResource("npc_script")
 npc_id = &"fish_co_operator"
 display_name = "FISH CO."
-# Assign your phone sprite to portrait in the Inspector when it is ready.
-# Until then the existing DialogueUI fallback portrait is displayed.
+portrait = ExtResource("fish_co_portrait")
 dialogue_json_path = "res://dialogue/fish_co_phone_intro.json"
