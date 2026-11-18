@@ -22,6 +22,23 @@ func _run() -> void:
 	) as DivingWorld
 	var iris: ColorRect = main.get_node("TransitionLayer/Iris") as ColorRect
 	var dialogue_ui: DialogueUI = main.get_node("CanvasLayer/DialogueUI") as DialogueUI
+	var intro: FishCoIntro = main.get_node("IntroLayer/FishCoIntro") as FishCoIntro
+	var terminal: ShopMenu = main.get_node("CanvasLayer/ShopMenu") as ShopMenu
+	var tabs: VBoxContainer = terminal.get_node("TerminalRoot/NavTabs") as VBoxContainer
+	_check(intro.visible and player.busy and not bool(main.get("_contract_call_finished")),
+		"New game opens on Fish Co contract call before the player can move")
+	_check(tabs.get_node("QuotaTab").visible and not tabs.get_node("ShopTab").visible
+		and not tabs.get_node("StorageTab").visible,
+		"Only quota tab exists visually during the first-minute introduction")
+	_check((intro.get("_pages") as Array).size() == 10,
+		"Full authored phone call is grouped into ten stage speeches")
+	for i in range((intro.get("_pages") as Array).size()):
+		intro.advance()
+	_check(not intro.visible and terminal.visible and not player.busy,
+		"Hang-up immediately reveals quota-only terminal and restores movement")
+	_check(bool(main.get("_contract_call_finished")),
+		"Contract call is marked complete after it is read")
+	terminal.close()
 
 	_check(not dive_layer.visible, "Game starts on the original island")
 	_check(not iris.visible, "Iris is not visible during ordinary gameplay")
@@ -40,6 +57,8 @@ func _run() -> void:
 
 	var actions_before: int = GameManager.get_actions_left()
 	main.call("request_dive", player, dock)
+	_check(tabs.get_node("ShopTab").visible and tabs.get_node("StorageTab").visible,
+		"Other terminal tabs unlock once Penni begins her first dive")
 	_check(player.busy, "Player input locks during the jump")
 	await create_timer(1.7).timeout
 	_check(dive_layer.visible and bool(main.get("_underwater")), "Dock jump leads to underwater scene")
