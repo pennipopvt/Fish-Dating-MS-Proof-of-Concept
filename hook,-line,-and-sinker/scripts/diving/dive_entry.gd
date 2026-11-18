@@ -5,6 +5,7 @@ extends Control
 const SILAS_SCENE: PackedScene = preload("res://prefabs/silas.tscn")
 const SILAS_FISH_DATA: FishData = preload("res://resources/fish/silas.tres")
 const FISH_CO_OPERATOR: NPCData = preload("res://resources/npcs/fish_co_operator.tres")
+const DOCK_CONFIRM: NPCData = preload("res://resources/npcs/dock_dive_prompt.tres")
 const RIPPLE: Texture2D = preload("res://sprites/environment/medium_ripple_a.png")
 const POOF_SHEET: Texture2D = preload("res://sprites/characters/poof.png")
 const DIVE_DURATION: float = 0.43
@@ -30,6 +31,11 @@ var _shore_return_position: Vector2 = Vector2(56.0, 112.0)
 var _silas_actor: NPCInteractable
 var _silas_recruited: bool = false
 var _contract_call_finished: bool = false
+var _first_quota_opened: bool = false
+var _first_dive_call_started: bool = false
+var _first_dive_call_finished: bool = false
+var _dock_confirmation_target: Node2D
+var _dock_confirmation_yes: bool = false
 
 
 func _ready() -> void:
@@ -47,6 +53,11 @@ func _ready() -> void:
 	DialogueManager.conversation_finished.connect(_on_reveal_conversation_finished)
 	_intro_layer.hide()
 	DialogueManager.conversation_finished.connect(_on_contract_conversation_finished)
+	DialogueManager.conversation_finished.connect(_on_first_dive_conversation_finished)
+	DialogueManager.choice_resolved.connect(_on_dock_choice_resolved)
+	DialogueManager.conversation_finished.connect(_on_dock_confirmation_finished)
+	ShopManager.shop_opened.connect(_on_first_quota_opened)
+	ShopManager.shop_closed.connect(_on_first_quota_closed)
 	_start_contract_call.call_deferred()
 
 
@@ -105,16 +116,95 @@ func _transition_contract_to_dock() -> void:
 	_world_player.busy = false
 
 
+# The first terminal visit is the prerequisite for the second Fish Co call.
+# Reuse ShopManager signals instead of inventing a second terminal or flag
+# inside the menu; subsequent visits must never replay the call.
+func _on_first_quota_opened() -> void:
+	if _contract_call_finished and not _transitioning and not _first_dive_call_started:
+		_first_quota_opened = true
+
+
+func _on_first_quota_closed() -> void:
+	if not _first_quota_opened or _first_dive_call_started or _first_dive_call_finished:
+		return
+	_first_dive_call_started = true
+	_start_first_dive_call.call_deferred()
+
+
+func _start_first_dive_call() -> void:
+	if not _first_dive_call_started or _first_dive_call_finished or _transitioning or _underwater:
+		return
+	if DialogueManager.is_active or ShopManager.is_shop_open:
+		return
+	_world_player.busy = true
+	DialogueManager.request_conversation(
+		FISH_CO_OPERATOR, "res://dialogue/fish_co_first_dive.json"
+	)
+	if not DialogueManager.is_active:
+		push_error("Fish Co. first-dive onboarding dialogue could not open.")
+		# Don't leave Penni permanently locked if dialogue data is missing.
+		_finish_first_dive_call()
+
+
+func _on_first_dive_conversation_finished(npc: NPCData) -> void:
+	if npc != FISH_CO_OPERATOR or not _first_dive_call_started or _first_dive_call_finished:
+		return
+	_finish_first_dive_call()
+
+
+func _finish_first_dive_call() -> void:
+	_first_dive_call_finished = true
+	_world_player.busy = false
+	var dock: Node2D = _world.get_node("Dock") as Node2D
+	# Existing InteractPrompt is visible from a distance the first time,
+	# then returns to ordinary proximity behavior once diving begins.
+	dock.call("set_first_dive_prompt", true)
+
+
 # Called by Dock.interact using the real world Player and Dock instances.
 func request_dive(fisher: Player, dock: Node2D) -> void:
-	if not _contract_call_finished or _transitioning or _underwater or fisher != _world_player:
+	if not _first_dive_call_finished or _transitioning or _underwater or fisher != _world_player:
 		return
 	if not GameManager.can_act() or DialogueManager.is_active or GameManager.is_modal_ui_open():
 		return
+	if _dock_confirmation_target != null:
+		return
+	# A normal dialogue graph provides the Yes/No choice; the player does
+	# not dive until the Yes choice finishes through DialogueManager.
+	_dock_confirmation_target = dock
+	_dock_confirmation_yes = false
+	DialogueManager.request_conversation(
+		DOCK_CONFIRM, "res://dialogue/dock_dive_confirmation.json"
+	)
+	if not DialogueManager.is_active:
+		_dock_confirmation_target = null
+
+
+func _on_dock_choice_resolved(npc: NPCData, choice: Dictionary) -> void:
+	if npc != DOCK_CONFIRM or _dock_confirmation_target == null:
+		return
+	_dock_confirmation_yes = str(choice.get("dive_decision", "")) == "yes"
+
+
+func _on_dock_confirmation_finished(npc: NPCData) -> void:
+	if npc != DOCK_CONFIRM or _dock_confirmation_target == null:
+		return
+	var dock: Node2D = _dock_confirmation_target
+	var confirmed: bool = _dock_confirmation_yes
+	_dock_confirmation_target = null
+	_dock_confirmation_yes = false
+	if confirmed:
+		_start_confirmed_dive(dock)
+
+
+func _start_confirmed_dive(dock: Node2D) -> void:
+	if _transitioning or _underwater:
+		return
 	_transitioning = true
-	# By the first dive, the quota has been introduced. Other terminal
-	# pages can become visible without cluttering the opening minute.
+	# Other terminal pages become available only once the player actually
+	# chooses to dive, never when they merely read the dock prompt.
 	_shop_menu.set_quota_only(false)
+	dock.call("mark_dive_started")
 	_world_player.busy = true
 	_shore_return_position = dock.global_position + Vector2(21.0, 11.0)
 	_begin_dive(dock)
