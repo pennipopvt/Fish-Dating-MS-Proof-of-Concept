@@ -68,23 +68,19 @@ z_index = -10
 [node name="LevelArt" type="Node2D" parent="SubViewportContainer/SubViewport/Lagoon"]
 z_index = 1
 
-[node name="Water" type="TileMapLayer" parent="SubViewportContainer/SubViewport/Lagoon/LevelArt"]
+[node name="BackgroundSprites" type="Node2D" parent="SubViewportContainer/SubViewport/Lagoon/LevelArt"]
 z_index = -2
-collision_enabled = false
-tile_set = ExtResource("lagoon_tiles")
-
-[node name="Terrain" type="TileMapLayer" parent="SubViewportContainer/SubViewport/Lagoon/LevelArt"]
-collision_enabled = false
-tile_set = ExtResource("lagoon_tiles")
-
-[node name="Details" type="TileMapLayer" parent="SubViewportContainer/SubViewport/Lagoon/LevelArt"]
-z_index = 1
-collision_enabled = false
-tile_set = ExtResource("lagoon_tiles")
+# Place individual background PNGs here as Sprite2D children.
+# Water is rendered by DivingWorld for now; a shader can replace it later.
 
 [node name="Solids" type="TileMapLayer" parent="SubViewportContainer/SubViewport/Lagoon/LevelArt"]
 z_index = 2
+# The ONLY tile-painting layer: rock/cave wall tiles with collision.
 tile_set = ExtResource("lagoon_tiles")
+
+[node name="Details" type="Node2D" parent="SubViewportContainer/SubViewport/Lagoon/LevelArt"]
+z_index = 1
+# Decorative sprites (coral, plants, shells) go here as Sprite2D children.
 
 [node name="Points" type="Node2D" parent="SubViewportContainer/SubViewport/Lagoon"]
 
@@ -155,10 +151,7 @@ random_seed = 2300
 
 [node name="ForegroundArt" type="Node2D" parent="SubViewportContainer/SubViewport/Lagoon"]
 z_index = 8
-
-[node name="Overhangs" type="TileMapLayer" parent="SubViewportContainer/SubViewport/Lagoon/ForegroundArt"]
-collision_enabled = false
-tile_set = ExtResource("lagoon_tiles")
+# Sprite2D children here draw in front of Penni, Silas and wild fish.
 
 [node name="Combat" type="Node" parent="SubViewportContainer/SubViewport/Lagoon"]
 script = ExtResource("combat_script")
