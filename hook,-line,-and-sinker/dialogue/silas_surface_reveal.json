@@ -1,0 +1,15 @@
+{
+  "entry": "surface",
+  "free_greeting": true,
+  "nodes": {
+    "surface": {
+      "lines": [
+        "Ah! W-what just happened?!",
+        "My fins... they're gone. I have legs?",
+        "I didn't think coming up here would be quite so different.",
+        "But... I'm glad you asked me to come.",
+        "There are so many things I want to see with you."
+      ]
+    }
+  }
+}

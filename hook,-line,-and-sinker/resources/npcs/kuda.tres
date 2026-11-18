@@ -7,6 +7,7 @@
 [ext_resource type="Texture2D" uid="uid://bv41gk34hgl5s" path="res://sprites/placeholders/placeholderhousegood.png" id="4_house"]
 [ext_resource type="Resource" uid="uid://b4fcc4cial7fn" path="res://resources/items/kuda_scarf.tres" id="5_gift"]
 [ext_resource type="Texture2D" uid="uid://j2t1f35vluti" path="res://sprites/characters/kuda_portrait.png" id="6_2m545"]
+[ext_resource type="Texture2D" path="res://sprites/fish/kuda_placeholder.png" id="underwater_kuda"]
 
 [ext_resource type="Texture2D" path="res://sprites/porn/kuda.png" id="7_kuda_scene"]
 
@@ -42,6 +43,7 @@ script = ExtResource("1_npc")
 npc_id = &"barracuda"
 display_name = "Kuda"
 portrait = ExtResource("6_2m545")
+underwater_sprite = ExtResource("underwater_kuda")
 porn_sprite = ExtResource("7_kuda_scene")
 date_bold_scores = Array[int]([6, 5, -4, -6])
 date_playful_scores = Array[int]([3, 2, 0, -2])

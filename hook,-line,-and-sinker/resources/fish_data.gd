@@ -12,9 +12,9 @@ extends Resource
 ## existing sprite scale for other fish/resources.
 @export_range(0.0, 128.0, 1.0) var hooked_sprite_width: float = 0.0
 
-## Legacy setting retained so existing fish resources still load. In the
-## parry/dash combat system fish do not drift backward automatically.
-## Per-attack FishEscapeState.escape_rate controls contested pull and dash speed.
+## Continuous pull rate between attacks in diving combat, as a fraction
+## of available net length per second. FishEscapeState.escape_rate separately
+## controls contested attack pulling and missed-parry dash speed.
 @export_range(0.0, 0.2, 0.001) var passive_escape_rate: float = 0.015
 @export_group("Tension")
 ## Tension added per reel scroll (the old scene value was 0.015).
@@ -30,6 +30,38 @@ extends Resource
 @export_range(0.05, 0.5, 0.01) var miss_dash_duration: float = 0.25
 ## Multiplier on the selected attack's escape_rate during a miss dash.
 @export_range(1.0, 8.0, 0.25) var miss_dash_speed_multiplier: float = 3.0
+
+@export_group("Stagger")
+## Parry pressure needed to stagger this species. Carried over from the
+## revised-fishing prototype; a single perfect parry is not a full stun.
+@export_range(20.0, 300.0, 1.0) var stagger_resistance: float = 100.0
+
+@export_group("Battle")
+## Diving: health that a companion's auto-battle wears down before netting.
+## Remaining health also weakens the fish's pull and tension in the reel fight.
+@export_range(1.0, 500.0, 1.0) var max_health: float = 30.0
+## Damage per hit against the companion, before its defense.
+@export_range(0.0, 50.0, 0.5) var attack: float = 3.0
+## Reduces each companion hit by half this value (min 1 damage).
+@export_range(0.0, 50.0, 0.5) var defense: float = 2.0
+## Attacks per second in the auto-battle.
+@export_range(0.1, 5.0, 0.05) var speed: float = 1.0
+@export_group("Reel Strength")
+## Reel-fight strength follows remaining health on a reverse-sigmoid curve:
+## near full strength while healthy, a steep drop around curve_midpoint,
+## then flat near the lowest point. 0 health gives exactly min_strength.
+## Strength multiplier at 0 health (the curve's lowest point).
+@export_range(0.1, 4.0, 0.05) var min_strength: float = 1.0
+## Pulling force at full health relative to the lowest point (max 2.5x).
+## Multiplies passive and contested pull, tension, and (above 1) stagger
+## resistance.
+@export_range(1.0, 2.5, 0.05) var force_range: float = 1.0
+## Miss-dash distance at full health relative to the lowest point (max 1.5x).
+@export_range(1.0, 1.5, 0.05) var dash_range: float = 1.0
+## Health ratio where strength drops fastest.
+@export_range(0.05, 0.95, 0.05) var curve_midpoint: float = 0.5
+## How sharp the drop is (higher = closer to a step).
+@export_range(1.0, 30.0, 0.5) var curve_steepness: float = 10.0
 
 @export_group("Attacks")
 @export var states: Array[FishEscapeState] = []

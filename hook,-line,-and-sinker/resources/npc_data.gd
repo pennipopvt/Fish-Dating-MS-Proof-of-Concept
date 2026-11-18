@@ -6,6 +6,9 @@ extends Resource
 
 @export_group("Appearance")
 @export var portrait: Texture2D
+## Fish-form portrait for conversations while exploring underwater.
+## Keep the human portrait untouched for scenes on land.
+@export var underwater_sprite: Texture2D
 @export var house: Texture2D
 @export var porn_sprite: Texture2D # Optional illustrated adult-scene background.
 

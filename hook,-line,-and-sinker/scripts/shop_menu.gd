@@ -63,6 +63,9 @@ const TABS_HIDDEN_X_OFFSET := 12.0
 
 var _nav_buttons: Array[Button] = []
 var _page: int = Page.QUOTA
+var _selected_quota_fish: StringName = &""
+# First-minute onboarding: show exactly one terminal tab until the first dive.
+var _quota_only: bool = true
 var _entries: Array[Dictionary] = []
 var _entry_buttons: Array[Button] = []
 var _selected_index: int = 0
@@ -160,6 +163,18 @@ func _unhandled_input(event: InputEvent) -> void:
 	if visible and event.is_action_pressed(&"ui_cancel"):
 		close()
 		get_viewport().set_input_as_handled()
+
+
+func set_quota_only(value: bool) -> void:
+	if _quota_only == value:
+		return
+	_quota_only = value
+	if not is_node_ready():
+		return
+	if _quota_only:
+		_page = Page.QUOTA
+	_refresh_page()
+	_update_nav_tabs(false)
 
 
 func open() -> void:
@@ -270,6 +285,8 @@ func _select_shop_section(section: int) -> void:
 
 
 func _select_page(page: int) -> void:
+	if _quota_only and page != Page.QUOTA:
+		return
 	_page = page
 	_selected_index = 0
 	_last_order_message = ""
@@ -293,6 +310,7 @@ func _update_nav_tabs(animate: bool) -> void:
 
 	for i in range(_nav_buttons.size()):
 		var tab: Button = _nav_buttons[i]
+		tab.visible = not _quota_only or i == Page.QUOTA
 		var caption: Label = tab.get_node("VerticalTitle") as Label
 		var text_width: float = _layout_vertical_caption(caption)
 		var padded_height: float = TAB_CLOSED_HEIGHT + TAB_TEXT_GAP + text_width + TAB_TEXT_PADDING
@@ -511,16 +529,17 @@ func _refresh_quota_page() -> void:
 	_challenge_view.hide()
 	_quota_view.show()
 	_entry_buttons.clear()
-	_preview_frame.hide()
+	_preview_frame.show()
 	_page_title.show()
 	_page_hint.show()
 	_details_panel.custom_minimum_size.x = 420
 	_page_title.text = "CONTRACT %d QUOTA" % QuotaManager.week
-	_page_hint.text = "Deliver fish by the end of Day %d (Night)" % QuotaManager.deadline_day
-	_page_indicator.text = "FISH CO.  /  MANDATORY 3-DAY CONTRACT"
+	_page_hint.text = "DUE DAY %d / NIGHT" % QuotaManager.deadline_day
+	_page_indicator.text = "FISH CO. / CONTRACT %d" % QuotaManager.week
 	for i in range(_nav_buttons.size()):
 		_nav_buttons[i].button_pressed = i == _page
 		_nav_buttons[i].self_modulate = Color.WHITE if i == _page else Color(0.88, 0.9, 0.9, 0.9)
+
 	for child in _quota_view.get_children():
 		_quota_view.remove_child(child)
 		child.queue_free()
@@ -528,17 +547,27 @@ func _refresh_quota_page() -> void:
 		_costs.remove_child(child)
 		child.queue_free()
 	_order_button.hide()
-	_preview.texture = null
-	_item_name.text = "FISH CO. CONTRACT"
-	_description.text = "Fish are surrendered as soon as you submit them. They cannot also be used for gifts or upgrades."
+
+	# Reuse FishData/ItemData art and the shared details preview, not a new
+	# quota image panel. Clicking a species in the left column previews it.
+	if not QuotaManager.requirements.is_empty():
+		var selection_exists: bool = false
+		for requirement in QuotaManager.requirements:
+			if requirement["item_id"] == _selected_quota_fish:
+				selection_exists = true
+				break
+		if not selection_exists:
+			_selected_quota_fish = QuotaManager.requirements[0]["item_id"]
+	_update_quota_fish_preview()
+
 	var is_done: bool = QuotaManager.is_complete()
-	_status.text = "QUOTA COMPLETE / NEXT CONTRACT STARTS DAY %d" % (QuotaManager.deadline_day + 1) if is_done else (
-		"FAILURE TO DELIVER BY DAY %d ENDS THE RUN" % QuotaManager.deadline_day
-	)
 	if is_done:
-		var complete := PixelUI.label("DELIVERY REQUIREMENTS MET", &"TitleLabel")
+		_status.text = "QUOTA COMPLETE"
+		var complete := PixelUI.label("QUOTA COMPLETE", &"TitleLabel")
 		complete.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		_quota_view.add_child(complete)
+	else:
+		_status.text = ""
 
 	for requirement in QuotaManager.requirements:
 		var item_id: StringName = requirement["item_id"]
@@ -555,21 +584,42 @@ func _refresh_quota_page() -> void:
 			padding.add_theme_constant_override(side, 12)
 		frame.add_child(padding)
 		var body := VBoxContainer.new()
-		body.add_theme_constant_override("separation", 10)
+		body.add_theme_constant_override("separation", 9)
 		padding.add_child(body)
 		var header := HBoxContainer.new()
+		header.add_theme_constant_override("separation", 12)
 		body.add_child(header)
-		var title := PixelUI.label(str(requirement["label"]).to_upper(), &"TitleLabel")
-		title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		header.add_child(title)
+
+		var fish_texture: Texture2D = _quota_fish_sprite(item_id)
+		if fish_texture != null:
+			var icon := TextureRect.new()
+			icon.texture = fish_texture
+			icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+			icon.custom_minimum_size = Vector2(60, 60)
+			icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+			icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+			icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			header.add_child(icon)
+
+		var select_fish := Button.new()
+		select_fish.text = str(requirement["label"]).to_upper()
+		select_fish.flat = true
+		select_fish.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		select_fish.alignment = HORIZONTAL_ALIGNMENT_LEFT
+		select_fish.tooltip_text = "View fish"
+		select_fish.add_theme_color_override("font_color", DARK_TEXT)
+		select_fish.pressed.connect(_select_quota_fish.bind(item_id))
+		header.add_child(select_fish)
+
 		var progress := PixelUI.label("%d / %d" % [current, amount], &"TitleLabel")
+		progress.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		header.add_child(progress)
 
 		var bar := ProgressBar.new()
 		bar.max_value = amount
 		bar.value = current
 		bar.show_percentage = false
-		bar.custom_minimum_size.y = 18
+		bar.custom_minimum_size.y = 15
 		bar.add_theme_stylebox_override("background", PixelUI.box(PixelUI.INSET, PixelUI.ROW_EDGE, 1))
 		bar.add_theme_stylebox_override("fill", PixelUI.box(PixelUI.CYAN_DARK, PixelUI.CYAN, 1))
 		body.add_child(bar)
@@ -581,11 +631,31 @@ func _refresh_quota_page() -> void:
 		submit_row.add_child(available_label)
 		var take: int = mini(available, remaining)
 		var send := Button.new()
-		send.text = "DELIVER %d" % take if take > 0 else ("FULFILLED" if remaining == 0 else "NO FISH")
+		send.text = "DELIVER %d" % take if take > 0 else ("DONE" if remaining == 0 else "NO FISH")
 		send.disabled = take <= 0 or is_done
 		send.custom_minimum_size.x = 168
 		send.pressed.connect(_submit_quota_fish.bind(item_id))
 		submit_row.add_child(send)
+
+
+func _quota_fish_sprite(item_id: StringName) -> Texture2D:
+	# The same fish resource used by the fishing, collection and storage
+	# systems supplies the icon. No duplicate species/icon mapping.
+	for fish in FishingManager.possible_catches:
+		if fish != null and fish.fish_id == item_id and fish.item_data != null:
+			return fish.item_data.sprite
+	return null
+
+
+func _select_quota_fish(item_id: StringName) -> void:
+	_selected_quota_fish = item_id
+	_update_quota_fish_preview()
+
+
+func _update_quota_fish_preview() -> void:
+	_preview.texture = _quota_fish_sprite(_selected_quota_fish)
+	_item_name.text = _human_name(_selected_quota_fish).to_upper()
+	_description.text = "LEGENDARY FISH KING\n$400,000 GRAND PRIZE"
 
 
 func _submit_quota_fish(item_id: StringName) -> void:
@@ -844,6 +914,9 @@ func _refresh_schedule_details() -> void:
 func _collect_trades() -> void:
 	for trade in ShopManager.trades:
 		if trade == null:
+			continue
+		# Safety gate: the diving loop has no bait or extra fishing casts.
+		if trade.reward_method in [&"shop_reward_unlock_hard_bait", &"shop_reward_unlock_yellow_bait", &"shop_reward_upgrade_casts", &"shop_reward_add_casts"]:
 			continue
 		var is_upgrade := trade.reward_method != &""
 		var is_gift := trade.reward_item != null and not is_upgrade
