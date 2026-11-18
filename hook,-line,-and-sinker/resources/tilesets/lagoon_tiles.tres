@@ -1,10 +1,10 @@
 [gd_resource type="TileSet" format=3]
 
 [resource]
-# Shared atlas grid for every underwater drawing layer.
-# Drop your finished PNG into the TileSet editor as an Atlas Source.
+# One grid is used for SOLID walls only; background, detail, and
+# foreground PNGs are placed as individual Sprite2D scene children.
+# Add a wall/rock atlas source in the Godot TileSet editor when art is ready.
 tile_size = Vector2i(16, 16)
-# Physical walls are on 2D collision layer 2 so the diver's ShapeCast2D
-# can ignore overworld physics. Only paint collidable tiles on Solids.
+# Solid-wall physics is isolated on layer 2 for Penni and the thrown net.
 physics_layer_0/collision_layer = 2
 physics_layer_0/collision_mask = 0
