@@ -24,8 +24,20 @@ func _run() -> void:
 
 	_check(sea.get_parent() == world and not sea.has_node("Player"),
 		"Sea still shares one existing Player and camera")
-	_check(solids.collision_enabled and solids.get_used_cells().size() > 0,
-		"Rough solid-block seabed has actual painted collision tiles")
+	# TileMapLayer.tile_map_data is a 2-byte format header + 12 bytes per
+	# cell. Without the header Godot silently rejects all painted geometry.
+	_check(solids.tile_map_data.size() == 2 + 12 * 331,
+		"Sea floor has the required Godot 4 tile data format header")
+	_check(solids.collision_enabled and solids.get_used_cells().size() == 331,
+		"All 331 painted seabed tiles actually load into the TileMapLayer")
+	_check(solids.get_cell_source_id(Vector2i(-10, 24)) == 0,
+		"Seafloor tile exists to the left of the dock at x=-10, y=24")
+	var atlas: TileSetAtlasSource = solids.tile_set.get_source(0) as TileSetAtlasSource
+	var tile: TileData = atlas.get_tile_data(Vector2i.ZERO, 0)
+	_check(tile != null and tile.get_collision_polygons_count(0) > 0,
+		"Visible sea block includes a physics collision polygon")
+	_check((player.collision_mask | 2) & 2 != 0,
+		"Swimming player can collide with sea layer 2")
 	_check(solids.tile_set != (world.get_node("Ground") as TileMapLayer).tile_set,
 		"Sea wall physics remains separate from the island TileSet")
 	_check(solids.tile_set.get_physics_layer_collision_layer(0) == 2,
@@ -66,6 +78,16 @@ func _run() -> void:
 	world.call("_process", 0.0)
 	_check(absf(sky.global_position.y + sky.size.y - (world.get_node("Water") as ColorRect).global_position.y) < 0.1,
 		"Sky ends exactly at the world waterline")
+	# Let TileMapLayer upload physics bodies, then trace a real physics ray
+	# through an occupied column, not just the serialized tile metadata.
+	await physics_frame
+	await physics_frame
+	var ray_top: Vector2 = solids.to_global(solids.map_to_local(Vector2i(-10, 18)))
+	var ray_bottom: Vector2 = solids.to_global(solids.map_to_local(Vector2i(-10, 30)))
+	var ray: PhysicsRayQueryParameters2D = PhysicsRayQueryParameters2D.create(ray_top, ray_bottom, 2)
+	var hit: Dictionary = world.get_world_2d().direct_space_state.intersect_ray(ray)
+	_check(not hit.is_empty() and hit.get("collider") == solids,
+		"Physics ray hits a sea floor tile collider before passing through")
 	guide.map_size = Vector2(1040, 620)
 	sea.call("_set_camera_bounds", true)
 	_check((player.get_node("Camera2D") as Camera2D).limit_left == -832
