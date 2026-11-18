@@ -237,8 +237,8 @@ func _move_player(delta: float) -> void:
 	if direction.length_squared() > 0.0:
 		direction = direction.normalized()
 	var speed: float = SWIM_SPEED if _underwater else 64.0
-	if _underwater and _veil_time > 0.0:
-		speed *= 0.82
+	# Concealment is now an automatic Silas special. It shouldn't
+	# unexpectedly slow Penni's movement when it triggers mid-fight.
 	player_sprite.position += direction * speed * delta
 	if _underwater:
 		player_sprite.position.x = clampf(player_sprite.position.x, SEA_BOUNDS.position.x + 8.0, SEA_BOUNDS.end.x - 8.0)
