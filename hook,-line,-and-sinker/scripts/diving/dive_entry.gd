@@ -9,6 +9,8 @@ const POOF_SHEET: Texture2D = preload("res://sprites/characters/poof.png")
 const DIVE_DURATION: float = 0.43
 const IRIS_DURATION: float = 0.52
 const IRIS_OPEN_RADIUS: float = 2.6
+# Silas's sprite origin sits this far above his feet (32px frame, centred).
+const SILAS_FEET_OFFSET: float = 16.0
 
 @onready var _world: Node2D = $SubViewportContainer/SubViewport/World
 @onready var _world_player: Player = $SubViewportContainer/SubViewport/World/Player
@@ -138,7 +140,9 @@ func _surface_from_dive(with_silas: bool) -> void:
 func _place_silas_on_dock() -> void:
 	_silas_actor = SILAS_SCENE.instantiate() as NPCInteractable
 	_world.add_child(_silas_actor)
-	_silas_actor.global_position = _shore_return_position + Vector2(33.0, 0.0)
+	# Penni's sprite is drawn 16px above her node, but Silas's sprite is
+	# centred on his, so lift him 16px or his feet sink into the dock.
+	_silas_actor.global_position = _shore_return_position + Vector2(33.0, -SILAS_FEET_OFFSET)
 	var human: AnimatedSprite2D = _silas_actor.get_node("Sprite") as AnimatedSprite2D
 	human.hide()
 
@@ -162,7 +166,8 @@ func _show_silas_transformation() -> void:
 	poof.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	poof.z_index = 25
 	_world.add_child(poof)
-	poof.global_position = _silas_actor.global_position + Vector2(0, -14)
+	# Centre the poof on Silas's sprite (both are 32x32 and centred).
+	poof.global_position = _silas_actor.global_position
 	poof.play(&"transform")
 	await poof.animation_finished
 	poof.queue_free()
