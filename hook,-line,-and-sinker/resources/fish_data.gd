@@ -46,11 +46,22 @@ extends Resource
 @export_range(0.0, 50.0, 0.5) var defense: float = 2.0
 ## Attacks per second in the auto-battle.
 @export_range(0.1, 5.0, 0.05) var speed: float = 1.0
-## Reel-fight strength at full health (multiplies pulling, dash distance and
-## tension). It falls toward DivingCombat.low_health_strength as health drops.
-## 1.0 = beatable without a battle; much higher makes a fresh fish
-## practically impossible to reel in until the companion wears it down.
-@export_range(0.1, 6.0, 0.05) var full_health_strength: float = 1.0
+@export_group("Reel Strength")
+## Reel-fight strength follows remaining health on a reverse-sigmoid curve:
+## near full strength while healthy, a steep drop around curve_midpoint,
+## then flat near the lowest point. 0 health gives exactly min_strength.
+## Strength multiplier at 0 health (the curve's lowest point).
+@export_range(0.1, 4.0, 0.05) var min_strength: float = 1.0
+## Pulling force at full health relative to the lowest point (max 2.5x).
+## Multiplies passive and contested pull, tension, and (above 1) stagger
+## resistance.
+@export_range(1.0, 2.5, 0.05) var force_range: float = 1.0
+## Miss-dash distance at full health relative to the lowest point (max 1.5x).
+@export_range(1.0, 1.5, 0.05) var dash_range: float = 1.0
+## Health ratio where strength drops fastest.
+@export_range(0.05, 0.95, 0.05) var curve_midpoint: float = 0.5
+## How sharp the drop is (higher = closer to a step).
+@export_range(1.0, 30.0, 0.5) var curve_steepness: float = 10.0
 
 @export_group("Attacks")
 @export var states: Array[FishEscapeState] = []

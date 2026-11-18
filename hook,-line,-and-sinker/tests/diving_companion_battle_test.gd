@@ -26,8 +26,8 @@ func _unit_checks() -> void:
 	_check(is_equal_approx(DivingCompanionBattle.damage(6.0, 4.0), 4.0)
 		and is_equal_approx(DivingCompanionBattle.damage(1.0, 10.0), 1.0),
 		"Damage is attack - defense/2, at least 1")
-	_check(is_equal_approx(GOBY.full_health_strength, 1.0) and TUNA.full_health_strength > 2.0,
-		"Early fish fight at normal strength; later fish are far stronger when fresh")
+	_check(GOBY.min_strength * GOBY.force_range <= 1.0 and TUNA.min_strength * TUNA.force_range > 2.0,
+		"Early fish fight at or below normal strength; later fish are far stronger when fresh")
 
 	var battle := DivingCompanionBattle.new()
 	get_root().add_child(battle)
@@ -105,7 +105,7 @@ func _scene_checks() -> void:
 		"Spawned fish take their health from FishData")
 
 	world.call("_on_net_fish_hit", tuna)
-	_check(combat.is_active() and is_equal_approx(combat.strength, TUNA.full_health_strength),
+	_check(combat.is_active() and is_equal_approx(combat.strength, TUNA.min_strength * TUNA.force_range),
 		"A full-health tuna can be netted, but fights at full strength")
 	combat.release()
 
@@ -126,7 +126,8 @@ func _scene_checks() -> void:
 	tuna.catch_cooldown = 0.0
 	world.call("_on_net_fish_hit", tuna)
 	_check(combat.is_active() and is_equal_approx(combat.strength,
-		lerpf(combat.low_health_strength, TUNA.full_health_strength, 0.4)),
+		TUNA.min_strength * lerpf(1.0, TUNA.force_range,
+			DivingCombat.health_curve(0.4, TUNA.curve_midpoint, TUNA.curve_steepness))),
 		"Reel fight strength follows the fish's remaining health")
 	combat.release()
 	_check(is_equal_approx(tuna.health, tuna.max_health * 0.4),

@@ -26,11 +26,6 @@ enum Phase { WARNING, WINDUP, ATTACK, DASH, RECOVERY, STUN }
 @export_range(1.0, 100.0, 1.0) var perfect_stagger_gain: float = 48.0
 @export_range(0.0, 15.0, 0.5) var stagger_decay_per_second: float = 2.0
 @export_range(1.0, 3.0, 0.05) var stun_reel_multiplier: float = 1.5
-# A fish's strength in the reel fight follows its remaining health from the
-# companion's auto-battle: its pulling (passive, contested, dash distance)
-# and the tension it causes scale from this value at 0 health up to
-# FishData.full_health_strength at full health.
-@export_range(0.0, 1.0, 0.05) var low_health_strength: float = 0.4
 
 # Keep upgrade strength proportional as the base reel distance changes.
 const ORIGINAL_REEL_PIXELS_PER_SCROLL: float = 7.0
@@ -67,9 +62,26 @@ var _dash_start_distance: float = 0.0
 var _dash_end_distance: float = 0.0
 var _dash_start_tension: float = 0.0
 var _dash_end_tension: float = 0.0
-# Set in begin() from the fish's remaining health: low_health_strength at 0,
-# FishData.full_health_strength at full (well above 1 for later species).
+# Set in begin() from the fish's remaining health (companion auto-battle)
+# through the species' reverse-sigmoid curve (see FishData "Reel Strength").
+# strength scales pulling, tension and stagger resistance; dash_strength
+# scales the miss-dash distance.
 var strength: float = 1.0
+var dash_strength: float = 1.0
+
+# Reverse sigmoid over health, normalized so 0 health -> 0 and full -> 1:
+# stays high while the fish is healthy, falls steeply around midpoint,
+# then flattens out near 0.
+static func health_curve(health_ratio: float, midpoint: float, steepness: float) -> float:
+	var h: float = clampf(health_ratio, 0.0, 1.0)
+	var low: float = _sigmoid(-steepness * midpoint)
+	var high: float = _sigmoid(steepness * (1.0 - midpoint))
+	return clampf((_sigmoid(steepness * (h - midpoint)) - low) / maxf(high - low, 0.0001), 0.0, 1.0)
+
+
+static func _sigmoid(x: float) -> float:
+	return 1.0 / (1.0 + exp(-x))
+
 
 func is_active() -> bool:
 	return target != null and is_instance_valid(target)
@@ -85,7 +97,9 @@ func begin(wild: DivingWildFish, data: FishData, initial_distance: float, net_ra
 	_update_progress_from_distance()
 	tension = 0.0
 	stagger = 0.0
-	strength = lerpf(low_health_strength, data.full_health_strength, clampf(health_ratio, 0.0, 1.0))
+	var curve: float = health_curve(health_ratio, data.curve_midpoint, data.curve_steepness)
+	strength = data.min_strength * lerpf(1.0, data.force_range, curve)
+	dash_strength = data.min_strength * lerpf(1.0, data.dash_range, curve)
 	recovery_timer = 0.0
 	reel_open = false
 	free_reel = false
@@ -350,7 +364,7 @@ func _fail_parry() -> void:
 	_dash_start_distance = line_distance
 	_dash_end_distance = minf(
 		max_line_distance,
-		line_distance + maxf(attack.escape_rate, 0.0) * fish_data.miss_dash_speed_multiplier * _dash_duration * _line_span() * strength
+		line_distance + maxf(attack.escape_rate, 0.0) * fish_data.miss_dash_speed_multiplier * _dash_duration * _line_span() * dash_strength
 	)
 	_dash_start_tension = tension
 	_dash_end_tension = clampf(tension + maxf(0.0, fish_data.miss_tension_gain * fish_data.attack_tension_multiplier * strength - FishingManager.miss_tension_reduction), 0.0, 1.0)

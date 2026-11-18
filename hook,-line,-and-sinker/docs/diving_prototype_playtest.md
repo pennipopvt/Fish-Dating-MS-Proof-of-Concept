@@ -47,20 +47,30 @@ Once Silas follows you, **right-click a fish** to send him at it. The two trade 
 - **Silas at 0 health is exhausted** and can't battle again until you **rest** (the next `GameManager.day_started`). Otherwise he slowly regains health (`regen_per_second`) while not fighting. Fish never regain health during a session, even if they escape the reel.
 - Throwing the net and latching onto a fish ends the battle.
 
-**Progression through strength, not a block:** every fish can be netted, but each has a `FishData.full_health_strength`. Early fish (goby, mullet, porgy) are 1.0 and are fine to reel at full health. Later fish are far stronger when fresh (needlefish 5.5, flounder 4.75, tuna 3.0), which makes the reel fight practically impossible until Silas wears them down. A bot with a perfect parry on every attack, reeling at 12 scrolls/s, only starts winning at about 50% health for needlefish and flounder and 40% for tuna; even at 40 scrolls/s it never wins at 90% or more.
+**Progression through strength, not a block:** every fish can be netted, but its reel-fight strength follows its remaining health on a **reverse-sigmoid curve** (FishData **Reel Strength** group): it stays near full strength while healthy, drops steeply around `curve_midpoint` (sharpness `curve_steepness`), then flattens near its lowest point `min_strength` at 0 health.
 
-**Remaining health sets the reel fight's strength:** `strength = lerp(Combat.low_health_strength, full_health_strength, health ratio)` (0.4 at 0 health). Passive and contested pulling, miss-dash distance, reel tension and miss tension are all multiplied by it. Strength above 1 also multiplies stagger resistance (a fresh strong fish is hard to stun); a worn-down fish is never easier to stagger than its authored value. Parry timing is unchanged.
+- **Pulling force** (passive and contested pull, reel and miss tension, and stagger resistance above 1×) runs from `min_strength` at 0 health to `min_strength × force_range` at full health. `force_range` is at most 2.5.
+- **Miss-dash distance** runs from `min_strength` to `min_strength × dash_range`, with `dash_range` at most 1.5.
+- A worn-down fish is never easier to stagger than its authored value.
 
-Each hit deals `max(1, attack - defense / 2)`. Stats are placeholder tuning: fish use the **Battle** group on each `FishData` (`max_health`, `attack`, `defense`, `speed` = attacks per second, `full_health_strength`); Silas uses `resources/companions/silas_battle.tres` (`CompanionStats`: 60 HP, 6 atk, 3 def, 1.0 spd, 0.5 HP/s regen).
+Each hit deals `max(1, attack - defense / 2)`. Stats are placeholder tuning. Fish use the **Battle** group (`max_health`, `attack`, `defense`, `speed` = attacks per second) and **Reel Strength** group. Silas uses `resources/companions/silas_battle.tres` (`CompanionStats`: 60 HP, 6 atk, 3 def, 1.0 spd, 0.5 HP/s regen).
 
-| Fish | HP | Atk | Def | Spd | Strength at full health |
-| --- | --- | --- | --- | --- | --- |
-| Goby | 20 | 2 | 1 | 1.4 | 1.0 |
-| Mullet | 30 | 3 | 2 | 1.0 | 1.0 |
-| Porgy | 35 | 3 | 3 | 1.0 | 1.0 |
-| Needlefish | 30 | 5 | 1 | 1.6 | 5.5 |
-| Flounder | 50 | 4 | 5 | 0.7 | 4.75 |
-| Tuna | 90 | 6 | 4 | 0.7 | 3.0 |
+| Fish | Tier | HP | Atk | Def | Spd | Lowest | Pull × | Dash × | Mid / steep | Silas 1v1 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Goby | easy | 20 | 2 | 1 | 1.4 | 0.5 | 1.6 | 1.2 | 0.5 / 8 | wins, −7% |
+| Mullet | easy | 30 | 3 | 2 | 1.0 | 0.6 | 1.8 | 1.25 | 0.5 / 8 | wins, −13% |
+| Porgy | hard | 45 | 4 | 4 | 1.0 | 3.0 | 2.5 | 1.4 | 0.5 / 10 | wins, −46% |
+| Needlefish | hard | 30 | 5 | 1 | 1.6 | 2.2 | 2.2 | 1.5 | 0.55 / 14 | wins, −47% |
+| Flounder | hard | 50 | 4 | 5 | 1.15 | 1.8 | 2.5 | 1.3 | 0.45 / 10 | wins, −67% |
+| Tuna | hardest | 90 | 6 | 4 | 0.75 | 1.0 | 2.5 | 1.5 | 0.45 / 9 | **loses** at 18.7 s (tuna at 16%) |
+
+Tuned with a simulated ideal player (perfect parry on every attack, reeling as fast as tension allows):
+
+- **Easy fish** (goby, mullet) are catchable at any health.
+- **At 12 scrolls/s**, the ideal player first wins at about 50% health for porgy and needlefish, and about 30% for flounder and tuna.
+- **At 40 scrolls/s**, those become about 50% (porgy), 70% (needlefish) and 40% (flounder and tuna).
+- **Nothing hard is ever caught at 80% health or more.**
+- **Tuna:** call Silas back around 30–40% health. He still has about 10–15 HP there; left to fight to the end, he loses.
 
 Code: `scripts/diving/companion_battle.gd` (`DivingCompanionBattle`, the `CompanionBattle` node under `Lagoon`), health on `DivingWildFish`, wiring in `DivingWorld`. Test: `tests/diving_companion_battle_test.gd` (uses autoloads, so run it from a temporary scene rather than `-s`).
 

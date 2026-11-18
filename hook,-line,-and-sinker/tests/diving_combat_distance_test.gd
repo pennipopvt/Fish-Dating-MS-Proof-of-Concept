@@ -5,7 +5,7 @@ extends SceneTree
 # godot --headless --path . -s res://tests/diving_combat_distance_test.gd
 const TUNA_FILE: FishData = preload("res://resources/fish/tuna.tres")
 # Base-rule checks use a normal-strength tuna; the real one is far stronger
-# at full health (full_health_strength) until a companion wears it down.
+# at full health (Reel Strength curve) until a companion wears it down.
 var TUNA: FishData
 var failures: int = 0
 
@@ -16,7 +16,9 @@ func _initialize() -> void:
 
 func _run() -> void:
 	TUNA = TUNA_FILE.duplicate()
-	TUNA.full_health_strength = 1.0
+	TUNA.min_strength = 1.0
+	TUNA.force_range = 1.0
+	TUNA.dash_range = 1.0
 	var combat := DivingCombat.new()
 	get_root().add_child(combat)
 	var fish := DivingWildFish.new()
@@ -125,37 +127,56 @@ func _run() -> void:
 		"Fish pulls again after successful parry rather than waiting motionless")
 	combat.release()
 
-	# A fish worn down by the companion battle pulls and strains less.
-	_check(combat.begin(fish, TUNA, 80.0, 110.0, 0.0) and is_equal_approx(combat.strength, combat.low_health_strength),
-		"A fish at 0 health fights at low_health_strength")
+	# Reverse-sigmoid health curve: 0 -> 0, full -> 1, flat near both ends.
+	var mid: float = TUNA_FILE.curve_midpoint
+	var k: float = TUNA_FILE.curve_steepness
+	_check(is_zero_approx(DivingCombat.health_curve(0.0, mid, k))
+		and is_equal_approx(DivingCombat.health_curve(1.0, mid, k), 1.0),
+		"Health curve spans exactly the lowest point to the maximum")
+	_check(DivingCombat.health_curve(0.85, mid, k) > 0.85 and DivingCombat.health_curve(0.15, mid, k) < 0.15,
+		"Health curve stays high while healthy and low when beaten (sigmoid shape)")
+	for path in ["goby", "mullet", "porgy", "needlefish", "flounder", "tuna"]:
+		var species: FishData = load("res://resources/fish/%s.tres" % path)
+		_check(species.force_range <= 2.5 and species.dash_range <= 1.5 and species.dash_range <= species.force_range,
+			"%s: pull at most 2.5x and dash at most 1.5x its lowest point" % path)
+
+	# Strength multiplies pull and tension; dash_strength the dash distance.
+	_check(combat.begin(fish, TUNA_FILE, 80.0, 110.0, 1.0)
+		and is_equal_approx(combat.strength, TUNA_FILE.min_strength * TUNA_FILE.force_range)
+		and is_equal_approx(combat.dash_strength, TUNA_FILE.min_strength * TUNA_FILE.dash_range),
+		"A fresh tuna fights at its maximum pull and dash")
 	var span: float = combat.max_line_distance - combat.catch_distance
-	var weak_start: float = combat.line_distance
+	var strong_start: float = combat.line_distance
 	combat.step(0.10)
-	_check(is_equal_approx(combat.line_distance - weak_start,
-		TUNA.passive_escape_rate * combat.passive_pull_multiplier * span * 0.10 * combat.strength),
-		"Low health weakens the passive pull")
+	_check(is_equal_approx(combat.line_distance - strong_start,
+		TUNA_FILE.passive_escape_rate * combat.passive_pull_multiplier * span * 0.10 * combat.strength),
+		"Strength scales the passive pull")
 	combat.call("_start_recovery")
-	var weak_tension: float = combat.tension
+	var strong_tension: float = combat.tension
 	combat.reel_scroll()
-	_check(is_equal_approx(combat.tension - weak_tension, TUNA.reel_tension_gain * combat.strength),
-		"Low health lowers reel tension")
+	_check(is_equal_approx(combat.tension - strong_tension, TUNA_FILE.reel_tension_gain * combat.strength),
+		"Strength scales reel tension")
 	combat.call("_start_warning")
 	combat.call("_start_windup")
 	combat.reel_scroll()
 	_check(combat.phase == DivingCombat.Phase.DASH and is_equal_approx(
 		combat._dash_end_distance - combat._dash_start_distance,
-		combat.attack.escape_rate * TUNA.miss_dash_speed_multiplier * TUNA.miss_dash_duration * span * combat.strength),
-		"Low health shortens the miss dash")
+		minf(combat.attack.escape_rate * TUNA_FILE.miss_dash_speed_multiplier * TUNA_FILE.miss_dash_duration * span * combat.dash_strength,
+			combat.max_line_distance - combat._dash_start_distance)),
+		"Dash distance uses its own, smaller dash curve")
 	_check(is_equal_approx(combat._dash_end_tension - combat._dash_start_tension,
-		TUNA.miss_tension_gain * TUNA.attack_tension_multiplier * combat.strength),
-		"Low health lowers miss tension")
+		minf(TUNA_FILE.miss_tension_gain * TUNA_FILE.attack_tension_multiplier * combat.strength, 1.0 - combat._dash_start_tension)),
+		"Strength scales miss tension")
+	combat.release()
+	_check(combat.begin(fish, TUNA_FILE, 80.0, 110.0, 0.0)
+		and is_equal_approx(combat.strength, TUNA_FILE.min_strength)
+		and is_equal_approx(combat.dash_strength, TUNA_FILE.min_strength),
+		"A fish at 0 health is at its lowest point")
 	combat.release()
 	_check(combat.begin(fish, TUNA, 80.0, 110.0) and is_equal_approx(combat.strength, 1.0),
 		"A normal-strength fish at full health (the default) has strength 1")
 	combat.release()
-	_check(combat.begin(fish, TUNA_FILE, 80.0, 110.0)
-		and is_equal_approx(combat.strength, TUNA_FILE.full_health_strength)
-		and TUNA_FILE.full_health_strength > 2.0,
+	_check(combat.begin(fish, TUNA_FILE, 80.0, 110.0) and combat.strength > 2.0,
 		"A fresh tuna fights far above normal strength")
 	_check(is_equal_approx(combat.stagger_resistance(), TUNA_FILE.stagger_resistance * combat.strength),
 		"Extra strength also makes the fish harder to stagger")
