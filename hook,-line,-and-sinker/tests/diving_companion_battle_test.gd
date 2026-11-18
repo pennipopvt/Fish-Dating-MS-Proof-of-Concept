@@ -1,87 +1,151 @@
 extends SceneTree
 
-# godot --headless --path . -s res://tests/diving_companion_battle_test.gd
-# Combat health prototype tests. These deliberately avoid the overworld
-# save/inventory managers so defeat can never masquerade as a catch.
-const MULLET: FishData = preload("res://resources/fish/mullet.tres")
-const MULLET_ART: Texture2D = preload("res://sprites/fish/mullet.png")
+# Companion auto-battle and fish health for diving.
+# Uses autoloads (FishingManager, DialogueManager), so `-s` can't compile it;
+# run it from a temporary scene (see AGENTS.md "Tests").
+const PROTOTYPE: PackedScene = preload("res://scenes/diving_prototype.tscn")
+const GOBY: FishData = preload("res://resources/fish/goby.tres")
+const TUNA: FishData = preload("res://resources/fish/tuna.tres")
 var failures: int = 0
+var _fish_ko: DivingWildFish = null
+var _companion_ko: bool = false
+
 
 func _initialize() -> void:
 	call_deferred("_run")
 
 
 func _run() -> void:
-	var battle := DivingCompanionBattle.new()
-	get_root().add_child(battle)
-	var fish := DivingWildFish.new()
-	get_root().add_child(fish)
-	fish.setup(&"mullet", MULLET_ART, Vector2(100, 100),
-		Rect2(0, 0, 320, 180), 712, MULLET)
-	_check(fish.health > 0.0 and is_equal_approx(fish.health_fraction(), 1.0),
-		"Wild fish starts with species-scaled health")
-	_check(battle.set_target(fish) and battle.target == fish and fish.selected_for_attack,
-		"Right-click command selects a fish and marks it in-world")
-	_check(battle.set_target(fish) and not battle.has_target(),
-		"Right-clicking the same fish cancels the command")
-	_check(battle.set_target(fish), "Wild fish can be selected again")
-	var original_health: float = fish.health
-	battle.tick(0.8, fish.position + Vector2(-15, 0), true, false)
-	_check(fish.health < original_health and not fish.defeated,
-		"Silas automatically attacks without an additional player button")
-	_check(fish.health_fraction() < 1.0, "Fish health drops after companion attack")
-
-	battle._attack_time = 100.0
-	battle._retaliation_time = 0.0
-	battle.tick(0.1, fish.position + Vector2(-10, 0), true, false)
-	_check(battle.companion_health < battle.max_companion_health,
-		"Target fish can retaliate and injure Silas")
-	battle.companion_health = 20.0
-	battle._retaliation_time = 0.0
-	battle._cover_cooldown_time = 0.0
-	battle.tick(0.1, fish.position + Vector2(-10, 0), true, false)
-	_check(battle.cover_time > 0.0 and is_equal_approx(battle.companion_health, 20.0),
-		"Silas automatically uses defensive cover at low health")
-	battle._cover_cooldown_time = 99.0
-	battle.cover_time = 0.0
-	battle._retaliation_time = 0.0
-	battle.retaliation_damage = 25.0
-	battle.tick(0.1, fish.position + Vector2(-10, 0), true, false)
-	_check(not battle.is_companion_available() and not battle.has_target(),
-		"An injured companion becomes temporarily unable to fight")
-	battle.tick(battle.recovery_seconds + 0.1, fish.position, true, true)
-	_check(battle.is_companion_available() and battle.companion_health > 0.0,
-		"Silas recovers after the out-of-commission period")
-
-	# A weakened target resists the SAME original net combat less; the
-	# player still needs to throw and physically reel the net.
-	var net_combat := DivingCombat.new()
-	get_root().add_child(net_combat)
-	_check(net_combat.begin(fish, MULLET, 78.0, 110.0), "Damaged fish can still be hooked")
-	_check(net_combat.health_capture_factor < 1.0,
-		"Current health reduces the fish's net-pulling resistance")
-	_check(net_combat.line_distance > net_combat.catch_distance,
-		"Health damage never skips the actual distance-based catch")
-	net_combat.release()
-
-	# A companion can kill its target, removing the chance to catch it.
-	battle.rest_on_shore()
-	battle.auto_attack_damage = fish.health + 10.0
-	battle.set_target(fish)
-	battle.tick(0.9, fish.position + Vector2(-15, 0), true, false)
-	_check(fish.defeated and not battle.has_target(),
-		"Overattacking defeats the fish instead of catching it")
-	_check(not net_combat.begin(fish, MULLET, 45.0, 110.0),
-		"Defeated fish cannot be hooked or captured")
-
-	net_combat.queue_free()
-	battle.queue_free()
-	fish.queue_free()
-	print("FAILED: %d" % failures if failures > 0 else "Companion autobattle tests passed")
+	_unit_checks()
+	await _scene_checks()
+	print("FAILED: %d" % failures if failures > 0 else "Diving companion battle tests passed")
 	quit(1 if failures > 0 else 0)
 
 
-func _check(ok: bool, description: String) -> void:
-	print(("  PASS  " if ok else "  FAIL  ") + description)
+func _unit_checks() -> void:
+	_check(is_equal_approx(DivingCompanionBattle.damage(6.0, 4.0), 4.0)
+		and is_equal_approx(DivingCompanionBattle.damage(1.0, 10.0), 1.0),
+		"Damage is attack - defense/2, at least 1")
+	_check(GOBY.min_strength * GOBY.force_range <= 1.0 and TUNA.min_strength * TUNA.force_range > 2.0,
+		"Early fish fight at or below normal strength; later fish are far stronger when fresh")
+
+	var battle := DivingCompanionBattle.new()
+	get_root().add_child(battle)
+	battle.fish_knocked_out.connect(func(f: DivingWildFish) -> void: _fish_ko = f)
+	battle.companion_knocked_out.connect(func() -> void: _companion_ko = true)
+	var full: float = battle.stats.max_health
+	_check(is_equal_approx(battle.health, full), "Companion starts at full health")
+
+	var goby := _make_fish(GOBY)
+	_check(battle.start(goby, GOBY) and goby.battling, "Battle starts and holds the fish")
+	battle.step(0.5)
+	var silas_hit: float = DivingCompanionBattle.damage(battle.stats.attack, GOBY.defense)
+	_check(is_equal_approx(goby.health, GOBY.max_health - silas_hit),
+		"Companion strikes first, half an interval in")
+	battle.step(DivingCompanionBattle.attack_interval(GOBY.speed) - 0.5 + 0.01)
+	var goby_hit: float = DivingCompanionBattle.damage(GOBY.attack, battle.stats.defense)
+	_check(is_equal_approx(battle.health, full - goby_hit),
+		"Fish hits back on its own speed timer")
+
+	var fish_before: float = goby.health
+	var silas_before: float = battle.health
+	battle.stop()
+	_check(not battle.is_active() and not goby.battling, "Recall ends the battle and frees the fish")
+	battle.step(1.0)
+	_check(is_equal_approx(goby.health, fish_before), "Fish keeps its damage after the battle")
+	_check(is_equal_approx(battle.health, minf(full, silas_before + battle.stats.regen_per_second)),
+		"Companion regenerates slowly while idle")
+
+	battle.start(goby, GOBY)
+	for i in range(200):
+		if not battle.is_active():
+			break
+		battle.step(0.1)
+	_check(_fish_ko == goby and goby.health <= 0.0 and not battle.is_active(),
+		"Fighting too long knocks the fish out")
+
+	var tuna := _make_fish(TUNA)
+	battle.health = 3.0
+	battle.start(tuna, TUNA)
+	for i in range(200):
+		if not battle.is_active():
+			break
+		battle.step(0.1)
+	_check(_companion_ko and battle.exhausted and is_zero_approx(battle.health),
+		"Companion at 0 health is exhausted")
+	_check(not battle.start(tuna, TUNA), "Exhausted companion can't start a battle")
+	battle.step(10.0)
+	_check(is_zero_approx(battle.health), "No regen while exhausted")
+	battle.rest()
+	_check(battle.can_fight() and is_equal_approx(battle.health, full), "Resting restores the companion")
+
+	battle.queue_free()
+	goby.queue_free()
+	tuna.queue_free()
+
+
+func _scene_checks() -> void:
+	var prototype := PROTOTYPE.instantiate()
+	get_root().add_child(prototype)
+	await process_frame
+	await process_frame
+	var world: Node2D = prototype.get_node("SubViewportContainer/SubViewport/Lagoon")
+	var player: Sprite2D = world.get_node("Player")
+	var combat: DivingCombat = world.get_node("Combat")
+	var battle: DivingCompanionBattle = world.get_node("CompanionBattle")
+	var wild: Array[DivingWildFish] = world.get("_wild_fish")
+	var goby: DivingWildFish = null
+	var tuna: DivingWildFish = null
+	for fish in wild:
+		if fish.fish_name == &"goby":
+			goby = fish
+		elif fish.fish_name == &"tuna":
+			tuna = fish
+	_check(goby != null and tuna != null and is_equal_approx(tuna.max_health, TUNA.max_health),
+		"Spawned fish take their health from FishData")
+
+	world.call("_on_net_fish_hit", tuna)
+	_check(combat.is_active() and is_equal_approx(combat.strength, TUNA.min_strength * TUNA.force_range),
+		"A full-health tuna can be netted, but fights at full strength")
+	combat.release()
+
+	world.set("_silas_following", true)
+	player.position = goby.position + Vector2(-30.0, 0.0)
+	world.call("_command_battle", goby.position)
+	_check(battle.is_active() and battle.target == goby, "Right-clicking a fish sends Silas at it")
+	world.call("_command_battle", goby.position)
+	_check(not battle.is_active(), "Right-clicking the same fish calls Silas back")
+
+	world.call("_command_battle", goby.position)
+	world.call("_on_net_fish_hit", goby)
+	_check(combat.is_active() and not battle.is_active(),
+		"An early fish is catchable at full health, and netting ends the battle")
+	combat.release()
+
+	tuna.health = tuna.max_health * 0.4
+	tuna.catch_cooldown = 0.0
+	world.call("_on_net_fish_hit", tuna)
+	_check(combat.is_active() and is_equal_approx(combat.strength,
+		TUNA.min_strength * lerpf(1.0, TUNA.force_range,
+			DivingCombat.health_curve(0.4, TUNA.curve_midpoint, TUNA.curve_steepness))),
+		"Reel fight strength follows the fish's remaining health")
+	combat.release()
+	_check(is_equal_approx(tuna.health, tuna.max_health * 0.4),
+		"An escaped fish keeps its damage")
+
+	prototype.queue_free()
+	await process_frame
+
+
+func _make_fish(data: FishData) -> DivingWildFish:
+	var fish := DivingWildFish.new()
+	fish.fish_name = data.fish_id
+	fish.set_max_health(data.max_health)
+	get_root().add_child(fish)
+	return fish
+
+
+func _check(ok: bool, note: String) -> void:
+	print(("  PASS  " if ok else "  FAIL  ") + note)
 	if not ok:
 		failures += 1

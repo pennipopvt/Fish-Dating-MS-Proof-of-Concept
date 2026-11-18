@@ -1,6 +1,10 @@
 # Diving prototype — integrated island playtest
 
-This experimental work is on the **`diving` branch**, based on `main`. **Nothing was merged into main or revised-fishing.**
+This is the integrated diving/fishing implementation, combining Jerry's companion combat with Penni's first-day onboarding on `penni-diving` (and the main integration branch after merge).
+
+## First-day story and controls
+
+Start with the Fish Co contract call on the boat. The shared circular iris closes and reveals the dock. Open the marked terminal to see the three-day quota and grand prize. When the terminal closes for the first time, the second Fish Co call explains your first dive. The existing InteractPrompt appears above the dock. Interact there and confirm **Yes** in DialogueUI to dive; **No** keeps you ashore without spending an action. After the first dive is confirmed, the other terminal tabs become available.
 
 ## Start from the normal island
 
@@ -19,7 +23,7 @@ The lagoon is kept alive between dives so the fish you've caught and Silas's con
 5. Successful captures go into the normal FishingManager's storage, collection and challenges, exactly as before. **No fish is stored when merely clicked or hooked.**
 6. Swim **east** to the garden eel trapped in an old net by his burrow. Press **E** to discover that he can speak: he asks, **"Help pull me out!"**
 7. After his plea, **aim and cast the same projectile net directly at Silas**. He stays near the burrow, and a hit begins the normal scrolling/parrying encounter. **Reel him all the way to Penni** to free him. If he escapes, he remains trapped at the burrow, so you can try again. The catch is a **companion rescue**, not an ordinary fish for inventory or collections.
-8. Silas thanks you, introduces himself, and **begins following once the conversation ends**. Swim with Silas, talk to him, catch more fish, and explore the **glowing shell garden** farther east. After rescuing him, **right-click a wild fish to target it**; Silas swims over and auto-attacks. Fish and Silas can hurt each other. Silas automatically uses his sand cover when endangered, without an ability button. Net a weakened fish before your companion defeats it entirely.
+8. Silas thanks you, introduces himself, and **begins following once the conversation ends**. Swim with Silas, talk to him, catch more fish, and explore the **glowing shell garden** farther east. Press **Q** to ask him to conceal you for five seconds so wild fish don't flee as easily.
 9. When you're ready, return to the illuminated **surface marker** near the start and press **E**. Silas only asks to join you on land once you've gotten to know him. Use the **normal dialogue choice buttons** to invite him or stay together underwater.
 10. If you invite him, the iris brings you back to the **original island dock**, where Silas appears as a human in a little poof animation. His portrait switches from the **fish sprite underwater** to the **human portrait on land**; the existing dialogue interface and NPC recruitment / housing systems handle his life on land.
 
@@ -34,9 +38,45 @@ The lagoon is kept alive between dives so the fish you've caught and Silas's con
 | Scroll down in combat | Three rapid ticks to parry the attack, then reel during the opening |
 | Escape in combat | Release the fish (it swims away) |
 | Underwater E / Space | Talk, advance the standard dialogue UI or interact with the surface marker |
-| Right-click a wild fish | Set or cancel Silas’s autonomous battle target |
-| Right-click empty water | Clear the target / stand down |
+| Q | Silas conceals you once he joins you |
+| Right-click a fish | Send Silas to auto-battle it (within 120 px); right-click it again to call him back |
+| F | Call Silas back from a battle |
 | Dialogue choice buttons | Invite Silas to land or postpone, using the same UI as land conversations |
+
+## Companion auto-battle and fish health
+
+Once Silas follows you, **right-click a fish** to send him at it. The two trade hits on their own speed timers, and small health bars appear over both. **Call him back** (right-click the fish again, or F) before it's too late:
+
+- A fish at **0 health is knocked out and lost** for the session (not stored).
+- **Silas at 0 health is exhausted** and can't battle again until you **rest** (the next `GameManager.day_started`). Otherwise he slowly regains health (`regen_per_second`) while not fighting. Fish never regain health during a session, even if they escape the reel.
+- Throwing the net and latching onto a fish ends the battle.
+
+**Progression through strength, not a block:** every fish can be netted, but its reel-fight strength follows its remaining health on a **reverse-sigmoid curve** (FishData **Reel Strength** group): it stays near full strength while healthy, drops steeply around `curve_midpoint` (sharpness `curve_steepness`), then flattens near its lowest point `min_strength` at 0 health.
+
+- **Pulling force** (passive and contested pull, reel and miss tension, and stagger resistance above 1×) runs from `min_strength` at 0 health to `min_strength × force_range` at full health. `force_range` is at most 2.5.
+- **Miss-dash distance** runs from `min_strength` to `min_strength × dash_range`, with `dash_range` at most 1.5.
+- A worn-down fish is never easier to stagger than its authored value.
+
+Each hit deals `max(1, attack - defense / 2)`. Stats are placeholder tuning. Fish use the **Battle** group (`max_health`, `attack`, `defense`, `speed` = attacks per second) and **Reel Strength** group. Silas uses `resources/companions/silas_battle.tres` (`CompanionStats`: 60 HP, 6 atk, 3 def, 1.0 spd, 0.5 HP/s regen).
+
+| Fish | Tier | HP | Atk | Def | Spd | Lowest | Pull × | Dash × | Mid / steep | Silas 1v1 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Goby | easy | 20 | 2 | 1 | 1.4 | 0.5 | 1.6 | 1.2 | 0.5 / 8 | wins, −7% |
+| Mullet | easy | 30 | 3 | 2 | 1.0 | 0.6 | 1.8 | 1.25 | 0.5 / 8 | wins, −13% |
+| Porgy | hard | 45 | 4 | 4 | 1.0 | 3.0 | 2.5 | 1.4 | 0.5 / 10 | wins, −46% |
+| Needlefish | hard | 30 | 5 | 1 | 1.6 | 2.2 | 2.2 | 1.5 | 0.55 / 14 | wins, −47% |
+| Flounder | hard | 50 | 4 | 5 | 1.15 | 1.8 | 2.5 | 1.3 | 0.45 / 10 | wins, −67% |
+| Tuna | hardest | 90 | 6 | 4 | 0.75 | 1.0 | 2.5 | 1.5 | 0.45 / 9 | **loses** at 18.7 s (tuna at 16%) |
+
+Tuned with a simulated ideal player (perfect parry on every attack, reeling as fast as tension allows):
+
+- **Easy fish** (goby, mullet) are catchable at any health.
+- **At 12 scrolls/s**, the ideal player first wins at about 50% health for porgy and needlefish, and about 30% for flounder and tuna.
+- **At 40 scrolls/s**, those become about 50% (porgy), 70% (needlefish) and 40% (flounder and tuna).
+- **Nothing hard is ever caught at 80% health or more.**
+- **Tuna:** call Silas back around 30–40% health. He still has about 10–15 HP there; left to fight to the end, he loses.
+
+Code: `scripts/diving/companion_battle.gd` (`DivingCompanionBattle`, the `CompanionBattle` node under `Lagoon`), health on `DivingWildFish`, wiring in `DivingWorld`. Test: `tests/diving_companion_battle_test.gd` (uses autoloads, so run it from a temporary scene rather than `-s`).
 
 ## Implementation notes
 
@@ -55,12 +95,6 @@ The lagoon is kept alive between dives so the fish you've caught and Silas's con
 - Silas's dive-specific friendship state persists in the lagoon instance while the game is running. On his first visit ashore, a custom first-land conversation runs in the original game's DialogueUI; afterward he joins the usual town NPC/housing flow.
 - The original bait/bobber items and existing fishing controller still exist in the repository. They're not used by the **dock's new diving path**. This experiment does not yet rebalance the old upgrades for underwater net-catching.
 - The net is a visual tether, rather than a physics-driven rope. The authored fishing attack timing now applies to underwater encounters. This prototype is focused on whether exploration companions plus concentrated reel/parry encounters feel better than instant clicking.
-
-## Optional companion combat prototype (`penni-diving` only)
-
-After rescuing Silas, right-click wild fish to target them. Silas automatically swims over and deals damage. Targeted fish show small health pips above their sprite, and fish counterattacks can leave Silas unable to fight temporarily. His defensive sand cover activates automatically at low health; it is no longer tied to the Q key. A target at zero health is defeated, cannot be netted, and does **not** award any fish inventory. A weaker, still-living fish is easier to reel after the net latches because it pulls and dashes less. The existing reel/parry mechanics are unchanged, and there is no large combat HUD.
-
-See [the companion combat design guide](penni_diving_companion_combat.md) for exact tuning and tests.
 
 ## Editing the underwater level in Godot
 

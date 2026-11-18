@@ -1,123 +1,121 @@
 extends Node
 class_name DivingCompanionBattle
 
-# Early companion-combat prototype. Target selection and autonomous attacks
-# live here, separate from the existing net/reel/parry state machine.
-signal target_changed(fish: DivingWildFish)
-signal attack_landed(fish: DivingWildFish, damage: float)
-signal fish_defeated(fish: DivingWildFish)
-signal companion_hit()
-signal companion_incapacitated()
-signal companion_recovered()
-signal cover_activated()
+# Underwater auto-battle: the player sends their companion (Silas) at a wild
+# fish to wear its health down before netting it. Both sides hit each other
+# on their own speed timers. The player decides when to call him back:
+# a fish at 0 health is knocked out and lost, and a companion at 0 health is
+# exhausted until the player rests (GameManager.day_started -> rest()).
 
-@export_range(10.0, 80.0, 1.0) var attack_range: float = 33.0
-@export_range(10.0, 80.0, 1.0) var retaliation_range: float = 34.0
-@export_range(1.0, 25.0, 0.5) var auto_attack_damage: float = 8.0
-@export_range(0.5, 5.0, 0.1) var auto_attack_interval: float = 1.5
-@export_range(0.5, 5.0, 0.1) var retaliation_interval: float = 2.3
-@export_range(1.0, 30.0, 0.5) var retaliation_damage: float = 12.0
-@export_range(20.0, 120.0, 1.0) var max_companion_health: float = 60.0
-@export_range(3.0, 60.0, 1.0) var recovery_seconds: float = 18.0
-@export_range(1.0, 10.0, 0.5) var cover_duration: float = 3.5
-@export_range(5.0, 30.0, 1.0) var cover_cooldown: float = 14.0
+signal hit(on_fish: bool, damage: float)
+signal fish_knocked_out(fish: DivingWildFish)
+signal companion_knocked_out()
+signal ended()
 
+@export var stats: CompanionStats = preload("res://resources/companions/silas_battle.tres")
+
+var health: float = 0.0
+var exhausted: bool = false
 var target: DivingWildFish
-var companion_health: float = 60.0
-var incapacitated_time: float = 0.0
-var cover_time: float = 0.0
-var _cover_cooldown_time: float = 0.0
-var _attack_time: float = 0.7
-var _retaliation_time: float = 1.4
+var target_data: FishData
+var _companion_timer: float = 0.0
+var _fish_timer: float = 0.0
 
 
-func is_companion_available() -> bool:
-	return incapacitated_time <= 0.0
+func _ready() -> void:
+	health = stats.max_health
 
 
-func has_target() -> bool:
-	return is_instance_valid(target) and not target.defeated
+static func damage(attack: float, defense: float) -> float:
+	return maxf(1.0, attack - defense * 0.5)
 
 
-func set_target(fish: DivingWildFish) -> bool:
-	if fish == null or not is_instance_valid(fish) or fish.defeated or fish.trapped or not is_companion_available():
+static func attack_interval(speed: float) -> float:
+	return 1.0 / maxf(speed, 0.05)
+
+
+func is_active() -> bool:
+	return target != null and is_instance_valid(target)
+
+
+func can_fight() -> bool:
+	return not exhausted and health > 0.0
+
+
+func health_ratio() -> float:
+	return clampf(health / maxf(stats.max_health, 1.0), 0.0, 1.0)
+
+
+func start(fish: DivingWildFish, data: FishData) -> bool:
+	if fish == null or not is_instance_valid(fish) or data == null or not can_fight():
 		return false
-	if target == fish:
-		clear_target()
-		return true
-	clear_target()
+	if is_active():
+		stop()
 	target = fish
-	target.set_attack_target(true)
-	_attack_time = 0.6
-	_retaliation_time = 1.7
-	target_changed.emit(target)
+	target_data = data
+	fish.battling = true
+	# The companion strikes first, half an interval in, so a command
+	# feels responsive; the fish answers on its own full interval.
+	_companion_timer = attack_interval(stats.speed) * 0.5
+	_fish_timer = attack_interval(data.speed)
 	return true
 
 
-func clear_target() -> void:
-	if is_instance_valid(target):
-		target.set_attack_target(false)
+func stop() -> void:
+	var was_active: bool = target != null
+	if is_active():
+		target.battling = false
 	target = null
-	target_changed.emit(null)
+	target_data = null
+	if was_active:
+		ended.emit()
 
 
-func rest_on_shore() -> void:
-	clear_target()
-	companion_health = max_companion_health
-	incapacitated_time = 0.0
-	cover_time = 0.0
-	_cover_cooldown_time = 0.0
+func rest() -> void:
+	health = stats.max_health
+	exhausted = false
 
 
-func tick(delta: float, companion_position: Vector2, companion_present: bool, paused: bool) -> void:
-	_cover_cooldown_time = maxf(0.0, _cover_cooldown_time - delta)
-	cover_time = maxf(0.0, cover_time - delta)
-	if incapacitated_time > 0.0:
-		incapacitated_time = maxf(0.0, incapacitated_time - delta)
-		if incapacitated_time <= 0.0:
-			companion_health = max_companion_health * 0.65
-			companion_recovered.emit()
-	if not companion_present or not is_companion_available():
-		if has_target():
-			clear_target()
+func step(delta: float) -> void:
+	if target != null and not is_instance_valid(target):
+		# The fish was freed elsewhere (caught, surfaced scene, etc.).
+		stop()
+	if not is_active():
+		if not exhausted:
+			health = minf(stats.max_health, health + stats.regen_per_second * delta)
 		return
-	if not has_target():
-		if target != null:
-			clear_target()
-		return
-	if paused:
-		return
-	if companion_position.distance_to(target.position) > attack_range:
-		return
-
-	_attack_time -= delta
-	_retaliation_time -= delta
-	if _attack_time <= 0.0:
-		_attack_time = auto_attack_interval
-		var victim: DivingWildFish = target
-		var defeated_now: bool = victim.take_damage(auto_attack_damage)
-		attack_landed.emit(victim, auto_attack_damage)
-		if defeated_now:
-			# No catches or inventory rewards from battle defeats. The player
-			# must net the fish before its health is depleted.
-			clear_target()
-			fish_defeated.emit(victim)
+	_companion_timer -= delta
+	if _companion_timer <= 0.0:
+		_companion_timer += attack_interval(stats.speed)
+		var dealt: float = damage(stats.attack, target_data.defense)
+		target.take_damage(dealt)
+		hit.emit(true, dealt)
+		if target.health <= 0.0:
+			var fallen: DivingWildFish = target
+			stop()
+			fish_knocked_out.emit(fallen)
 			return
+	_fish_timer -= delta
+	if _fish_timer <= 0.0:
+		_fish_timer += attack_interval(target_data.speed)
+		var taken: float = damage(target_data.attack, stats.defense)
+		health = maxf(0.0, health - taken)
+		hit.emit(false, taken)
+		if health <= 0.0:
+			exhausted = true
+			stop()
+			companion_knocked_out.emit()
 
-	if _retaliation_time > 0.0 or companion_position.distance_to(target.position) > retaliation_range:
-		return
-	_retaliation_time = retaliation_interval
-	# Silas's signature defensive special triggers automatically when his
-	# health gets low. No extra player button or ability menu required.
-	if companion_health <= max_companion_health * 0.45 and _cover_cooldown_time <= 0.0:
-		cover_time = cover_duration
-		_cover_cooldown_time = cover_cooldown
-		cover_activated.emit()
-	if cover_time > 0.0:
-		return
-	companion_health = maxf(0.0, companion_health - retaliation_damage)
-	companion_hit.emit()
-	if companion_health <= 0.0:
-		incapacitated_time = recovery_seconds
-		clear_target()
-		companion_incapacitated.emit()
+
+# Tiny pixel health bar, shared by wild fish and the companion.
+static func draw_health_bar(canvas: CanvasItem, center: Vector2, ratio: float, width: float = 14.0) -> void:
+	var r: float = clampf(ratio, 0.0, 1.0)
+	var origin := Vector2(roundf(center.x - width * 0.5), roundf(center.y))
+	canvas.draw_rect(Rect2(origin - Vector2.ONE, Vector2(width + 2.0, 4.0)), Color(0.04, 0.07, 0.10, 0.85))
+	var fill := Color("#e5544b")
+	if r > 0.6:
+		fill = Color("#7bd36b")
+	elif r > 0.3:
+		fill = Color("#f0c24f")
+	if r > 0.0:
+		canvas.draw_rect(Rect2(origin, Vector2(maxf(1.0, roundf(width * r)), 2.0)), fill)

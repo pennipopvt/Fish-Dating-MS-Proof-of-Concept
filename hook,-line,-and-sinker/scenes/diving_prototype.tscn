@@ -2,8 +2,8 @@
 
 [ext_resource type="Script" path="res://scripts/diving/diving_world.gd" id="1_world"]
 [ext_resource type="Script" path="res://scripts/diving/diving_combat.gd" id="combat_script"]
-[ext_resource type="Script" path="res://scripts/diving/companion_battle.gd" id="companion_battle"]
 [ext_resource type="Script" path="res://scripts/diving/net_projectile.gd" id="net_projectile"]
+[ext_resource type="Script" path="res://scripts/diving/companion_battle.gd" id="companion_battle"]
 [ext_resource type="Script" path="res://scripts/diving/fish_spawn.gd" id="fish_spawn"]
 [ext_resource type="Script" path="res://scripts/diving/lagoon_editor_guide.gd" id="lagoon_guide"]
 [ext_resource type="Resource" path="res://resources/fish/mullet.tres" id="fish_mullet"]
