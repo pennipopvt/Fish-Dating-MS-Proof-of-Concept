@@ -16,8 +16,8 @@
 [ext_resource type="Texture2D" path="res://sprites/fish/silas_eel.png" id="3_silas"]
 
 [node name="Lagoon" type="Node2D"]
-show_prototype_environment = false
 script = ExtResource("1_world")
+show_prototype_environment = false
 
 [node name="EditorGuide" type="Node2D" parent="."]
 script = ExtResource("lagoon_guide")
