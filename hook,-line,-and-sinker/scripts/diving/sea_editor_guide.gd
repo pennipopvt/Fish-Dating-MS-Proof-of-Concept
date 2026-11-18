@@ -1,8 +1,8 @@
 @tool
 extends Node2D
-class_name LagoonEditorGuide
+class_name SeaEditorGuide
 
-# Single source of truth for lagoon dimensions, with an editor-only footprint
+# Single source of truth for sea dimensions, with an editor-only footprint
 # and paint grid. Camera and gameplay bounds read this node at runtime.
 @export var map_size: Vector2 = Vector2(920.0, 530.0):
 	set(value):

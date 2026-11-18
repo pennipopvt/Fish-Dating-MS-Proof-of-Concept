@@ -21,7 +21,7 @@
 [ext_resource type="Shader" uid="uid://bv2isyw6ln31h" path="res://shaders/moon.gdshader" id="moon_shader"]
 [ext_resource type="Shader" uid="uid://cli6ci0c4km7b" path="res://shaders/night_stars.gdshader" id="night_stars"]
 [ext_resource type="Script" uid="uid://cba27f3x60a3r" path="res://scripts/world_day_night.gd" id="world_day_night"]
-[ext_resource type="PackedScene" path="res://scenes/lagoon_area.tscn" id="lagoon_area"]
+[ext_resource type="PackedScene" path="res://scenes/sea_area.tscn" id="sea_area"]
 [ext_resource type="TileSet" path="res://resources/tilesets/world_tiles.tres" id="world_tiles"]
 [ext_resource type="Shader" path="res://shaders/underwater_tint.gdshader" id="water_tint_shader"]
 
@@ -203,4 +203,4 @@ offset_right = 2800.0
 offset_bottom = 800.0
 
 
-[node name="Lagoon" parent="." instance=ExtResource("lagoon_area")]
+[node name="Sea" parent="." instance=ExtResource("sea_area")]

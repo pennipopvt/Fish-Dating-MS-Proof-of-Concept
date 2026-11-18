@@ -16,7 +16,7 @@ const SILAS_HUMAN: Texture2D = preload("res://sprites/characters/silas_idle.png"
 # Wild fish species, art, and spawn positions now live on FishSpawns marker
 # nodes in diving_prototype.tscn instead of being hardcoded in this script.
 
-# Dimensions and collision geometry now come from the editor-authored lagoon.
+# Dimensions and collision geometry now come from the editor-authored sea.
 const SHORE_DIVE_POINT := Vector2(251.0, 111.0)
 const SWIM_SPEED: float = 78.0
 const REACH: float = 44.0
@@ -24,18 +24,20 @@ const REACH: float = 44.0
 const BATTLE_RANGE: float = 120.0
 
 @export var show_prototype_environment: bool = true
-# Turn this off once you have painted/placed actual lagoon scenery in the
+# Turn this off once you have painted/placed actual sea scenery in the
 # LevelArt or ForegroundArt nodes. It hides placeholder terrain and reefs.
 
-@onready var _entry_point: Vector2 = to_local(($Points/Entry as Marker2D).global_position)
-@onready var _surface_point: Vector2 = to_local(($Points/SurfaceExit as Marker2D).global_position)
-@onready var _silas_burrow: Vector2 = to_local(($Points/SilasBurrow as Marker2D).global_position)
-@onready var _tangled_net: Vector2 = to_local(($Points/TangledNet as Marker2D).global_position)
-@onready var _glowing_garden: Vector2 = to_local(($Points/ShellGarden as Marker2D).global_position)
-@onready var _level_guide: LagoonEditorGuide = $EditorGuide
+# Resolve editor-authored markers without dereferencing a missing node.
+# An out-of-date scene instance reports a warning instead of halting in @onready.
+@onready var _entry_point: Vector2 = _marker_position(^"Points/Entry", Vector2(55, 182))
+@onready var _surface_point: Vector2 = _marker_position(^"Points/SurfaceExit", Vector2(55, 157))
+@onready var _silas_burrow: Vector2 = _marker_position(^"Points/SilasBurrow", Vector2(385, 258))
+@onready var _tangled_net: Vector2 = _marker_position(^"Points/TangledNet", Vector2(411, 250))
+@onready var _glowing_garden: Vector2 = _marker_position(^"Points/ShellGarden", Vector2(670, 213))
+@onready var _level_guide: SeaEditorGuide = $EditorGuide
 @onready var _wall_cast: ShapeCast2D = get_node_or_null("Player/WallCast") as ShapeCast2D
 @onready var _prototype_visual: Sprite2D = get_node_or_null("Player") as Sprite2D
-# The World scene shares its original Player and camera with this lagoon.
+# The World scene shares its original Player and camera with this sea.
 @onready var player_sprite: Node2D = (get_parent().get_node("Player") as Node2D) if get_parent().has_node("Player") else ($Player as Node2D)
 @onready var camera: Camera2D = (player_sprite.get_node("Camera2D") as Camera2D) if player_sprite is Player else ($Camera2D as Camera2D)
 @onready var _hud_root: Control = (get_node("../../../../DivingHUD") as Control) if player_sprite is Player else (get_node("../../../HUD") as Control)
@@ -78,6 +80,14 @@ var _dialogue_event: StringName = &""
 var _surface_choice: StringName = &""
 var _standalone_dialogue_ui: DialogueUI
 var _shore_transformation_played: bool = false
+
+func _marker_position(path: NodePath, fallback: Vector2) -> Vector2:
+	var marker: Marker2D = get_node_or_null(path) as Marker2D
+	if marker == null:
+		push_warning("Sea marker '%s' is missing; check the Sea scene instance in res://scenes/sea_area.tscn." % path)
+		return fallback
+	return to_local(marker.global_position)
+
 
 func _ready() -> void:
 	_embedded_in_world = player_sprite is Player
@@ -147,7 +157,7 @@ func _return_to_surface(with_silas: bool) -> void:
 	# A throw that missed should not remain stuck midway through its flight
 	# when the underwater scene is hidden until the next dive.
 	_net.reset_net()
-	# The lagoon stops processing on land, so end any battle here.
+	# The sea stops processing on land, so end any battle here.
 	_battle.stop()
 	if _embedded_in_world:
 		_underwater = false

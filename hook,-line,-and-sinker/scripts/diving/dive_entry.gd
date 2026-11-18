@@ -1,7 +1,7 @@
 extends Control
 
 # Keeps the existing island as the real overworld. Only the dock's fishing
-# interaction changes: jump -> circular iris -> persistent diving lagoon.
+# interaction changes: jump -> circular iris -> persistent diving sea.
 const SILAS_SCENE: PackedScene = preload("res://prefabs/silas.tscn")
 const SILAS_FISH_DATA: FishData = preload("res://resources/fish/silas.tres")
 const FISH_CO_OPERATOR: NPCData = preload("res://resources/npcs/fish_co_operator.tres")
@@ -17,7 +17,7 @@ const SILAS_FEET_OFFSET: float = 16.0
 @onready var _world: Node2D = $SubViewportContainer/SubViewport/World
 @onready var _world_player: Player = $SubViewportContainer/SubViewport/World/Player
 @onready var _diving_hud: Control = $DivingHUD
-@onready var _lagoon: DivingWorld = $SubViewportContainer/SubViewport/World/Lagoon
+@onready var _sea: DivingWorld = $SubViewportContainer/SubViewport/World/Sea
 @onready var _iris: ColorRect = $TransitionLayer/Iris
 @onready var _music: AudioStreamPlayer2D = $AudioStreamPlayer2D
 @onready var _dialogue_ui: DialogueUI = $CanvasLayer/DialogueUI
@@ -46,9 +46,9 @@ func _ready() -> void:
 	_iris_material = (_iris.material as ShaderMaterial).duplicate() as ShaderMaterial
 	_iris.material = _iris_material
 	_set_iris_radius(IRIS_OPEN_RADIUS)
-	_lagoon.set_embedded_mode(true)
-	_lagoon.surface_requested.connect(_on_surface_requested)
-	# The lagoon is a child of the one live World; there is only one music player.
+	_sea.set_embedded_mode(true)
+	_sea.surface_requested.connect(_on_surface_requested)
+	# The sea is a child of the one live World; there is only one music player.
 	DialogueManager.conversation_finished.connect(_on_reveal_conversation_finished)
 	_intro_layer.hide()
 	DialogueManager.conversation_finished.connect(_on_contract_conversation_finished)
@@ -227,7 +227,8 @@ func _begin_dive(dock: Node2D) -> void:
 	GameManager.diving_session_active = true
 	_dialogue_ui.set_underwater_mode(true)
 	_diving_hud.show()
-	var entry: Vector2 = (_lagoon.get_node("Points/Entry") as Marker2D).global_position
+	var entry_marker: Marker2D = _sea.get_node_or_null("Points/Entry") as Marker2D
+	var entry: Vector2 = entry_marker.global_position if entry_marker != null else _sea.to_global(Vector2(55, 182))
 	var island_camera: Camera2D = _world_player.get_node("Camera2D") as Camera2D
 	var descent: Tween = create_tween().set_parallel(true)
 	descent.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
@@ -235,7 +236,7 @@ func _begin_dive(dock: Node2D) -> void:
 	descent.tween_property(island_camera, "position", Vector2.ZERO, 0.85)
 	await descent.finished
 	_world_player.animator.rotation = 0.0
-	_lagoon.enter_from_dock()
+	_sea.enter_from_dock()
 	_world_player.busy = false
 	_transitioning = false
 
@@ -284,7 +285,7 @@ func _surface_from_dive(with_silas: bool) -> void:
 	_world_player.animator.play(&"idle_l")
 	_underwater = false
 	GameManager.diving_session_active = false
-	_lagoon.call("_set_camera_bounds", false)
+	_sea.call("_set_camera_bounds", false)
 	_diving_hud.hide()
 	_dialogue_ui.set_underwater_mode(false)
 	# A dive costs one ordinary time action on surfacing.

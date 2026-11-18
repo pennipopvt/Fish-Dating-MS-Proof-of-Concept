@@ -18,7 +18,7 @@ func _run() -> void:
 	var dock_prompt: InteractPrompt = dock.get_node("InteractPrompt") as InteractPrompt
 	var player: Player = world.get_node("Player") as Player
 	var diving_hud: Control = main.get_node("DivingHUD") as Control
-	var lagoon: DivingWorld = world.get_node("Lagoon") as DivingWorld
+	var sea: DivingWorld = world.get_node("Sea") as DivingWorld
 	var iris: ColorRect = main.get_node("TransitionLayer/Iris") as ColorRect
 	var dialogue_ui: DialogueUI = main.get_node("CanvasLayer/DialogueUI") as DialogueUI
 	var intro: FishCoIntro = main.get_node("IntroLayer/FishCoIntro") as FishCoIntro
@@ -177,7 +177,7 @@ func _run() -> void:
 	await create_timer(1.7).timeout
 	_check(diving_hud.visible and bool(main.get("_underwater")) and player.swimming,
 		"Dock descent enables swimming in the original World with its existing Player")
-	_check(bool(lagoon.get("_embedded_in_world")) and lagoon.get_parent() == world,
+	_check(bool(sea.get("_embedded_in_world")) and sea.get_parent() == world,
 		"Underwater level is an editable child of the same persistent World")
 	_check(GameManager.diving_session_active, "Catching fish underwater does not spend additional actions")
 	_check(not iris.visible, "No iris or black-screen cut is used for the dock dive")
@@ -185,7 +185,7 @@ func _run() -> void:
 		"Existing dialogue UI switches to underwater fish sprite portraits")
 
 	# Surface without Silas and ensure the normal island and its clock return.
-	lagoon.call("_return_to_surface", false)
+	sea.call("_return_to_surface", false)
 	await create_timer(1.3).timeout
 	_check(not diving_hud.visible and not bool(main.get("_underwater")) and not player.swimming,
 		"Surfacing restores land controls without swapping scenes")
@@ -194,8 +194,8 @@ func _run() -> void:
 	_check(not bool(dialogue_ui.get("_underwater_mode")), "Land dialogue portraits and layout are restored")
 	_check(GameManager.get_actions_left() == actions_before - 1, "One completed dive costs one action")
 
-	# The same lagoon is preserved across a second jump.
-	var original_lagoon_id: int = lagoon.get_instance_id()
+	# The same sea is preserved across a second jump.
+	var original_sea_id: int = sea.get_instance_id()
 	main.call("request_dive", player, dock)
 	_check(DialogueManager.is_active and DialogueManager.current_npc.npc_id == &"dock_dive_prompt",
 		"Subsequent dives also use the dock confirmation dialog")
@@ -203,18 +203,18 @@ func _run() -> void:
 	DialogueManager.select_choice(0)
 	DialogueManager.advance()
 	await create_timer(1.7).timeout
-	_check(lagoon.get_instance_id() == original_lagoon_id and lagoon.get_parent() == world,
-		"Same lagoon NPCs and fish remain in World across multiple dives")
+	_check(sea.get_instance_id() == original_sea_id and sea.get_parent() == world,
+		"Same sea NPCs and fish remain in World across multiple dives")
 
 	# Silas's land decision requests the same exit instead of switching to
 	# the obsolete standalone prototype's drawn shoreline.
-	lagoon.set("_silas_following", true)
-	lagoon.set("_silas_met", true)
-	lagoon.set("_net_cleared", true)
-	lagoon.set("_silas_talks", 3)
-	lagoon.call("_return_to_surface", true)
+	sea.set("_silas_following", true)
+	sea.set("_silas_met", true)
+	sea.set("_net_cleared", true)
+	sea.set("_silas_talks", 3)
+	sea.call("_return_to_surface", true)
 	await create_timer(1.8).timeout
-	_check(bool(lagoon.get("_silas_ashore")), "Silas remembers choosing to surface")
+	_check(bool(sea.get("_silas_ashore")), "Silas remembers choosing to surface")
 	_check(main.get("_silas_actor") is NPCInteractable, "Human Silas spawns in the original island")
 	_check(not diving_hud.visible, "Island remains visible after Silas's transformation")
 	if DialogueManager.is_active:

@@ -1,9 +1,9 @@
 [gd_scene load_steps=6 format=3]
 
 # Compatibility scene for the old isolated combat regression tests.
-# It instances the REAL lagoon_area.tscn so there is only one level layout.
+# It instances the REAL sea_area.tscn so there is only one level layout.
 # The full game and level editor use scenes/main.tscn / prefabs/world.tscn.
-[ext_resource type="PackedScene" path="res://scenes/lagoon_area.tscn" id="lagoon_area"]
+[ext_resource type="PackedScene" path="res://scenes/sea_area.tscn" id="sea_area"]
 [ext_resource type="PackedScene" path="res://scenes/diving_hud.tscn" id="diving_hud"]
 [ext_resource type="Texture2D" path="res://sprites/characters/penni/penni_idle.png" id="test_penni"]
 [ext_resource type="AudioStream" path="res://sounds/FROM THE SEA 2026-10-30 03_02_51.mp3" id="music"]
@@ -37,24 +37,24 @@ canvas_item_default_texture_filter = 0
 size = Vector2i(320, 180)
 render_target_update_mode = 4
 
-[node name="Lagoon" parent="SubViewportContainer/SubViewport" instance=ExtResource("lagoon_area")]
+[node name="Sea" parent="SubViewportContainer/SubViewport" instance=ExtResource("sea_area")]
 
 # Test-only sprite and camera. The real game uses World/Player and its camera.
-[node name="Player" type="Sprite2D" parent="SubViewportContainer/SubViewport/Lagoon"]
+[node name="Player" type="Sprite2D" parent="SubViewportContainer/SubViewport/Sea"]
 z_index = 7
 texture_filter = 1
 position = Vector2(122, 123)
 texture = ExtResource("test_penni")
 hframes = 2
 
-[node name="WallCast" type="ShapeCast2D" parent="SubViewportContainer/SubViewport/Lagoon/Player"]
+[node name="WallCast" type="ShapeCast2D" parent="SubViewportContainer/SubViewport/Sea/Player"]
 shape = SubResource("SwimCollision")
 target_position = Vector2(0, 0)
 collision_mask = 2
 max_results = 1
 margin = 0.0
 
-[node name="Camera2D" type="Camera2D" parent="SubViewportContainer/SubViewport/Lagoon"]
+[node name="Camera2D" type="Camera2D" parent="SubViewportContainer/SubViewport/Sea"]
 enabled = true
 position_smoothing_enabled = true
 position_smoothing_speed = 6.0

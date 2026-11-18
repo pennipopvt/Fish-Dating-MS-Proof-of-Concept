@@ -17,7 +17,7 @@ func _run() -> void:
 	get_root().add_child(prototype)
 	await process_frame
 	await process_frame
-	var world: Node2D = prototype.get_node("SubViewportContainer/SubViewport/Lagoon")
+	var world: Node2D = prototype.get_node("SubViewportContainer/SubViewport/Sea")
 	var player: Sprite2D = world.get_node("Player")
 	var viewport_container: SubViewportContainer = prototype.get_node("SubViewportContainer")
 	var pixel_viewport: SubViewport = prototype.get_node("SubViewportContainer/SubViewport")
@@ -30,15 +30,15 @@ func _run() -> void:
 	var tangled_net: Vector2 = (locations.get_node("TangledNet") as Marker2D).position
 	var surface_point: Vector2 = (locations.get_node("SurfaceExit") as Marker2D).position
 	_check(level_art.get_node_or_null("Solids") is TileMapLayer and foreground_art != null,
-		"Compatibility test uses the real lagoon's solid-wall tiles and foreground art")
-	_check(world.scene_file_path == "res://scenes/lagoon_area.tscn",
+		"Compatibility test uses the real sea's solid-wall tiles and foreground art")
+	_check(world.scene_file_path == "res://scenes/sea_area.tscn",
 		"Old combat test scene instances the canonical underwater level, not a duplicate")
 	_check(spawn_group.get_child_count() == 8 and spawn_group.get_child(0) is DivingFishSpawn,
 		"Fish are controlled by editor-placeable spawn markers")
 	_check(locations.has_node("Entry") and locations.has_node("ShellGarden"),
 		"Story locations and dive entry are editor-placeable markers")
 	_check(pixel_viewport.size == Vector2i(320, 180) and viewport_container.stretch_shrink == 6,
-		"Lagoon world uses the same 320x180 pixel grid as the island")
+		"Sea world uses the same 320x180 pixel grid as the island")
 	_check(hud.get_parent() == prototype and hud.has_node("Location"),
 		"Diving HUD renders outside the pixel viewport for readable typography")
 	_check(is_equal_approx(player.scale.x, 1.0) and is_equal_approx(player.scale.y, 1.0),
@@ -46,7 +46,7 @@ func _run() -> void:
 	var silas: Sprite2D = world.get_node("Silas")
 	var wild_fish: Array = world.get("_wild_fish")
 	var dialogue: DialogueUI = world.get("_standalone_dialogue_ui") as DialogueUI
-	_check(dialogue != null, "Standalone lagoon opens the same DialogueUI component")
+	_check(dialogue != null, "Standalone sea opens the same DialogueUI component")
 	_check(dialogue != null and bool(dialogue.get("_underwater_mode")), "Underwater portraits use fish sprite mode")
 	_check(bool(world.get("_underwater")), "Starts in the underwater level")
 	_check(wild_fish.size() == spawn_group.get_child_count(),
@@ -143,7 +143,7 @@ func _run() -> void:
 		"Winning at close range releases the net projectile")
 	_check(int(world.call("_total_catches")) == before + 1,
 		"Only winning combat by pulling the fish in adds it to storage")
-	_check(wild_fish.size() == 7, "Caught fish disappears from the lagoon")
+	_check(wild_fish.size() == 7, "Caught fish disappears from the sea")
 
 	# An escaped fish remains physically present for future exploration.
 	var second: DivingWildFish = wild_fish[0]
