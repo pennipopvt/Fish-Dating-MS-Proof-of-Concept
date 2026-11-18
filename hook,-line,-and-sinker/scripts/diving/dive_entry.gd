@@ -4,6 +4,7 @@ extends Control
 # interaction changes: jump -> circular iris -> persistent diving lagoon.
 const SILAS_SCENE: PackedScene = preload("res://prefabs/silas.tscn")
 const SILAS_FISH_DATA: FishData = preload("res://resources/fish/silas.tres")
+const FISH_CO_OPERATOR: NPCData = preload("res://resources/npcs/fish_co_operator.tres")
 const RIPPLE: Texture2D = preload("res://sprites/environment/medium_ripple_a.png")
 const POOF_SHEET: Texture2D = preload("res://sprites/characters/poof.png")
 const DIVE_DURATION: float = 0.43
@@ -45,7 +46,7 @@ func _ready() -> void:
 	(_diving_scene.get_node("Music") as AudioStreamPlayer).stop()
 	DialogueManager.conversation_finished.connect(_on_reveal_conversation_finished)
 	_intro_layer.hide()
-	_intro.finished.connect(_on_contract_call_finished)
+	DialogueManager.conversation_finished.connect(_on_contract_conversation_finished)
 	_start_contract_call.call_deferred()
 
 
@@ -58,10 +59,24 @@ func _start_contract_call() -> void:
 	_shop_menu.set_quota_only(true)
 	_intro_layer.show()
 	_intro.play()
+	# The same DialogueManager/DialogueUI, NPCData, and graph loader used for
+	# every other conversation. Speaker tags in the JSON distinguish Penni
+	# from the Fish Co representative while both normal portraits remain.
+	DialogueManager.request_conversation(FISH_CO_OPERATOR, "res://dialogue/fish_co_phone_intro.json")
+	if not DialogueManager.is_active:
+		push_error("Fish Co. introductory dialogue failed to open.")
+		_on_contract_call_finished()
+
+
+func _on_contract_conversation_finished(npc: NPCData) -> void:
+	if _contract_call_finished or npc != FISH_CO_OPERATOR:
+		return
+	_on_contract_call_finished()
 
 
 func _on_contract_call_finished() -> void:
 	_contract_call_finished = true
+	_intro.end()
 	_intro_layer.hide()
 	_world_player.busy = false
 	# The contract is the only thing in the terminal at the beginning.
