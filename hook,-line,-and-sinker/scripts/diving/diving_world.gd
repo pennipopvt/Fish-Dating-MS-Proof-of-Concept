@@ -781,8 +781,10 @@ func _set_camera_bounds(in_sea: bool) -> void:
 		camera.limit_right = 10000000
 		camera.limit_bottom = 10000000
 	else:
-		camera.limit_left = 0
-		camera.limit_top = 0
+		# Let the same island camera remain centered over the left-hand dock
+		# while descending. A hard limit_left=0 would snap it 100px sideways.
+		camera.limit_left = -160 if _embedded_in_world else 0
+		camera.limit_top = -90 if _embedded_in_world else 0
 		camera.limit_right = roundi(_level_guide.map_size.x) if in_sea else 320
 		camera.limit_bottom = roundi(_level_guide.map_size.y) if in_sea else 180
 
