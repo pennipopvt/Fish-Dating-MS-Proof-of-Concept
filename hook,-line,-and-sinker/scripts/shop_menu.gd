@@ -607,7 +607,7 @@ func _refresh_quota_page() -> void:
 		select_fish.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		select_fish.alignment = HORIZONTAL_ALIGNMENT_LEFT
 		select_fish.tooltip_text = "View fish"
-		select_fish.add_theme_font_color_override("font_color", DARK_TEXT)
+		select_fish.add_theme_color_override("font_color", DARK_TEXT)
 		select_fish.pressed.connect(_select_quota_fish.bind(item_id))
 		header.add_child(select_fish)
 
