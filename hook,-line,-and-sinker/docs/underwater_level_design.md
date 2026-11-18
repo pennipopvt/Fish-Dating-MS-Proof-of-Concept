@@ -1,43 +1,92 @@
-# Blank sea level design
+# First dive storyboard — rough playable sea
 
-The playable sea is `res://scenes/sea_area.tscn`, instanced inside the
-original World. Play from `res://scenes/main.tscn`. There is one Player,
-one camera, and no extra gameplay scene. The existing island, Fish Co
-introduction, dock and water shaders remain intact.
+The entire island, dock, swimming player, camera, day/night system, water
+reflection and underwater tint are still in the SAME World. Run
+`res://scenes/main.tscn` as usual. The actual underwater level is
+`res://scenes/sea_area.tscn` on the `penni-diving` branch.
+
+This is deliberately a *blockout*, based on the 13-page first dive
+storyboard. There are no new finished art assets.
+
+## Editing the sea
 
 ```text
 Sea
-├── EditorGuide         editor-only outline/grid and Map Size
-├── BackgroundSprites   empty container for individual PNG sprites
-├── Solids              the ONLY TileMapLayer; completely empty
-├── Details             empty container for individual PNG sprites
-├── ForegroundSprites   empty container for individual PNG sprites
-└── Points
-    ├── Entry           start of the dive
-    └── SurfaceExit     swim near here, press E or Space to return
+├── EditorGuide          map size and editor grid
+├── BackgroundSprites    two editable DockLeg placeholder Sprite2Ds
+├── Solids               one collision-enabled TileMapLayer, single block tile
+├── Details              empty for your custom sprites
+├── ForegroundSprites    three replaceable Seaweed Sprite2Ds
+├── Points               Entry and SurfaceExit markers
+├── FishSpawns           three movable fish species markers
+├── FishActors           spawned dynamically; don't paint here
+├── NPCs
+│   └── Silas            reusable SeaNPC, references existing silas.tres
+├── StoryDirector        first-dive-specific flags and one-time triggers
+├── NetProjectile        existing directional net system
+├── Combat               existing reel/parry system
+└── CompanionBattle      existing Silas vs fish battle system
 ```
 
-There are no fish, NPCs, nets, combat managers, placeholder rocks or
-seafloor decorations in the sea. Their standalone scripts/resources remain
-in the repo for future work but are not instantiated.
+**Change any Sprite2D's Texture** under BackgroundSprites or
+ForegroundSprites to swap in your own PNG. The existing placeholders use
+an AtlasTexture from the project's original environment tiles. All
+sea floor walls are painted with **one tile** from the existing graphics
+on `Solids`, which collides on physics layer 2. Use the TileMap paint
+tools to edit/delete/extend the rough floor. These are separate physics
+settings from the island TileSet.
 
-## Paint walls
+## Storyboard sequence (first-pass logic)
 
-1. Open `scenes/sea_area.tscn`. Select **Sea → Solids**.
-2. Paint wall tiles from `resources/tilesets/sea_solids.tres`.
-3. These 16×16 tiles all have solid collision polygons on **physics layer 2**.
-   The original `Player` CharacterBody2D uses that layer while swimming,
-   so painted walls should stop Penni via `move_and_slide()`.
-4. The sea-only TileSet shares visual tiles with the island but **not**
-   collision resources: editing wall collisions won't affect land.
-5. Keep the entry and surface markers clear of walls.
+1. The existing Fish Co intro / dock prompt leads into the continuous
+   jump and splash. Reflection/tint remain in World.
+2. The editor-placeable **FirstFish** mullet is near the dock support
+   sprites. Left click to throw the real directional net.
+3. On the **first successful hook** of FirstFish, scroll down once.
+   The one-time story event breaks the line, pushes the fish away, and
+   shows **Help me!** at the right edge of the screen.
+4. Swim right toward the eel near **SeaweedSilas**. The **E** indicator
+   appears in range. Speak to him using the existing DialogueManager;
+   the current dialogue text is a small placeholder.
+5. Left click to net the trapped Silas and finish the normal parry/reel
+   battle to pull him out. He is **not** stored or counted as a fish.
+   The existing silas.tres, NPCManager flags and dialogue portrait
+   switching are reused.
+6. After the rescue dialogue he follows Penni as a fish. Near other
+   fish, his **I can help with that fish** call introduces right-click
+   targeting. Fish and companion health bars reuse companion combat.
+7. Return to the SurfaceExit marker with E or Space.
 
-Use separate PNG Sprite2D children in BackgroundSprites, Details and
-ForegroundSprites for decorations. The existing World water shader and
-underwater tint handle the water; no water tiles are needed. The editor-only
-guide has **Map Size**, **Grid Size**, and **Show Grid** properties. Default
-sea footprint is 920×530.
+The *first escape is scripted*, while later fish use the normal
+mechanics. This avoids embedding the special story condition in the
+reel/parry implementation.
 
-To playtest: run `scenes/main.tscn`, finish the Fish Co intro, use the
-dock, swim with WASD/arrows, paint a wall to test collision, and return
-near SurfaceExit with E/Space.
+## Speech bubble replacement
+
+The HUD scene is `res://scenes/sea_speech_bubble.tscn` and script is
+`res://scripts/diving/sea_speech_bubble.gd`. Set **Bubble Texture**
+on the SeaSpeechBubble instance to your nine-slice PNG, then tune
+**Patch Margin** for its border. Until then, a plain bordered fallback
+renders with the same spacing. The text is Pixel Operator, sized for
+the 1920x1080 UI instead of the tiny 320x180 world viewport.
+The text, arrow, and hint labels can all be positioned visually in
+the separate speech bubble scene.
+
+## Intentional limitations
+
+- This is a rough blockout of timing, interaction and layout, not final
+  art, authored dialogue or a full NPC-route progression.
+- Foreground placeholders are independent sprites, not a final foliage
+  system. Fish currently wander within sea bounds, not around walls.
+- Companion mechanics, the net and parry code are reused, not rewritten.
+- State lives for the current game session; persistent save/load for the
+  new storyboard events is not implemented.
+- Runtime verification is still required in Godot.
+
+Tests to run from the Godot project folder:
+
+```sh
+godot --headless --path . -s res://tests/sea_level_layout_test.gd
+godot --headless --path . -s res://tests/sea_storyboard_test.gd
+godot --headless --path . -s res://tests/diving_island_transition_test.gd
+```

@@ -1,6 +1,10 @@
-# Previous underwater playtest (currently inactive)
+# First dive blockout
 
-Fish, Silas, companions, the net/parry combat and the custom diving HUD
-are intentionally detached from the blank sea. Their underlying scripts
-and resources still exist in the repository for a later integration.
-The active editing workflow is [Blank sea level design](underwater_level_design.md).
+The old standalone diving prototype is no longer a separate playable
+underwater level; it just instantiates the shared sea scene for preview.
+The live world has the new first-dive storyboard pass with placed fish,
+a one-time failed net, an offscreen Silas call, rescue and companion
+targeting. See [editing and playtesting the storyboard](underwater_level_design.md).
+
+Use `scenes/main.tscn` to test the whole sequence from the existing
+Fish Co phone calls and dock.

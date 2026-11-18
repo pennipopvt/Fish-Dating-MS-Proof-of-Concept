@@ -32,7 +32,8 @@ func has_silas_flag(id: StringName) -> bool:
 
 
 func _set_silas_flag(id: StringName) -> void:
-	_npc_flags()[id] = true
+	var flags: Dictionary = _npc_flags()
+	flags[id] = true
 
 
 func on_dive_entered() -> void:

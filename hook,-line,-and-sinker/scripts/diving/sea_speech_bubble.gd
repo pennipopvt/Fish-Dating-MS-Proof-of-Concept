@@ -56,7 +56,7 @@ func show_call(message: String, from_right: bool = true, seconds: float = 4.0) -
 	_call.show()
 	if seconds > 0.0:
 		await get_tree().create_timer(seconds).timeout
-		if serial == _call_serial:
+		if serial == _call_serial and is_instance_valid(_call):
 			_call.hide()
 
 
