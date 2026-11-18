@@ -217,9 +217,20 @@ func _run() -> void:
 	_finish_dialogue()
 	_check(bool(world.get("_silas_following")), "After being rescued, Silas swims alongside Penni")
 
-	# Silas can conceal the player, making ordinary fish less skittish.
-	world.call("_ask_silas_to_hide")
-	_check(float(world.get("_veil_time")) > 0.0, "Silas's concealment ability activates")
+	# No new command button: right-click targets, while Silas's defense
+	# activates by itself when he's injured during an auto-battle.
+	var companion: DivingCompanionBattle = world.get_node("CompanionBattle") as DivingCompanionBattle
+	var battle_fish: DivingWildFish = wild_fish[0]
+	world.call("_target_companion_enemy", battle_fish.position)
+	_check(companion.target == battle_fish and battle_fish.selected_for_attack,
+		"Right-click sets the autonomous companion battle target")
+	companion.companion_health = 20.0
+	companion._attack_time = 100.0
+	companion._retaliation_time = 0.0
+	companion.tick(0.1, battle_fish.position, true, false)
+	_check(companion.cover_time > 0.0 and float(world.get("_veil_time")) > 0.0,
+		"Silas automatically raises his defensive sand cloud when hurt")
+	companion.clear_target()
 	world.set("_talk_cooldown", 0.0)
 	world.call("_talk_to_silas")
 	_finish_dialogue()
