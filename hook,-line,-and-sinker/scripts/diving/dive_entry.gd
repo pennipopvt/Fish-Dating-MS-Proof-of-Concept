@@ -250,6 +250,14 @@ func _spawn_splash(at: Vector2) -> void:
 	tween.chain().tween_callback(splash.queue_free)
 
 
+# Main receives mouse events before SubViewportContainer can consume them.
+# Delegate underwater gameplay input to Sea; all land controls stay unchanged.
+func _input(event: InputEvent) -> void:
+	if _world_player.swimming and _underwater and not _transitioning:
+		if _sea.handle_input(event):
+			get_viewport().set_input_as_handled()
+
+
 func _on_surface_requested() -> void:
 	if _transitioning or not _underwater:
 		return

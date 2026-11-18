@@ -35,6 +35,9 @@ const RECOVERY_DELAY := 0.10
 const STRONG_REEL_SCROLLS := 3
 const STRONG_REEL_INTERVAL_MS := 150
 
+# Special rescue encounters don't increment the ordinary lost-fish records.
+var record_lost_fish: bool = true
+
 var target: DivingWildFish
 var fish_data: FishData
 var phase: Phase = Phase.WARNING
@@ -448,6 +451,6 @@ func _finish(won: bool) -> void:
 	fish_data = null
 	reel_open = false
 	free_reel = false
-	if previous_data != null and not won:
+	if previous_data != null and not won and record_lost_fish:
 		FishingManager.lose_fish(previous_data)
 	finished.emit(won, previous)

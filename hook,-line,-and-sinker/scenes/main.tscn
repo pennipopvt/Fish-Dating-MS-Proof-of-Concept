@@ -3,6 +3,7 @@
 [ext_resource type="PackedScene" uid="uid://bjt7lp2qss3qh" path="res://prefabs/world.tscn" id="1_sugp2"]
 [ext_resource type="Script" path="res://scripts/diving/dive_entry.gd" id="dive_entry"]
 [ext_resource type="PackedScene" path="res://scenes/fish_co_intro.tscn" id="fish_co_intro"]
+[ext_resource type="PackedScene" path="res://scenes/sea_speech_bubble.tscn" id="sea_speech_bubble"]
 [ext_resource type="Shader" path="res://shaders/iris_transition.gdshader" id="iris_shader"]
 [ext_resource type="AudioStream" uid="uid://b4567j3srpp18" path="res://sounds/FROM THE SEA 2026-10-30 03_02_51.mp3" id="4_jyhfs"]
 [ext_resource type="Texture2D" uid="uid://vu47883rgrp5" path="res://sprites/characters/penni/penni_portrait.png" id="4_tbgi4"]
@@ -55,6 +56,8 @@ visible = false
 player_portrait = ExtResource("4_tbgi4")
 
 [node name="IllustrationScene" parent="." instance=ExtResource("10_illustration")]
+
+[node name="SeaSpeechBubble" parent="." instance=ExtResource("sea_speech_bubble")]
 
 [node name="IntroLayer" type="CanvasLayer" parent="."]
 visible = false
