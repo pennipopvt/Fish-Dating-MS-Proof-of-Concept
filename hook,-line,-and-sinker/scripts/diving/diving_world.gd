@@ -149,6 +149,7 @@ func _return_to_surface(with_silas: bool) -> void:
 	# The lagoon stops processing on land, so end any battle here.
 	_battle.stop()
 	if _embedded_in_world:
+		_underwater = false
 		_dialogue_event = &""
 		_surface_choice = &""
 		if with_silas:
@@ -243,7 +244,7 @@ func _process(delta: float) -> void:
 	prompt_label.visible = not is_talking and not fighting
 	hud_footer.visible = not is_talking and not fighting
 
-	if not is_talking and not fighting:
+	if not _embedded_in_world and not is_talking and not fighting:
 		_move_player(delta)
 	# The auto-battle pauses for nothing: dialogue, the reel fight or leaving
 	# the water calls Silas back. Idle steps regenerate his health.
@@ -263,13 +264,16 @@ func _process(delta: float) -> void:
 					fish.swim(delta, player_sprite.position, _veil_time > 0.0)
 		_update_silas_fish(delta)
 		_maybe_discover_garden()
-		camera.position = camera.position.lerp(player_sprite.position, minf(delta * 5.5, 1.0))
+		if not _embedded_in_world:
+			camera.position = camera.position.lerp(player_sprite.position, minf(delta * 5.5, 1.0))
 	else:
-		camera.position = camera.position.lerp(Vector2(160, 90), minf(delta * 7.0, 1.0))
-		if _silas_ashore:
-			silas_sprite.position.y = 110.0 + sin(_time * 1.7) * 0.45
+		if not _embedded_in_world:
+			camera.position = camera.position.lerp(Vector2(160, 90), minf(delta * 7.0, 1.0))
+			if _silas_ashore:
+				silas_sprite.position.y = 110.0 + sin(_time * 1.7) * 0.45
 
-	player_sprite.frame = int(_time * 3.2) % 2
+	if not _embedded_in_world:
+		(player_sprite as Sprite2D).frame = int(_time * 3.2) % 2
 	_update_hud()
 	queue_redraw()
 
@@ -295,17 +299,23 @@ func _move_player(delta: float) -> void:
 		player_sprite.position.y = clampf(player_sprite.position.y, limits.position.y + 8.0, limits.end.y - 8.0)
 		player_sprite.rotation = lerpf(player_sprite.rotation, direction.x * 0.11, minf(delta * 6.0, 1.0))
 		# Visual bob only: never shift the physics point through a painted wall.
-		player_sprite.offset.y = sin(_time * 2.6) * 0.8
+		(player_sprite as Sprite2D).offset.y = sin(_time * 2.6) * 0.8
 	else:
 		player_sprite.position += direction * speed * delta
-		player_sprite.offset.y = 0.0
+		(player_sprite as Sprite2D).offset.y = 0.0
 		player_sprite.position.x = clampf(player_sprite.position.x, 38.0, 280.0)
 		player_sprite.position.y = clampf(player_sprite.position.y, 76.0, 148.0)
 		player_sprite.rotation = 0.0
 	if direction.x < -0.05:
-		player_sprite.flip_h = true
+		(player_sprite as Sprite2D).flip_h = true
 	elif direction.x > 0.05:
-		player_sprite.flip_h = false
+		(player_sprite as Sprite2D).flip_h = false
+
+func _player_faces_left() -> bool:
+	if _embedded_in_world:
+		return (player_sprite as Player).last_direction < 0.0
+	return (player_sprite as Sprite2D).flip_h
+
 
 func _update_silas_fish(delta: float) -> void:
 	# While Silas is a trapped, catchable fish, that actor owns his art. Don't
@@ -332,7 +342,7 @@ func _update_silas_fish(delta: float) -> void:
 		return
 	# Keep Silas physically near the player but give him a little room to
 	# explore, catch up, and glide naturally instead of snapping to a socket.
-	var offset := Vector2(-23.0 if not player_sprite.flip_h else 23.0, 12.0 + sin(_time * 1.7) * 4.0)
+	var offset := Vector2(23.0 if _player_faces_left() else -23.0, 12.0 + sin(_time * 1.7) * 4.0)
 	var target: Vector2 = player_sprite.position + offset
 	var distance: float = silas_sprite.position.distance_to(target)
 	var max_speed: float = 114.0 if distance > 95.0 else 67.0
@@ -356,6 +366,8 @@ func _maybe_discover_garden() -> void:
 		])
 
 func _unhandled_input(event: InputEvent) -> void:
+	if _embedded_in_world and not _underwater:
+		return
 	# Dialogue UI owns conversation input; diving combat owns scroll-down
 	# while engaged. Movement, net clicks and Silas commands are paused.
 	if DialogueManager.is_active:
@@ -884,10 +896,10 @@ func _update_hud() -> void:
 			prompt_label.text = "WASD MOVE  |  SWIM AGAIN AT THE RIGHT DOCK"
 
 func _draw() -> void:
-	if not _underwater:
-		_draw_shore()
-	else:
+	if _embedded_in_world or _underwater:
 		_draw_underwater()
+	else:
+		_draw_shore()
 		if _combat.is_active():
 			_draw_combat_telegraph()
 		if _silas_following and silas_sprite.visible and (
@@ -920,7 +932,8 @@ func _draw_shore() -> void:
 
 func _draw_underwater() -> void:
 	var sea_size: Vector2 = _level_guide.map_size
-	draw_rect(Rect2(Vector2.ZERO, sea_size), Color("#143c58"))
+	if not _embedded_in_world:
+		draw_rect(Rect2(Vector2.ZERO, sea_size), Color("#143c58"))
 	if show_prototype_environment:
 		for i in range(14):
 			var y: float = float(i) * 37.0
