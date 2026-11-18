@@ -1,0 +1,106 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scripts/intro/fish_co_intro.gd" id="intro_script"]
+[ext_resource type="Texture2D" path="res://sprites/characters/penni/penni_idle.png" id="penni_idle"]
+
+[sub_resource type="StyleBoxFlat" id="phone_panel"]
+bg_color = Color(0.045, 0.075, 0.105, 0.95)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.61, 0.8, 0.82, 0.85)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+
+[node name="FishCoIntro" type="Control"]
+visible = false
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 0
+script = ExtResource("intro_script")
+
+[node name="Penni" type="Sprite2D" parent="."]
+texture_filter = 1
+z_index = 2
+texture = ExtResource("penni_idle")
+hframes = 2
+
+[node name="StageTitle" type="Label" parent="."]
+layout_mode = 1
+anchor_left = 0.06
+anchor_top = 0.07
+anchor_right = 0.72
+anchor_bottom = 0.13
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.08, 0.25, 0.33, 1)
+theme_override_font_sizes/font_size = 32
+text = "FISH CO.  /  CONTRACT CONFIRMATION"
+
+[node name="StageNote" type="Label" parent="."]
+layout_mode = 1
+anchor_left = 0.06
+anchor_top = 0.14
+anchor_right = 0.72
+anchor_bottom = 0.20
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.12, 0.36, 0.44, 1)
+theme_override_font_sizes/font_size = 23
+text = "INCOMING CALL  •  EMPLOYEE SERVICES"
+
+[node name="DialoguePanel" type="PanelContainer" parent="."]
+layout_mode = 1
+anchor_left = 0.12
+anchor_top = 0.64
+anchor_right = 0.88
+anchor_bottom = 0.96
+mouse_filter = 0
+theme_override_styles/panel = SubResource("phone_panel")
+
+[node name="Margin" type="MarginContainer" parent="DialoguePanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 33
+theme_override_constants/margin_top = 24
+theme_override_constants/margin_right = 33
+theme_override_constants/margin_bottom = 22
+
+[node name="Layout" type="VBoxContainer" parent="DialoguePanel/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 13
+
+[node name="Speaker" type="Label" parent="DialoguePanel/Margin/Layout"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.96, 0.85, 0.57, 1)
+theme_override_font_sizes/font_size = 31
+text = "PENNI"
+
+[node name="Speech" type="Label" parent="DialoguePanel/Margin/Layout"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_colors/font_color = Color(0.92, 0.96, 0.96, 1)
+theme_override_font_sizes/font_size = 29
+text = "..."
+autowrap_mode = 3
+
+[node name="Bottom" type="HBoxContainer" parent="DialoguePanel/Margin/Layout"]
+layout_mode = 2
+theme_override_constants/separation = 18
+
+[node name="PageCount" type="Label" parent="DialoguePanel/Margin/Layout/Bottom"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.6, 0.74, 0.77, 1)
+theme_override_font_sizes/font_size = 20
+text = "01 / 10"
+
+[node name="Continue" type="Button" parent="DialoguePanel/Margin/Layout/Bottom"]
+layout_mode = 2
+custom_minimum_size = Vector2(205, 56)
+theme_override_font_sizes/font_size = 25
+text = "CONTINUE"
