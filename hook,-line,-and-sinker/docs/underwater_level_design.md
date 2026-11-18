@@ -1,95 +1,75 @@
 # Underwater level design — Godot editing workflow
 
-The current authoring scene is **`res://scenes/diving_prototype.tscn`**. The actual game still opens `res://scenes/main.tscn` and enters that same lagoon through the existing dock and iris. The level is authored with built-in Godot `TileMapLayer`s and scene markers; **do not make a second level manager or hardcode fish locations in `diving_world.gd`**.
+Open **`res://scenes/diving_prototype.tscn`** in the Godot editor to design the underwater map. The full game still starts in `scenes/main.tscn` and loads this same scene when Penni dives.
 
-## Scene organization
+**One tilemap for collidable walls. All other scenery is independent PNG sprites.** The existing procedural water background stays in `DivingWorld` for now and can be replaced by a shader; there's no water-tile painting layer.
+
+## Scene hierarchy
 
 ```text
 DivingPrototype
-└─ SubViewportContainer / SubViewport (320 × 180 game pixels)
+└─ SubViewportContainer / SubViewport (320 × 180)
    └─ Lagoon (DivingWorld)
-      ├─ EditorGuide                 editor outline; MAP SIZE goes here
+      ├─ EditorGuide                      editable world size + editor grid
       ├─ LevelArt
-      │  ├─ Water                   backgrounds, water tones and patterns
-      │  ├─ Terrain                 sand, seabed, cliffs and reefs (visual)
-      │  ├─ Details                 coral, plants, shell decorations (visual)
-      │  └─ Solids                  walls and rocks that stop Penni / net
-      ├─ Points                     designer-placeable story locations
-      │  ├─ Entry
-      │  ├─ SurfaceExit
-      │  ├─ SilasBurrow
-      │  ├─ TangledNet
-      │  └─ ShellGarden
-      ├─ FishSpawns                 edit / duplicate / delete species spawns
-      ├─ ForegroundArt
-      │  └─ Overhangs               anything that renders IN FRONT of Penni
-      ├─ Combat / CompanionBattle   Jerry's existing mechanics
-      ├─ NetProjectile              line/net system
+      │  ├─ BackgroundSprites             Node2D — standalone PNG sprites behind actors
+      │  ├─ Solids                        TileMapLayer — the ONLY wall tileset
+      │  └─ Details                       Node2D — standalone decorative PNG sprites
+      ├─ Points
+      │  ├─ Entry                         first underwater position
+      │  ├─ SurfaceExit                   return to shore
+      │  ├─ SilasBurrow                   Silas's home/rescue position
+      │  ├─ TangledNet                    rescue decoration
+      │  └─ ShellGarden                   exploration destination
+      ├─ FishSpawns                       DivingFishSpawn markers with FishData
+      ├─ ForegroundArt                     Node2D — standalone sprites in front of actors
+      ├─ Combat / CompanionBattle          Jerry's existing fishing mechanics
+      ├─ NetProjectile                     existing thrown net
       ├─ Camera2D
-      ├─ Player / WallCast          existing Penni sprite and wall collision
-      └─ Silas                      existing story companion
+      ├─ Player / WallCast                 existing Penni sprite + wall collision
+      └─ Silas                             companion sprite
 ```
 
-No need to modify any of the combat or dialogue systems when painting the map.
+## Using PNGs for background and details
 
-## Set up your water tileset
+1. Add your individual **PNG** files to `res://sprites/environment/` in Godot.
+2. Open `scenes/diving_prototype.tscn` and expand `Lagoon → LevelArt`.
+3. Drag a PNG from the **FileSystem** panel into the 2D viewport while **BackgroundSprites** or **Details** is selected, so Godot creates a Sprite2D there. You can also add a Sprite2D manually and assign its **Texture**.
+4. Move, duplicate, resize or rotate each sprite directly in the scene editor. There's **no tileset requirement** or fixed grid for these decorations.
+5. Put anything that needs to draw **in front of Penni and the fish** under `Lagoon/ForegroundArt`. It is already configured at a higher Z index.
 
-1. Export your underwater tile art as a **PNG**, using a **16 × 16 pixel grid**. For example, 32 × 32 tiles can be used if we change the tile size in the shared resource first; tell us before making dozens of painted cells.
-2. Put the image under `res://sprites/environment/` in the Godot FileSystem dock.
-3. Open `diving_prototype.tscn`. Select `Lagoon/LevelArt/Water`. In the Inspector, open its **Tile Set** resource, which is already linked to `res://resources/tilesets/lagoon_tiles.tres`.
-4. At the bottom TileSet editor, add an **Atlas Source**, choose your PNG, and let Godot generate the 16 × 16 tiles. Edit atlas separation/margins if your spritesheet has gutters.
-5. Select one of the five paintable layers and paint tiles onto the **2D** canvas using the same TileSet palette. You can switch between Water, Terrain, Details, Solids and ForegroundArt/Overhangs without recreating the atlas.
+Use **BackgroundSprites** for distant reef art, silhouettes and large environmental PNGs; **Details** for coral, plants, sand patches, props and shells; **ForegroundArt** for overhangs and other objects the player passes behind. Small reusable props can be saved as `PackedScene`s if that becomes useful, but plain Sprite2D instances are enough to begin.
 
-Every layer uses the **same** TileSet resource. Do not duplicate it just to put a tile in the foreground. You can add several atlas PNGs to the same resource (water, reef, plants, walls).
+The existing underwater fill, rays, sand and reef sketches are still generated by `DivingWorld`. Once the authored art is ready, disable **Lagoon → Show Prototype Environment** to hide the placeholder scenery. We can replace the remaining water fill with a dedicated shader later without adding a tiled water layer.
 
-| Paint layer | Purpose | Collides? |
-| --- | --- | --- |
-| `LevelArt/Water` | Base color, light patterns, deep-water motifs | No |
-| `LevelArt/Terrain` | Seafloor and structural tiles | No |
-| `LevelArt/Details` | Plants, coral, small objects | No |
-| `LevelArt/Solids` | Impassable stones, cave walls, cliffs | **Yes**, once collision shapes are painted |
-| `ForegroundArt/Overhangs` | Tall seaweed and rock arches in front of the diver | No |
+## Using the wall tileset
 
-### Making a tile solid
+The only TileMapLayer is `Lagoon/LevelArt/Solids`; its resource is `res://resources/tilesets/lagoon_tiles.tres`, set to **16 × 16-pixel tiles**. The grid applies only to solid walls, not your background PNGs.
 
-The shared TileSet already has a **Physics Layer** configured on 2D physics **layer 2**. Select the TileSet's **Paint → Physics Layer 0** tools, select the rock/wall tiles, and draw their collision polygons. Then paint those tiles on `LevelArt/Solids`.
+1. Export a PNG atlas containing the stone/reef/cave-wall **tiles** and import it under `res://sprites/environment/`.
+2. Select `Lagoon → LevelArt → Solids` and open its **Tile Set** resource in the Inspector. In the bottom TileSet editor, add an **Atlas Source** referencing the PNG and generate its 16×16 atlas cells.
+3. In the TileSet editor, use **Paint → Physics Layer 0** to draw the collision polygon on every tile that should block the player.
+4. Switch to the TileMap painting tools and paint those wall tiles onto **Solids**.
 
-Penni's existing sprite has a **7-pixel circular ShapeCast2D** attached. It uses Godot's physics to stop against the polygons, with sliding along the wall on diagonal movement. Net throws also stop at these walls, rather than catching fish through the rock. No new physics manager was created.
+The TileSet physics is configured on **2D physics layer 2**. Penni's existing Sprite2D has a 7px circular ShapeCast2D that checks the wall tiles, and the existing net projectile raycasts against the same layer. Both should stop against collision polygons after you paint them; fish and Silas still move directly and do **not** pathfind around the walls yet.
 
-Only `Solids` has TileMapLayer collision enabled. Thus you can use the same rock art on `Terrain` as scenery without physically blocking the player. A tile has to be painted in `Solids` **and** have a collision polygon to block movement.
+If you want a rock to look solid but **not** block Penni, use a standalone Sprite2D in **Details** or **BackgroundSprites**, rather than painting it in Solids.
 
-For now, **wild fish and Silas still use their preexisting direct movement**, so they do not automatically path around painted obstacles. Avoid sealing fish in narrow mazes until companion and fish navigation is updated. Net casts and the player already respect solid tiles.
+## Editing the level layout
 
-## Arrange the story and fish
+The existing `Points` markers control the story locations; move them in the editor without changing any dialogue code. `FishSpawns` uses `DivingFishSpawn` markers with **Species (FishData)** and **Random Seed** properties. Duplicate a marker for more fish, delete it for fewer, or move it to change their spawn points.
 
-These are preexisting marker systems, not new scripts:
+For the first-day playtest, put a relatively approachable fish near `Entry`, make Silas's `SilasBurrow` easy to discover, allow a clear line for the net rescue, and place more difficult fish farther into the level. Avoid enclosing any fish in narrow corridors until their pathfinding is addressed.
 
-- **`Points/Entry`** — Penni's spawn; place this near **`Points/SurfaceExit`** so leaving is obvious.
-- **`Points/SilasBurrow`** — where Silas calls for help; keep at least 100px of clear water to throw and reel the net.
-- **`Points/TangledNet`** — visual net/knot location.
-- **`Points/ShellGarden`** — reward for exploring with Silas.
-- **`FishSpawns/*`** — each `DivingFishSpawn` has a `Species` (`FishData`) and `Random Seed` in the Inspector. Duplicate a marker for more fish or move it to change the initial fish position; its artwork is previewed in the editor. Fish wander around the marker at runtime.
+The native camera remains **320 × 180 world pixels**. To expand the level, change **Lagoon → EditorGuide → Map Size** (currently **920 × 530**). That value controls the camera and rectangular swimming bounds. The guide's grid is a **visual editor aid only**; changing it does not constrain where you place PNG sprites.
 
-**First-day layout idea:** Start in a safe left-hand entry area with a weak fish, travel east toward Silas's voice, create a clear pocket of water around the net rescue, then leave an open combat area to the right for stronger species. Keep the surface-return path readable and leave enough room for the net's 110-pixel reach.
+## Quick validation
 
-## Map size and camera
+- Open `diving_prototype.tscn` and verify that **Solids is the only TileMapLayer**.
+- Place one standalone Sprite2D behind Penni, one under Details, and one in ForegroundArt; confirm their draw order.
+- Paint one rock tile with a collision polygon onto Solids; Penni should stop or slide along it.
+- Throw the net toward that solid tile; the net should stop before it hits a fish behind the rock.
+- Move one fish spawn and one story marker, then check their new positions during play.
+- Play `main.tscn` to verify the intro, quota, dock, and first underwater transition.
 
-- The editor reference is **`Lagoon/EditorGuide → Map Size`** (currently **920 × 530 world pixels**). This property now drives the playable rectangle, camera edges, fish spawning bounds and the outline grid. Changing it does not move any of the story markers or tiles for you.
-- **Grid Size** defaults to **16 pixels**, matching the TileSet. Both properties can be edited in the Inspector.
-- Visible native pixel camera remains **320 × 180**, scaled for the game window. Do not change the viewport size just to expand the level: change the editor guide's Map Size instead.
-- Keep enough margins around the map edges so Penni's 7px collision circle does not start outside a wall.
-
-## Replacing the temporary backdrop
-
-At first, the original procedural underwater background, reefs, sand and light rays remain visible so the scene still looks like water before artwork exists. Once your tiles look right, select **Lagoon** and uncheck **Show Prototype Environment**. The safe-water background color, surface/Silas story cues and combat effects remain until we replace those separately.
-
-## Quick playtest checklist
-
-1. Open `diving_prototype.tscn` directly to check painted layers and the camera.
-2. Run `main.tscn` to exercise the Fish Co introduction, quota, phone call and dock confirmation before diving.
-3. Swim toward a solid tile with a collision polygon. Penni should stop or slide along it, while a tile on Terrain should not block her.
-4. Throw the net into a wall. It should retract, not grab a fish behind the wall.
-5. Move one fish spawn or story marker in the editor and confirm it changes the runtime placement without editing scripts.
-6. Check that SurfaceExit and Silas's rescue remain reachable and that the new foreground tiles draw in front of Penni.
-
-A static scene-structure regression is in `tests/lagoon_level_layout_test.gd`. Full swimming/collision playtesting still needs the Godot editor (not installed in the GitHub editing environment).
+Scene-layout regression checks are in `tests/lagoon_level_layout_test.gd`. Godot isn't installed in the GitHub editing environment, so runtime validation still needs an editor playtest.
