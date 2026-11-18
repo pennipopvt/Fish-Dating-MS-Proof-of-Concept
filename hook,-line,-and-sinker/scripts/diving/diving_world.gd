@@ -16,8 +16,7 @@ const SILAS_HUMAN: Texture2D = preload("res://sprites/characters/silas_idle.png"
 # Wild fish species, art, and spawn positions now live on FishSpawns marker
 # nodes in diving_prototype.tscn instead of being hardcoded in this script.
 
-const SEA_SIZE := Vector2(920.0, 530.0)
-const SEA_BOUNDS := Rect2(Vector2(16.0, 30.0), Vector2(888.0, 460.0))
+# Dimensions and collision geometry now come from the editor-authored lagoon.
 const SHORE_DIVE_POINT := Vector2(251.0, 111.0)
 const SWIM_SPEED: float = 78.0
 const REACH: float = 44.0
@@ -33,6 +32,8 @@ const BATTLE_RANGE: float = 120.0
 @onready var _silas_burrow: Vector2 = to_local(($Points/SilasBurrow as Marker2D).global_position)
 @onready var _tangled_net: Vector2 = to_local(($Points/TangledNet as Marker2D).global_position)
 @onready var _glowing_garden: Vector2 = to_local(($Points/ShellGarden as Marker2D).global_position)
+@onready var _level_guide: LagoonEditorGuide = $EditorGuide
+@onready var _wall_cast: ShapeCast2D = $Player/WallCast
 @onready var camera: Camera2D = $Camera2D
 @onready var player_sprite: Sprite2D = $Player
 @onready var silas_sprite: Sprite2D = $Silas
@@ -168,6 +169,41 @@ func _set_silas_human_sprite() -> void:
 	silas_sprite.rotation = 0.0
 	silas_sprite.visible = true
 
+# Resize the ocean in EditorGuide/Map Size; gameplay, spawn bounds and
+# camera update together. Leave a small margin around the edges for sprites.
+func _sea_bounds() -> Rect2:
+	var size: Vector2 = _level_guide.map_size
+	return Rect2(Vector2(16.0, 30.0), size - Vector2(32.0, 70.0))
+
+
+func _swim_sweep(motion: Vector2) -> float:
+	if motion.length_squared() <= 0.000001:
+		return 1.0
+	# Player is still the existing Sprite2D, so a child ShapeCast2D supplies
+	# solid-tile collision without replacing its visual or dialogue references.
+	# Cancel the slight visual bank so casts remain world-axis aligned.
+	_wall_cast.rotation = -player_sprite.rotation
+	_wall_cast.target_position = motion
+	_wall_cast.force_shapecast_update()
+	return clampf(_wall_cast.get_closest_collision_safe_fraction(), 0.0, 1.0)
+
+
+func _move_swimmer(motion: Vector2) -> void:
+	if motion.length_squared() <= 0.000001:
+		return
+	var safe: float = _swim_sweep(motion)
+	player_sprite.position += motion * maxf(0.0, safe - 0.005)
+	if safe >= 0.999:
+		return
+	# A blocked diagonal input slides along walls instead of freezing Penni.
+	var remainder: Vector2 = motion * (1.0 - safe)
+	for axis_motion in [Vector2(remainder.x, 0.0), Vector2(0.0, remainder.y)]:
+		if axis_motion.length_squared() <= 0.000001:
+			continue
+		var axis_safe: float = _swim_sweep(axis_motion)
+		player_sprite.position += axis_motion * maxf(0.0, axis_safe - 0.005)
+
+
 func _spawn_fish() -> void:
 	# Every fish starts from an editor-placeable FishSpawns marker. Designers
 	# can move, add, duplicate or delete markers without rewriting code.
@@ -179,7 +215,7 @@ func _spawn_fish() -> void:
 		if art == null or spawn.species.states.is_empty():
 			continue
 		var fish: DivingWildFish = WILD_FISH_SCRIPT.new() as DivingWildFish
-		fish.setup(spawn.species.fish_id, art, to_local(spawn.global_position), SEA_BOUNDS, spawn.random_seed)
+		fish.setup(spawn.species.fish_id, art, to_local(spawn.global_position), _sea_bounds(), spawn.random_seed)
 		fish.set_max_health(spawn.species.max_health)
 		add_child(fish)
 		_wild_fish.append(fish)
@@ -243,13 +279,17 @@ func _move_player(delta: float) -> void:
 	var speed: float = SWIM_SPEED if _underwater else 64.0
 	if _underwater and _veil_time > 0.0:
 		speed *= 0.82
-	player_sprite.position += direction * speed * delta
 	if _underwater:
-		player_sprite.position.x = clampf(player_sprite.position.x, SEA_BOUNDS.position.x + 8.0, SEA_BOUNDS.end.x - 8.0)
-		player_sprite.position.y = clampf(player_sprite.position.y, SEA_BOUNDS.position.y + 8.0, SEA_BOUNDS.end.y - 8.0)
+		_move_swimmer(direction * speed * delta)
+		var limits: Rect2 = _sea_bounds()
+		player_sprite.position.x = clampf(player_sprite.position.x, limits.position.x + 8.0, limits.end.x - 8.0)
+		player_sprite.position.y = clampf(player_sprite.position.y, limits.position.y + 8.0, limits.end.y - 8.0)
 		player_sprite.rotation = lerpf(player_sprite.rotation, direction.x * 0.11, minf(delta * 6.0, 1.0))
-		player_sprite.position.y += sin(_time * 2.6) * delta * 1.2
+		# Visual bob only: never shift the physics point through a painted wall.
+		player_sprite.offset.y = sin(_time * 2.6) * 0.8
 	else:
+		player_sprite.position += direction * speed * delta
+		player_sprite.offset.y = 0.0
 		player_sprite.position.x = clampf(player_sprite.position.x, 38.0, 280.0)
 		player_sprite.position.y = clampf(player_sprite.position.y, 76.0, 148.0)
 		player_sprite.rotation = 0.0
@@ -712,8 +752,8 @@ func _go_underwater() -> void:
 func _set_camera_bounds(in_sea: bool) -> void:
 	camera.limit_left = 0
 	camera.limit_top = 0
-	camera.limit_right = int(SEA_SIZE.x) if in_sea else 320
-	camera.limit_bottom = int(SEA_SIZE.y) if in_sea else 180
+	camera.limit_right = roundi(_level_guide.map_size.x) if in_sea else 320
+	camera.limit_bottom = roundi(_level_guide.map_size.y) if in_sea else 180
 
 # This is a lightweight wrapper around the REAL DialogueManager; its normal
 # DialogueUI now renders every underwater conversation and interactive choice.
@@ -775,7 +815,7 @@ func _make_silas_catchable() -> void:
 		SILAS_FISH_DATA.fish_id,
 		SILAS_FISH,
 		_silas_burrow + Vector2(0, -16),
-		SEA_BOUNDS,
+		_sea_bounds(),
 		2606
 	)
 	rescue.trapped = true
@@ -870,16 +910,17 @@ func _draw_shore() -> void:
 		draw_arc(_net_flash_point, (1.0 - _net_flash_time / 0.8) * 30.0 + 6.0, 0.0, TAU, 32, Color(1.0, 0.95, 0.74, _net_flash_time / 0.8), 1.6)
 
 func _draw_underwater() -> void:
-	draw_rect(Rect2(Vector2.ZERO, SEA_SIZE), Color("#143c58"))
+	var sea_size: Vector2 = _level_guide.map_size
+	draw_rect(Rect2(Vector2.ZERO, sea_size), Color("#143c58"))
 	if show_prototype_environment:
 		for i in range(14):
 			var y: float = float(i) * 37.0
-			draw_rect(Rect2(0, y, SEA_SIZE.x, 38.0), Color(0.08, 0.28 + float(i) * 0.003, 0.39, 0.10))
+			draw_rect(Rect2(0, y, sea_size.x, 38.0), Color(0.08, 0.28 + float(i) * 0.003, 0.39, 0.10))
 		for i in range(22):
 			var top: Vector2 = Vector2(float(i * 52 - 80), 0.0)
 			draw_line(top, top + Vector2(165, 425), Color(0.53, 0.78, 0.79, 0.035), 8.0)
-		draw_rect(Rect2(0, 462, SEA_SIZE.x, 68), Color("#897b66"))
-		draw_rect(Rect2(0, 460, SEA_SIZE.x, 6), Color("#b3a38a"))
+		draw_rect(Rect2(0, 462, sea_size.x, 68), Color("#897b66"))
+		draw_rect(Rect2(0, 460, sea_size.x, 6), Color("#b3a38a"))
 		for i in range(92):
 			var pebble := Vector2(float((i * 127 + 15) % 910), float(468 + (i * 23) % 58))
 			draw_circle(pebble, float(1 + (i % 3)), Color("#756f65"))
