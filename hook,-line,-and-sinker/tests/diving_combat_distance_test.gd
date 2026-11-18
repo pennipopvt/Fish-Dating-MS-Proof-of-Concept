@@ -120,6 +120,35 @@ func _run() -> void:
 		"Fish pulls again after successful parry rather than waiting motionless")
 	combat.release()
 
+	# A fish worn down by the companion battle pulls and strains less.
+	_check(combat.begin(fish, TUNA, 80.0, 110.0, 0.0) and is_equal_approx(combat.strength, combat.low_health_strength),
+		"A fish at 0 health fights at low_health_strength")
+	var span: float = combat.max_line_distance - combat.catch_distance
+	var weak_start: float = combat.line_distance
+	combat.step(0.10)
+	_check(is_equal_approx(combat.line_distance - weak_start,
+		TUNA.passive_escape_rate * combat.passive_pull_multiplier * span * 0.10 * combat.strength),
+		"Low health weakens the passive pull")
+	combat.call("_start_recovery")
+	var weak_tension: float = combat.tension
+	combat.reel_scroll()
+	_check(is_equal_approx(combat.tension - weak_tension, TUNA.reel_tension_gain * combat.strength),
+		"Low health lowers reel tension")
+	combat.call("_start_warning")
+	combat.call("_start_windup")
+	combat.reel_scroll()
+	_check(combat.phase == DivingCombat.Phase.DASH and is_equal_approx(
+		combat._dash_end_distance - combat._dash_start_distance,
+		combat.attack.escape_rate * TUNA.miss_dash_speed_multiplier * TUNA.miss_dash_duration * span * combat.strength),
+		"Low health shortens the miss dash")
+	_check(is_equal_approx(combat._dash_end_tension - combat._dash_start_tension,
+		TUNA.miss_tension_gain * TUNA.attack_tension_multiplier * combat.strength),
+		"Low health lowers miss tension")
+	combat.release()
+	_check(combat.begin(fish, TUNA, 80.0, 110.0) and is_equal_approx(combat.strength, 1.0),
+		"Full health (the default) keeps full strength")
+	combat.release()
+
 	combat.queue_free()
 	fish.queue_free()
 	print("FAILED: %d" % failures if failures > 0 else "Diving physical catch progression tests passed")

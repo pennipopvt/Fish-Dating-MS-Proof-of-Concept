@@ -35,7 +35,34 @@ The lagoon is kept alive between dives so the fish you've caught and Silas's con
 | Escape in combat | Release the fish (it swims away) |
 | Underwater E / Space | Talk, advance the standard dialogue UI or interact with the surface marker |
 | Q | Silas conceals you once he joins you |
+| Right-click a fish | Send Silas to auto-battle it (within 120 px); right-click it again to call him back |
+| F | Call Silas back from a battle |
 | Dialogue choice buttons | Invite Silas to land or postpone, using the same UI as land conversations |
+
+## Companion auto-battle and fish health
+
+Once Silas follows you, **right-click a fish** to send him at it. The two trade hits on their own speed timers, and small health bars appear over both. **Call him back** (right-click the fish again, or F) before it's too late:
+
+- A fish at **0 health is knocked out and lost** for the session (not stored).
+- **Silas at 0 health is exhausted** and can't battle again until you **rest** (the next `GameManager.day_started`). Otherwise he slowly regains health (`regen_per_second`) while not fighting. Fish never regain health during a session, even if they escape the reel.
+- Throwing the net and latching onto a fish ends the battle.
+
+**Progression:** early fish (goby, mullet, porgy) can be netted at full health. Later fish refuse the net until worn down: needlefish ≤ 70%, flounder ≤ 60%, tuna ≤ 40% (`FishData.catchable_health`). A refused cast retracts with "too strong for the net".
+
+**Remaining health weakens the reel fight:** passive and contested pulling, miss-dash distance, reel tension and miss tension are all multiplied by `lerp(Combat.low_health_strength, 1, health ratio)` (0.4 at 0 health). Parry timing and stagger are unchanged.
+
+Each hit deals `max(1, attack - defense / 2)`. Stats are placeholder tuning: fish use the **Battle** group on each `FishData` (`max_health`, `attack`, `defense`, `speed` = attacks per second, `catchable_health`); Silas uses `resources/companions/silas_battle.tres` (`CompanionStats`: 60 HP, 6 atk, 3 def, 1.0 spd, 0.5 HP/s regen).
+
+| Fish | HP | Atk | Def | Spd | Net holds at |
+| --- | --- | --- | --- | --- | --- |
+| Goby | 20 | 2 | 1 | 1.4 | any health |
+| Mullet | 30 | 3 | 2 | 1.0 | any health |
+| Porgy | 35 | 3 | 3 | 1.0 | any health |
+| Needlefish | 30 | 5 | 1 | 1.6 | ≤ 70% |
+| Flounder | 50 | 4 | 5 | 0.7 | ≤ 60% |
+| Tuna | 90 | 6 | 4 | 0.7 | ≤ 40% |
+
+Code: `scripts/diving/companion_battle.gd` (`DivingCompanionBattle`, the `CompanionBattle` node under `Lagoon`), health on `DivingWildFish`, wiring in `DivingWorld`. Test: `tests/diving_companion_battle_test.gd` (uses autoloads, so run it from a temporary scene rather than `-s`).
 
 ## Implementation notes
 

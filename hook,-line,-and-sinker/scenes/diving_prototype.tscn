@@ -1,8 +1,9 @@
-[gd_scene load_steps=16 format=3]
+[gd_scene load_steps=17 format=3]
 
 [ext_resource type="Script" path="res://scripts/diving/diving_world.gd" id="1_world"]
 [ext_resource type="Script" path="res://scripts/diving/diving_combat.gd" id="combat_script"]
 [ext_resource type="Script" path="res://scripts/diving/net_projectile.gd" id="net_projectile"]
+[ext_resource type="Script" path="res://scripts/diving/companion_battle.gd" id="companion_battle"]
 [ext_resource type="Script" path="res://scripts/diving/fish_spawn.gd" id="fish_spawn"]
 [ext_resource type="Script" path="res://scripts/diving/lagoon_editor_guide.gd" id="lagoon_guide"]
 [ext_resource type="Resource" path="res://resources/fish/mullet.tres" id="fish_mullet"]
@@ -137,6 +138,9 @@ z_index = 8
 
 [node name="Combat" type="Node" parent="SubViewportContainer/SubViewport/Lagoon"]
 script = ExtResource("combat_script")
+
+[node name="CompanionBattle" type="Node" parent="SubViewportContainer/SubViewport/Lagoon"]
+script = ExtResource("companion_battle")
 
 [node name="NetProjectile" type="Node2D" parent="SubViewportContainer/SubViewport/Lagoon"]
 script = ExtResource("net_projectile")

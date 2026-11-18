@@ -21,6 +21,8 @@ const SEA_BOUNDS := Rect2(Vector2(16.0, 30.0), Vector2(888.0, 460.0))
 const SHORE_DIVE_POINT := Vector2(251.0, 111.0)
 const SWIM_SPEED: float = 78.0
 const REACH: float = 44.0
+# How far from Penni a fish can be for Silas to be sent at it (right-click).
+const BATTLE_RANGE: float = 120.0
 
 @export var show_prototype_environment: bool = true
 # Turn this off once you have painted/placed actual lagoon scenery in the
@@ -42,6 +44,9 @@ const REACH: float = 44.0
 @onready var hud_footer: Panel = $"../../../HUD/FooterBack"
 @onready var _combat: DivingCombat = $Combat
 @onready var _net: DivingNetProjectile = $NetProjectile
+@onready var _battle: DivingCompanionBattle = $CompanionBattle
+# Short lunge toward the fish each time Silas lands a hit.
+var _silas_lunge: float = 0.0
 var _combat_direction: Vector2 = Vector2.RIGHT
 var _combat_distance: float = 40.0
 
@@ -85,6 +90,11 @@ func _ready() -> void:
 	_combat.finished.connect(_on_combat_finished)
 	_net.fish_hit.connect(_on_net_fish_hit)
 	_combat.parried.connect(_on_combat_parried)
+	_battle.hit.connect(_on_battle_hit)
+	_battle.fish_knocked_out.connect(_on_battle_fish_knocked_out)
+	_battle.companion_knocked_out.connect(_on_battle_companion_knocked_out)
+	# Resting (a new day) is the only cure for an exhausted companion.
+	GameManager.day_started.connect(func(_day: int) -> void: _battle.rest())
 	DialogueManager.conversation_finished.connect(_on_diving_conversation_finished)
 	DialogueManager.choice_resolved.connect(_on_diving_choice_resolved)
 	# The integrated island owns a DialogueUI already. For running the
@@ -128,6 +138,8 @@ func _return_to_surface(with_silas: bool) -> void:
 	# A throw that missed should not remain stuck midway through its flight
 	# when the underwater scene is hidden until the next dive.
 	_net.reset_net()
+	# The lagoon stops processing on land, so end any battle here.
+	_battle.stop()
 	if _embedded_in_world:
 		_dialogue_event = &""
 		_surface_choice = &""
@@ -168,6 +180,7 @@ func _spawn_fish() -> void:
 			continue
 		var fish: DivingWildFish = WILD_FISH_SCRIPT.new() as DivingWildFish
 		fish.setup(spawn.species.fish_id, art, to_local(spawn.global_position), SEA_BOUNDS, spawn.random_seed)
+		fish.set_max_health(spawn.species.max_health)
 		add_child(fish)
 		_wild_fish.append(fish)
 
@@ -187,6 +200,12 @@ func _process(delta: float) -> void:
 
 	if not is_talking and not fighting:
 		_move_player(delta)
+	# The auto-battle pauses for nothing: dialogue, the reel fight or leaving
+	# the water calls Silas back. Idle steps regenerate his health.
+	if _battle.is_active() and (is_talking or fighting or not _underwater):
+		_battle.stop()
+	_battle.step(delta)
+	_silas_lunge = maxf(0.0, _silas_lunge - delta)
 	if fighting:
 		_combat.step(delta)
 		_sync_combat_fish(delta)
@@ -246,6 +265,17 @@ func _update_silas_fish(delta: float) -> void:
 		silas_sprite.hide()
 		return
 	silas_sprite.visible = true
+	if _battle.is_active():
+		# Fight on the side of the fish facing Penni, lunging on each hit.
+		var foe: Vector2 = _battle.target.position
+		var side: Vector2 = (player_sprite.position - foe).normalized()
+		if side.length_squared() < 0.01:
+			side = Vector2.LEFT
+		var spot: Vector2 = foe + side * (22.0 - 7.0 * (_silas_lunge / 0.15))
+		silas_sprite.position = silas_sprite.position.move_toward(spot, 140.0 * delta)
+		silas_sprite.flip_h = foe.x < silas_sprite.position.x
+		silas_sprite.rotation = sin(_time * 9.0) * 0.12
+		return
 	if not _silas_following:
 		var resting: Vector2 = _silas_wait_position if _net_cleared else _silas_burrow + Vector2(0, -16)
 		silas_sprite.position = resting + Vector2(sin(_time * 1.7) * 1.7, sin(_time * 2.3) * 1.4)
@@ -299,9 +329,16 @@ func _unhandled_input(event: InputEvent) -> void:
 		elif event.keycode == KEY_Q:
 			_ask_silas_to_hide()
 			get_viewport().set_input_as_handled()
+		elif event.keycode == KEY_F:
+			_recall_silas()
+			get_viewport().set_input_as_handled()
 	elif event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
 		if _underwater:
 			_try_catch(get_global_mouse_position())
+			get_viewport().set_input_as_handled()
+	elif event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_RIGHT:
+		if _underwater:
+			_command_battle(get_global_mouse_position())
 			get_viewport().set_input_as_handled()
 
 func _interact() -> void:
@@ -388,6 +425,15 @@ func _on_net_fish_hit(fish: DivingWildFish) -> void:
 	if fish == null or not is_instance_valid(fish):
 		_net.retract()
 		return
+	# Later species are too strong to hold until Silas wears them down.
+	var data: FishData = _get_fish_data(fish.fish_name)
+	if fish != _silas_rescue_target and data != null and fish.health_ratio() > data.catchable_health + 0.001:
+		_net.retract()
+		fish.catch_cooldown = 1.5
+		var away: Vector2 = (fish.position - player_sprite.position).normalized()
+		fish.position += away * 12.0
+		_toast("The %s is too strong for the net. Wear it down with Silas first." % fish.get_display_name().to_lower())
+		return
 	_begin_combat(fish)
 	if not _combat.is_active():
 		_net.retract()
@@ -405,7 +451,10 @@ func _begin_combat(fish: DivingWildFish) -> void:
 	if _combat_direction.length_squared() <= 0.01:
 		_combat_direction = Vector2.RIGHT
 	_combat_distance = player_sprite.position.distance_to(fish.position)
-	if _combat.begin(fish, data, _combat_distance, _net.max_range):
+	# A fish worn down by Silas pulls and strains the line less.
+	var health_ratio: float = 1.0 if fish == _silas_rescue_target else fish.health_ratio()
+	if _combat.begin(fish, data, _combat_distance, _net.max_range, health_ratio):
+		_battle.stop()
 		_net_flash_time = 0.0
 		_update_net_tension()
 
@@ -525,6 +574,79 @@ func _ask_silas_to_hide() -> void:
 	_veil_time = 5.0
 	_veil_cooldown = 10.0
 	_toast("Silas stirs up a veil of sand. Fish won't notice you so easily!")
+
+# ---- Companion auto-battle ------------------------------------------------
+
+func _fish_under_cursor(world_mouse: Vector2) -> DivingWildFish:
+	var best: DivingWildFish = null
+	var best_distance: float = INF
+	for fish in _wild_fish:
+		if not is_instance_valid(fish) or fish.trapped or fish == _silas_rescue_target:
+			continue
+		var distance: float = world_mouse.distance_to(fish.position)
+		if distance <= fish.capture_radius + 7.0 and distance < best_distance:
+			best = fish
+			best_distance = distance
+	return best
+
+
+func _command_battle(world_mouse: Vector2) -> void:
+	var fish: DivingWildFish = _fish_under_cursor(world_mouse)
+	if fish != null and fish == _battle.target:
+		_recall_silas()
+		return
+	if fish == null:
+		if _battle.is_active():
+			_recall_silas()
+		else:
+			_toast("Right-click a fish to send Silas at it.")
+		return
+	if not _silas_following:
+		_toast("You need a companion to fight with.")
+		return
+	if not _battle.can_fight():
+		_toast("Silas is too tired to fight. Rest first.")
+		return
+	if player_sprite.position.distance_to(fish.position) > BATTLE_RANGE:
+		_toast("That fish is too far away.")
+		return
+	var data: FishData = _get_fish_data(fish.fish_name)
+	if data == null:
+		return
+	if _battle.start(fish, data):
+		_toast("Silas attacks the %s! Right-click it again or press F to call him back." % fish.get_display_name().to_lower())
+
+
+func _recall_silas() -> void:
+	if not _battle.is_active():
+		return
+	_battle.stop()
+	_toast("Silas swims back to you.")
+
+
+func _on_battle_hit(on_fish: bool, _damage: float) -> void:
+	if on_fish:
+		_silas_lunge = 0.15
+	else:
+		silas_sprite.modulate = Color(1.0, 0.55, 0.5)
+		get_tree().create_timer(0.12).timeout.connect(func() -> void:
+			if is_instance_valid(silas_sprite):
+				silas_sprite.modulate = Color.WHITE)
+
+
+func _on_battle_fish_knocked_out(fish: DivingWildFish) -> void:
+	# Pushed too far: the fish is lost for this session, never stored.
+	_wild_fish.erase(fish)
+	_toast("The %s was knocked out and drifted away..." % fish.get_display_name().to_lower())
+	var fade := fish.create_tween()
+	fade.tween_property(fish, "modulate:a", 0.0, 0.6)
+	fade.parallel().tween_property(fish, "position:y", fish.position.y - 10.0, 0.6)
+	fade.tween_callback(fish.queue_free)
+
+
+func _on_battle_companion_knocked_out() -> void:
+	_toast("Silas is exhausted! He can't fight again until you rest.")
+
 
 func _try_surface() -> void:
 	if _combat.is_active():
@@ -702,12 +824,16 @@ func _update_hud() -> void:
 		var near_surface: bool = player_sprite.position.distance_to(_surface_point) < REACH
 		var near_silas: bool = player_sprite.position.distance_to(silas_sprite.position) < REACH
 		var near_trapped_eel: bool = _silas_met and not _net_cleared and player_sprite.position.distance_to(_silas_burrow) < REACH + 22.0
-		if near_surface:
+		if _battle.is_active():
+			prompt_label.text = "SILAS IS FIGHTING  |  RIGHT-CLICK / F  CALL HIM BACK  |  CLICK NET"
+		elif near_surface:
 			prompt_label.text = "[E]  RETURN TO SURFACE"
 		elif near_trapped_eel:
 			prompt_label.text = "CLICK  CAST NET AT EEL  |  [E] TALK"
 		elif near_silas:
 			prompt_label.text = "[E] TALK TO SILAS"
+		elif _silas_following:
+			prompt_label.text = "WASD MOVE  |  CLICK NET  |  RIGHT-CLICK SILAS FIGHTS  |  Q HIDE"
 		else:
 			prompt_label.text = "WASD MOVE  |  CLICK TO CAST NET  |  Q SILAS HIDES"
 	else:
@@ -724,6 +850,12 @@ func _draw() -> void:
 		_draw_underwater()
 		if _combat.is_active():
 			_draw_combat_telegraph()
+		if _silas_following and silas_sprite.visible and (
+			_battle.is_active() or _battle.health < _battle.stats.max_health
+		):
+			DivingCompanionBattle.draw_health_bar(
+				self, silas_sprite.position + Vector2(0.0, -12.0), _battle.health_ratio()
+			)
 
 func _draw_shore() -> void:
 	draw_rect(Rect2(0, 0, 320, 180), Color("#a7c6cf"))

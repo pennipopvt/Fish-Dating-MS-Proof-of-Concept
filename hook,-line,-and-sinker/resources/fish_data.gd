@@ -36,5 +36,19 @@ extends Resource
 ## revised-fishing prototype; a single perfect parry is not a full stun.
 @export_range(20.0, 300.0, 1.0) var stagger_resistance: float = 100.0
 
+@export_group("Battle")
+## Diving: health that a companion's auto-battle wears down before netting.
+## Remaining health also weakens the fish's pull and tension in the reel fight.
+@export_range(1.0, 500.0, 1.0) var max_health: float = 30.0
+## Damage per hit against the companion, before its defense.
+@export_range(0.0, 50.0, 0.5) var attack: float = 3.0
+## Reduces each companion hit by half this value (min 1 damage).
+@export_range(0.0, 50.0, 0.5) var defense: float = 2.0
+## Attacks per second in the auto-battle.
+@export_range(0.1, 5.0, 0.05) var speed: float = 1.0
+## Highest health ratio the net can hold. 1.0 = catchable without a fight;
+## lower values mean the companion must wear the fish down first.
+@export_range(0.05, 1.0, 0.05) var catchable_health: float = 1.0
+
 @export_group("Attacks")
 @export var states: Array[FishEscapeState] = []
