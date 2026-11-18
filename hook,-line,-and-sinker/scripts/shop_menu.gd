@@ -63,6 +63,8 @@ const TABS_HIDDEN_X_OFFSET := 12.0
 
 var _nav_buttons: Array[Button] = []
 var _page: int = Page.QUOTA
+# First-minute onboarding: show exactly one terminal tab until the first dive.
+var _quota_only: bool = true
 var _entries: Array[Dictionary] = []
 var _entry_buttons: Array[Button] = []
 var _selected_index: int = 0
@@ -160,6 +162,18 @@ func _unhandled_input(event: InputEvent) -> void:
 	if visible and event.is_action_pressed(&"ui_cancel"):
 		close()
 		get_viewport().set_input_as_handled()
+
+
+func set_quota_only(value: bool) -> void:
+	if _quota_only == value:
+		return
+	_quota_only = value
+	if not is_node_ready():
+		return
+	if _quota_only:
+		_page = Page.QUOTA
+	_refresh_page()
+	_update_nav_tabs(false)
 
 
 func open() -> void:
@@ -270,6 +284,8 @@ func _select_shop_section(section: int) -> void:
 
 
 func _select_page(page: int) -> void:
+	if _quota_only and page != Page.QUOTA:
+		return
 	_page = page
 	_selected_index = 0
 	_last_order_message = ""
@@ -293,6 +309,7 @@ func _update_nav_tabs(animate: bool) -> void:
 
 	for i in range(_nav_buttons.size()):
 		var tab: Button = _nav_buttons[i]
+		tab.visible = not _quota_only or i == Page.QUOTA
 		var caption: Label = tab.get_node("VerticalTitle") as Label
 		var text_width: float = _layout_vertical_caption(caption)
 		var padded_height: float = TAB_CLOSED_HEIGHT + TAB_TEXT_GAP + text_width + TAB_TEXT_PADDING
@@ -529,8 +546,8 @@ func _refresh_quota_page() -> void:
 		child.queue_free()
 	_order_button.hide()
 	_preview.texture = null
-	_item_name.text = "FISH CO. CONTRACT"
-	_description.text = "Fish are surrendered as soon as you submit them. They cannot also be used for gifts or upgrades."
+	_item_name.text = "LEGENDARY FISH KING"
+	_description.text = "GRAND PRIZE: $400,000\nDeliver the fish listed here every 3 days to stay employed. Submitted fish cannot also be used for gifts or upgrades."
 	var is_done: bool = QuotaManager.is_complete()
 	_status.text = "QUOTA COMPLETE / NEXT CONTRACT STARTS DAY %d" % (QuotaManager.deadline_day + 1) if is_done else (
 		"FAILURE TO DELIVER BY DAY %d ENDS THE RUN" % QuotaManager.deadline_day
