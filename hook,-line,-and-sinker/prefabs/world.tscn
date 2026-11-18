@@ -21,6 +21,9 @@
 [ext_resource type="Shader" uid="uid://bv2isyw6ln31h" path="res://shaders/moon.gdshader" id="moon_shader"]
 [ext_resource type="Shader" uid="uid://cli6ci0c4km7b" path="res://shaders/night_stars.gdshader" id="night_stars"]
 [ext_resource type="Script" uid="uid://cba27f3x60a3r" path="res://scripts/world_day_night.gd" id="world_day_night"]
+[ext_resource type="PackedScene" path="res://scenes/lagoon_area.tscn" id="lagoon_area"]
+[ext_resource type="TileSet" path="res://resources/tilesets/world_tiles.tres" id="world_tiles"]
+[ext_resource type="Shader" path="res://shaders/underwater_tint.gdshader" id="water_tint_shader"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_4284n"]
 shader = ExtResource("6_07nuu")
@@ -50,63 +53,11 @@ shader_parameter/falloff = 4.0
 shader = ExtResource("moon_shader")
 shader_parameter/visibility = 0.0
 
-[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_gi6id"]
-texture = ExtResource("10_6mti1")
-0:0/0 = 0
-1:0/0 = 0
-2:0/0 = 0
-3:0/0 = 0
-4:0/0 = 0
-5:0/0 = 0
-0:1/0 = 0
-1:1/0 = 0
-2:1/0 = 0
-3:1/0 = 0
-4:1/0 = 0
-5:1/0 = 0
-0:6/0 = 0
-1:6/0 = 0
-2:7/0 = 0
-3:7/0 = 0
-4:7/0 = 0
-5:7/0 = 0
-6:7/0 = 0
-6:6/0 = 0
-5:6/0 = 0
-4:6/0 = 0
-3:6/0 = 0
-2:6/0 = 0
-0:7/0 = 0
-1:7/0 = 0
-0:2/0 = 0
-1:2/0 = 0
-2:2/0 = 0
-3:2/0 = 0
-0:3/0 = 0
-1:3/0 = 0
-2:3/0 = 0
-3:3/0 = 0
-4:3/0 = 0
-5:3/0 = 0
-6:3/0 = 0
-7:3/0 = 0
-3:1/0 = 0
-4:1/0 = 0
-5:1/0 = 0
-6:1/0 = 0
-7:1/0 = 0
-
-[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_onplayer"]
-texture = ExtResource("11_onplayer")
-2:1/0 = 0
-2:2/0 = 0
-3:2/0 = 0
-2:3/0 = 0
-3:3/0 = 0
-
-[sub_resource type="TileSet" id="TileSet_yd4fr"]
-sources/0 = SubResource("TileSetAtlasSource_gi6id")
-sources/1 = SubResource("TileSetAtlasSource_onplayer")
+[sub_resource type="ShaderMaterial" id="UnderwaterTintMaterial"]
+shader = ExtResource("water_tint_shader")
+shader_parameter/submersion = 0.0
+shader_parameter/surface_y_uv = 1.0
+shader_parameter/tint_color = Color(0.10, 0.36, 0.67, 0.45)
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_23sxu"]
 shader = ExtResource("13_le6xu")
@@ -133,6 +84,16 @@ position = Vector2(160, 112)
 position = Vector2(0, -22)
 editor_draw_limits = true
 editor_draw_drag_margin = true
+
+[node name="UnderwaterTint" type="ColorRect" parent="Player/Camera2D"]
+material = SubResource("UnderwaterTintMaterial")
+z_as_relative = false
+z_index = 80
+mouse_filter = 2
+offset_left = -160.0
+offset_top = -90.0
+offset_right = 160.0
+offset_bottom = 90.0
 
 [node name="Sky" type="Node2D" parent="Player/Camera2D" unique_id=512056317]
 z_index = -1
@@ -223,13 +184,15 @@ position = Vector2(505, 104)
 position = Vector2(860, 112)
 
 [node name="Ground" type="TileMapLayer" parent="." unique_id=97856843]
+collision_enabled = false
 tile_map_data = PackedByteArray("AAACAAcAAAAAAAYAAAADAAcAAAAGAAYAAAAEAAcAAAACAAYAAAAFAAcAAAAGAAYAAAAGAAcAAAADAAYAAAAHAAcAAAAEAAYAAAAIAAcAAAAFAAYAAAAJAAcAAAAFAAYAAAAKAAcAAAAFAAYAAAALAAcAAAAFAAYAAAAMAAcAAAAFAAYAAAANAAcAAAAFAAYAAAAOAAcAAAAFAAYAAAAPAAcAAAAFAAYAAAAQAAcAAAAFAAYAAAARAAcAAAAFAAYAAAASAAcAAAAFAAYAAAATAAcAAAAFAAYAAAAUAAcAAAAFAAYAAAAVAAcAAAAFAAYAAAAWAAcAAAAFAAYAAAAXAAcAAAAFAAYAAAAYAAcAAAAFAAYAAAAZAAcAAAAFAAYAAAAaAAcAAAAFAAYAAAAbAAcAAAAFAAYAAAAcAAcAAAAFAAYAAAAdAAcAAAAFAAYAAAAeAAcAAAAFAAYAAAAfAAcAAAAFAAYAAAAgAAcAAAAFAAYAAAAhAAcAAAAFAAYAAAAiAAcAAAAFAAYAABAjAAcAAAAFAAYAABAkAAcAAAAFAAYAABAlAAcAAAAFAAYAABAmAAcAAAAFAAYAABAnAAcAAAAAAAIAAAAoAAcAAAABAAIAAAApAAcAAAACAAIAAAAqAAcAAAADAAIAAAABAAgAAAAAAAEAAAACAAgAAAAAAAcAAAADAAgAAAABAAEAAAAEAAgAAAACAAcAAAAFAAgAAAACAAEAAAAGAAgAAAADAAcAAAAHAAgAAAAEAAcAAAAIAAgAAAAFAAcAAAAJAAgAAAAFAAcAAAAKAAgAAAAFAAcAAAALAAgAAAAFAAcAAAAMAAgAAAAFAAcAAAANAAgAAAAFAAcAAAAOAAgAAAAFAAcAAAAPAAgAAAAFAAcAAAAQAAgAAAAFAAcAAAARAAgAAAAFAAcAAAASAAgAAAAFAAcAAAATAAgAAAAFAAcAAAAUAAgAAAAFAAcAAAAVAAgAAAAFAAcAAAAWAAgAAAAFAAcAAAAXAAgAAAAFAAcAAAAYAAgAAAAFAAcAAAAZAAgAAAAFAAcAAAAaAAgAAAAFAAcAAAAbAAgAAAAFAAcAAAAcAAgAAAAFAAcAAAAdAAgAAAAFAAcAAAAeAAgAAAAFAAcAAAAfAAgAAAAFAAcAAAAgAAgAAAAFAAcAAAAhAAgAAAAFAAcAAAAiAAgAAAAFAAcAABAjAAgAAAAFAAcAABAkAAgAAAAFAAcAABAlAAgAAAAFAAcAABAmAAgAAAAFAAcAABAnAAgAAAAAAAMAAAAoAAgAAAABAAMAAAApAAgAAAACAAMAAAAqAAgAAAADAAMAAAArAAgAAAAEAAMAAAAsAAgAAAAFAAMAAAAtAAgAAAAGAAMAAAAuAAgAAAAEAAMAAAAvAAgAAAAFAAMAAAAwAAgAAAAGAAMAAAAxAAgAAAAEAAMAAAAyAAgAAAAFAAMAAAAzAAgAAAAGAAMAAAA0AAgAAAAEAAMAAAA1AAgAAAAFAAMAAAA2AAgAAAAGAAMAAAA3AAgAAAAHAAMAAAA4AAgAAAADAAEAAAA5AAgAAAAEAAEAAAA6AAgAAAAFAAEAAAA7AAgAAAAGAAEAAAA8AAgAAAAHAAEAAAA=")
-tile_set = SubResource("TileSet_yd4fr")
+tile_set = ExtResource("world_tiles")
 
 [node name="GroundFront" type="TileMapLayer" parent="."]
 z_index = 4
+collision_enabled = false
 tile_map_data = PackedByteArray("AAApAAYAAQACAAEAAAApAAcAAQACAAIAAAAqAAcAAQADAAIAAAApAAgAAQACAAMAAAAqAAgAAQADAAMAAAA=")
-tile_set = SubResource("TileSet_yd4fr")
+tile_set = ExtResource("world_tiles")
 
 [node name="Water" type="ColorRect" parent="." unique_id=1286032416]
 material = SubResource("ShaderMaterial_23sxu")
@@ -237,5 +200,7 @@ custom_minimum_size = Vector2(320, 180)
 offset_left = -237.0
 offset_top = 140.0
 offset_right = 2800.0
-offset_bottom = 320.0
+offset_bottom = 800.0
 
+
+[node name="Lagoon" parent="." instance=ExtResource("lagoon_area")]
