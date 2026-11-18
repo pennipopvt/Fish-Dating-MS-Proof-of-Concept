@@ -1,0 +1,46 @@
+{
+  "title": "Fish Co. / Contract Confirmation",
+  "setting": "Penni is already on the boat, having signed up for the Fish Co. competition. A representative calls to review the agreement.",
+  "lines": [
+    {
+      "speaker": "Penni",
+      "text": "$400,000? That's enough to pay off my student loans!\nJust for catching a fish?\nI can totally do that!"
+    },
+    {
+      "speaker": "Fish Co.",
+      "text": "Wonderful! Then would you like me to go over the contract?"
+    },
+    {
+      "speaker": "Penni",
+      "text": "Wait I thought this was a competition?"
+    },
+    {
+      "speaker": "Fish Co.",
+      "text": "You became an employee of Fish Co. by agreeing to sign up for the competition.\nIt was in the fine print."
+    },
+    {
+      "speaker": "Penni",
+      "text": "Oh. Okay."
+    },
+    {
+      "speaker": "Fish Co.",
+      "text": "By catching the prized legendary fish king you will win a total of $400,000.\nDuring your time on the island, you will be expected to fulfil a quota every 3 days."
+    },
+    {
+      "speaker": "Penni",
+      "text": "What? A quota?"
+    },
+    {
+      "speaker": "Fish Co.",
+      "text": "Failure to do so will result in your termination from the island and your chance at catching the legendary fish king.\nYou will be monitored for our records during your stay on the island."
+    },
+    {
+      "speaker": "Penni",
+      "text": "...okay."
+    },
+    {
+      "speaker": "Fish Co.",
+      "text": "That is all for now. We reserve the right to add or remove any terms from the contract at any point in time during your stay on the island.\nThank you for your time."
+    }
+  ]
+}
