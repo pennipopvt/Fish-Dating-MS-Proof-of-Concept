@@ -34,6 +34,7 @@ const BATTLE_RANGE: float = 120.0
 @onready var _glowing_garden: Vector2 = to_local(($Points/ShellGarden as Marker2D).global_position)
 @onready var _level_guide: LagoonEditorGuide = $EditorGuide
 @onready var _wall_cast: ShapeCast2D = get_node_or_null("Player/WallCast") as ShapeCast2D
+@onready var _prototype_visual: Sprite2D = get_node_or_null("Player") as Sprite2D
 # The World scene shares its original Player and camera with this lagoon.
 @onready var player_sprite: Node2D = (get_parent().get_node("Player") as Node2D) if get_parent().has_node("Player") else ($Player as Node2D)
 @onready var camera: Camera2D = (player_sprite.get_node("Camera2D") as Camera2D) if player_sprite is Player else ($Camera2D as Camera2D)
@@ -273,7 +274,7 @@ func _process(delta: float) -> void:
 				silas_sprite.position.y = 110.0 + sin(_time * 1.7) * 0.45
 
 	if not _embedded_in_world:
-		(player_sprite as Sprite2D).frame = int(_time * 3.2) % 2
+		_prototype_visual.frame = int(_time * 3.2) % 2
 	_update_hud()
 	queue_redraw()
 
@@ -299,22 +300,22 @@ func _move_player(delta: float) -> void:
 		player_sprite.position.y = clampf(player_sprite.position.y, limits.position.y + 8.0, limits.end.y - 8.0)
 		player_sprite.rotation = lerpf(player_sprite.rotation, direction.x * 0.11, minf(delta * 6.0, 1.0))
 		# Visual bob only: never shift the physics point through a painted wall.
-		(player_sprite as Sprite2D).offset.y = sin(_time * 2.6) * 0.8
+		_prototype_visual.offset.y = sin(_time * 2.6) * 0.8
 	else:
 		player_sprite.position += direction * speed * delta
-		(player_sprite as Sprite2D).offset.y = 0.0
+		_prototype_visual.offset.y = 0.0
 		player_sprite.position.x = clampf(player_sprite.position.x, 38.0, 280.0)
 		player_sprite.position.y = clampf(player_sprite.position.y, 76.0, 148.0)
 		player_sprite.rotation = 0.0
 	if direction.x < -0.05:
-		(player_sprite as Sprite2D).flip_h = true
+		_prototype_visual.flip_h = true
 	elif direction.x > 0.05:
-		(player_sprite as Sprite2D).flip_h = false
+		_prototype_visual.flip_h = false
 
 func _player_faces_left() -> bool:
 	if _embedded_in_world:
 		return (player_sprite as Player).last_direction < 0.0
-	return (player_sprite as Sprite2D).flip_h
+	return _prototype_visual.flip_h
 
 
 func _update_silas_fish(delta: float) -> void:
