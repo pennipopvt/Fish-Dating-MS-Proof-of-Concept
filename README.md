@@ -125,8 +125,8 @@ Debug builds only (not in exports):
   the talk follows its `next` to a "not now" line.
   **The date:** fade out, Penni and the NPC move to the place's `PlayerSpot` /
   `NpcSpot`, the date JSON plays, then fade back and both return. Places are
-  `DateLocation` interactables (`prefabs/beach.tscn`, a yellow triangle at the
-  island's right end); a booked place shows a sign with the date and time. A date
+  `DateLocation` interactables (`prefabs/beach.tscn`, at x=860 near the water end of
+  the beach); a booked place shows a sign with the date and time. A date
   can instead happen at a `venue_scene` spawned just for it at `venue_position` and
   removed afterwards: `prefabs/ship.tscn`, an upside-down triangle out at sea
   (x=2400, no island in view). Current data: beach = NOW, afternoon only (jumps
@@ -134,9 +134,14 @@ Debug builds only (not in exports):
   TODO placeholders. Bookings and flags live in memory only.
 - **UI:** visual-novel style dialogue UI, shop menu, bait menu, interact prompt.
 - **Player** movement on the dock, plus interactables for NPCs and the shop.
-- **Island:** the ground tiles are the original island plus 7 extra cells of land
-  on the right (cells 34-40, mirrored copies of the land next to them), so the
-  island runs to x=656, where the beach starts. The water rect reaches x=2800 for the ship.
+- **Island:** the ground tiles are the original island plus extra land on the right
+  (cells 34-38, mirrored copies of the land next to them). Cells 39-51 are the beach
+  from `tileset.png`: grass, stairs down from x=656 and flat sand (atlas rows 2-3,
+  cols 0-6 at cells 39-45), then 3 more copies of sand tiles 4-6 (cells 46-54), sand
+  tile 7 (cell 55), then the slope into the water (atlas row 1, cols 3-7, cells
+  56-60), so the beach ends at x=976. The stair handle (`tilesetOnPlayer.png`) is on its own
+  layer, `GroundFront` (z_index 4), so it draws in front of the player. The player
+  still walks at grass height across the beach. The water rect reaches x=2800 for the ship.
 - **Fishing rod (visual only):** `prefabs/fishing_rod.tscn` on the player. When you
   start fishing, the player faces the water and pulls out the rod. Every cast swings
   the rod back and flicks it forward, and the equipped bait's icon flies out on the
