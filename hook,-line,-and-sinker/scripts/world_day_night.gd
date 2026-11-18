@@ -49,12 +49,23 @@ func _ready() -> void:
 
     _target_progress = _clock_progress()
     _apply_immediately(_visual_state(_target_progress))
+    set_process(true)
 
     # actions_changed fires for both action spending and rest/period changes.
     # time_changed is also observed for explicit save loads and future callers;
     # _refresh_target suppresses the duplicate callback on period boundaries.
     GameManager.actions_changed.connect(_on_actions_changed)
     GameManager.time_changed.connect(_on_time_changed)
+
+
+# The waterline moves through the camera's viewport while Penni dives.
+# Keep the existing reflection shader aligned to its actual screen position,
+# rather than assuming that the surface always sits at screen Y=140.
+func _process(_delta: float) -> void:
+    if not is_instance_valid(_water_mat):
+        return
+    var surface_y: float = _water.get_global_transform_with_canvas().origin.y
+    _water_mat.set_shader_parameter("waterline_y", surface_y)
 
 
 func _local_material(item: CanvasItem) -> ShaderMaterial:
