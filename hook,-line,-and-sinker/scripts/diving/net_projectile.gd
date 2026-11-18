@@ -106,9 +106,9 @@ func _process(delta: float) -> void:
 			var wall_hit: Dictionary = get_world_2d().direct_space_state.intersect_ray(
 				PhysicsRayQueryParameters2D.create(previous, next_position, 2)
 			)
-			var unobstructed_end: Vector2 = (
-				wall_hit["position"] as Vector2 if not wall_hit.is_empty() else next_position
-			)
+			var unobstructed_end: Vector2 = next_position
+			if not wall_hit.is_empty():
+				unobstructed_end = wall_hit["position"]
 			var collided: DivingWildFish = _first_fish_on_segment(previous, unobstructed_end)
 			if collided != null:
 				_latched_fish = collided
