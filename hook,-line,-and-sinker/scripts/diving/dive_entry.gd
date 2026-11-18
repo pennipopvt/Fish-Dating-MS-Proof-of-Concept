@@ -273,13 +273,13 @@ func _on_surface_requested(with_silas: bool) -> void:
 func _surface_from_dive(with_silas: bool) -> void:
 	# Return through the SAME water surface. Sky stays visible in the camera;
 	# there is no fade-to-black or replacement scene.
-	_world_player.set_swimming(false)
 	var island_camera: Camera2D = _world_player.get_node("Camera2D") as Camera2D
 	var ascent: Tween = create_tween().set_parallel(true)
 	ascent.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 	ascent.tween_property(_world_player, "global_position", _shore_return_position, 0.85)
 	ascent.tween_property(island_camera, "position", Vector2(0.0, -22.0), 0.85)
 	await ascent.finished
+	_world_player.set_swimming(false)
 	_world_player.animator.rotation = 0.0
 	_world_player.animator.play(&"idle_l")
 	_underwater = false
