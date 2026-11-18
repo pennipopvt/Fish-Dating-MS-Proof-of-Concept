@@ -33,16 +33,18 @@ const BATTLE_RANGE: float = 120.0
 @onready var _tangled_net: Vector2 = to_local(($Points/TangledNet as Marker2D).global_position)
 @onready var _glowing_garden: Vector2 = to_local(($Points/ShellGarden as Marker2D).global_position)
 @onready var _level_guide: LagoonEditorGuide = $EditorGuide
-@onready var _wall_cast: ShapeCast2D = $Player/WallCast
-@onready var camera: Camera2D = $Camera2D
-@onready var player_sprite: Sprite2D = $Player
+@onready var _wall_cast: ShapeCast2D = get_node_or_null("Player/WallCast") as ShapeCast2D
+# The World scene shares its original Player and camera with this lagoon.
+@onready var player_sprite: Node2D = get_parent().get_node("Player") if get_parent().has_node("Player") else $Player
+@onready var camera: Camera2D = player_sprite.get_node("Camera2D") if player_sprite is Player else $Camera2D
+@onready var _hud_root: Control = get_node("../../../../DivingHUD") if player_sprite is Player else get_node("../../../HUD")
 @onready var silas_sprite: Sprite2D = $Silas
-@onready var location_label: Label = $"../../../HUD/Location"
-@onready var catch_label: Label = $"../../../HUD/CatchCount"
-@onready var story_label: Label = $"../../../HUD/StoryHint"
-@onready var prompt_label: Label = $"../../../HUD/Prompt"
-@onready var toast_label: Label = $"../../../HUD/Toast"
-@onready var hud_footer: Panel = $"../../../HUD/FooterBack"
+@onready var location_label: Label = _hud_root.get_node("Location")
+@onready var catch_label: Label = _hud_root.get_node("CatchCount")
+@onready var story_label: Label = _hud_root.get_node("StoryHint")
+@onready var prompt_label: Label = _hud_root.get_node("Prompt")
+@onready var toast_label: Label = _hud_root.get_node("Toast")
+@onready var hud_footer: Panel = _hud_root.get_node("FooterBack")
 @onready var _combat: DivingCombat = $Combat
 @onready var _net: DivingNetProjectile = $NetProjectile
 @onready var _battle: DivingCompanionBattle = $CompanionBattle
@@ -77,17 +79,22 @@ var _standalone_dialogue_ui: DialogueUI
 var _shore_transformation_played: bool = false
 
 func _ready() -> void:
-	player_sprite.position = _entry_point
-	player_sprite.texture = PLAYER_IDLE
-	player_sprite.hframes = 2
-	player_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	player_sprite.scale = Vector2.ONE
+	_embedded_in_world = player_sprite is Player
+	_underwater = not _embedded_in_world
+	if not _embedded_in_world:
+		player_sprite.position = _entry_point
+		var preview: Sprite2D = player_sprite as Sprite2D
+		preview.texture = PLAYER_IDLE
+		preview.hframes = 2
+		preview.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		preview.scale = Vector2.ONE
 	silas_sprite.position = _silas_burrow + Vector2(0, -16)
 	silas_sprite.texture = SILAS_FISH
 	silas_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	_set_silas_fish_sprite()
-	camera.position = player_sprite.position
-	_set_camera_bounds(true)
+	if not _embedded_in_world:
+		camera.position = player_sprite.position
+		_set_camera_bounds(true)
 	_combat.finished.connect(_on_combat_finished)
 	_net.fish_hit.connect(_on_net_fish_hit)
 	_combat.parried.connect(_on_combat_parried)
@@ -173,6 +180,8 @@ func _set_silas_human_sprite() -> void:
 # camera update together. Leave a small margin around the edges for sprites.
 func _sea_bounds() -> Rect2:
 	var size: Vector2 = _level_guide.map_size
+	if _embedded_in_world:
+		return Rect2(Vector2(16.0, 154.0), size - Vector2(32.0, 170.0))
 	return Rect2(Vector2(16.0, 30.0), size - Vector2(32.0, 70.0))
 
 
