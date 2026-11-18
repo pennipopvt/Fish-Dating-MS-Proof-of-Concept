@@ -18,6 +18,9 @@ const IRIS_OPEN_RADIUS: float = 2.6
 @onready var _iris: ColorRect = $TransitionLayer/Iris
 @onready var _music: AudioStreamPlayer2D = $AudioStreamPlayer2D
 @onready var _dialogue_ui: DialogueUI = $CanvasLayer/DialogueUI
+@onready var _shop_menu: ShopMenu = $CanvasLayer/ShopMenu
+@onready var _intro_layer: CanvasLayer = $IntroLayer
+@onready var _intro: FishCoIntro = $IntroLayer/FishCoIntro
 
 var _iris_material: ShaderMaterial
 var _underwater: bool = false
@@ -25,6 +28,7 @@ var _transitioning: bool = false
 var _shore_return_position: Vector2 = Vector2(56.0, 112.0)
 var _silas_actor: NPCInteractable
 var _silas_recruited: bool = false
+var _contract_call_finished: bool = false
 
 
 func _ready() -> void:
@@ -40,15 +44,41 @@ func _ready() -> void:
 	# Both scenes currently use the same theme. Keep one copy playing.
 	(_diving_scene.get_node("Music") as AudioStreamPlayer).stop()
 	DialogueManager.conversation_finished.connect(_on_reveal_conversation_finished)
+	_intro_layer.hide()
+	_intro.finished.connect(_on_contract_call_finished)
+	_start_contract_call.call_deferred()
+
+
+func _start_contract_call() -> void:
+	# The opening assumes Penni has already entered the competition. She
+	# learns she is employed through the phone call, not a separate signup.
+	if _contract_call_finished:
+		return
+	_world_player.busy = true
+	_shop_menu.set_quota_only(true)
+	_intro_layer.show()
+	_intro.play()
+
+
+func _on_contract_call_finished() -> void:
+	_contract_call_finished = true
+	_intro_layer.hide()
+	_world_player.busy = false
+	# The contract is the only thing in the terminal at the beginning.
+	# Show the real quota requirements directly after hanging up.
+	_shop_menu.open()
 
 
 # Called by Dock.interact using the real world Player and Dock instances.
 func request_dive(fisher: Player, dock: Node2D) -> void:
-	if _transitioning or _underwater or fisher != _world_player:
+	if not _contract_call_finished or _transitioning or _underwater or fisher != _world_player:
 		return
 	if not GameManager.can_act() or DialogueManager.is_active or GameManager.is_modal_ui_open():
 		return
 	_transitioning = true
+	# By the first dive, the quota has been introduced. Other terminal
+	# pages can become visible without cluttering the opening minute.
+	_shop_menu.set_quota_only(false)
 	_world_player.busy = true
 	_shore_return_position = dock.global_position + Vector2(21.0, 11.0)
 	_begin_dive(dock)
