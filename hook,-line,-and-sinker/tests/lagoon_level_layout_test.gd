@@ -21,30 +21,30 @@ func _run() -> void:
 		"SubViewportContainer/SubViewport/Lagoon"
 	) as DivingWorld
 	var guide: LagoonEditorGuide = lagoon.get_node("EditorGuide") as LagoonEditorGuide
-	var water: TileMapLayer = lagoon.get_node("LevelArt/Water") as TileMapLayer
-	var terrain: TileMapLayer = lagoon.get_node("LevelArt/Terrain") as TileMapLayer
-	var details: TileMapLayer = lagoon.get_node("LevelArt/Details") as TileMapLayer
+	var background_sprites: Node2D = lagoon.get_node("LevelArt/BackgroundSprites") as Node2D
+	var details: Node2D = lagoon.get_node("LevelArt/Details") as Node2D
 	var solids: TileMapLayer = lagoon.get_node("LevelArt/Solids") as TileMapLayer
-	var overhangs: TileMapLayer = lagoon.get_node("ForegroundArt/Overhangs") as TileMapLayer
+	var foreground_sprites: Node2D = lagoon.get_node("ForegroundArt") as Node2D
 	var wall_cast: ShapeCast2D = lagoon.get_node("Player/WallCast") as ShapeCast2D
 	var camera: Camera2D = lagoon.get_node("Camera2D") as Camera2D
 
 	_check(guide != null and guide.grid_size == 16, "Editor guide uses a 16px tile grid")
 	_check(guide.map_size == Vector2(920.0, 530.0), "Starting ocean footprint is preserved")
-	_check(water != null and terrain != null and details != null
-		and solids != null and overhangs != null,
-		"Five dedicated water, terrain, details, solids and foreground paint layers exist")
-	_check(water.tile_set != null and water.tile_set == terrain.tile_set
-		and water.tile_set == details.tile_set
-		and water.tile_set == solids.tile_set
-		and water.tile_set == overhangs.tile_set,
-		"All paint layers share one TileSet resource")
-	_check(solids.tile_set.tile_size == Vector2i(16, 16),
-		"Atlas grid is set for 16x16 underwater tiles")
-	_check(solids.collision_enabled and not water.collision_enabled
-		and not terrain.collision_enabled and not details.collision_enabled
-		and not overhangs.collision_enabled,
-		"Only the solid wall layer creates physical collisions")
+	_check(background_sprites != null and details != null
+		and solids != null and foreground_sprites != null,
+		"Background, details, solid walls and foreground groups are present")
+	_check(background_sprites.get_class() == "Node2D"
+		and details.get_class() == "Node2D"
+		and foreground_sprites.get_class() == "Node2D",
+		"Non-wall artwork uses regular Node2D containers for standalone PNG sprites")
+	_check(lagoon.get_node("LevelArt").get_children().filter(
+		func(node: Node) -> bool: return node is TileMapLayer
+	).size() == 1 and solids is TileMapLayer,
+		"Exactly one paintable TileMapLayer remains for solid walls")
+	_check(solids.tile_set != null and solids.tile_set.tile_size == Vector2i(16, 16),
+		"Solid wall TileSet uses 16x16 cells")
+	_check(solids.collision_enabled,
+		"Wall layer creates physical collisions")
 	_check(solids.tile_set.get_physics_layers_count() == 1
 		and solids.tile_set.get_physics_layer_collision_layer(0) == 2,
 		"TileSet physics are isolated on layer 2")
