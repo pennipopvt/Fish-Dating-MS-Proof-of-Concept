@@ -19,7 +19,7 @@ The lagoon is kept alive between dives so the fish you've caught and Silas's con
 5. Successful captures go into the normal FishingManager's storage, collection and challenges, exactly as before. **No fish is stored when merely clicked or hooked.**
 6. Swim **east** to the garden eel trapped in an old net by his burrow. Press **E** to discover that he can speak: he asks, **"Help pull me out!"**
 7. After his plea, **aim and cast the same projectile net directly at Silas**. He stays near the burrow, and a hit begins the normal scrolling/parrying encounter. **Reel him all the way to Penni** to free him. If he escapes, he remains trapped at the burrow, so you can try again. The catch is a **companion rescue**, not an ordinary fish for inventory or collections.
-8. Silas thanks you, introduces himself, and **begins following once the conversation ends**. Swim with Silas, talk to him, catch more fish, and explore the **glowing shell garden** farther east. Press **Q** to ask him to conceal you for five seconds so wild fish don't flee as easily.
+8. Silas thanks you, introduces himself, and **begins following once the conversation ends**. Swim with Silas, talk to him, catch more fish, and explore the **glowing shell garden** farther east. After rescuing him, **right-click a wild fish to target it**; Silas swims over and auto-attacks. Fish and Silas can hurt each other. Silas automatically uses his sand cover when endangered, without an ability button. Net a weakened fish before your companion defeats it entirely.
 9. When you're ready, return to the illuminated **surface marker** near the start and press **E**. Silas only asks to join you on land once you've gotten to know him. Use the **normal dialogue choice buttons** to invite him or stay together underwater.
 10. If you invite him, the iris brings you back to the **original island dock**, where Silas appears as a human in a little poof animation. His portrait switches from the **fish sprite underwater** to the **human portrait on land**; the existing dialogue interface and NPC recruitment / housing systems handle his life on land.
 
@@ -34,7 +34,8 @@ The lagoon is kept alive between dives so the fish you've caught and Silas's con
 | Scroll down in combat | Three rapid ticks to parry the attack, then reel during the opening |
 | Escape in combat | Release the fish (it swims away) |
 | Underwater E / Space | Talk, advance the standard dialogue UI or interact with the surface marker |
-| Q | Silas conceals you once he joins you |
+| Right-click a wild fish | Set or cancel Silas’s autonomous battle target |
+| Right-click empty water | Clear the target / stand down |
 | Dialogue choice buttons | Invite Silas to land or postpone, using the same UI as land conversations |
 
 ## Implementation notes
@@ -54,6 +55,12 @@ The lagoon is kept alive between dives so the fish you've caught and Silas's con
 - Silas's dive-specific friendship state persists in the lagoon instance while the game is running. On his first visit ashore, a custom first-land conversation runs in the original game's DialogueUI; afterward he joins the usual town NPC/housing flow.
 - The original bait/bobber items and existing fishing controller still exist in the repository. They're not used by the **dock's new diving path**. This experiment does not yet rebalance the old upgrades for underwater net-catching.
 - The net is a visual tether, rather than a physics-driven rope. The authored fishing attack timing now applies to underwater encounters. This prototype is focused on whether exploration companions plus concentrated reel/parry encounters feel better than instant clicking.
+
+## Optional companion combat prototype (`penni-diving` only)
+
+After rescuing Silas, right-click wild fish to target them. Silas automatically swims over and deals damage. Targeted fish show small health pips above their sprite, and fish counterattacks can leave Silas unable to fight temporarily. His defensive sand cover activates automatically at low health; it is no longer tied to the Q key. A target at zero health is defeated, cannot be netted, and does **not** award any fish inventory. A weaker, still-living fish is easier to reel after the net latches because it pulls and dashes less. The existing reel/parry mechanics are unchanged, and there is no large combat HUD.
+
+See [the companion combat design guide](penni_diving_companion_combat.md) for exact tuning and tests.
 
 ## Editing the underwater level in Godot
 
