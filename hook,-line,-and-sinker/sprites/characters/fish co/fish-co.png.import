@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://raysrsoqufps"
-path="res://.godot/imported/silas_portrait.png-9b22e910de68eea706d2ecc170e79045.ctex"
+uid="uid://dqnl5r2kigu3c"
+path="res://.godot/imported/fish-co.png-2a22de687089adabc1ada2c2198e7ad1.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://sprites/characters/silas_portrait.png"
-dest_files=["res://.godot/imported/silas_portrait.png-9b22e910de68eea706d2ecc170e79045.ctex"]
+source_file="res://sprites/characters/fish co/fish-co.png"
+dest_files=["res://.godot/imported/fish-co.png-2a22de687089adabc1ada2c2198e7ad1.ctex"]
 
 [params]
 

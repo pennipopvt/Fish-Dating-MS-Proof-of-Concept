@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://j2t1f35vluti"
-path="res://.godot/imported/kuda_portrait.png-3c2c843e547b885ad965d8ecb9c18e6a.ctex"
+uid="uid://do160tdyrgx0m"
+path="res://.godot/imported/kuda.png-8a69d87e9c56a89b0c66996ae71203d7.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://sprites/characters/kuda_portrait.png"
-dest_files=["res://.godot/imported/kuda_portrait.png-3c2c843e547b885ad965d8ecb9c18e6a.ctex"]
+source_file="res://sprites/characters/kuda/kuda.png"
+dest_files=["res://.godot/imported/kuda.png-8a69d87e9c56a89b0c66996ae71203d7.ctex"]
 
 [params]
 

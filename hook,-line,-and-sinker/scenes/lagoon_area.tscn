@@ -1,0 +1,108 @@
+[gd_scene format=3 uid="uid://0li1vl5l70q0"]
+
+[ext_resource type="Script" uid="uid://byp4fou8kyseq" path="res://scripts/diving/diving_world.gd" id="1_world"]
+[ext_resource type="Texture2D" uid="uid://fur256i6ik5n" path="res://sprites/fish/silas_eel.png" id="3_silas"]
+[ext_resource type="Script" uid="uid://cuo1eyo7ijqpj" path="res://scripts/diving/companion_battle.gd" id="companion_battle"]
+[ext_resource type="Resource" path="res://resources/fish/flounder.tres" id="fish_flounder"]
+[ext_resource type="Resource" path="res://resources/fish/goby.tres" id="fish_goby"]
+[ext_resource type="Resource" uid="uid://bad7evmwitdpl" path="res://resources/fish/mullet.tres" id="fish_mullet"]
+[ext_resource type="Resource" path="res://resources/fish/needlefish.tres" id="fish_needle"]
+[ext_resource type="Resource" path="res://resources/fish/porgy.tres" id="fish_porgy"]
+[ext_resource type="Script" uid="uid://c57ont7cf2c3x" path="res://scripts/diving/fish_spawn.gd" id="fish_spawn"]
+[ext_resource type="Resource" uid="uid://c2argebsm6uyk" path="res://resources/fish/tuna.tres" id="fish_tuna"]
+[ext_resource type="Script" path="res://scripts/diving/lagoon_editor_guide.gd" id="lagoon_guide"]
+[ext_resource type="Script" uid="uid://cl58ec468rvsb" path="res://scripts/diving/net_projectile.gd" id="net_projectile"]
+
+[node name="Lagoon" type="Node2D" unique_id=602994969]
+script = ExtResource("1_world")
+show_prototype_environment = false
+
+[node name="EditorGuide" type="Node2D" parent="." unique_id=1457841751]
+z_index = -10
+script = ExtResource("lagoon_guide")
+
+[node name="LevelArt" type="Node2D" parent="." unique_id=840165128]
+z_index = 1
+
+[node name="BackgroundSprites" type="Node2D" parent="LevelArt" unique_id=1584389165]
+z_index = -2
+
+[node name="Details" type="Node2D" parent="LevelArt" unique_id=2039211601]
+z_index = 1
+
+[node name="Points#SurfaceExit" type="Marker2D" parent="." unique_id=2097262095]
+position = Vector2(55, 157)
+
+[node name="Points#SilasBurrow" type="Marker2D" parent="." unique_id=347636559]
+position = Vector2(385, 258)
+
+[node name="Points#TangledNet" type="Marker2D" parent="." unique_id=1098865536]
+position = Vector2(411, 250)
+
+[node name="Points#ShellGarden" type="Marker2D" parent="." unique_id=16747872]
+position = Vector2(670, 213)
+
+[node name="FishSpawns" type="Node2D" parent="." unique_id=826868599]
+
+[node name="MulletNearSurface" type="Marker2D" parent="FishSpawns" unique_id=711876712]
+position = Vector2(208, 178)
+script = ExtResource("fish_spawn")
+species = ExtResource("fish_mullet")
+
+[node name="PorgyByReef" type="Marker2D" parent="FishSpawns" unique_id=804852598]
+position = Vector2(278, 197)
+script = ExtResource("fish_spawn")
+species = ExtResource("fish_porgy")
+random_seed = 2078
+
+[node name="GobySeafloor" type="Marker2D" parent="FishSpawns" unique_id=299693679]
+position = Vector2(320, 314)
+script = ExtResource("fish_spawn")
+species = ExtResource("fish_goby")
+random_seed = 2115
+
+[node name="MulletMiddle" type="Marker2D" parent="FishSpawns" unique_id=1858090015]
+position = Vector2(476, 149)
+script = ExtResource("fish_spawn")
+species = ExtResource("fish_mullet")
+random_seed = 2152
+
+[node name="FlounderDeep" type="Marker2D" parent="FishSpawns" unique_id=540024619]
+position = Vector2(543, 356)
+script = ExtResource("fish_spawn")
+species = ExtResource("fish_flounder")
+random_seed = 2189
+
+[node name="NeedlefishOpenWater" type="Marker2D" parent="FishSpawns" unique_id=428766966]
+position = Vector2(600, 155)
+script = ExtResource("fish_spawn")
+species = ExtResource("fish_needle")
+random_seed = 2226
+
+[node name="PorgyFarReef" type="Marker2D" parent="FishSpawns" unique_id=386684918]
+position = Vector2(758, 309)
+script = ExtResource("fish_spawn")
+species = ExtResource("fish_porgy")
+random_seed = 2263
+
+[node name="TunaDeepEast" type="Marker2D" parent="FishSpawns" unique_id=1877965803]
+position = Vector2(814, 180)
+script = ExtResource("fish_spawn")
+species = ExtResource("fish_tuna")
+random_seed = 2300
+
+[node name="ForegroundArt" type="Node2D" parent="." unique_id=2047989995]
+z_index = 8
+
+[node name="CompanionBattle" type="Node" parent="." unique_id=817773298]
+script = ExtResource("companion_battle")
+
+[node name="NetProjectile" type="Node2D" parent="." unique_id=2127048827]
+z_index = 9
+script = ExtResource("net_projectile")
+
+[node name="Silas" type="Sprite2D" parent="." unique_id=1808367342]
+z_index = 6
+texture_filter = 1
+position = Vector2(385, 242)
+texture = ExtResource("3_silas")

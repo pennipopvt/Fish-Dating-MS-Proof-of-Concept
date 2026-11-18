@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://b606v6feem3is"
-path="res://.godot/imported/silas_idle.png-7b1a011728aeee603a60eb05ec5aae12.ctex"
+uid="uid://j2t1f35vluti"
+path="res://.godot/imported/kuda_portrait.png-5daa27df242ed1367a2fa84117cab673.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://sprites/characters/silas_idle.png"
-dest_files=["res://.godot/imported/silas_idle.png-7b1a011728aeee603a60eb05ec5aae12.ctex"]
+source_file="res://sprites/characters/kuda/kuda_portrait.png"
+dest_files=["res://.godot/imported/kuda_portrait.png-5daa27df242ed1367a2fa84117cab673.ctex"]
 
 [params]
 

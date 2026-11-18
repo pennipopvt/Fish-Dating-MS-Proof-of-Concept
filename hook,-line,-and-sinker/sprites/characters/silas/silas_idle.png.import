@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://do160tdyrgx0m"
-path="res://.godot/imported/kuda.png-d606cfcf1d3d11463728ee9da702f4e3.ctex"
+uid="uid://b606v6feem3is"
+path="res://.godot/imported/silas_idle.png-5a548003c4c0f5541316f9d52a47cd0f.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://sprites/characters/penni/kuda.png"
-dest_files=["res://.godot/imported/kuda.png-d606cfcf1d3d11463728ee9da702f4e3.ctex"]
+source_file="res://sprites/characters/silas/silas_idle.png"
+dest_files=["res://.godot/imported/silas_idle.png-5a548003c4c0f5541316f9d52a47cd0f.ctex"]
 
 [params]
 
