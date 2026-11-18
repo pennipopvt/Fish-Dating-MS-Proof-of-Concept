@@ -1,4 +1,4 @@
-[gd_scene load_steps=17 format=3]
+[gd_scene load_steps=19 format=3]
 
 [ext_resource type="Script" path="res://scripts/diving/diving_world.gd" id="1_world"]
 [ext_resource type="Script" path="res://scripts/diving/diving_combat.gd" id="combat_script"]
@@ -6,6 +6,7 @@
 [ext_resource type="Script" path="res://scripts/diving/companion_battle.gd" id="companion_battle"]
 [ext_resource type="Script" path="res://scripts/diving/fish_spawn.gd" id="fish_spawn"]
 [ext_resource type="Script" path="res://scripts/diving/lagoon_editor_guide.gd" id="lagoon_guide"]
+[ext_resource type="TileSet" path="res://resources/tilesets/lagoon_tiles.tres" id="lagoon_tiles"]
 [ext_resource type="Resource" path="res://resources/fish/mullet.tres" id="fish_mullet"]
 [ext_resource type="Resource" path="res://resources/fish/porgy.tres" id="fish_porgy"]
 [ext_resource type="Resource" path="res://resources/fish/goby.tres" id="fish_goby"]
@@ -15,6 +16,9 @@
 [ext_resource type="Texture2D" path="res://sprites/characters/penni/penni_idle.png" id="2_player"]
 [ext_resource type="Texture2D" path="res://sprites/fish/silas_eel.png" id="3_silas"]
 [ext_resource type="AudioStream" path="res://sounds/FROM THE SEA 2026-10-30 03_02_51.mp3" id="4_music"]
+
+[sub_resource type="CircleShape2D" id="SwimCollision"]
+radius = 7.0
 
 [sub_resource type="StyleBoxFlat" id="HUDCard"]
 bg_color = Color(0.035, 0.085, 0.12, 0.82)
@@ -64,7 +68,23 @@ z_index = -10
 [node name="LevelArt" type="Node2D" parent="SubViewportContainer/SubViewport/Lagoon"]
 z_index = 1
 
+[node name="Water" type="TileMapLayer" parent="SubViewportContainer/SubViewport/Lagoon/LevelArt"]
+z_index = -2
+collision_enabled = false
+tile_set = ExtResource("lagoon_tiles")
+
 [node name="Terrain" type="TileMapLayer" parent="SubViewportContainer/SubViewport/Lagoon/LevelArt"]
+collision_enabled = false
+tile_set = ExtResource("lagoon_tiles")
+
+[node name="Details" type="TileMapLayer" parent="SubViewportContainer/SubViewport/Lagoon/LevelArt"]
+z_index = 1
+collision_enabled = false
+tile_set = ExtResource("lagoon_tiles")
+
+[node name="Solids" type="TileMapLayer" parent="SubViewportContainer/SubViewport/Lagoon/LevelArt"]
+z_index = 2
+tile_set = ExtResource("lagoon_tiles")
 
 [node name="Points" type="Node2D" parent="SubViewportContainer/SubViewport/Lagoon"]
 
@@ -136,6 +156,10 @@ random_seed = 2300
 [node name="ForegroundArt" type="Node2D" parent="SubViewportContainer/SubViewport/Lagoon"]
 z_index = 8
 
+[node name="Overhangs" type="TileMapLayer" parent="SubViewportContainer/SubViewport/Lagoon/ForegroundArt"]
+collision_enabled = false
+tile_set = ExtResource("lagoon_tiles")
+
 [node name="Combat" type="Node" parent="SubViewportContainer/SubViewport/Lagoon"]
 script = ExtResource("combat_script")
 
@@ -162,6 +186,13 @@ position = Vector2(122, 123)
 scale = Vector2(1, 1)
 texture = ExtResource("2_player")
 hframes = 2
+
+[node name="WallCast" type="ShapeCast2D" parent="SubViewportContainer/SubViewport/Lagoon/Player"]
+shape = SubResource("SwimCollision")
+target_position = Vector2(0, 0)
+collision_mask = 2
+max_results = 1
+margin = 0.0
 
 [node name="Silas" type="Sprite2D" parent="SubViewportContainer/SubViewport/Lagoon"]
 z_index = 6
