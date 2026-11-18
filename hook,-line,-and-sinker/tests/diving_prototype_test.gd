@@ -29,8 +29,10 @@ func _run() -> void:
 	var silas_burrow: Vector2 = (locations.get_node("SilasBurrow") as Marker2D).position
 	var tangled_net: Vector2 = (locations.get_node("TangledNet") as Marker2D).position
 	var surface_point: Vector2 = (locations.get_node("SurfaceExit") as Marker2D).position
-	_check(level_art.get_node_or_null("Terrain") is TileMapLayer and foreground_art != null,
-		"Visual level art and foreground layers are editable in the lagoon scene")
+	_check(level_art.get_node_or_null("Solids") is TileMapLayer and foreground_art != null,
+		"Compatibility test uses the real lagoon's solid-wall tiles and foreground art")
+	_check(world.scene_file_path == "res://scenes/lagoon_area.tscn",
+		"Old combat test scene instances the canonical underwater level, not a duplicate")
 	_check(spawn_group.get_child_count() == 8 and spawn_group.get_child(0) is DivingFishSpawn,
 		"Fish are controlled by editor-placeable spawn markers")
 	_check(locations.has_node("Entry") and locations.has_node("ShellGarden"),
