@@ -16,9 +16,8 @@ const SILAS_FEET_OFFSET: float = 16.0
 
 @onready var _world: Node2D = $SubViewportContainer/SubViewport/World
 @onready var _world_player: Player = $SubViewportContainer/SubViewport/World/Player
-@onready var _diving_layer: CanvasLayer = $DivingLayer
-@onready var _diving_scene: Control = $DivingLayer/DivingPrototype
-@onready var _lagoon: DivingWorld = $DivingLayer/DivingPrototype/SubViewportContainer/SubViewport/Lagoon
+@onready var _diving_hud: Control = $DivingHUD
+@onready var _lagoon: DivingWorld = $SubViewportContainer/SubViewport/World/Lagoon
 @onready var _iris: ColorRect = $TransitionLayer/Iris
 @onready var _music: AudioStreamPlayer2D = $AudioStreamPlayer2D
 @onready var _dialogue_ui: DialogueUI = $CanvasLayer/DialogueUI
@@ -41,8 +40,7 @@ var _dock_confirmation_yes: bool = false
 
 
 func _ready() -> void:
-	_diving_layer.visible = false
-	_diving_layer.process_mode = Node.PROCESS_MODE_DISABLED
+	_diving_hud.hide()
 	_iris.hide()
 	_iris.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_iris_material = (_iris.material as ShaderMaterial).duplicate() as ShaderMaterial
@@ -50,8 +48,7 @@ func _ready() -> void:
 	_set_iris_radius(IRIS_OPEN_RADIUS)
 	_lagoon.set_embedded_mode(true)
 	_lagoon.surface_requested.connect(_on_surface_requested)
-	# Both scenes currently use the same theme. Keep one copy playing.
-	(_diving_scene.get_node("Music") as AudioStreamPlayer).stop()
+	# The lagoon is a child of the one live World; there is only one music player.
 	DialogueManager.conversation_finished.connect(_on_reveal_conversation_finished)
 	_intro_layer.hide()
 	DialogueManager.conversation_finished.connect(_on_contract_conversation_finished)
@@ -223,18 +220,23 @@ func _begin_dive(dock: Node2D) -> void:
 	).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 	await jump.finished
 	_spawn_splash(landing)
-	# Use the real camera-transformed position of the impact, not a fixed
-	# screen center: this is where the black circle must close around.
-	await _close_iris(_normalized_screen_position(_world_player))
 
-	_world_player.hide()
-	_diving_layer.visible = true
-	_dialogue_ui.set_underwater_mode(true)
-	_lagoon.enter_from_dock()
+	# No second world, teleport or viewport switch. The camera follows
+	# Penni from the dock through the same surface into the ocean.
 	_underwater = true
 	GameManager.diving_session_active = true
-	await _open_iris(_normalized_screen_position(_lagoon.get_node("Player") as Node2D))
-	_diving_layer.process_mode = Node.PROCESS_MODE_INHERIT
+	_dialogue_ui.set_underwater_mode(true)
+	_diving_hud.show()
+	var entry: Vector2 = (_lagoon.get_node("Points/Entry") as Marker2D).global_position
+	var island_camera: Camera2D = _world_player.get_node("Camera2D") as Camera2D
+	var descent: Tween = create_tween().set_parallel(true)
+	descent.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	descent.tween_property(_world_player, "global_position", entry, 0.85)
+	descent.tween_property(island_camera, "position", Vector2.ZERO, 0.85)
+	await descent.finished
+	_world_player.animator.rotation = 0.0
+	_lagoon.enter_from_dock()
+	_world_player.busy = false
 	_transitioning = false
 
 
@@ -264,29 +266,33 @@ func _on_surface_requested(with_silas: bool) -> void:
 	if _transitioning or not _underwater:
 		return
 	_transitioning = true
-	# Freeze underwater movement and net clicks while the circle closes.
-	_diving_layer.process_mode = Node.PROCESS_MODE_DISABLED
+	_world_player.busy = true
 	_surface_from_dive(with_silas)
 
 
 func _surface_from_dive(with_silas: bool) -> void:
-	await _close_iris(_normalized_screen_position(_lagoon.get_node("Player") as Node2D))
-	_diving_layer.visible = false
-	_diving_layer.process_mode = Node.PROCESS_MODE_DISABLED
-	_dialogue_ui.set_underwater_mode(false)
-	_world_player.global_position = _shore_return_position
-	_world_player.show()
+	# Return through the SAME water surface. Sky stays visible in the camera;
+	# there is no fade-to-black or replacement scene.
+	_world_player.set_swimming(false)
+	var island_camera: Camera2D = _world_player.get_node("Camera2D") as Camera2D
+	var ascent: Tween = create_tween().set_parallel(true)
+	ascent.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	ascent.tween_property(_world_player, "global_position", _shore_return_position, 0.85)
+	ascent.tween_property(island_camera, "position", Vector2(0.0, -22.0), 0.85)
+	await ascent.finished
 	_world_player.animator.rotation = 0.0
 	_world_player.animator.play(&"idle_l")
 	_underwater = false
 	GameManager.diving_session_active = false
-	# A full dive spends one normal-world action, not one per net capture.
+	_lagoon.call("_set_camera_bounds", false)
+	_diving_hud.hide()
+	_dialogue_ui.set_underwater_mode(false)
+	# A dive costs one ordinary time action on surfacing.
 	GameManager.spend_actions(1)
 
 	var reveal_silas: bool = with_silas and not _silas_recruited and not is_instance_valid(_silas_actor)
 	if reveal_silas:
 		_place_silas_on_dock()
-	await _open_iris(_normalized_screen_position(_world_player))
 	if reveal_silas:
 		await _show_silas_transformation()
 	_transitioning = false
@@ -347,9 +353,7 @@ func _on_reveal_conversation_finished(npc: NPCData) -> void:
 
 
 func _normalized_screen_position(actor: Node2D) -> Vector2:
-	# Both the island and diving area render into separate 320x180 viewports
-	# which fill the same display. Normalizing canvas coordinates maps the
-	# actual splash/player position to the iris's fullscreen ColorRect UV.
+	# The boat/intro iris still uses the single island-world viewport.
 	var point: Vector2 = actor.get_global_transform_with_canvas().origin
 	var view_size: Vector2 = Vector2(actor.get_viewport().get_visible_rect().size)
 	return Vector2(
