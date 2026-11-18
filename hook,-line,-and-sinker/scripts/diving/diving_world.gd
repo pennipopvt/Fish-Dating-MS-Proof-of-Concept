@@ -91,7 +91,7 @@ func enter_from_dock() -> void:
 func _sea_bounds() -> Rect2:
 	var size: Vector2 = _guide.map_size
 	return Rect2(
-		Vector2(16.0, SEA_TOP),
+		Vector2(_guide.map_origin.x + 16.0, SEA_TOP),
 		Vector2(maxf(size.x - 32.0, 32.0), maxf(size.y - SEA_TOP - 16.0, 32.0))
 	)
 
@@ -100,9 +100,9 @@ func _set_camera_bounds(in_sea: bool) -> void:
 	if _camera == null:
 		return
 	if in_sea:
-		_camera.limit_left = -160
+		_camera.limit_left = roundi(_guide.map_origin.x)
 		_camera.limit_top = -90
-		_camera.limit_right = roundi(_guide.map_size.x)
+		_camera.limit_right = roundi(_guide.map_origin.x + _guide.map_size.x + 64.0)
 		_camera.limit_bottom = roundi(_guide.map_size.y)
 	else:
 		_camera.limit_left = -10000000

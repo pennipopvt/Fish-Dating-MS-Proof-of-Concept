@@ -68,8 +68,8 @@ func consume_first_reel() -> bool:
 	_events[&"line_broken"] = true
 	var ui: SeaSpeechBubble = _bubble()
 	if ui != null:
-		ui.show_hint("The line broke! Follow the voice to the right.")
-		ui.show_call("Help me!", true, 5.0)
+		ui.show_hint("The line broke! Follow the voice to the left.")
+		ui.show_call("Help me!", false, 5.0)
 	return true
 
 
@@ -131,7 +131,7 @@ func maybe_offer_companion_help(player_position: Vector2, fish_list: Array[Divin
 			_events[&"companion_help_offered"] = true
 			var ui: SeaSpeechBubble = _bubble()
 			if ui != null:
-				ui.show_call("I can help with that fish.", true, 4.5)
+				ui.show_call("I can help with that fish.", false, 4.5)
 				ui.show_hint("RIGHT CLICK a fish to tell Silas to attack")
 			return
 

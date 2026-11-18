@@ -2,7 +2,7 @@ extends Node2D
 
 # Visuals follow the existing action-based GameManager clock. No second clock:
 # each of the three periods contains three visual steps (one per action).
-# The world stays camera-relative, so fishing camera pans do not move the sky.
+# The sky pans horizontally with the camera but stays fixed above the surface.
 @export_range(0.0, 4.0, 0.1) var transition_seconds: float = 1.6
 
 const AFTERNOON_START: float = 1.0 / 3.0
@@ -20,12 +20,14 @@ const MOON_ARC_HEIGHT: float = 220.0
 # The surface is the upper edge of the existing World/Water ColorRect.
 const REFLECTION_AT_SURFACE: float = 0.477
 
-@onready var _sky: ColorRect = $Player/Camera2D/Sky/SkyGradient
-@onready var _stars: ColorRect = $Player/Camera2D/Sky/NightStars
-@onready var _sun: Sprite2D = $Player/Camera2D/Sky/Sun
-@onready var _sun_glow: ColorRect = $Player/Camera2D/Sky/SunGlow
-@onready var _moon: ColorRect = $Player/Camera2D/Sky/Moon
-@onready var _moon_glow: ColorRect = $Player/Camera2D/Sky/MoonGlow
+@onready var _sky: ColorRect = $Sky/SkyGradient
+@onready var _stars: ColorRect = $Sky/NightStars
+@onready var _sun: Sprite2D = $Sky/Sun
+@onready var _sun_glow: ColorRect = $Sky/SunGlow
+@onready var _moon: ColorRect = $Sky/Moon
+@onready var _moon_glow: ColorRect = $Sky/MoonGlow
+@onready var _sky_region: Control = $Sky
+@onready var _camera: Camera2D = $Player/Camera2D
 @onready var _ambient: CanvasModulate = $DayNightTint
 @onready var _water: ColorRect = $Water
 @onready var _diver: Player = $Player
@@ -65,6 +67,12 @@ func _ready() -> void:
 
 
 func _process(_delta: float) -> void:
+    # Horizontal parallax follows the camera, but the sky's BOTTOM stays at
+    # the actual world-space waterline. It cannot follow Penni underwater.
+    _sky_region.global_position = Vector2(
+        _camera.get_screen_center_position().x - 160.0,
+        _water.global_position.y - _sky_region.size.y
+    )
     # Reflection exists at the surface, but dissolves as the original player
     # swims below it. No second viewport, water clock or duplicate shader.
     var surface_y: float = _water.global_position.y
