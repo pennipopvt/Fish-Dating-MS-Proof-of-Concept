@@ -1,0 +1,32 @@
+{
+  "entry": "start",
+  "free_greeting": true,
+  "nodes": {
+    "start": {
+      "lines": [
+        "Start diving?"
+      ],
+      "choices": [
+        {
+          "text": "Yes",
+          "next": "done",
+          "spends_action": false,
+          "grey_when_picked": false,
+          "dive_decision": "yes",
+          "tone": "neutral"
+        },
+        {
+          "text": "No",
+          "next": "done",
+          "spends_action": false,
+          "grey_when_picked": false,
+          "dive_decision": "no",
+          "tone": "neutral"
+        }
+      ]
+    },
+    "done": {
+      "lines": []
+    }
+  }
+}
