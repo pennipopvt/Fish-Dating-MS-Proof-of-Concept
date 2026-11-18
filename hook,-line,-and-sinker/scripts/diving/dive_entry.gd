@@ -2,24 +2,17 @@ extends Control
 
 # Keeps the existing island as the real overworld. Only the dock's fishing
 # interaction changes: jump -> circular iris -> persistent diving sea.
-const SILAS_SCENE: PackedScene = preload("res://prefabs/silas.tscn")
-const SILAS_FISH_DATA: FishData = preload("res://resources/fish/silas.tres")
 const FISH_CO_OPERATOR: NPCData = preload("res://resources/npcs/fish_co_operator.tres")
 const DOCK_CONFIRM: NPCData = preload("res://resources/npcs/dock_dive_prompt.tres")
 const RIPPLE: Texture2D = preload("res://sprites/environment/medium_ripple_a.png")
-const POOF_SHEET: Texture2D = preload("res://sprites/characters/poof.png")
 const DIVE_DURATION: float = 0.43
 const IRIS_DURATION: float = 0.52
 const IRIS_OPEN_RADIUS: float = 2.6
-# Lift Silas's centred sprite to match Penni's dock-height sprite origin.
-const SILAS_FEET_OFFSET: float = 16.0
 
 @onready var _world: Node2D = $SubViewportContainer/SubViewport/World
 @onready var _world_player: Player = $SubViewportContainer/SubViewport/World/Player
-@onready var _diving_hud: Control = $DivingHUD
 @onready var _sea: DivingWorld = $SubViewportContainer/SubViewport/World/Sea
 @onready var _iris: ColorRect = $TransitionLayer/Iris
-@onready var _music: AudioStreamPlayer2D = $AudioStreamPlayer2D
 @onready var _dialogue_ui: DialogueUI = $CanvasLayer/DialogueUI
 @onready var _shop_menu: ShopMenu = $CanvasLayer/ShopMenu
 @onready var _intro_layer: CanvasLayer = $IntroLayer
@@ -29,8 +22,6 @@ var _iris_material: ShaderMaterial
 var _underwater: bool = false
 var _transitioning: bool = false
 var _shore_return_position: Vector2 = Vector2(56.0, 112.0)
-var _silas_actor: NPCInteractable
-var _silas_recruited: bool = false
 var _contract_call_finished: bool = false
 var _first_quota_opened: bool = false
 var _first_dive_call_started: bool = false
@@ -40,16 +31,13 @@ var _dock_confirmation_yes: bool = false
 
 
 func _ready() -> void:
-	_diving_hud.hide()
 	_iris.hide()
 	_iris.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_iris_material = (_iris.material as ShaderMaterial).duplicate() as ShaderMaterial
 	_iris.material = _iris_material
 	_set_iris_radius(IRIS_OPEN_RADIUS)
-	_sea.set_embedded_mode(true)
 	_sea.surface_requested.connect(_on_surface_requested)
 	# The sea is a child of the one live World; there is only one music player.
-	DialogueManager.conversation_finished.connect(_on_reveal_conversation_finished)
 	_intro_layer.hide()
 	DialogueManager.conversation_finished.connect(_on_contract_conversation_finished)
 	DialogueManager.conversation_finished.connect(_on_first_dive_conversation_finished)
@@ -226,7 +214,6 @@ func _begin_dive(dock: Node2D) -> void:
 	_underwater = true
 	GameManager.diving_session_active = true
 	_dialogue_ui.set_underwater_mode(true)
-	_diving_hud.show()
 	var entry_marker: Marker2D = _sea.get_node_or_null("Points/Entry") as Marker2D
 	var entry: Vector2 = entry_marker.global_position if entry_marker != null else _sea.to_global(Vector2(55, 182))
 	var island_camera: Camera2D = _world_player.get_node("Camera2D") as Camera2D
@@ -263,15 +250,15 @@ func _spawn_splash(at: Vector2) -> void:
 	tween.chain().tween_callback(splash.queue_free)
 
 
-func _on_surface_requested(with_silas: bool) -> void:
+func _on_surface_requested() -> void:
 	if _transitioning or not _underwater:
 		return
 	_transitioning = true
 	_world_player.busy = true
-	_surface_from_dive(with_silas)
+	_surface_from_dive()
 
 
-func _surface_from_dive(with_silas: bool) -> void:
+func _surface_from_dive() -> void:
 	# Return through the SAME water surface. Sky stays visible in the camera;
 	# there is no fade-to-black or replacement scene.
 	var island_camera: Camera2D = _world_player.get_node("Camera2D") as Camera2D
@@ -286,71 +273,12 @@ func _surface_from_dive(with_silas: bool) -> void:
 	_underwater = false
 	GameManager.diving_session_active = false
 	_sea.call("_set_camera_bounds", false)
-	_diving_hud.hide()
 	_dialogue_ui.set_underwater_mode(false)
 	# A dive costs one ordinary time action on surfacing.
 	GameManager.spend_actions(1)
 
-	var reveal_silas: bool = with_silas and not _silas_recruited and not is_instance_valid(_silas_actor)
-	if reveal_silas:
-		_place_silas_on_dock()
-	if reveal_silas:
-		await _show_silas_transformation()
 	_transitioning = false
 	_world_player.busy = false
-
-
-func _place_silas_on_dock() -> void:
-	_silas_actor = SILAS_SCENE.instantiate() as NPCInteractable
-	_world.add_child(_silas_actor)
-	_silas_actor.global_position = _shore_return_position + Vector2(33.0, -SILAS_FEET_OFFSET)
-	var human: AnimatedSprite2D = _silas_actor.get_node("Sprite") as AnimatedSprite2D
-	human.hide()
-
-
-func _show_silas_transformation() -> void:
-	if not is_instance_valid(_silas_actor):
-		return
-	# Show the same four-frame poof sprite as the original catch sequence,
-	# but this time it happens because Silas CHOSE to accompany Penni.
-	var frames := SpriteFrames.new()
-	frames.add_animation(&"transform")
-	frames.set_animation_loop(&"transform", false)
-	frames.set_animation_speed(&"transform", 12.0)
-	for i in range(4):
-		var cutout := AtlasTexture.new()
-		cutout.atlas = POOF_SHEET
-		cutout.region = Rect2(float(i * 32), 0.0, 32.0, 32.0)
-		frames.add_frame(&"transform", cutout)
-	var poof := AnimatedSprite2D.new()
-	poof.sprite_frames = frames
-	poof.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	poof.z_index = 25
-	_world.add_child(poof)
-	poof.global_position = _silas_actor.global_position
-	poof.play(&"transform")
-	await poof.animation_finished
-	poof.queue_free()
-	if not is_instance_valid(_silas_actor):
-		return
-	(_silas_actor.get_node("Sprite") as AnimatedSprite2D).show()
-	# Reuse the original game's dialogue portrait/UI while giving the new
-	# diving encounter its own first-on-land lines (not the caught-fish story).
-	DialogueManager.request_conversation(
-		_silas_actor.npc, "res://dialogue/silas_surface_reveal.json"
-	)
-
-
-func _on_reveal_conversation_finished(npc: NPCData) -> void:
-	if npc == null or npc.npc_id != &"test_npc" or _silas_recruited:
-		return
-	if not is_instance_valid(_silas_actor):
-		return
-	# The same recruitment/housing mechanism as the original fishing game.
-	# This removes Silas from the ordinary catch pool and enables his town
-	# interactions after he agrees to live above water.
-	if RecruitmentHandler.recruit_actor_for_debug(_silas_actor, SILAS_FISH_DATA):
-		_silas_recruited = true
 
 
 func _normalized_screen_position(actor: Node2D) -> Vector2:

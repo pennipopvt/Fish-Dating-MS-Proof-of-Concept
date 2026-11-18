@@ -2,7 +2,6 @@
 
 [ext_resource type="PackedScene" uid="uid://bjt7lp2qss3qh" path="res://prefabs/world.tscn" id="1_sugp2"]
 [ext_resource type="Script" path="res://scripts/diving/dive_entry.gd" id="dive_entry"]
-[ext_resource type="PackedScene" path="res://scenes/diving_hud.tscn" id="diving_hud"]
 [ext_resource type="PackedScene" path="res://scenes/fish_co_intro.tscn" id="fish_co_intro"]
 [ext_resource type="Shader" path="res://shaders/iris_transition.gdshader" id="iris_shader"]
 [ext_resource type="AudioStream" uid="uid://b4567j3srpp18" path="res://sounds/FROM THE SEA 2026-10-30 03_02_51.mp3" id="4_jyhfs"]
@@ -45,9 +44,6 @@ size = Vector2i(320, 180)
 render_target_update_mode = 4
 
 [node name="World" parent="SubViewportContainer/SubViewport" unique_id=1151991614 instance=ExtResource("1_sugp2")]
-
-[node name="DivingHUD" parent="." instance=ExtResource("diving_hud")]
-visible = false
 
 [node name="CanvasLayer" type="CanvasLayer" parent="." unique_id=1326123139]
 
