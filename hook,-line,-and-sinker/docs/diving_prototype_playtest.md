@@ -98,9 +98,9 @@ Code: `scripts/diving/companion_battle.gd` (`DivingCompanionBattle`, the `Compan
 
 ## Editing the underwater level in Godot
 
-See [underwater level design](underwater_level_design.md) for the Godot scene hierarchy and hands-on editing guide. The lagoon's **920×530 world pixels** are visible through a **320×180 camera**. The fish spawn points and the story markers are now actual scene nodes; select and move them in `scenes/diving_prototype.tscn`. Add art under `Lagoon/LevelArt` or `Lagoon/ForegroundArt`, and assign a TileSet to `LevelArt/Terrain` when you're ready to paint tiles. Disable `Lagoon.show_prototype_environment` to hide most of the old script-drawn scenery once real art is placed.
+See [underwater level design](underwater_level_design.md) for the scene hierarchy, how to add your underwater PNGs to the shared **16px TileSet**, painting the five visual/solid layers and moving existing FishSpawns and Points markers. The lagoon starts at **920×530 world pixels**, viewed through the existing **320×180 camera**; resize the level with `Lagoon/EditorGuide → Map Size`, not a script constant. The TileSet is already shared by all paint layers in `scenes/diving_prototype.tscn`. Disable `Lagoon.show_prototype_environment` after replacing the temporary procedural art.
 
-**Warning:** obstacles are currently visual only. The diver moves with a rectangular position clamp and does not collide with cave walls or rocks yet; that needs a separate collision-aware movement pass.
+**Collisions:** Penni and net casts now respect collision polygons on `LevelArt/Solids`. The visual-only water, terrain, detail and foreground layers do not block them. Fish and Silas still use direct movement rather than navigation/pathfinding, so avoid enclosing them in narrow walls until we upgrade their movement.
 
 ## Removed bait and bobber content
 
