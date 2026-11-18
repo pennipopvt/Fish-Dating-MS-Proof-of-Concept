@@ -75,13 +75,34 @@ func _on_contract_conversation_finished(npc: NPCData) -> void:
 
 
 func _on_contract_call_finished() -> void:
+	# Close the SAME iris used for diving, switch from boat to dock while
+	# black, then reveal the island. Don't auto-open the terminal: its
+	# familiar exclamation bubble guides the player's first interaction.
 	_contract_call_finished = true
+	_transitioning = true
+	_world_player.busy = true
+	_transition_contract_to_dock()
+
+
+func _transition_contract_to_dock() -> void:
+	await _close_iris(Vector2(0.5, 0.5))
 	_intro.end()
 	_intro_layer.hide()
+
+	# The existing island and dock are already loaded under the backdrop.
+	# This is not a new scene or a duplicate starting environment.
+	var dock: Node2D = _world.get_node("Dock") as Node2D
+	_world_player.global_position = dock.global_position + Vector2(22.0, 11.0)
+	_world_player.animator.play(&"idle_l")
+	var island_camera: Camera2D = _world_player.get_node("Camera2D") as Camera2D
+	island_camera.reset_smoothing()
+	island_camera.force_update_scroll()
+	var terminal: ShopInteractable = _world.get_node("Shop") as ShopInteractable
+	terminal.set_intro_quota_notice(true)
+
+	await _open_iris(_normalized_screen_position(_world_player))
+	_transitioning = false
 	_world_player.busy = false
-	# The contract is the only thing in the terminal at the beginning.
-	# Show the real quota requirements directly after hanging up.
-	_shop_menu.open()
 
 
 # Called by Dock.interact using the real world Player and Dock instances.
