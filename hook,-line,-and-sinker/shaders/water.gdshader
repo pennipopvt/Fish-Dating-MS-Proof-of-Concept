@@ -17,6 +17,10 @@ uniform float highlight_density : hint_range(0.0, 1.0) = 0.25;
 uniform float highlight_speed : hint_range(0.0, 5.0) = 0.5;
 
 uniform float waterline_y = 140.0;
+// The sky/reflection remains readable just below the surface, then fades
+// into a blue translucent water tint. Values are in native screen pixels.
+uniform float reflection_fade_depth : hint_range(4.0, 160.0) = 64.0;
+uniform float deep_water_alpha : hint_range(0.0, 1.0) = 0.58;
 
 
 // Stable random number for each pixel-grid cell.
@@ -32,6 +36,7 @@ void fragment() {
 	vec2 screen_pixel = SCREEN_UV / pixel_size;
 
 	float depth = max(screen_pixel.y - waterline_y, 0.0);
+	float submersion = smoothstep(0.0, max(reflection_fade_depth, 1.0), depth);
 
 	// Preserve the order of reflected rows: never add independent vertical
 	// waves that can make foreground/sky stripes cross over each other.
@@ -67,7 +72,7 @@ void fragment() {
 	vec3 final_color = mix(
 		water_color.rgb,
 		reflection,
-		reflection_strength
+		reflection_strength * (1.0 - submersion)
 	);
 
 	// Small horizontal glints, grouped into 8x3-pixel cells.
@@ -101,7 +106,7 @@ void fragment() {
 	float highlight = glint_shape
 		* glint_exists
 		* shimmer
-		* highlight_intensity;
+		* highlight_intensity * (1.0 - submersion);
 
 	final_color = mix(
 		final_color,
@@ -109,5 +114,7 @@ void fragment() {
 		highlight
 	);
 
-	COLOR = vec4(final_color, 1.0);
+	// Close to the surface the reflected image is opaque, like the existing
+	// ocean. Underwater it becomes a translucent tint over the real scenery.
+	COLOR = vec4(final_color, mix(1.0, deep_water_alpha, submersion));
 }
