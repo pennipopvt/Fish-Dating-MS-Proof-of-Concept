@@ -1,0 +1,42 @@
+{
+  "entry": "call",
+  "free_greeting": true,
+  "nodes": {
+    "call": {
+      "lines": [
+        {
+          "speaker": "npc",
+          "text": "*ring ring*"
+        },
+        {
+          "speaker": "player",
+          "text": "Hello?"
+        },
+        {
+          "speaker": "npc",
+          "text": "Congratulations on reaching your new home."
+        },
+        {
+          "speaker": "npc",
+          "text": "You may now start your first dive."
+        },
+        {
+          "speaker": "npc",
+          "text": "Living arrangements will be open after you have completed your dive."
+        },
+        {
+          "speaker": "npc",
+          "text": "Good luck!"
+        },
+        {
+          "speaker": "npc",
+          "text": "*Click*"
+        },
+        {
+          "speaker": "player",
+          "text": "Just throw me into the deep end, I guess..."
+        }
+      ]
+    }
+  }
+}
