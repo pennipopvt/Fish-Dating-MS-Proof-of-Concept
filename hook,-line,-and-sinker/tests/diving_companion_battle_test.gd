@@ -26,8 +26,8 @@ func _unit_checks() -> void:
 	_check(is_equal_approx(DivingCompanionBattle.damage(6.0, 4.0), 4.0)
 		and is_equal_approx(DivingCompanionBattle.damage(1.0, 10.0), 1.0),
 		"Damage is attack - defense/2, at least 1")
-	_check(GOBY.catchable_health >= 1.0 and TUNA.catchable_health < 1.0,
-		"Early fish are catchable at full health; later fish need wearing down")
+	_check(is_equal_approx(GOBY.full_health_strength, 1.0) and TUNA.full_health_strength > 2.0,
+		"Early fish fight at normal strength; later fish are far stronger when fresh")
 
 	var battle := DivingCompanionBattle.new()
 	get_root().add_child(battle)
@@ -105,7 +105,9 @@ func _scene_checks() -> void:
 		"Spawned fish take their health from FishData")
 
 	world.call("_on_net_fish_hit", tuna)
-	_check(not combat.is_active(), "A full-health tuna is too strong for the net")
+	_check(combat.is_active() and is_equal_approx(combat.strength, TUNA.full_health_strength),
+		"A full-health tuna can be netted, but fights at full strength")
+	combat.release()
 
 	world.set("_silas_following", true)
 	player.position = goby.position + Vector2(-30.0, 0.0)
@@ -120,15 +122,14 @@ func _scene_checks() -> void:
 		"An early fish is catchable at full health, and netting ends the battle")
 	combat.release()
 
-	tuna.health = tuna.max_health * TUNA.catchable_health
+	tuna.health = tuna.max_health * 0.4
 	tuna.catch_cooldown = 0.0
 	world.call("_on_net_fish_hit", tuna)
-	_check(combat.is_active(), "A worn-down tuna can be netted")
-	_check(is_equal_approx(combat.strength,
-		lerpf(combat.low_health_strength, 1.0, TUNA.catchable_health)),
+	_check(combat.is_active() and is_equal_approx(combat.strength,
+		lerpf(combat.low_health_strength, TUNA.full_health_strength, 0.4)),
 		"Reel fight strength follows the fish's remaining health")
 	combat.release()
-	_check(is_equal_approx(tuna.health, tuna.max_health * TUNA.catchable_health),
+	_check(is_equal_approx(tuna.health, tuna.max_health * 0.4),
 		"An escaped fish keeps its damage")
 
 	prototype.queue_free()

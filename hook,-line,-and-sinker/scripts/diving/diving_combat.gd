@@ -26,9 +26,10 @@ enum Phase { WARNING, WINDUP, ATTACK, DASH, RECOVERY, STUN }
 @export_range(1.0, 100.0, 1.0) var perfect_stagger_gain: float = 48.0
 @export_range(0.0, 15.0, 0.5) var stagger_decay_per_second: float = 2.0
 @export_range(1.0, 3.0, 0.05) var stun_reel_multiplier: float = 1.5
-# A fish worn down by the companion's auto-battle fights back weaker:
-# its pulling (passive, contested, dash distance) and the tension it causes
-# scale from this value at 0 health up to 1.0 at full health.
+# A fish's strength in the reel fight follows its remaining health from the
+# companion's auto-battle: its pulling (passive, contested, dash distance)
+# and the tension it causes scale from this value at 0 health up to
+# FishData.full_health_strength at full health.
 @export_range(0.0, 1.0, 0.05) var low_health_strength: float = 0.4
 
 # Keep upgrade strength proportional as the base reel distance changes.
@@ -66,7 +67,8 @@ var _dash_start_distance: float = 0.0
 var _dash_end_distance: float = 0.0
 var _dash_start_tension: float = 0.0
 var _dash_end_tension: float = 0.0
-# Set in begin() from the fish's remaining health (1.0 = full strength).
+# Set in begin() from the fish's remaining health: low_health_strength at 0,
+# FishData.full_health_strength at full (well above 1 for later species).
 var strength: float = 1.0
 
 func is_active() -> bool:
@@ -83,7 +85,7 @@ func begin(wild: DivingWildFish, data: FishData, initial_distance: float, net_ra
 	_update_progress_from_distance()
 	tension = 0.0
 	stagger = 0.0
-	strength = lerpf(low_health_strength, 1.0, clampf(health_ratio, 0.0, 1.0))
+	strength = lerpf(low_health_strength, data.full_health_strength, clampf(health_ratio, 0.0, 1.0))
 	recovery_timer = 0.0
 	reel_open = false
 	free_reel = false
@@ -301,9 +303,15 @@ func _close_parry() -> void:
 func _add_stagger(amount: float) -> void:
 	if not is_active() or phase == Phase.STUN:
 		return
-	stagger = clampf(stagger + amount, 0.0, maxf(fish_data.stagger_resistance, 1.0))
-	if stagger >= maxf(fish_data.stagger_resistance, 1.0):
+	stagger = clampf(stagger + amount, 0.0, stagger_resistance())
+	if stagger >= stagger_resistance():
 		_start_stagger_break()
+
+
+# A fish stronger than normal (fresh later species) is also harder to
+# stagger; a worn-down fish is never easier than its authored value.
+func stagger_resistance() -> float:
+	return maxf(fish_data.stagger_resistance * maxf(strength, 1.0), 1.0)
 
 
 func _start_stagger_break() -> void:

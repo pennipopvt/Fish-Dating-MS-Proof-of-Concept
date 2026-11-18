@@ -46,9 +46,11 @@ extends Resource
 @export_range(0.0, 50.0, 0.5) var defense: float = 2.0
 ## Attacks per second in the auto-battle.
 @export_range(0.1, 5.0, 0.05) var speed: float = 1.0
-## Highest health ratio the net can hold. 1.0 = catchable without a fight;
-## lower values mean the companion must wear the fish down first.
-@export_range(0.05, 1.0, 0.05) var catchable_health: float = 1.0
+## Reel-fight strength at full health (multiplies pulling, dash distance and
+## tension). It falls toward DivingCombat.low_health_strength as health drops.
+## 1.0 = beatable without a battle; much higher makes a fresh fish
+## practically impossible to reel in until the companion wears it down.
+@export_range(0.1, 6.0, 0.05) var full_health_strength: float = 1.0
 
 @export_group("Attacks")
 @export var states: Array[FishEscapeState] = []

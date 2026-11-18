@@ -3,7 +3,10 @@ extends SceneTree
 # Regression for the old diving bug: an arbitrary progress bar made fish
 # disappear after one parry even when they were still far from Penni.
 # godot --headless --path . -s res://tests/diving_combat_distance_test.gd
-const TUNA: FishData = preload("res://resources/fish/tuna.tres")
+const TUNA_FILE: FishData = preload("res://resources/fish/tuna.tres")
+# Base-rule checks use a normal-strength tuna; the real one is far stronger
+# at full health (full_health_strength) until a companion wears it down.
+var TUNA: FishData
 var failures: int = 0
 
 
@@ -12,6 +15,8 @@ func _initialize() -> void:
 
 
 func _run() -> void:
+	TUNA = TUNA_FILE.duplicate()
+	TUNA.full_health_strength = 1.0
 	var combat := DivingCombat.new()
 	get_root().add_child(combat)
 	var fish := DivingWildFish.new()
@@ -146,7 +151,18 @@ func _run() -> void:
 		"Low health lowers miss tension")
 	combat.release()
 	_check(combat.begin(fish, TUNA, 80.0, 110.0) and is_equal_approx(combat.strength, 1.0),
-		"Full health (the default) keeps full strength")
+		"A normal-strength fish at full health (the default) has strength 1")
+	combat.release()
+	_check(combat.begin(fish, TUNA_FILE, 80.0, 110.0)
+		and is_equal_approx(combat.strength, TUNA_FILE.full_health_strength)
+		and TUNA_FILE.full_health_strength > 2.0,
+		"A fresh tuna fights far above normal strength")
+	_check(is_equal_approx(combat.stagger_resistance(), TUNA_FILE.stagger_resistance * combat.strength),
+		"Extra strength also makes the fish harder to stagger")
+	combat.release()
+	combat.begin(fish, TUNA_FILE, 80.0, 110.0, 0.0)
+	_check(is_equal_approx(combat.stagger_resistance(), TUNA_FILE.stagger_resistance),
+		"A worn-down fish is never easier to stagger than its authored value")
 	combat.release()
 
 	combat.queue_free()

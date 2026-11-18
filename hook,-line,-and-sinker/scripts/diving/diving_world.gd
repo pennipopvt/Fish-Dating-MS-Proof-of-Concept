@@ -425,15 +425,6 @@ func _on_net_fish_hit(fish: DivingWildFish) -> void:
 	if fish == null or not is_instance_valid(fish):
 		_net.retract()
 		return
-	# Later species are too strong to hold until Silas wears them down.
-	var data: FishData = _get_fish_data(fish.fish_name)
-	if fish != _silas_rescue_target and data != null and fish.health_ratio() > data.catchable_health + 0.001:
-		_net.retract()
-		fish.catch_cooldown = 1.5
-		var away: Vector2 = (fish.position - player_sprite.position).normalized()
-		fish.position += away * 12.0
-		_toast("The %s is too strong for the net. Wear it down with Silas first." % fish.get_display_name().to_lower())
-		return
 	_begin_combat(fish)
 	if not _combat.is_active():
 		_net.retract()
