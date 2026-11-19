@@ -154,3 +154,23 @@ Texture2D slots: assigning your finished art replaces each placeholder.
 There is no background panel or screen-wide overlay.
 
 The existing 1.15-second first-fish focus safety timeout is preserved.
+
+## Camera-native tutorial cues
+
+The first-dive WASD/click/reel indicator is now `World/Player/Camera2D/SeaTutorialCue`
+(`scripts/diving/sea_tutorial_cue.gd`), one sprite in the **same 320x180
+SubViewport as Penni**. It renders above the underwater tint and fades only
+its own alpha. No tutorial drawing, texture preload, or sprite import is
+required in the separate Main CanvasLayer. Each action has a tiny transparent
+pixel placeholder drawn by the sprite itself if its exported texture is unset.
+
+Assign replacement images to **Movement Sprite**, **Cast Sprite** and
+**Reel Sprite** on that camera child in `prefabs/world.tscn`.
+`SeaStoryDirector` now addresses this scene node directly, with no group
+lookup; the old input overlay node and code were removed from
+`SeaSpeechBubble`, which remains solely for spoken dialogue.
+
+The fish-focus check uses the full 110px net-casting reach and the sea
+retries the initial WASD cue after the dive if the usual transition
+notification occurred before its UI became available. The existing focus
+safety timeout prevents a gameplay softlock.

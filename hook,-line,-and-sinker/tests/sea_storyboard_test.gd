@@ -15,24 +15,25 @@ func _run() -> void:
 	var sea: DivingWorld = main.get_node("SubViewportContainer/SubViewport/World/Sea") as DivingWorld
 	var story: SeaStoryDirector = sea.get_node("StoryDirector") as SeaStoryDirector
 	var bubble: SeaSpeechBubble = main.get_node("SeaSpeechBubble") as SeaSpeechBubble
-	var prompt: TextureRect = bubble.get_node("InputSprite") as TextureRect
-	_check(not prompt.visible and bubble.get_node_or_null("InputPrompt") == null,
-		"Only a hidden sprite exists; no full-screen tutorial panel")
-	_check(not prompt.visible and prompt.texture == null,
-		"InputSprite starts hidden with no imported-file dependency")
-	_check(bubble.movement_sprite == null and bubble.cast_sprite == null
-		and bubble.reel_sprite == null,
-		"No preloaded PNGs are needed for the placeholder artwork")
+	var cue: SeaTutorialCue = main.get_node(
+		"SubViewportContainer/SubViewport/World/Player/Camera2D/SeaTutorialCue"
+	) as SeaTutorialCue
+	_check(cue != null and not cue.visible,
+		"Camera has a hidden tutorial sprite before diving")
+	_check(cue.z_index > 80 and not cue.z_as_relative,
+		"Control cue renders above the underwater tint in the game viewport")
+	_check(cue.movement_sprite == null and cue.cast_sprite == null
+		and cue.reel_sprite == null,
+		"Fallback art needs no imported files; Inspector sprites are replaceable")
 	var first_fish: DivingWildFish = sea.get("_tutorial_fish") as DivingWildFish
 	_check(first_fish != null, "FirstFish spawn creates the tutorial target")
 	_check(first_fish.trapped, "First tutorial fish waits in place for a cast")
 	story.on_dive_entered()
-	_check(prompt.visible and bubble.current_action == &"move"
-		and prompt.texture is ImageTexture,
-		"Entering the sea generates a transparent WASD image with no import")
+	_check(cue.visible and cue.current_action == &"move",
+		"Entering the sea shows WASD on the Player camera")
 	_check(story.on_first_fish_seen(), "First fish focus is allowed only if the icon is visible")
-	_check(bubble.current_action == &"cast" and prompt.texture is ImageTexture,
-		"Noticing the fish replaces WASD with a mouse-click image")
+	_check(cue.current_action == &"cast" and cue.visible,
+		"Fish discovery replaces WASD with click in the same camera viewport")
 	# The movement pause always expires even if no mouse event arrives.
 	var player: Player = main.get_node("SubViewportContainer/SubViewport/World/Player") as Player
 	player.busy = true
@@ -42,16 +43,16 @@ func _run() -> void:
 	_check(not player.busy and not bool(sea.get("_fish_focus_locked")),
 		"Focus pause automatically releases; no invisible softlock")
 	story.on_first_cast()
-	_check(bubble.current_action == &"",
-		"Casting dismisses the input cue without a timer")
+	_check(cue.current_action == &"cast" and cue.visible,
+		"Casting fades out the click sprite rather than creating another HUD")
 	_check(story.wants_scripted_hook(first_fish, first_fish), "First hook is story-owned")
 	story.on_scripted_hook()
-	_check(bubble.current_action == &"reel" and prompt.texture is ImageTexture,
-		"Hooking the fish generates the scrolling cue")
+	_check(cue.current_action == &"reel" and cue.visible,
+		"Hooking the first fish shows the scroll sprite")
 	_check(story.consume_first_reel(), "First scroll triggers the one-time line break")
 	_check(not story.consume_first_reel(), "The same line-break cue cannot repeat")
 	_check(story.has_event(&"line_broken"), "The story event records its completion")
-	_check(bubble.current_action == &"", "The reel cue hides after the line breaks")
+	_check(cue.visible, "The reel cue fades out after the line breaks")
 	_check((bubble.get_node("Call") as Control).visible,
 		"Offscreen Help me bubble appears after the break")
 	_check(story.can_talk_to_silas(), "Silas can be found after the first escape")

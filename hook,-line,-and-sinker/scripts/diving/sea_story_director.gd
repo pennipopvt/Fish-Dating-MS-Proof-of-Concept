@@ -18,6 +18,13 @@ func _ready() -> void:
 func _bubble() -> SeaSpeechBubble:
 	return get_tree().get_first_node_in_group("sea_speech_bubble") as SeaSpeechBubble
 
+func _cue() -> SeaTutorialCue:
+	# Direct node lookup in the SAME SubViewport as the Player and camera.
+	# No dependency on Main's CanvasLayer or cross-viewport group ordering.
+	return get_parent().get_parent().get_node_or_null(
+		"Player/Camera2D/SeaTutorialCue"
+	) as SeaTutorialCue
+
 
 func has_event(id: StringName) -> bool:
 	return bool(_events.get(id, false))
@@ -37,17 +44,22 @@ func _set_silas_flag(id: StringName) -> void:
 
 
 func on_dive_entered() -> void:
+	if not has_event(&"line_broken"):
+		var cue: SeaTutorialCue = _cue()
+		if cue == null:
+			push_warning("SeaTutorialCue is missing from the Player camera.")
+			return
+		if has_event(&"tutorial_hooked"):
+			cue.show_action(&"reel")
+		elif has_event(&"fish_focus_seen") and not has_event(&"first_cast"):
+			cue.show_action(&"cast")
+		elif not has_event(&"first_cast"):
+			cue.show_action(&"move")
+		return
 	var ui: SeaSpeechBubble = _bubble()
 	if ui == null:
 		return
-	if not has_event(&"line_broken"):
-		if has_event(&"tutorial_hooked"):
-			ui.show_input_prompt(&"reel")
-		elif has_event(&"fish_focus_seen") and not has_event(&"first_cast"):
-			ui.show_input_prompt(&"cast")
-		else:
-			ui.show_input_prompt(&"move")
-	elif not has_silas_flag(&"silas_met"):
+	if not has_silas_flag(&"silas_met"):
 		ui.show_hint("Follow the voice. Press E near the eel.")
 	elif not has_silas_flag(&"silas_freed"):
 		ui.show_hint("LEFT CLICK: net Silas to pull him free")
@@ -65,9 +77,9 @@ func wants_first_fish_focus() -> bool:
 func on_first_fish_seen() -> bool:
 	if not wants_first_fish_focus():
 		return false
-	var ui: SeaSpeechBubble = _bubble()
-	# Never take control unless the prompt can actually be displayed.
-	if ui == null or not ui.show_input_prompt(&"cast"):
+	var cue: SeaTutorialCue = _cue()
+	# Never take control unless the in-world camera cue is visible.
+	if cue == null or not cue.show_action(&"cast"):
 		return false
 	_events[&"fish_focus_seen"] = true
 	return true
@@ -77,9 +89,9 @@ func on_first_cast() -> void:
 	if has_event(&"first_cast"):
 		return
 	_events[&"first_cast"] = true
-	var ui: SeaSpeechBubble = _bubble()
-	if ui != null:
-		ui.hide_input_prompt()
+	var cue: SeaTutorialCue = _cue()
+	if cue != null:
+		cue.hide_action()
 
 
 func wants_scripted_hook(fish: DivingWildFish, tutorial_fish: DivingWildFish) -> bool:
@@ -88,9 +100,9 @@ func wants_scripted_hook(fish: DivingWildFish, tutorial_fish: DivingWildFish) ->
 
 func on_scripted_hook() -> void:
 	_events[&"tutorial_hooked"] = true
-	var ui: SeaSpeechBubble = _bubble()
-	if ui != null:
-		ui.show_input_prompt(&"reel")
+	var cue: SeaTutorialCue = _cue()
+	if cue != null:
+		cue.show_action(&"reel")
 
 
 func consume_first_reel() -> bool:
@@ -98,9 +110,11 @@ func consume_first_reel() -> bool:
 		return false
 	_events.erase(&"tutorial_hooked")
 	_events[&"line_broken"] = true
+	var cue: SeaTutorialCue = _cue()
+	if cue != null:
+		cue.hide_action()
 	var ui: SeaSpeechBubble = _bubble()
 	if ui != null:
-		ui.hide_input_prompt()
 		ui.show_hint("Follow the voice to the left.")
 		ui.show_call("Help me!", false, 5.0)
 	return true

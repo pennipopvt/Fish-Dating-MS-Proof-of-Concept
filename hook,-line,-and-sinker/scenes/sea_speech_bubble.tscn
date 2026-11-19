@@ -87,12 +87,3 @@ theme_override_fonts/font = ExtResource("pixel")
 theme_override_font_sizes/font_size = 26
 
 
-# One unobstructed, replaceable sprite. Only its alpha is animated.
-[node name="InputSprite" type="TextureRect" parent="."]
-visible = false
-mouse_filter = 2
-offset_right = 120.0
-offset_bottom = 80.0
-expand_mode = 1
-stretch_mode = 5
-texture_filter = 1

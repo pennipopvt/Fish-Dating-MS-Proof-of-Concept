@@ -9,7 +9,7 @@ signal surface_requested
 const SEA_TOP: float = 154.0
 const SURFACE_REACH: float = 44.0
 # First encounter: only lock movement when the fish is close enough to cast.
-const FIRST_FISH_FOCUS_RANGE: float = 104.0
+const FIRST_FISH_FOCUS_RANGE: float = 110.0
 const MIN_TUTORIAL_SWIM_DISTANCE: float = 50.0
 # Safety release: a tutorial must never leave the player unable to move.
 const FISH_FOCUS_HOLD_SECONDS: float = 1.15
@@ -22,6 +22,9 @@ const WILD_FISH_SCRIPT = preload("res://scripts/diving/wild_fish.gd")
 @onready var _spawns: Node2D = $FishSpawns
 @onready var _actors: Node2D = $FishActors
 @onready var _story: SeaStoryDirector = $StoryDirector
+@onready var _cue: SeaTutorialCue = get_parent().get_node_or_null(
+	"Player/Camera2D/SeaTutorialCue"
+) as SeaTutorialCue
 @onready var _net: DivingNetProjectile = $NetProjectile
 @onready var _combat: DivingCombat = $Combat
 @onready var _battle: DivingCompanionBattle = $CompanionBattle
@@ -126,6 +129,11 @@ func _set_camera_bounds(in_sea: bool) -> void:
 func _process(delta: float) -> void:
 	if _player == null or not _player.swimming:
 		return
+	# If the dive transition ran before its UI was ready, the Sea itself
+	# starts the movement lesson on the next swimming frame.
+	if _cue != null and _cue.current_action == &"" and not _story.has_event(&"fish_focus_seen") \
+			and not _story.has_event(&"first_cast") and not _story.has_event(&"line_broken"):
+		_story.on_dive_entered()
 	_check_first_fish_focus(delta)
 	_battle.step(delta)
 	if _combat.is_active():
