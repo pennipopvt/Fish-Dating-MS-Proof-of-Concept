@@ -57,8 +57,10 @@ player_portrait = ExtResource("4_tbgi4")
 
 [node name="IllustrationScene" parent="." instance=ExtResource("10_illustration")]
 
-# Outer UI is the proven drawing surface. The bubble itself scales from
-# 320x180 virtual pixels to the live SubViewportContainer display rect.
+# To edit Silas's bubble, OPEN res://scenes/sea_speech_bubble.tscn
+# and select its root; all game-pixel sizing/positioning is in its Inspector.
+# It lives under Main (UI), NOT under sea_area.tscn (world SubViewport).
+# Outer UI scales from 320x180 to SubViewportContainer display size.
 [node name="SeaSpeechBubble" parent="." instance=ExtResource("sea_speech_bubble")]
 
 [node name="IntroLayer" type="CanvasLayer" parent="."]

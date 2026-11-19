@@ -88,18 +88,8 @@ func _run() -> void:
 		"Pixel Operator speech bubble label is present")
 	_check((bubble.get_node("Call/Message") as Label).get_theme_font_size("font_size") == 11,
 		"Speech bubble uses smaller, readable 11px Pixel Operator")
-	bubble.show_hint("Silas attacks automatically. Right click again to recall him.")
-	var hint: Label = bubble.get_node("Hint") as Label
-	_check(hint.get_theme_font_size("font_size") == bubble.hint_font_pixels
-		and hint.size.x <= bubble.hint_width and hint.position.x > 160.0
-		and hint.position.y < 40.0,
-		"Companion hint wraps in a small top-right box")
-	_check((bubble.get_node("HintFrame") as Panel).visible,
-		"Companion hint uses a bounded pixel-frame Panel")
-	_check((bubble.get_node("HintFrame") as Panel).size == Vector2(
-		bubble.hint_width, bubble.hint_height),
-		"Hint frame cannot grow larger than Inspector width and height")
-	bubble.hide_hint()
+	_check(not bubble.has_node("Hint") and not bubble.has_node("HintFrame"),
+		"Standalone instruction popup removed without changing Silas's call")
 	_check(sea.get_node("Points/Entry") is Marker2D
 		and sea.get_node("Points/SurfaceExit") is Marker2D,
 		"Entry and surface return markers persist")

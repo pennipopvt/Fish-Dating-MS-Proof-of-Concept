@@ -489,3 +489,22 @@ Restoring audio, impact, line vibration and more legible parry
 effects should be a **separate gameplay feedback pass** after
 testing the distancing numbers. Do not couple lighting or a new
 combat controller to this small behavior change.
+
+
+## Editing the sea speech bubble (and no extra instruction popup)
+
+Open `res://scenes/sea_speech_bubble.tscn` directly in Godot,
+select its **SeaSpeechBubble** root, then edit **Call: Text and Size**
+and **Call: Position and Timing** in the Inspector. This is the
+existing PackedScene instanced at `Main/SeaSpeechBubble` in
+`res://scenes/main.tscn`; the UI is deliberately **not** inside
+`sea_area.tscn`, which is a SubViewport world scene. Bubble and
+marker offsets are measured from Silas in the 320x180 game pixel grid
+at runtime, so the static editor placement won't match the in-game
+camera-projected position.
+
+The unrelated tutorial **HintFrame + Hint** panel has been removed
+from the authored scene, runtime fallback and story calls, not just
+hidden. Silas's speech call, the standalone circle marker, the normal
+NPC dialogue UI and the camera's graphical tutorial sprites
+(WASD, cast/reel, right-click) still function separately.

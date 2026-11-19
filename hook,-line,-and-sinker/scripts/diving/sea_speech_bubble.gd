@@ -35,21 +35,11 @@ class_name SeaSpeechBubble
 @export_range(0.5, 8.0, 0.1) var help_hold_seconds: float = 2.4
 @export_range(0.1, 2.0, 0.1) var fade_seconds: float = 0.7
 @export_range(0.2, 6.0, 0.1) var repeat_gap_seconds: float = 1.8
-@export_group("Hint: Position and Size")
-# Offset is measured from the TOP-RIGHT corner of the native game view.
-@export var hint_top_right_offset: Vector2 = Vector2(-9.0, 18.0)
-@export_range(60.0, 160.0, 1.0) var hint_width: float = 110.0
-@export_range(20.0, 68.0, 1.0) var hint_height: float = 34.0
-@export_range(6, 14, 1) var hint_font_pixels: int = 8
-@export var hint_padding: Vector2 = Vector2(5.0, 3.0)
-
 @onready var _call: Control = $Call
 @onready var _frame: NinePatchRect = $Call/Frame
 @onready var _fallback: Panel = $Call/Fallback
 @onready var _text: Label = $Call/Message
 @onready var _tail: TextureRect = $Call/Tail
-@onready var _hint: Label = $Hint
-@onready var _hint_frame: Panel = get_node_or_null("HintFrame") as Panel
 
 var _display: SubViewportContainer
 var _game_viewport: SubViewport
@@ -79,9 +69,6 @@ func _ready() -> void:
 	_apply_frame()
 	_call.hide()
 	_tail.hide()
-	_hint.hide()
-	if _hint_frame != null:
-		_hint_frame.hide()
 	_sync_game_scale()
 	set_process(false)
 
@@ -98,8 +85,6 @@ func _apply_frame() -> void:
 	# the 32x32 nine-slice, and both use 1 source pixel = 1 game pixel.
 	# The runtime recovery used to inflate this 12px marker to 24px.
 	_tail.texture = tail_texture
-	# The small hint uses a simple 1-pixel framed Panel, not a second
-	# NinePatchRect whose stretch could cover the entire game view.
 	_tail.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	_tail.stretch_mode = TextureRect.STRETCH_KEEP
 	_tail.scale = Vector2.ONE
@@ -299,34 +284,3 @@ func hide_call() -> void:
 	set_process(false)
 
 
-func show_hint(message: String) -> void:
-	_sync_game_scale()
-	# Stable small native rect: no anchors, autosizing or full-screen
-	# nine-slice stretching. Exposed Inspector numbers control placement.
-	var size_pixels: Vector2 = Vector2(hint_width, hint_height)
-	var pos: Vector2 = Vector2(
-		_game_size().x + hint_top_right_offset.x - hint_width,
-		hint_top_right_offset.y
-	).round()
-	pos.x = clampf(pos.x, 0.0, maxf(0.0, _game_size().x - size_pixels.x))
-	pos.y = clampf(pos.y, 0.0, maxf(0.0, _game_size().y - size_pixels.y))
-	_hint.set_anchors_preset(Control.PRESET_TOP_LEFT)
-	_hint.position = pos + hint_padding
-	_hint.size = size_pixels - hint_padding * 2.0
-	_hint.add_theme_font_size_override("font_size", hint_font_pixels)
-	_hint.add_theme_color_override("font_color", Color.BLACK)
-	_hint.add_theme_constant_override("outline_size", 0)
-	_hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_hint.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	_hint.text = message
-	_hint.visible = not message.is_empty()
-	if _hint_frame != null:
-		_hint_frame.set_anchors_preset(Control.PRESET_TOP_LEFT)
-		_hint_frame.position = pos
-		_hint_frame.size = size_pixels
-		_hint_frame.visible = _hint.visible
-
-func hide_hint() -> void:
-	_hint.hide()
-	if _hint_frame != null:
-		_hint_frame.hide()

@@ -112,19 +112,6 @@ func on_dive_entered() -> void:
 		elif not has_event(&"first_cast"):
 			cue.show_action(&"move")
 		return
-	# Stay quiet after the line breaks until Penni follows the escaping fish.
-	if not has_event(&"help_called"):
-		return
-	var ui: SeaSpeechBubble = _bubble()
-	if ui == null:
-		return
-	if not has_silas_flag(&"silas_met"):
-		ui.show_hint("Follow the voice. Press E near the eel.")
-	elif not has_silas_flag(&"silas_freed"):
-		ui.show_hint("LEFT CLICK: net Silas to pull him free")
-	elif has_silas_flag(&"silas_following") and not has_event(&"companion_targeted"):
-		ui.show_hint("RIGHT CLICK a fish to send Silas")
-
 
 # The camera/player pause is deliberately a one-time moment. Core player
 # controls are unchanged; the sea controller releases its own movement lock.
@@ -259,7 +246,6 @@ func on_silas_rescued() -> void:
 	var ui: SeaSpeechBubble = _bubble()
 	if ui != null:
 		ui.hide_call()
-		ui.hide_hint()
 
 
 func _on_conversation_finished(finished_npc: NPCData) -> void:
@@ -267,15 +253,9 @@ func _on_conversation_finished(finished_npc: NPCData) -> void:
 		return
 	if _dialogue_stage == &"introduction":
 		_set_silas_flag(&"silas_met")
-		var ui: SeaSpeechBubble = _bubble()
-		if ui != null:
-			ui.show_hint("LEFT CLICK: cast your net at Silas")
 	elif _dialogue_stage == &"rescue":
 		_set_silas_flag(&"silas_following")
 		silas_following_started.emit()
-		var ui: SeaSpeechBubble = _bubble()
-		if ui != null:
-			ui.show_hint("Explore with Silas")
 	_dialogue_stage = &""
 
 
@@ -286,9 +266,6 @@ func maybe_offer_companion_help(player_position: Vector2, fish_list: Array[Divin
 		if is_instance_valid(fish) and not fish.trapped and fish.position.distance_to(player_position) < 130.0:
 			_events[&"companion_help_offered"] = true
 			_show_silas_bubble("I can help with that fish.", 4.5)
-			var ui: SeaSpeechBubble = _bubble()
-			if ui != null:
-				ui.show_hint("RIGHT CLICK a fish to tell Silas to attack")
 			var cue: SeaTutorialCue = _cue()
 			if cue != null:
 				cue.show_action(&"command")
@@ -303,4 +280,3 @@ func on_companion_targeted() -> void:
 	var ui: SeaSpeechBubble = _bubble()
 	if ui != null:
 		ui.hide_call()
-		ui.show_hint("Silas attacks automatically. Right click again to call him back.")

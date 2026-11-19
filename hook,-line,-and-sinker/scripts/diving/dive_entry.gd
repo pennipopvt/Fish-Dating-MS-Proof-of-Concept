@@ -92,7 +92,7 @@ func _ensure_sea_speech_bubble() -> SeaSpeechBubble:
 	var resource: PackedScene = load("res://scenes/sea_speech_bubble.tscn") as PackedScene
 	if resource != null:
 		var node: Node = resource.instantiate()
-		if node is SeaSpeechBubble and node.has_node("Call/Frame") and node.has_node("Call/Message") and node.has_node("Call/Tail") and node.has_node("Hint"):
+		if node is SeaSpeechBubble and node.has_node("Call/Frame") and node.has_node("Call/Message") and node.has_node("Call/Tail"):
 			node.name = "SeaSpeechBubble"
 			add_child(node)
 			var result: SeaSpeechBubble = node as SeaSpeechBubble
@@ -158,23 +158,6 @@ func _ensure_sea_speech_bubble() -> SeaSpeechBubble:
 	message.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	message.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	call.add_child(message)
-
-	var hint_frame: Panel = Panel.new()
-	hint_frame.name = "HintFrame"
-	hint_frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var hint_style: StyleBoxFlat = StyleBoxFlat.new()
-	hint_style.bg_color = Color.WHITE
-	hint_style.border_color = Color.BLACK
-	hint_style.set_border_width_all(1)
-	hint_frame.add_theme_stylebox_override("panel", hint_style)
-	hint_frame.hide()
-	bubble.add_child(hint_frame)
-
-	var hint: Label = Label.new()
-	hint.name = "Hint"
-	hint.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	hint.hide()
-	bubble.add_child(hint)
 
 	# Optional originals: never require these imports for a basic bubble.
 	bubble.bubble_texture = load("res://sprites/ui/speech_bubble.png") as Texture2D
