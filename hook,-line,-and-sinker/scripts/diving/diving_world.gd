@@ -48,6 +48,10 @@ var _perfect_parry_line_flash_left: float = 0.0
 const HOOKED_FISH_MOVER_SCRIPT = preload("res://scripts/diving/hooked_fish_mover.gd")
 var _hooked_mover := HOOKED_FISH_MOVER_SCRIPT.new()
 var _hooked_fish: DivingWildFish
+# Sea sound effects (prefabs/sea_sfx.tscn; empty slots are silent).
+const SEA_SFX_SCENE = preload("res://prefabs/sea_sfx.tscn")
+var _sfx: Node
+var _last_combat_phase: int = -1
 @onready var _solids: TileMapLayer = get_node_or_null("Solids") as TileMapLayer
 # Points around a hooked fish's center that must be clear of Solids tiles.
 const HOOKED_FISH_PROBES: Array[Vector2] = [
@@ -60,6 +64,8 @@ func _ready() -> void:
 	if _player != null:
 		_camera = _player.get_node_or_null("Camera2D") as Camera2D
 	_hooked_mover.is_open = _is_open_water
+	_sfx = SEA_SFX_SCENE.instantiate()
+	add_child(_sfx)
 	_install_tutorial_cue()
 	_encounter.configure(_player, _story, _net, _silas, _cue)
 	_encounter.fish_remove_requested.connect(_unregister_encounter_fish)
@@ -183,7 +189,10 @@ func _set_camera_bounds(in_sea: bool) -> void:
 
 func _process(delta: float) -> void:
 	if _player == null or not _player.swimming:
+		if _sfx != null:
+			_sfx.set_swimming(false)
 		return
+	_sfx.set_swimming(not _player.busy and _player.velocity.length() > 8.0)
 	_encounter.step(delta)
 	# Reuse the original interaction bubble for the dock return.
 	# The marker lives at the waterline; the player cannot swim above
@@ -199,6 +208,7 @@ func _process(delta: float) -> void:
 	_silas_behavior.on_combat_update(delta, _silas.can_strike_target())
 	if _combat.is_active():
 		_combat.step(delta)
+		_play_combat_phase_sfx()
 		if _combat.is_active():
 			_sync_hooked_fish(delta)
 			_perfect_parry_line_flash_left = maxf(0.0, _perfect_parry_line_flash_left - delta)
@@ -290,6 +300,7 @@ func handle_input(event: InputEvent) -> bool:
 			return true
 		if _combat.is_active():
 			_combat.reel_scroll()
+			play_sfx(&"reel")
 			return true
 	if mouse.button_index == MOUSE_BUTTON_RIGHT:
 		return _try_companion_target(_player.get_global_mouse_position())
@@ -312,11 +323,15 @@ func _on_fish_hit(fish: DivingWildFish) -> void:
 	if _combat.begin(fish, data, _player.position.distance_to(fish.position),
 			_net.max_range, fish.health_ratio()):
 		_player.busy = true
+		_last_combat_phase = -1
+		play_sfx(&"hook")
 	else:
 		_net.retract()
 
 
 func _on_sea_parried(result: StringName) -> void:
+	if result == &"perfect" or result == &"close":
+		play_sfx(&"counter")
 	if result == &"perfect":
 		_perfect_parry_line_flash_left = perfect_parry_line_flash_seconds
 		# Show gold immediately, rather than waiting for the next frame.
@@ -326,6 +341,7 @@ func _on_sea_parried(result: StringName) -> void:
 
 
 func _on_combat_finished(won: bool, fish: DivingWildFish) -> void:
+	play_sfx(&"catch" if won else &"lose")
 	_perfect_parry_line_flash_left = 0.0
 	_player.busy = false
 	_net.reset_net()
@@ -364,6 +380,7 @@ func _on_battle_ended() -> void:
 
 
 func _on_battle_hit(on_fish: bool, damage: float) -> void:
+	play_sfx(&"battle_hit")
 	_silas.on_battle_hit(on_fish)
 	print("[SEA COMBAT] %s hit for %.1f; companion HP %.1f/%0.1f" % [
 		"Silas" if on_fish else "Fish", damage,
@@ -427,6 +444,7 @@ func _try_companion_target(world_mouse: Vector2) -> bool:
 
 func _return_to_surface() -> void:
 	if _player != null and _player.swimming:
+		play_sfx(&"surface")
 		_exit_prompt.pop_out()
 		_encounter.leave_sea()
 		if _combat.is_active():
@@ -442,3 +460,20 @@ func on_surface_completed() -> void:
 	_exit_prompt.pop_out()
 	if _story.can_begin_silas_surface_reveal():
 		_encounter.play_silas_surface_reveal()
+
+
+# Sea sound hub; SeaDiveTransition also calls this for the dive splash.
+func play_sfx(event: StringName) -> void:
+	if _sfx != null:
+		_sfx.play(event)
+
+
+# Windup and attack sounds when the hooked fish enters those phases.
+func _play_combat_phase_sfx() -> void:
+	if not _combat.is_active() or _combat.phase == _last_combat_phase:
+		return
+	_last_combat_phase = _combat.phase
+	if _combat.phase == DivingCombat.Phase.WINDUP:
+		play_sfx(&"windup")
+	elif _combat.phase == DivingCombat.Phase.ATTACK:
+		play_sfx(&"attack")

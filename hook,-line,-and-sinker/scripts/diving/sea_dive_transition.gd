@@ -105,6 +105,7 @@ func _begin_dive(dock: Node2D) -> void:
 	).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 	await jump.finished
 	_spawn_splash(landing)
+	_sea.play_sfx(&"dive")
 
 	# No second world, teleport or viewport switch. The camera follows
 	# Penni from the dock through the same surface into the ocean.

@@ -1,0 +1,21 @@
+[gd_scene load_steps=9 format=3]
+
+[ext_resource type="Script" path="res://scripts/diving/sea_sfx.gd" id="1_script"]
+[ext_resource type="AudioStream" path="res://sounds/sfx/hook.wav" id="2_hook"]
+[ext_resource type="AudioStream" path="res://sounds/sfx/windup.wav" id="3_windup"]
+[ext_resource type="AudioStream" path="res://sounds/sfx/attack.wav" id="4_attack"]
+[ext_resource type="AudioStream" path="res://sounds/sfx/counter.wav" id="5_counter"]
+[ext_resource type="AudioStream" path="res://sounds/sfx/reel.wav" id="6_reel"]
+[ext_resource type="AudioStream" path="res://sounds/sfx/catch.wav" id="7_catch"]
+[ext_resource type="AudioStream" path="res://sounds/sfx/lose.wav" id="8_lose"]
+
+[node name="SeaSfx" type="Node"]
+script = ExtResource("1_script")
+hook = ExtResource("2_hook")
+windup = ExtResource("3_windup")
+attack = ExtResource("4_attack")
+counter = ExtResource("5_counter")
+reel = ExtResource("6_reel")
+catch = ExtResource("7_catch")
+lose = ExtResource("8_lose")
+battle_hit = ExtResource("4_attack")
