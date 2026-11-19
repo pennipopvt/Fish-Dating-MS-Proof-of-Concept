@@ -26,6 +26,7 @@ const WILD_FISH_SCRIPT = preload("res://scripts/diving/wild_fish.gd")
 @export var movement_tutorial_sprite: Texture2D
 @export var cast_tutorial_sprite: Texture2D
 @export var reel_tutorial_sprite: Texture2D
+@export var right_click_tutorial_sprite: Texture2D
 
 @onready var _guide: SeaEditorGuide = $EditorGuide
 @onready var _entry: Marker2D = $Points/Entry
@@ -92,6 +93,7 @@ func _install_tutorial_cue() -> void:
 	_cue.movement_sprite = movement_tutorial_sprite
 	_cue.cast_sprite = cast_tutorial_sprite
 	_cue.reel_sprite = reel_tutorial_sprite
+	_cue.right_click_sprite = right_click_tutorial_sprite
 
 
 func _spawn_editor_fish() -> void:

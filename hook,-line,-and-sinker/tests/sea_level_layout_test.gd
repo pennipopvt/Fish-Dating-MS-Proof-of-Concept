@@ -69,7 +69,7 @@ func _run() -> void:
 	_check(bubble.get_node("Call/Frame") is NinePatchRect,
 		"Speech bubble frame is nine-slice replaceable")
 	_check(bubble.get_node("Call/Tail") is TextureRect,
-		"One movable speech tail handles onscreen and offscreen direction")
+		"Independent circle speaker marker replaces the long speech tail")
 	_check(bubble.get_node("Call/Direction") == null,
 		"No duplicate text arrow remains")
 	_check(bubble.get_node("Call/Message") is Label,

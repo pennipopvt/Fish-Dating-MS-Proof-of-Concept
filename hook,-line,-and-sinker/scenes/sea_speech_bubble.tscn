@@ -3,7 +3,7 @@
 [ext_resource type="Script" path="res://scripts/diving/sea_speech_bubble.gd" id="script"]
 [ext_resource type="FontFile" path="res://fonts/pixel_operator(1)/PixelOperator.ttf" id="pixel"]
 [ext_resource type="Texture2D" path="res://sprites/ui/speech_bubble.png" id="bubble_art"]
-[ext_resource type="Texture2D" path="res://sprites/ui/speech_tail.png" id="tail_art"]
+[ext_resource type="Texture2D" path="res://sprites/ui/speech_marker.png" id="tail_art"]
 
 [sub_resource type="StyleBoxFlat" id="temporary_frame"]
 bg_color = Color(1, 1, 1, 1)
@@ -23,10 +23,10 @@ patch_margin = 6
 [node name="Call" type="Control" parent="."]
 visible = false
 mouse_filter = 2
-offset_right = 88.0
-offset_bottom = 30.0
+offset_right = 96.0
+offset_bottom = 38.0
 
-# Tail draws behind the white frame so its flat base connects neatly.
+# Independent circle marker, visually separated from the speech box.
 [node name="Tail" type="TextureRect" parent="Call"]
 visible = false
 mouse_filter = 2
@@ -62,13 +62,13 @@ texture_filter = 1
 
 [node name="Message" type="Label" parent="Call"]
 mouse_filter = 2
-offset_left = 8.0
-offset_top = 4.0
-offset_right = 80.0
-offset_bottom = 26.0
+offset_left = 9.0
+offset_top = 6.0
+offset_right = 87.0
+offset_bottom = 32.0
 theme_override_colors/font_color = Color(0, 0, 0, 1)
 theme_override_fonts/font = ExtResource("pixel")
-theme_override_font_sizes/font_size = 12
+theme_override_font_sizes/font_size = 14
 autowrap_mode = 3
 vertical_alignment = 1
 

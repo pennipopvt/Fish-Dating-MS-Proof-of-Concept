@@ -19,7 +19,7 @@ class_name SeaSpeechBubble
 		patch_margin = value
 		if is_node_ready():
 			_apply_frame()
-@export_range(9, 18, 1) var font_pixels: int = 12
+@export_range(9, 18, 1) var font_pixels: int = 14
 @export var bubble_offset: Vector2 = Vector2(12.0, -39.0)
 @export_range(2.0, 24.0, 1.0) var screen_margin: float = 8.0
 @export_range(0.04, 0.3, 0.01) var letter_seconds: float = 0.09
@@ -55,6 +55,7 @@ func _ready() -> void:
 	# The fallback created in Main at runtime uses the same child names.
 	_text.add_theme_font_size_override("font_size", font_pixels)
 	_text.add_theme_color_override("font_color", Color.BLACK)
+	_text.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	_text.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_tail.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	_frame.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
@@ -204,16 +205,16 @@ func _layout_for_characters(count: int) -> void:
 	var measured: float = float(count) * 6.0
 	if font != null and not shown.is_empty():
 		measured = font.get_string_size(shown, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x
-	var width: float = clampf(18.0 + measured, 28.0, 132.0)
-	var height: float = 30.0
-	if 18.0 + measured > 132.0:
-		height = 44.0
+	var width: float = clampf(22.0 + measured, 34.0, 134.0)
+	var height: float = 38.0
+	if 22.0 + measured > 134.0:
+		height = 54.0
 	_call.size = Vector2(ceilf(width), height)
 	# Runtime recovery also creates Panel/NinePatch without anchors.
 	_frame.size = _call.size
 	_fallback.size = _call.size
-	_text.position = Vector2(8.0, 4.0)
-	_text.size = _call.size - Vector2(16.0, 8.0)
+	_text.position = Vector2(9.0, 6.0)
+	_text.size = _call.size - Vector2(18.0, 12.0)
 
 
 func _update_position() -> void:
@@ -233,7 +234,7 @@ func _update_position() -> void:
 		roundf(clampf(desired.y, min_pos.y, max_pos.y)))
 	_tail.visible = tracked and tail_texture != null
 	if _tail.visible:
-		_point_tail_at(target)
+		_place_speaker_marker(target)
 
 
 func _update_attached_position() -> void:
@@ -243,28 +244,17 @@ func _update_attached_position() -> void:
 		_update_position()
 
 
-func _point_tail_at(target: Vector2) -> void:
+# The circle is independent of the speech box. Place it over Silas, or
+# on the screen edge pointing to him while he is outside the camera.
+func _place_speaker_marker(target: Vector2) -> void:
 	if tail_texture == null:
 		return
-	var half: Vector2 = _call.size * 0.5
-	var direction: Vector2 = target - (_call.position + half)
-	if direction.length_squared() < 0.01:
-		direction = Vector2(-1.0, 1.0)
-	var factor_x: float = half.x / maxf(absf(direction.x), 0.001)
-	var factor_y: float = half.y / maxf(absf(direction.y), 0.001)
-	var edge: Vector2 = half + direction * minf(factor_x, factor_y)
-	if factor_x < factor_y:
-		edge.x = _call.size.x if direction.x > 0.0 else 0.0
-		edge.y = clampf(edge.y, 8.0, maxf(8.0, _call.size.y - 8.0))
-	else:
-		edge.y = _call.size.y if direction.y > 0.0 else 0.0
-		edge.x = clampf(edge.x, 8.0, maxf(8.0, _call.size.x - 8.0))
-	var pivot: Vector2 = _tail.size * 0.5
-	var base_center: Vector2 = Vector2(_tail.size.x * 0.5, 0.0)
-	_tail.pivot_offset = pivot
-	_tail.rotation = direction.angle() - Vector2(-5.5, 5.5).angle()
-	var rotated_base: Vector2 = (base_center - pivot).rotated(_tail.rotation)
-	_tail.position = (edge - direction.normalized() - pivot - rotated_base).round()
+	var screen: Vector2 = _game_size()
+	var marker: Vector2 = target + Vector2(0.0, -2.0 + sin(_cycle_time * 3.0) * 1.0)
+	marker.x = clampf(marker.x, 7.0, screen.x - 7.0)
+	marker.y = clampf(marker.y, 7.0, screen.y - 7.0)
+	_tail.rotation = 0.0
+	_tail.position = (marker - _call.position - _tail.size * 0.5).round()
 
 
 func hide_call() -> void:

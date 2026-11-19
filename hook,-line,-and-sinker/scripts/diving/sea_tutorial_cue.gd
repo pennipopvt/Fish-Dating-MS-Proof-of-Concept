@@ -7,6 +7,7 @@ class_name SeaTutorialCue
 @export var movement_sprite: Texture2D
 @export var cast_sprite: Texture2D
 @export var reel_sprite: Texture2D
+@export var right_click_sprite: Texture2D
 
 var current_action: StringName = &""
 var _fade: Tween
@@ -24,7 +25,7 @@ func _ready() -> void:
 
 
 func show_action(action: StringName) -> bool:
-	if action != &"move" and action != &"cast" and action != &"reel":
+	if action != &"move" and action != &"cast" and action != &"reel" and action != &"command":
 		return false
 	if action == current_action and is_visible_in_tree():
 		return true
@@ -35,6 +36,7 @@ func show_action(action: StringName) -> bool:
 		&"move": texture = movement_sprite
 		&"cast": texture = cast_sprite
 		&"reel": texture = reel_sprite
+		&"command": texture = right_click_sprite
 	modulate.a = 0.0
 	show()
 	queue_redraw()
@@ -73,6 +75,8 @@ func _draw() -> void:
 			_draw_mouse(false)
 		&"reel":
 			_draw_mouse(true)
+		&"command":
+			_draw_mouse(false, true)
 
 
 func _draw_key(at: Vector2, letter: String) -> void:
@@ -87,7 +91,7 @@ func _draw_key(at: Vector2, letter: String) -> void:
 					Color("#ffffff"))
 
 
-func _draw_mouse(scroll: bool) -> void:
+func _draw_mouse(scroll: bool, right_click: bool = false) -> void:
 	draw_rect(Rect2(-9, -15, 18, 30), Color("#e8fbff"))
 	draw_rect(Rect2(-7, -13, 14, 26), Color("#14394d"))
 	draw_rect(Rect2(-1, -13, 2, 11), Color("#e8fbff"))
@@ -96,5 +100,7 @@ func _draw_mouse(scroll: bool) -> void:
 		draw_rect(Rect2(-2, -10, 4, 7), Color("#91e2f2"))
 		draw_rect(Rect2(-1, 3, 2, 7), Color("#91e2f2"))
 		draw_rect(Rect2(-4, 8, 8, 2), Color("#91e2f2"))
+	elif right_click:
+		draw_rect(Rect2(1, -13, 6, 11), Color("#91e2f2"))
 	else:
 		draw_rect(Rect2(-7, -13, 6, 11), Color("#91e2f2"))

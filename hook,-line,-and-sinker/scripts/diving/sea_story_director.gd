@@ -258,11 +258,17 @@ func maybe_offer_companion_help(player_position: Vector2, fish_list: Array[Divin
 			var ui: SeaSpeechBubble = _bubble()
 			if ui != null:
 				ui.show_hint("RIGHT CLICK a fish to tell Silas to attack")
+			var cue: SeaTutorialCue = _cue()
+			if cue != null:
+				cue.show_action(&"command")
 			return
 
 
 func on_companion_targeted() -> void:
 	_events[&"companion_targeted"] = true
+	var cue: SeaTutorialCue = _cue()
+	if cue != null:
+		cue.hide_action()
 	var ui: SeaSpeechBubble = _bubble()
 	if ui != null:
 		ui.hide_call()
