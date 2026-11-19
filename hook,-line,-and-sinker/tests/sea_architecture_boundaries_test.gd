@@ -43,6 +43,15 @@ func _run() -> void:
 	_check(sea.surface_requested.is_connected(
 		Callable(transition, "_on_surface_requested")),
 		"Surface request reaches the transition component only")
+	var sea_combat: DivingCombat = sea.get_node("Combat") as DivingCombat
+	var sea_net: DivingNetProjectile = sea.get_node("NetProjectile") as DivingNetProjectile
+	_check(sea_combat.parried.is_connected(Callable(sea, "_on_sea_parried")),
+		"Sea combat parries reach the existing net line presentation")
+	sea.call("_on_sea_parried", &"perfect")
+	_check(sea_net.line_stunned and float(sea.get("_perfect_parry_line_flash_left")) > 0.0,
+		"Perfect parry flashes the underwater net line yellow immediately")
+	sea_net.set_line_state(0.0, false)
+	sea.set("_perfect_parry_line_flash_left", 0.0)
 	_check(host != null and host.get_parent() == main and bubble != null
 		and host.source != "uninitialized" and story.get("_speech_bubble") == bubble,
 		"Main's editable speech bubble remains bound via one UI host")
