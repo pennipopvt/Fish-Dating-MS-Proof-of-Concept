@@ -215,7 +215,13 @@ func _start_open_animation() -> void:
 	_opening_frame.show()
 
 	var end_position: Vector2 = _terminal_panel.position
-	var end_size: Vector2 = _terminal_panel.size
+	# On the first open the hidden panel's size (and minimum size) is stale
+	# (1177px / 1909px tall instead of 900), which made the frame grow past
+	# the terminal and snap back. The authored layout is the size it shows at.
+	var end_size := Vector2(
+		_terminal_panel.offset_right - _terminal_panel.offset_left,
+		_terminal_panel.offset_bottom - _terminal_panel.offset_top
+	)
 	var center: Vector2 = end_position + end_size * 0.5
 
 	_opening_frame.size = Vector2(BOOT_LINE, BOOT_LINE)
