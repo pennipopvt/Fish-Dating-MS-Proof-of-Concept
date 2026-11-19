@@ -324,3 +324,22 @@ unchanged for healthy projects.
 F7 now reports `UI node` and `source` so we can see which recovery
 path was used. The B test (with F7 open) can also restore the missing
 node and rebind the director if necessary.
+
+
+## Native voice bubble + companion combat smoke tests
+
+`res://tests/sea_storyboard_test.gd` checks that the new native-scale
+Pixel Operator text reveals over time, the nine-slice expands, the cry
+fades, and it repeats after a pause without consuming the story event.
+`res://tests/sea_companion_actor_test.gd` checks right-click target
+selection, physical chase, no damage before reaching the fish, the
+unchanged CompanionBattle damage after arrival, hit lunge, and recall.
+The existing `tests/diving_companion_battle_test.gd` remains useful
+for unit-level species damage and exhaustion (its old prototype-scene
+integration section references an obsolete scene tree).
+F7 reveals the active bubble phase, gameplay-pixel scale, the target,
+companion attack range and last click-command result.
+
+These tests have not yet been executed in an installed Godot runtime.
+In particular, scene load/typing and animation rendering still need
+an actual playtest before treating the changes as stable.
