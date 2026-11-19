@@ -13,6 +13,9 @@ func _initialize() -> void:
 func _run() -> void:
 	var main: Control = MAIN.instantiate() as Control
 	get_root().add_child(main)
+	# Isolate the surfacing test from the deferred Fish Co phone introduction.
+	# Suppressing its first call here avoids triggering the unrelated iris.
+	(main.get_node("IntroLayer") as FishCoOpeningSequence)._contract_call_finished = true
 	await process_frame
 	var sea: DivingWorld = main.get_node("SubViewportContainer/SubViewport/World/Sea") as DivingWorld
 	var player: Player = sea.get_parent().get_node("Player") as Player
