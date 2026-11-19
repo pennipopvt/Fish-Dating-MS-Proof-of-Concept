@@ -24,6 +24,12 @@ func _run() -> void:
 	var debug_layer: CanvasLayer = main.get_node_or_null("SeaDebugLayer") as CanvasLayer
 	_check(debug_layer != null and not debug_layer.visible,
 		"F7 diagnostics start hidden and cannot obstruct the game")
+	var skip_button: Button = main.get_node("SeaDebugLayer/Panel/SkipDialogue") as Button
+	_check(skip_button != null and skip_button.text == "Skip Dialogue"
+		and skip_button.pressed.is_connected(main._debug_skip_dialogue),
+		"F7 provides a clickable dialogue skip connected to Main")
+	_check((main.get_node("SeaDebugLayer/Panel") as Panel).mouse_filter == Control.MOUSE_FILTER_STOP,
+		"Clicking the debug panel never casts the underwater net")
 	var f7: InputEventKey = InputEventKey.new()
 	f7.keycode = KEY_F7
 	f7.pressed = true

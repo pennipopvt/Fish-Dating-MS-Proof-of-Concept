@@ -196,8 +196,9 @@ func _setup_sea_debug() -> void:
 	var panel: Panel = Panel.new()
 	panel.name = "Panel"
 	panel.position = Vector2(10.0, 10.0)
-	panel.size = Vector2(800.0, 535.0)
-	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	panel.size = Vector2(800.0, 585.0)
+	# Stop panel clicks reaching fishing input; child debug buttons work.
+	panel.mouse_filter = Control.MOUSE_FILTER_STOP
 	var background: StyleBoxFlat = StyleBoxFlat.new()
 	background.bg_color = Color(0.015, 0.035, 0.06, 0.93)
 	background.border_color = Color(0.5, 0.9, 1.0, 1.0)
@@ -212,6 +213,32 @@ func _setup_sea_debug() -> void:
 	_sea_debug_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_sea_debug_label.add_theme_font_size_override("font_size", 17)
 	panel.add_child(_sea_debug_label)
+
+	# A genuine clickable debug button, available only when F7 is open.
+	# Do not tie this to F8: that key is Godot's Stop shortcut.
+	var skip: Button = Button.new()
+	skip.name = "SkipDialogue"
+	skip.text = "Skip Dialogue"
+	skip.position = Vector2(574.0, 537.0)
+	skip.size = Vector2(206.0, 34.0)
+	skip.mouse_filter = Control.MOUSE_FILTER_STOP
+	skip.add_theme_font_size_override("font_size", 16)
+	skip.pressed.connect(_debug_skip_dialogue)
+	panel.add_child(skip)
+
+
+func _debug_skip_dialogue() -> void:
+	if not DialogueManager.is_active:
+		print("[SEA DEBUG] Skip Dialogue: no active conversation")
+		return
+	var speaker_name: String = DialogueManager.current_npc.display_name \
+		if DialogueManager.current_npc != null else "unknown speaker"
+	print("[SEA DEBUG] Skipping current conversation with " + speaker_name)
+	# Use the existing manager; its conversation_finished signal must
+	# reach StoryDirector/Main and release movement locks as usual.
+	# Debug skipping deliberately bypasses unchosen dialogue choices.
+	DialogueManager.end_conversation()
+	_update_sea_debug()
 
 
 func _process(delta: float) -> void:
@@ -258,7 +285,7 @@ func _update_sea_debug() -> void:
 	var combat: DivingCombat = _sea.get_node_or_null("Combat") as DivingCombat
 
 	var lines: PackedStringArray = PackedStringArray()
-	lines.append("SEA DEBUG | F7 hide/show | B while open: UI TEST")
+	lines.append("SEA DEBUG | F7 show/hide | B: UI test | Skip Dialogue button below")
 	lines.append("Swimming: %s   Main underwater: %s   UI parent: Main" % [
 		str(_world_player.swimming), str(_underwater)])
 	lines.append("Player: %s   Silas: %s" % [
@@ -581,6 +608,14 @@ func _spawn_splash(at: Vector2) -> void:
 # Main receives mouse events before SubViewportContainer can consume them.
 # Delegate underwater gameplay input to Sea; all land controls stay unchanged.
 func _input(event: InputEvent) -> void:
+	# The debug panel's clickable button must not cast the sea net below it.
+	# Do not consume the event: GUI still needs it to press the button.
+	if _sea_debug_layer != null and _sea_debug_layer.visible \
+			and event is InputEventMouseButton:
+		var overlay_panel: Control = _sea_debug_layer.get_node_or_null("Panel") as Control
+		if overlay_panel != null and overlay_panel.get_global_rect().has_point(
+				(event as InputEventMouseButton).position):
+			return
 	var key: InputEventKey = event as InputEventKey
 	if key != null and key.pressed and not key.echo:
 		if key.keycode == KEY_F7:

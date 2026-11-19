@@ -419,3 +419,17 @@ the view. `world_day_night.gd` repositions the 320x180 tint rect
 relative to `Camera2D.get_screen_center_position()` each frame, so
 the same shader remains aligned across the full screen near the
 sea boundaries without changing map geometry.
+
+
+## F7 debug Skip Dialogue button
+
+The F7 panel now has a real mouse-clickable **Skip Dialogue** button
+(bottom right of the panel). It calls `DialogueManager.end_conversation()`,
+which emits the normal `conversation_finished` signal and allows
+existing Fish Co, Silas and dive-transition listeners to react.
+This is a developer shortcut: it bypasses any dialogue choice effects
+that were not selected, so it must not be used as evidence that all
+branching dialogue progression is working. If there is no active
+conversation, it prints a harmless diagnostic message instead.
+The debug panel intercepts its own clicks so pressing Skip cannot
+simultaneously cast a net under the UI. F8 remains untouched.
