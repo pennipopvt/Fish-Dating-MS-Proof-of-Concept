@@ -22,6 +22,13 @@ signal fish_remove_requested(fish: DivingWildFish)
 @export_range(1.0, 30.0, 1.0) var rescue_reel_per_scroll: float = 13.0
 @export_range(5.0, 80.0, 1.0) var rescue_finish_distance: float = 17.0
 
+@export_group("Silas Surface Reveal")
+@export var silas_land_scene: PackedScene = preload("res://prefabs/silas.tscn")
+@export var silas_poof_texture: Texture2D = preload("res://sprites/characters/poof.png")
+@export_range(0.1, 2.0, 0.05) var silas_surface_swim_seconds: float = 0.75
+@export_range(0.1, 1.2, 0.05) var silas_surface_jump_seconds: float = 0.48
+var _silas_surface_scene_running: bool = false
+
 var _player: Player
 var _story: SeaStoryDirector
 var _net: DivingNetProjectile
@@ -342,13 +349,6 @@ func _cancel_scripted_reel() -> void:
 
 # Called after SeaDiveTransition has restored walking and land portraits.
 # Silas swims to the same dock, leaps after Penni, then changes actor on poof.
-@export_group("Silas Surface Reveal")
-@export var silas_land_scene: PackedScene = preload("res://prefabs/silas.tscn")
-@export var silas_poof_texture: Texture2D = preload("res://sprites/characters/poof.png")
-@export_range(0.1, 2.0, 0.05) var silas_surface_swim_seconds: float = 0.75
-@export_range(0.1, 1.2, 0.05) var silas_surface_jump_seconds: float = 0.48
-var _silas_surface_scene_running: bool = false
-
 
 func play_silas_surface_reveal() -> void:
 	if _silas_surface_scene_running or not _story.begin_silas_surface_reveal():
