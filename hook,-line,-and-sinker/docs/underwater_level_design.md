@@ -141,3 +141,16 @@ releases movement. The icon remains available afterward until a
 successful net cast. The story refuses to lock Penni if the input sprite
 is missing, hidden with its parent, or has no texture. This also avoids
 getting stuck at the first fish if its tutorial cue fails to render.
+
+## Import-independent input cue (November hotfix)
+
+Newly added PNG files were not available as imported Godot textures in
+some project copies, causing `preload("res://sprites/ui/tutorial_wasd.png")`
+to fail while parsing `sea_speech_bubble.gd`. The speech-bubble script
+and scene now reference **no tutorial image files**. Three tiny transparent
+key/mouse textures are made in memory when first requested. The
+`SeaSpeechBubble` Inspector still exposes movement, cast, and reel
+Texture2D slots: assigning your finished art replaces each placeholder.
+There is no background panel or screen-wide overlay.
+
+The existing 1.15-second first-fish focus safety timeout is preserved.
