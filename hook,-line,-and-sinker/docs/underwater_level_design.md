@@ -224,3 +224,23 @@ new manager, or artwork dependency is introduced.
 Removed the `GobyNearBottom` marker at (-236,315), which put an unrelated
 fish under Penni during Silas's initial offscreen call. `FirstFish` and
 `MulletAfterSilas` remain for their respective tutorial beats.
+
+
+## Silas speech bubble: attached to speaker with one directional tail
+
+The user's original 32x32 `speech_bubble.png` and 12x12
+`speech_tail.png` are installed at `sprites/ui/`, and assigned to the
+existing `SeaSpeechBubble` Inspector's Bubble Texture and Tail Texture.
+The white bubble uses a 6px nine-slice margin with Pixel Operator black
+text, and the tail is an independent, rotatable transparent TextureRect.
+No separate arrow or second bubble UI exists.
+
+`SeaStoryDirector` now calls `show_attached_call` with the existing
+`NPCs/Silas` actor and Main's SubViewportContainer. Every frame the
+speech UI maps Silas's world position through the game viewport to the
+root UI coordinates. The bubble is clamped to the visible play area until
+it can sit naturally above/right of Silas. Its single tail continuously
+points toward his position. The first "Help me!" stays on screen without
+a timer until Penni interacts with Silas; companion help uses the same
+bubble with a 4.5s timeout. The regular dialogue UI, tutorial controls,
+and fish code remain untouched.

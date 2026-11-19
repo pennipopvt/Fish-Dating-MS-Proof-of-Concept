@@ -18,6 +18,19 @@ func _ready() -> void:
 func _bubble() -> SeaSpeechBubble:
 	return get_tree().get_first_node_in_group("sea_speech_bubble") as SeaSpeechBubble
 
+
+func _show_silas_bubble(message: String, seconds: float = 0.0) -> void:
+	var ui: SeaSpeechBubble = _bubble()
+	if ui == null:
+		return
+	var speaker: Node2D = get_parent().get_node_or_null("NPCs/Silas") as Node2D
+	var display: SubViewportContainer = get_viewport().get_parent() as SubViewportContainer
+	if speaker != null and display != null:
+		ui.show_attached_call(message, speaker, display, seconds)
+	else:
+		ui.show_call(message, false, seconds)
+
+
 func _cue() -> SeaTutorialCue:
 	# Direct node lookup in the SAME SubViewport as the Player and camera.
 	# No dependency on Main's CanvasLayer or cross-viewport group ordering.
@@ -124,11 +137,8 @@ func consume_first_reel() -> bool:
 func on_followed_escape() -> void:
 	if not has_event(&"line_broken") or has_event(&"help_called"):
 		return
-	var ui: SeaSpeechBubble = _bubble()
-	if ui == null:
-		return
 	_events[&"help_called"] = true
-	ui.show_call("Help me!", false, 5.0)
+	_show_silas_bubble("Help me!")
 
 
 func can_talk_to_silas() -> bool:
@@ -142,6 +152,9 @@ func can_net_silas() -> bool:
 func talk_to_silas() -> void:
 	if not can_talk_to_silas() or DialogueManager.is_active:
 		return
+	var ui: SeaSpeechBubble = _bubble()
+	if ui != null:
+		ui.hide_call()
 	if not has_silas_flag(&"silas_met"):
 		_dialogue_stage = &"introduction"
 		var lines: Array[String] = ["Help me! I'm tangled in this net.", "Can you pull me free?"]
@@ -187,9 +200,9 @@ func maybe_offer_companion_help(player_position: Vector2, fish_list: Array[Divin
 	for fish in fish_list:
 		if is_instance_valid(fish) and not fish.trapped and fish.position.distance_to(player_position) < 130.0:
 			_events[&"companion_help_offered"] = true
+			_show_silas_bubble("I can help with that fish.", 4.5)
 			var ui: SeaSpeechBubble = _bubble()
 			if ui != null:
-				ui.show_call("I can help with that fish.", false, 4.5)
 				ui.show_hint("RIGHT CLICK a fish to tell Silas to attack")
 			return
 

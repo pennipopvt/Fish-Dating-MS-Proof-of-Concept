@@ -81,6 +81,24 @@ func _run() -> void:
 		"Swimming farther left triggers Silas's one-time help call")
 	_check((bubble.get_node("Call") as Control).visible,
 		"Offscreen Help me bubble appears only after following the fish")
+	_check(bubble.get_node("Call/Direction") == null
+		and bubble.get_node("Call/Tail") is TextureRect,
+		"Silas speech bubble uses the supplied tail, not a separate arrow")
+	_check((bubble.get_node("Call/Frame") as NinePatchRect).texture != null
+		and (bubble.get_node("Call/Tail") as TextureRect).texture != null,
+		"User-supplied bubble and tail textures loaded")
+	_check(bubble.get("_speaker") == sea.get_node("NPCs/Silas"),
+		"Bubble tracks Silas's actual world actor")
+	_check((bubble.get_node("Call/Tail") as TextureRect).visible,
+		"Tail shows while tracking Silas")
+	_check(bubble.get("_game_display") == main.get_node("SubViewportContainer"),
+		"Speaker position maps from game viewport to UI viewport")
+	bubble.call("_update_attached_position")
+	var call_rect: Rect2 = (bubble.get_node("Call") as Control).get_global_rect()
+	var screen_rect: Rect2 = (main.get_node("SubViewportContainer") as Control).get_global_rect()
+	_check(call_rect.position.x >= screen_rect.position.x
+		and call_rect.end.x <= screen_rect.end.x,
+		"Offscreen speech bubble stays inside the visible play area")
 	_check(story.can_talk_to_silas(), "Silas can be found after hearing him")
 	_check(not story.can_net_silas(), "Silas is not net-catchable before speaking")
 	main.queue_free()
