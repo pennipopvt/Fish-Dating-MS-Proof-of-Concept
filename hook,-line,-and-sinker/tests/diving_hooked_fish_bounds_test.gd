@@ -10,6 +10,7 @@ const WATERLINE: float = 166.0
 const GROUND: float = 400.0
 const WALL_X: float = 500.0  # rock from here to the right
 const DT: float = 1.0 / 60.0
+const MOVER_SCRIPT = preload("res://scripts/diving/hooked_fish_mover.gd")
 var failures: int = 0
 
 
@@ -21,15 +22,15 @@ func _open(p: Vector2) -> bool:
 	return p.y >= WATERLINE and p.y <= GROUND and p.x < WALL_X
 
 
-func _mover() -> HookedFishMover:
-	var m := HookedFishMover.new()
+func _mover() -> RefCounted:
+	var m: RefCounted = MOVER_SCRIPT.new()
 	m.is_open = _open
 	return m
 
 
 func _run() -> void:
 	# Open water: the fish stays exactly on the line.
-	var m := _mover()
+	var m: RefCounted = _mover()
 	var fish: Vector2 = m.step(DT, Vector2(300, 300), Vector2(350, 300), 80.0)
 	_check(fish.is_equal_approx(Vector2(380, 300)), "Fish in open water stays on the line")
 

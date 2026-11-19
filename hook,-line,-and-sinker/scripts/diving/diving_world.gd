@@ -43,7 +43,10 @@ var _fish_data: Dictionary = {}
 var _combat_debug_status: String = "No companion command yet"
 var _perfect_parry_line_flash_left: float = 0.0
 # Keeps the hooked fish in open water during the fight (see _is_open_water).
-var _hooked_mover := HookedFishMover.new()
+# Loaded by path (like WILD_FISH_SCRIPT) so it works before the editor has
+# registered the HookedFishMover class name.
+const HOOKED_FISH_MOVER_SCRIPT = preload("res://scripts/diving/hooked_fish_mover.gd")
+var _hooked_mover := HOOKED_FISH_MOVER_SCRIPT.new()
 var _hooked_fish: DivingWildFish
 @onready var _solids: TileMapLayer = get_node_or_null("Solids") as TileMapLayer
 # Points around a hooked fish's center that must be clear of Solids tiles.
