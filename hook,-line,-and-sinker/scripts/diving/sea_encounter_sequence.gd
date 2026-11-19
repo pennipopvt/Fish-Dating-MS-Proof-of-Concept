@@ -410,7 +410,15 @@ func _spawn_silas_on_dock(world: Node2D, at: Vector2) -> NPCInteractable:
 	actor.name = "SilasDockActor"
 	actor.visible = false
 	world.add_child(actor)
+	# SilasDockWait marks where the feet should touch the ground, not
+	# the center of the AnimatedSprite2D (which was leaving Silas half
+	# underneath the dock). Read the actual frame so sprite edits stay safe.
 	actor.global_position = at
+	var art: AnimatedSprite2D = actor.get_node_or_null("Sprite") as AnimatedSprite2D
+	if art != null and art.sprite_frames != null:
+		var frame_texture: Texture2D = art.sprite_frames.get_frame_texture(art.animation, art.frame)
+		if frame_texture != null and art.centered:
+			actor.global_position.y -= art.position.y + frame_texture.get_height() * 0.5 * art.scale.y
 	actor.z_index = 6
 	# Waiting is NOT recruitment: prevent the old post-catch romance/recruitment
 	# dialogue from opening until a dock interaction is actually designed.
