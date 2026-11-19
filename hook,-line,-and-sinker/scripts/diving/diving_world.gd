@@ -26,8 +26,9 @@ const WILD_FISH_SCRIPT = preload("res://scripts/diving/wild_fish.gd")
 @onready var _story: SeaStoryDirector = $StoryDirector
 @onready var _net: DivingNetProjectile = $NetProjectile
 @onready var _combat: DivingCombat = $Combat
-@onready var _battle: DivingCompanionBattle = $CompanionBattle
 @onready var _silas: SeaNPC = $NPCs/Silas
+@onready var _battle: DivingCompanionBattle = $NPCs/Silas/CompanionBattle
+@onready var _silas_behavior: SilasCombatBehavior = $NPCs/Silas/CombatBehavior
 @onready var _encounter: SeaEncounterSequence = $EncounterSequence
 
 var _player: Player
@@ -53,6 +54,8 @@ func _ready() -> void:
 	_battle.hit.connect(_on_battle_hit)
 	_battle.fish_knocked_out.connect(_on_battle_fish_knocked_out)
 	_battle.companion_knocked_out.connect(_on_battle_companion_knocked_out)
+	_silas_behavior.fish_spared.connect(_story.on_silas_spared_fish)
+	_silas_behavior.attack_refused.connect(_story.on_silas_attack_refused)
 	_spawn_editor_fish()
 	_make_silas_trap()
 	set_process(true)
@@ -165,7 +168,7 @@ func _process(delta: float) -> void:
 	_encounter.step(delta)
 	if _battle.is_active() and (DialogueManager.is_active or _combat.is_active()):
 		_battle.stop()
-	_battle.step(delta, _silas.can_strike_target())
+	_silas_behavior.on_combat_update(delta, _silas.can_strike_target())
 	if _combat.is_active():
 		_combat.step(delta)
 		if _combat.is_active():
@@ -317,9 +320,6 @@ func _on_battle_fish_knocked_out(fish: DivingWildFish) -> void:
 	fade.tween_property(fish, "modulate:a", 0.0, 0.6)
 	fade.parallel().tween_property(fish, "position:y", fish.position.y - 10.0, 0.6)
 	fade.tween_callback(fish.queue_free)
-	# CompanionBattle has already ended the fight; the story manager owns
-	# Silas's remorse, not the fish/combat controllers.
-	_story.on_companion_fish_killed()
 
 
 func _on_battle_companion_knocked_out() -> void:
@@ -353,16 +353,15 @@ func _try_companion_target(world_mouse: Vector2) -> bool:
 		_combat_debug_status = "No fish near right-click; range <=145"
 		print("[SEA COMBAT] " + _combat_debug_status + " at " + str(world_mouse.round()))
 		return false
-	if not _battle.can_fight():
-		_combat_debug_status = "Cannot fight; exhausted=%s health=%.1f" % [
-			str(_battle.exhausted), _battle.health]
-		print("[SEA COMBAT] " + _combat_debug_status)
-		return false
 	var data: FishData = _fish_data.get(chosen) as FishData
-	if data != null and _battle.start(chosen, data):
-		_story.on_companion_targeted()
+	if data != null and _silas_behavior.on_command(chosen, data):
+		# A refusal is a handled command but must not count as starting combat.
+		if _battle.is_active() and _battle.target == chosen:
+			_story.on_companion_targeted()
+		else:
+			_combat_debug_status = "Silas refuses to hurt this fish again"
 		return true
-	_combat_debug_status = "FishData missing or battle.start refused target"
+	_combat_debug_status = "FishData missing or companion cannot start battle"
 	print("[SEA COMBAT] " + _combat_debug_status)
 	return false
 

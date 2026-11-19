@@ -74,6 +74,17 @@ func _run() -> void:
 	_check(story.get("_events") is Dictionary and encounter.get("_story") == story,
 		"StoryDirector remains the event and dialogue authority")
 
+	var silas: SeaNPC = sea.get_node("NPCs/Silas") as SeaNPC
+	var battle: DivingCompanionBattle = silas.get_node("CompanionBattle") as DivingCompanionBattle
+	var behavior: SilasCombatBehavior = silas.get_node("CombatBehavior") as SilasCombatBehavior
+	_check(not sea.has_node("CompanionBattle") and battle != null
+		and behavior != null and battle.behavior == behavior
+		and behavior.battle == battle and behavior.actor == silas,
+		"Every NPC owns its own battle and specialized behavior component")
+	_check(behavior is CompanionCombatBehavior
+		and not battle.has_method("on_silas_attack_refused"),
+		"Shared combat class remains independent of Silas decisions")
+
 	main.queue_free()
 	await process_frame
 	print("FAILED: %d" % failures if failures > 0 else "Sea architecture boundaries passed")

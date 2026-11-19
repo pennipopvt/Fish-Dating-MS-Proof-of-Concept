@@ -57,7 +57,7 @@ func _run() -> void:
 		"One-time story conditions live outside core fishing")
 	_check(sea.get_node("NetProjectile") is DivingNetProjectile
 		and sea.get_node("Combat") is DivingCombat
-		and sea.get_node("CompanionBattle") is DivingCompanionBattle,
+		and sea.get_node("NPCs/Silas/CompanionBattle") is DivingCompanionBattle,
 		"Existing separate gameplay systems reused")
 	_check(bubble.get_viewport() == main.get_viewport(),
 		"Speech bubble stays on the reliable Main UI canvas")

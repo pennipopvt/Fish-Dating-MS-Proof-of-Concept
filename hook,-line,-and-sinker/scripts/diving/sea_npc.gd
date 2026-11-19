@@ -51,7 +51,7 @@ func _ready() -> void:
 		return
 	_player = get_node_or_null("../../../Player") as Player
 	_story = get_node_or_null("../../StoryDirector") as SeaStoryDirector
-	_battle = get_node_or_null("../../CompanionBattle") as DivingCompanionBattle
+	_battle = get_node_or_null("CompanionBattle") as DivingCompanionBattle
 
 
 func _refresh_sprite() -> void:

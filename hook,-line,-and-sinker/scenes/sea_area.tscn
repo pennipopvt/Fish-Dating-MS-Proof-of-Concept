@@ -2,6 +2,8 @@
 
 [ext_resource type="Texture2D" uid="uid://bfyphstvc01it" path="res://sprites/environment/tileset-2.png" id="4_8nafl"]
 [ext_resource type="Script" uid="uid://cuo1eyo7ijqpj" path="res://scripts/diving/companion_battle.gd" id="battle"]
+[ext_resource type="Script" path="res://scripts/diving/silas_combat_behavior.gd" id="silas_behavior"]
+[ext_resource type="Resource" path="res://resources/companions/silas_battle.tres" id="silas_stats"]
 [ext_resource type="Script" uid="uid://cctrjxxlon5uu" path="res://scripts/diving/diving_combat.gd" id="combat"]
 [ext_resource type="Script" uid="uid://dhvijpclcx1jf" path="res://scripts/diving/sea_encounter_sequence.gd" id="encounter"]
 [ext_resource type="Script" uid="uid://clx8exr24iwjv" path="res://scripts/diving/sea_editor_guide.gd" id="guide"]
@@ -140,6 +142,13 @@ texture = ExtResource("silas_fish")
 [node name="InteractPrompt" parent="NPCs/Silas" unique_id=1656409536 instance=ExtResource("interact_prompt")]
 position = Vector2(0, -24)
 
+[node name="CompanionBattle" type="Node" parent="NPCs/Silas" unique_id=1778717411]
+script = ExtResource("battle")
+stats = ExtResource("silas_stats")
+
+[node name="CombatBehavior" type="Node" parent="NPCs/Silas"]
+script = ExtResource("silas_behavior")
+
 [node name="StoryDirector" type="Node" parent="." unique_id=885138235]
 script = ExtResource("story")
 
@@ -153,5 +162,3 @@ script = ExtResource("net")
 [node name="Combat" type="Node" parent="." unique_id=447810725]
 script = ExtResource("combat")
 
-[node name="CompanionBattle" type="Node" parent="." unique_id=1778717411]
-script = ExtResource("battle")

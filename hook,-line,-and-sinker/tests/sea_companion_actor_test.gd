@@ -20,8 +20,12 @@ func _run() -> void:
 	var player: Player = main.get_node(
 		"SubViewportContainer/SubViewport/World/Player") as Player
 	var silas: SeaNPC = sea.get_node("NPCs/Silas") as SeaNPC
-	var battle: DivingCompanionBattle = sea.get_node("CompanionBattle") as DivingCompanionBattle
+	var battle: DivingCompanionBattle = silas.get_node("CompanionBattle") as DivingCompanionBattle
+	var behavior: SilasCombatBehavior = silas.get_node("CombatBehavior") as SilasCombatBehavior
 	var story: SeaStoryDirector = sea.get_node("StoryDirector") as SeaStoryDirector
+	_check(behavior != null and behavior.battle == battle and battle.behavior == behavior
+		and is_equal_approx(behavior.safety_health_ratio, 0.5),
+		"Silas has his own battle, behavior subclass and editable 50% limit")
 	var fish: DivingWildFish
 	var data: FishData
 	for candidate in sea.get("_wild_fish"):
@@ -105,37 +109,40 @@ func _run() -> void:
 		player.position + Vector2(-24.0, 6.0))
 	_check(after_return < before_return, "Silas returns toward Penni on recall")
 
-	# Silas's actual KO signal must open the existing dialogue UI, not just
-	# change a story flag. Later knockouts get the shorter repeat reaction.
+	# Silas's attacks stop exactly at half health, even if the final hit
+	# would otherwise overshoot or kill. The shared battle never KOs the fish.
+	if DialogueManager.is_active:
+		DialogueManager.end_conversation()
+	fish.health = fish.max_health * 0.5 + 0.5
+	var spared_events: Array[DivingWildFish] = []
+	var refused_events: Array[DivingWildFish] = []
+	behavior.fish_spared.connect(func(f: DivingWildFish) -> void: spared_events.append(f))
+	behavior.attack_refused.connect(func(f: DivingWildFish) -> void: refused_events.append(f))
+	_check(sea.call("_try_companion_target", fish.position),
+		"Penni can ask Silas to weaken a healthy fish")
+	battle.step(DivingCompanionBattle.attack_interval(battle.stats.speed), true)
+	_check(is_equal_approx(fish.health, fish.max_health * 0.5)
+		and fish.health > 0.0,
+		"Silas's hit cannot take a fish below his 50% safety threshold")
+	_check(not battle.is_active() and not fish.battling and spared_events.size() == 1,
+		"Silas automatically disengages after reaching the threshold")
+	_check((sea.get("_wild_fish") as Array).has(fish),
+		"Spared fish stays in the sea instead of being knocked out")
+
+	# Reordering Silas to attack a weak fish uses the established dialogue UI.
+	_check(sea.call("_try_companion_target", fish.position),
+		"Repeated orders against a hurt fish are consumed by the behavior")
+	var opening_line: DialogueLineData = DialogueManager.get_current_line()
+	_check(refused_events.size() == 1 and not battle.is_active()
+		and DialogueManager.is_active and DialogueManager.current_npc == story.silas_data
+		and opening_line != null and opening_line.text == "Penni? N-no, not that one...",
+		"Silas refuses and starts a conversation rather than attacking")
 	if DialogueManager.is_active:
 		DialogueManager.end_conversation()
 	fish.health = 1.0
-	_check(battle.start(fish, data), "Silas can engage a weakened fish")
-	battle.step(DivingCompanionBattle.attack_interval(battle.stats.speed), true)
-	_check(not battle.is_active() and fish.health <= 0.0,
-		"Silas's lethal strike ends companion combat")
-	_check(DialogueManager.is_active and DialogueManager.current_npc == story.silas_data,
-		"Silas's first fish kill opens his normal dialogue UI")
-	var first_reaction: DialogueLineData = DialogueManager.get_current_line()
-	_check(first_reaction != null and first_reaction.text == "AH! Penni, you have to stop me!",
-		"First kill starts the remorseful dialogue")
-	_check(story.has_event(&"silas_fish_kill_seen"),
-		"Story remembers that Silas has seen the consequences")
-	if DialogueManager.is_active:
-		DialogueManager.end_conversation()
-
-	var second_fish: DivingWildFish = DivingWildFish.new()
-	sea.get_node("FishActors").add_child(second_fish)
-	second_fish.fish_name = data.fish_id
-	second_fish.set_max_health(1.0)
-	(sea.get("_wild_fish") as Array).append(second_fish)
-	(sea.get("_fish_data") as Dictionary)[second_fish] = data
-	_check(battle.start(second_fish, data), "Silas can engage another fish afterward")
-	battle.step(DivingCompanionBattle.attack_interval(battle.stats.speed), true)
-	var repeat_reaction: DialogueLineData = DialogueManager.get_current_line()
-	_check(DialogueManager.is_active and repeat_reaction != null
-		and repeat_reaction.text == "N-no... Penni, it happened again.",
-		"Later kills trigger a shorter, still-regretful dialogue")
+	_check(sea.call("_try_companion_target", fish.position)
+		and refused_events.size() == 2 and is_equal_approx(fish.health, 1.0),
+		"Silas also refuses fish already below his limit without damaging them")
 	if DialogueManager.is_active:
 		DialogueManager.end_conversation()
 

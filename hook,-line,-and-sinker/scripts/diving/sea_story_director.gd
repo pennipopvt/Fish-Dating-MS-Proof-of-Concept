@@ -290,23 +290,12 @@ func on_companion_targeted() -> void:
 
 
 
-# CompanionBattle decides when a fish is knocked out; this director owns
-# Silas's story response, using the same JSON conversations as his rescue.
-func on_companion_fish_killed() -> void:
+# Companion behavior emits these events; story owns their presentation.
+func on_silas_spared_fish(_fish: DivingWildFish) -> void:
+	_show_silas_bubble("Penni... I'm scared I'll hurt it more.", 4.5)
+
+
+func on_silas_attack_refused(_fish: DivingWildFish) -> void:
 	if DialogueManager.is_active:
 		return
-	var first_time: bool = not has_event(&"silas_fish_kill_seen")
-	var path: String = (
-		"res://dialogue/silas_fish_kill_first.json" if first_time
-		else "res://dialogue/silas_fish_kill_repeat.json"
-	)
-	DialogueManager.request_conversation(silas_data, path)
-	if not DialogueManager.is_active:
-		push_warning("Silas kill reaction dialogue unavailable; using short fallback.")
-		DialogueManager.request_inline_conversation(
-			silas_data,
-			["Penni... I didn't mean to. Please stop me before I hurt another fish."],
-			"Silas"
-		)
-	if first_time and DialogueManager.is_active:
-		_events[&"silas_fish_kill_seen"] = true
+	DialogueManager.request_conversation(silas_data, "res://dialogue/silas_refuses_attack.json")

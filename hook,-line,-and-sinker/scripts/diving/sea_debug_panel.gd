@@ -104,7 +104,7 @@ func _update_sea_debug() -> void:
 	var call_on_tree: bool = call != null and call.is_visible_in_tree()
 	var visible: bool = ui != null and ui.is_call_shown()
 	var rect: Rect2 = call.get_global_rect() if call != null else Rect2()
-	var battle: DivingCompanionBattle = _sea.get_node_or_null("CompanionBattle") as DivingCompanionBattle
+	var battle: DivingCompanionBattle = _sea.get_node_or_null("NPCs/Silas/CompanionBattle") as DivingCompanionBattle
 	var fish: DivingWildFish = battle.target if battle != null and battle.is_active() else null
 	var actor: SeaNPC = silas as SeaNPC
 	var combat: DivingCombat = _sea.get_node_or_null("Combat") as DivingCombat
