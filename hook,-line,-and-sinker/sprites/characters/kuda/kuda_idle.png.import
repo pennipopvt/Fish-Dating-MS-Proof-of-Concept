@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://do160tdyrgx0m"
-path="res://.godot/imported/kuda.png-d606cfcf1d3d11463728ee9da702f4e3.ctex"
+uid="uid://btn7uh1qk00jp"
+path="res://.godot/imported/kuda_idle.png-739bae442b12d00d094f3b55ca9963f2.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://sprites/characters/penni/kuda.png"
-dest_files=["res://.godot/imported/kuda.png-d606cfcf1d3d11463728ee9da702f4e3.ctex"]
+source_file="res://sprites/characters/kuda/kuda_idle.png"
+dest_files=["res://.godot/imported/kuda_idle.png-739bae442b12d00d094f3b55ca9963f2.ctex"]
 
 [params]
 

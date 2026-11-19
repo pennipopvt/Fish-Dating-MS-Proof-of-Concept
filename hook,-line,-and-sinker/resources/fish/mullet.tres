@@ -14,18 +14,13 @@ metadata/_custom_type_script = "uid://cur8k0lqp6jxh"
 
 [resource]
 script = ExtResource("2_y4tt7")
-hooked_sprite_width = 32.0
 fish_id = &"mullet"
 item_data = ExtResource("1_o4qmq")
+hooked_sprite_width = 32.0
 stagger_resistance = 70.0
-max_health = 30.0
-attack = 3.0
-defense = 2.0
-speed = 1.0
 min_strength = 0.6
 force_range = 1.8
 dash_range = 1.25
-curve_midpoint = 0.5
 curve_steepness = 8.0
 states = Array[ExtResource("3_y4tt7")]([SubResource("Resource_r7p2w")])
 metadata/_custom_type_script = "uid://d2iidpvp5wrw7"

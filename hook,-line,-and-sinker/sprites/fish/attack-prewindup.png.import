@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://b606v6feem3is"
-path="res://.godot/imported/silas_idle.png-7b1a011728aeee603a60eb05ec5aae12.ctex"
+uid="uid://c6jebkmi468ty"
+path="res://.godot/imported/attack-prewindup.png-daf99adac33504b84f7958239c597033.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://sprites/characters/silas_idle.png"
-dest_files=["res://.godot/imported/silas_idle.png-7b1a011728aeee603a60eb05ec5aae12.ctex"]
+source_file="res://sprites/fish/attack-prewindup.png"
+dest_files=["res://.godot/imported/attack-prewindup.png-daf99adac33504b84f7958239c597033.ctex"]
 
 [params]
 

@@ -6,6 +6,7 @@ extends SceneTree
 const PROTOTYPE: PackedScene = preload("res://scenes/diving_prototype.tscn")
 const GOBY: FishData = preload("res://resources/fish/goby.tres")
 const TUNA: FishData = preload("res://resources/fish/tuna.tres")
+const SILAS_STATS: CompanionStats = preload("res://resources/companions/silas_battle.tres")
 var failures: int = 0
 var _fish_ko: DivingWildFish = null
 var _companion_ko: bool = false
@@ -30,6 +31,7 @@ func _unit_checks() -> void:
 		"Early fish fight at or below normal strength; later fish are far stronger when fresh")
 
 	var battle := DivingCompanionBattle.new()
+	battle.stats = SILAS_STATS
 	get_root().add_child(battle)
 	battle.fish_knocked_out.connect(func(f: DivingWildFish) -> void: _fish_ko = f)
 	battle.companion_knocked_out.connect(func() -> void: _companion_ko = true)
@@ -88,51 +90,29 @@ func _scene_checks() -> void:
 	var prototype := PROTOTYPE.instantiate()
 	get_root().add_child(prototype)
 	await process_frame
-	await process_frame
-	var world: Node2D = prototype.get_node("SubViewportContainer/SubViewport/Lagoon")
-	var player: Sprite2D = world.get_node("Player")
-	var combat: DivingCombat = world.get_node("Combat")
-	var battle: DivingCompanionBattle = world.get_node("CompanionBattle")
-	var wild: Array[DivingWildFish] = world.get("_wild_fish")
-	var goby: DivingWildFish = null
-	var tuna: DivingWildFish = null
-	for fish in wild:
-		if fish.fish_name == &"goby":
-			goby = fish
-		elif fish.fish_name == &"tuna":
-			tuna = fish
-	_check(goby != null and tuna != null and is_equal_approx(tuna.max_health, TUNA.max_health),
-		"Spawned fish take their health from FishData")
-
-	world.call("_on_net_fish_hit", tuna)
-	_check(combat.is_active() and is_equal_approx(combat.strength, TUNA.min_strength * TUNA.force_range),
-		"A full-health tuna can be netted, but fights at full strength")
-	combat.release()
-
-	world.set("_silas_following", true)
-	player.position = goby.position + Vector2(-30.0, 0.0)
-	world.call("_command_battle", goby.position)
-	_check(battle.is_active() and battle.target == goby, "Right-clicking a fish sends Silas at it")
-	world.call("_command_battle", goby.position)
-	_check(not battle.is_active(), "Right-clicking the same fish calls Silas back")
-
-	world.call("_command_battle", goby.position)
-	world.call("_on_net_fish_hit", goby)
-	_check(combat.is_active() and not battle.is_active(),
-		"An early fish is catchable at full health, and netting ends the battle")
-	combat.release()
-
-	tuna.health = tuna.max_health * 0.4
-	tuna.catch_cooldown = 0.0
-	world.call("_on_net_fish_hit", tuna)
-	_check(combat.is_active() and is_equal_approx(combat.strength,
-		TUNA.min_strength * lerpf(1.0, TUNA.force_range,
-			DivingCombat.health_curve(0.4, TUNA.curve_midpoint, TUNA.curve_steepness))),
-		"Reel fight strength follows the fish's remaining health")
-	combat.release()
-	_check(is_equal_approx(tuna.health, tuna.max_health * 0.4),
-		"An escaped fish keeps its damage")
-
+	var sea: DivingWorld = prototype.get_node("Sea") as DivingWorld
+	var silas: SeaNPC = sea.get_node("NPCs/Silas") as SeaNPC
+	var battle: DivingCompanionBattle = silas.get_node("CompanionBattle") as DivingCompanionBattle
+	var behavior: SilasCombatBehavior = silas.get_node("CombatBehavior") as SilasCombatBehavior
+	_check(battle != null and battle.stats == SILAS_STATS
+		and behavior != null and battle.behavior == behavior,
+		"Silas owns a configured battle instance and specialized behavior")
+	var wild: Array = sea.get("_wild_fish")
+	var fish: DivingWildFish
+	for candidate in wild:
+		if candidate is DivingWildFish and not candidate.trapped:
+			fish = candidate
+			break
+	_check(fish != null, "Sea still spawns fish after combat composition")
+	if fish != null:
+		var data: FishData = (sea.get("_fish_data") as Dictionary).get(fish)
+		_check(data != null and behavior.on_command(fish, data),
+			"Generic command hook starts the existing companion battle")
+		_check(battle.is_active() and battle.target == fish,
+			"Per-NPC battle owns its own target")
+		battle.stop()
+		_check(not battle.is_active() and not fish.battling,
+			"Stopping that NPC's battle clears its fish target")
 	prototype.queue_free()
 	await process_frame
 

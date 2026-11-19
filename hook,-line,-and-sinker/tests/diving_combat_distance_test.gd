@@ -138,13 +138,31 @@ func _run() -> void:
 	for path in ["goby", "mullet", "porgy", "needlefish", "flounder", "tuna"]:
 		var species: FishData = load("res://resources/fish/%s.tres" % path)
 		_check(species.force_range <= 2.5 and species.dash_range <= 1.5 and species.dash_range <= species.force_range,
-			"%s: pull at most 2.5x and dash at most 1.5x its lowest point" % path)
+			"%s: authored force and dash curves remain within species limits" % path)
+		_check(combat.begin(fish, species, 80.0, 110.0, 0.5)
+			and is_equal_approx(combat.strength, 1.0),
+			"%s: 50 percent HP provides normal rod difficulty" % path)
+		combat.release()
+		_check(combat.begin(fish, species, 80.0, 110.0, 1.0)
+			and combat.strength >= combat.full_health_pressure,
+			"%s: full HP is much more difficult for the standard rod" % path)
+		combat.release()
 
-	# Strength multiplies pull and tension; dash_strength the dash distance.
+	# Health-normalized pressure: every fish is at ordinary rod pressure at
+	# half HP and much harder at full HP, even naturally gentle species.
+	_check(is_equal_approx(DivingCombat.health_pressure(0.5, mid, k, 4.5, 0.75), 1.0)
+		and is_equal_approx(DivingCombat.health_pressure(1.0, mid, k, 4.5, 0.75), 4.5)
+		and is_equal_approx(DivingCombat.health_pressure(0.0, mid, k, 4.5, 0.75), 0.75),
+		"Health pressure is precisely normal at half HP and extreme at full HP")
+	_check(combat.begin(fish, TUNA_FILE, 80.0, 110.0, 0.5)
+		and is_equal_approx(combat.strength, 1.0)
+		and is_equal_approx(combat.dash_strength, 1.0),
+		"A half-health fish is normally catchable with the standard rod")
+	combat.release()
 	_check(combat.begin(fish, TUNA_FILE, 80.0, 110.0, 1.0)
-		and is_equal_approx(combat.strength, TUNA_FILE.min_strength * TUNA_FILE.force_range)
-		and is_equal_approx(combat.dash_strength, TUNA_FILE.min_strength * TUNA_FILE.dash_range),
-		"A fresh tuna fights at its maximum pull and dash")
+		and combat.strength >= combat.full_health_pressure
+		and combat.dash_strength > 1.0,
+		"Fresh fish resist reeling much more than half-health fish")
 	var span: float = combat.max_line_distance - combat.catch_distance
 	var strong_start: float = combat.line_distance
 	combat.step(0.10)
@@ -169,14 +187,13 @@ func _run() -> void:
 		"Strength scales miss tension")
 	combat.release()
 	_check(combat.begin(fish, TUNA_FILE, 80.0, 110.0, 0.0)
-		and is_equal_approx(combat.strength, TUNA_FILE.min_strength)
-		and is_equal_approx(combat.dash_strength, TUNA_FILE.min_strength),
-		"A fish at 0 health is at its lowest point")
+		and combat.strength < 1.0 and combat.dash_strength < 1.0,
+		"Exhausted fish are gentler than the half-health rod baseline")
 	combat.release()
-	_check(combat.begin(fish, TUNA, 80.0, 110.0) and is_equal_approx(combat.strength, 1.0),
-		"A normal-strength fish at full health (the default) has strength 1")
+	_check(combat.begin(fish, TUNA, 80.0, 110.0, 0.5) and is_equal_approx(combat.strength, 1.0),
+		"A neutral-strength species is normally catchable at half HP")
 	combat.release()
-	_check(combat.begin(fish, TUNA_FILE, 80.0, 110.0) and combat.strength > 2.0,
+	_check(combat.begin(fish, TUNA_FILE, 80.0, 110.0) and combat.strength > 4.0,
 		"A fresh tuna fights far above normal strength")
 	_check(is_equal_approx(combat.stagger_resistance(), TUNA_FILE.stagger_resistance * combat.strength),
 		"Extra strength also makes the fish harder to stagger")

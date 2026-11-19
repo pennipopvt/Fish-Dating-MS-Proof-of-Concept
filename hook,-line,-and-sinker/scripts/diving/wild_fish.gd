@@ -7,6 +7,10 @@ var fish_name: StringName = &""
 var swim_speed: float = 20.0
 var capture_radius: float = 13.0
 var flee_radius: float = 58.0
+# Configured by the editor-placeable DivingFishSpawn instance.
+# Unlike net/combat rules these affect only free-swimming behavior.
+var preferred_player_distance: float = 0.0
+var flee_speed: float = 0.0
 var catch_cooldown: float = 0.0
 # A rescued NPC may be trapped in place until the net battle is completed.
 var trapped: bool = false
@@ -62,7 +66,7 @@ func swim(delta: float, player_position: Vector2, concealed: bool) -> void:
 		return
 	_wander_timer -= delta
 	var distance: float = position.distance_to(player_position)
-	var danger_distance: float = 18.0 if concealed else flee_radius
+	var danger_distance: float = 18.0 if concealed else maxf(flee_radius, preferred_player_distance)
 	var direction: Vector2 = _heading
 	if distance < danger_distance and distance > 0.01:
 		direction = (position - player_position).normalized()
@@ -75,6 +79,14 @@ func swim(delta: float, player_position: Vector2, concealed: bool) -> void:
 			_heading = (Vector2.RIGHT.rotated(_rng.randf_range(-PI, PI)) * 0.55 + toward_home * 0.45).normalized()
 		direction = _heading
 	var speed: float = swim_speed * (1.9 if distance < danger_distance else 0.62)
+	if not concealed and distance < danger_distance and preferred_player_distance > 0.0:
+		# Normal free swimming can be caught from net range, but Penni
+		# can't simply overtake wary fish at 78px/s. No teleport or
+		# arbitrary minimum net-cast distance is introduced.
+		var retreat: float = flee_speed
+		if distance > preferred_player_distance:
+			retreat *= 0.82
+		speed = maxf(speed, retreat)
 	_sprite.position.x = 0.0
 	position += direction * speed * delta
 	position.x = clampf(position.x, region.position.x + 12.0, region.end.x - 12.0)

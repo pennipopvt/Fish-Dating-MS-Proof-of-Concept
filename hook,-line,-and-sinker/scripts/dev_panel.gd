@@ -240,7 +240,7 @@ func _spawn_npc_for_debug(npc_id: StringName) -> NPCInteractable:
 
 func _dev_recruit(npc_id: StringName) -> void:
 	var fish := _fish_for_npc(npc_id)
-	var state := NPCManager.get_npc_state(npc_id)
+	var state: Dictionary = NPCManager.get_npc_state(npc_id)
 	var data := _flag_npc_resource(npc_id)
 	if fish == null or data == null:
 		_say("No recruitable NPC fish found for " + String(npc_id))

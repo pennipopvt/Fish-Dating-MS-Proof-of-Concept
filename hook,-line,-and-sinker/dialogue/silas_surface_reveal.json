@@ -4,11 +4,30 @@
   "nodes": {
     "surface": {
       "lines": [
-        "Ah! W-what just happened?!",
-        "My fins... they're gone. I have legs?",
+        "AAH!",
+        {
+          "speaker": "player",
+          "text": "..."
+        },
+        "W-what just happened to me?",
+        {
+          "speaker": "player",
+          "text": "You... have legs?"
+        },
+        "I HAVE WHAT?",
+        "Oh. ...Is that normal?",
+        {
+          "speaker": "player",
+          "text": "I have absolutely no idea."
+        },
         "I didn't think coming up here would be quite so different.",
-        "But... I'm glad you asked me to come.",
-        "There are so many things I want to see with you."
+        "But... there are so many things I want to see.",
+        {
+          "speaker": "player",
+          "text": "Just wait here by the dock for now, okay?"
+        },
+        "O-okay! I can do that.",
+        "And... thank you for letting me come with you, Penni."
       ]
     }
   }

@@ -100,15 +100,24 @@ func _process(delta: float) -> void:
 			var previous: Vector2 = tip
 			_travelled = minf(max_range, _travelled + throw_speed * delta)
 			var next_position: Vector2 = _start + direction * _travelled
-			var collided: DivingWildFish = _first_fish_on_segment(previous, next_position)
+			# Physics layer 2 contains only the lagoon's painted solid tiles.
+			# Shorten this segment at a wall so a fish behind a cave wall
+			# cannot be hooked through it.
+			var wall_hit: Dictionary = get_world_2d().direct_space_state.intersect_ray(
+				PhysicsRayQueryParameters2D.create(previous, next_position, 2)
+			)
+			var unobstructed_end: Vector2 = next_position
+			if not wall_hit.is_empty():
+				unobstructed_end = wall_hit["position"]
+			var collided: DivingWildFish = _first_fish_on_segment(previous, unobstructed_end)
 			if collided != null:
 				_latched_fish = collided
 				tip = collided.position
 				state = State.LATCHED
 				fish_hit.emit(collided)
 			else:
-				tip = next_position
-				if _travelled >= max_range:
+				tip = unobstructed_end
+				if not wall_hit.is_empty() or _travelled >= max_range:
 					state = State.RETURNING
 		State.RETURNING:
 			tip = tip.move_toward(_get_anchor(), retract_speed * delta)
