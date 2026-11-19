@@ -3,6 +3,8 @@ class_name DivingWildFish
 
 # Tiny autonomous fish for the diving vertical slice. They wander on their
 # own, notice the player, and flee unless Silas is concealing the approach.
+# How far inside `region` the fish's center stays (free swimming and hooked).
+const EDGE_MARGIN: float = 12.0
 var fish_name: StringName = &""
 var swim_speed: float = 20.0
 var capture_radius: float = 13.0
@@ -89,8 +91,8 @@ func swim(delta: float, player_position: Vector2, concealed: bool) -> void:
 		speed = maxf(speed, retreat)
 	_sprite.position.x = 0.0
 	position += direction * speed * delta
-	position.x = clampf(position.x, region.position.x + 12.0, region.end.x - 12.0)
-	position.y = clampf(position.y, region.position.y + 12.0, region.end.y - 12.0)
+	position.x = clampf(position.x, region.position.x + EDGE_MARGIN, region.end.x - EDGE_MARGIN)
+	position.y = clampf(position.y, region.position.y + EDGE_MARGIN, region.end.y - EDGE_MARGIN)
 	_sprite.flip_h = direction.x < -0.01
 	_sprite.position.y = sin(_t * 3.2 + float(_rng.seed % 10)) * 1.4
 	rotation = clampf(direction.y * 0.15, -0.20, 0.20)

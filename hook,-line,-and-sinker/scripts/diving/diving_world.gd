@@ -206,9 +206,31 @@ func _sync_hooked_fish() -> void:
 	var direction: Vector2 = (fish.position - _player.position).normalized()
 	if direction.length_squared() < 0.01:
 		direction = Vector2.RIGHT
-	fish.position = _player.position + direction * _combat.line_distance
+	fish.position = place_on_line_inside(_player.position, direction, _combat.line_distance,
+		fish.region.grow(-DivingWildFish.EDGE_MARGIN))
 	if fish == _encounter.silas_trap:
 		_silas.position = fish.position
+
+
+# Where a hooked fish sits: `length` out from `origin` along `direction`, but
+# never above the waterline or past the sea walls. A fish that would cross an
+# edge slides along it at the same line length, so the fight's distance (and
+# its escape rule) still matches what the player sees. Only in a corner, where
+# no point at that length fits, does the fish end up closer.
+static func place_on_line_inside(origin: Vector2, direction: Vector2, length: float, bounds: Rect2) -> Vector2:
+	var point: Vector2 = origin + direction * length
+	if point.y < bounds.position.y or point.y > bounds.end.y:
+		point.y = clampf(point.y, bounds.position.y, bounds.end.y)
+		var dy: float = point.y - origin.y
+		var side_x: float = signf(direction.x) if absf(direction.x) > 0.01 else 1.0
+		point.x = origin.x + side_x * sqrt(maxf(length * length - dy * dy, 0.0))
+	if point.x < bounds.position.x or point.x > bounds.end.x:
+		point.x = clampf(point.x, bounds.position.x, bounds.end.x)
+		var dx: float = point.x - origin.x
+		var side_y: float = signf(point.y - origin.y) if absf(point.y - origin.y) > 0.01 else 1.0
+		point.y = clampf(origin.y + side_y * sqrt(maxf(length * length - dx * dx, 0.0)),
+			bounds.position.y, bounds.end.y)
+	return point
 
 
 # Main forwards UI-scaled mouse/key events here; sea remains in the original
