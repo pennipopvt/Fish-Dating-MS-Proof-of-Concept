@@ -45,7 +45,7 @@ func interact(_player: Node2D) -> void:
 		return
 	var player := _player as Player
 	if player != null and player.held_item != null:
-		var path := NPCManager.get_gift_encounter_path(npc, player.held_item)
+		var path: String = str(NPCManager.get_gift_encounter_path(npc, player.held_item))
 		if not path.is_empty():
 			DialogueManager.request_conversation(npc, path, player)
 			return

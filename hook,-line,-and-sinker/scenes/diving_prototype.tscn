@@ -1,8 +1,7 @@
 [gd_scene load_steps=2 format=3]
 
-# Optional scene preview, not a separate playable underwater prototype.
-[ext_resource type="PackedScene" path="res://scenes/sea_area.tscn" id="sea"]
+[ext_resource type="PackedScene" path="res://scenes/sea_area.tscn" id="1_sea"]
 
 [node name="SeaPreview" type="Node2D"]
 
-[node name="Sea" parent="." instance=ExtResource("sea")]
+[node name="Sea" parent="." instance=ExtResource("1_sea")]

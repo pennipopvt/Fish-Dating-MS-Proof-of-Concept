@@ -767,7 +767,7 @@ func _refresh_schedule_page() -> void:
 	row_pressed.bg_color = Color(0.11, 0.35, 0.37, 0.20)
 
 	for day_offset in SCHEDULE_DAYS:
-		var day := GameManager.get_day() + day_offset
+		var day: int = int(GameManager.get_day()) + int(day_offset)
 		var day_panel := PanelContainer.new()
 		day_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		day_panel.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -918,8 +918,8 @@ func _collect_trades() -> void:
 		# Safety gate: the diving loop has no bait or extra fishing casts.
 		if trade.reward_method in [&"shop_reward_unlock_hard_bait", &"shop_reward_unlock_yellow_bait", &"shop_reward_upgrade_casts", &"shop_reward_add_casts"]:
 			continue
-		var is_upgrade := trade.reward_method != &""
-		var is_gift := trade.reward_item != null and not is_upgrade
+		var is_upgrade: bool = trade.reward_method != &""
+		var is_gift: bool = trade.reward_item != null and not is_upgrade
 		if _page == Page.SHOP and ((_shop_section == 0 and is_upgrade) or (_shop_section == 1 and is_gift and _has_recruited_npc())):
 			var icon: Texture2D = trade.icon
 			if icon == null and trade.reward_item != null:
@@ -1247,7 +1247,7 @@ func _on_upgrade_state_changed(_trade: TradeData) -> void:
 func _on_trade_completed(trade: TradeData) -> void:
 	if not visible:
 		return
-	var delivered_later := ShopManager.has_delivery_point()
+	var delivered_later: bool = bool(ShopManager.has_delivery_point())
 	_delivery_status.text = "DELIVERY ORDERED" if delivered_later else "ORDER COMPLETE"
 	_last_order_message = "ORDER PLACED: %s" % trade.display_name
 	_refresh_page()
