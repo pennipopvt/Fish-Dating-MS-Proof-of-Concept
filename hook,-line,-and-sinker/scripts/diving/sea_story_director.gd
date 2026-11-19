@@ -9,6 +9,7 @@ signal silas_following_started
 
 var _events: Dictionary = {}
 var _dialogue_stage: StringName = &""
+var _missing_bubble_warned: bool = false
 
 
 func _ready() -> void:
@@ -16,18 +17,28 @@ func _ready() -> void:
 
 
 func _bubble() -> SeaSpeechBubble:
-	return get_tree().get_first_node_in_group("sea_speech_bubble") as SeaSpeechBubble
+	# SeaStoryDirector lives at SubViewport/World/Sea/StoryDirector.
+	# The bubble is the SubViewport's *sibling* of World. Resolve it in
+	# that exact viewport, never by a global group lookup across canvases.
+	return get_viewport().get_node_or_null("SeaSpeechBubble") as SeaSpeechBubble
 
 
-func _show_silas_bubble(message: String, seconds: float = 0.0) -> void:
+func _show_silas_bubble(message: String, seconds: float = 0.0) -> bool:
 	var ui: SeaSpeechBubble = _bubble()
-	if ui == null:
-		return
+	if ui == null or not ui.is_node_ready():
+		# The story beat must not be consumed when the presentation is
+		# missing. DivingWorld will retry the trigger on a later frame.
+		if not _missing_bubble_warned:
+			push_warning("SeaSpeechBubble missing from the game SubViewport; run scenes/main.tscn.")
+			_missing_bubble_warned = true
+		return false
+	_missing_bubble_warned = false
 	var speaker: Node2D = get_parent().get_node_or_null("NPCs/Silas") as Node2D
 	if speaker != null:
 		ui.show_attached_call(message, speaker, seconds)
 	else:
 		ui.show_call(message, false, seconds)
+	return true
 
 
 func _cue() -> SeaTutorialCue:
@@ -136,8 +147,10 @@ func consume_first_reel() -> bool:
 func on_followed_escape() -> void:
 	if not has_event(&"line_broken") or has_event(&"help_called"):
 		return
-	_events[&"help_called"] = true
-	_show_silas_bubble("Help me!")
+	# Never mark the cry as played before the bubble exists. Previously a
+	# null UI lookup silently ate this one-time story moment forever.
+	if _show_silas_bubble("Help me!"):
+		_events[&"help_called"] = true
 
 
 func can_talk_to_silas() -> bool:

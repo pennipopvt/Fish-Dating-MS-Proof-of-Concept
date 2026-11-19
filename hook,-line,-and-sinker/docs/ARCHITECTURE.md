@@ -1,10 +1,67 @@
 # Hook, Line, and Sinker — Architecture
 
-This is the current **Godot 4** prototype architecture. Keep new features aligned
+This documents the established island prototype plus the newer underwater
+first-dive prototype on **penni-diving**. The fishing dock architecture below
+is largely legacy; the sea uses separate combat components while sharing the
+same persistent World, Player, Camera, dialogue and managers.
+
+Keep new features aligned
 with these ownership rules to avoid changing the same gameplay state in several
 scripts. For the current prototype, gameplay progression is **session-only**.
 
-## Runtime flow
+## Actual scene tree and viewport ownership
+
+```text
+Main (Control, scripts/diving/dive_entry.gd)
+├── SubViewportContainer (stretch_shrink=6)
+│   └── SubViewport (native 320×180)
+│       ├── World (prefabs/world.tscn)
+│       │   ├── Player (CharacterBody2D; owns Camera2D, underwater tint)
+│       │   ├── Sky / Water / Dock / Shop / island systems
+│       │   └── Sea (scenes/sea_area.tscn)
+│       │       ├── Solids / FishSpawns / FishActors / NPCs/Silas
+│       │       ├── StoryDirector (first-dive event flags)
+│       │       ├── NetProjectile / Combat / CompanionBattle
+│       │       └── editor guide / entry and exit markers
+│       └── SeaSpeechBubble (CanvasLayer, layer 8)
+├── CanvasLayer (ShopMenu, DialogueUI which uses layer 10)
+├── IllustrationScene
+├── IntroLayer (FishCoIntro backdrop, layer 9)
+└── TransitionLayer (iris, layer 100)
+```
+
+**Important:** `SeaSpeechBubble` belongs directly to the *game*
+`SubViewport`, **not** to `World` or Main's outer CanvasLayer. Retrieve it
+from underwater logic using
+`get_viewport().get_node_or_null("SeaSpeechBubble")`. Global scene groups
+are not an authoritative node path. Its coordinates are already native
+game-screen pixels; map Silas via `get_global_transform_with_canvas()`
+and clamp in the same 320×180 viewport. The separate nine-slice + tail
+are user-supplied sprites. Do not attach the bubble script to the player
+camera or create a second bubble scene.
+
+`Main/dive_entry.gd` owns island ↔ sea transitions and forwards input
+into `DivingWorld.handle_input`, because the SubViewportContainer may
+consume mouse events. `World` and the same Player/Camera continue to exist
+during dives; the sea is **not** a second loaded world. Player movement and
+collision remain owned by `Player.set_swimming()` and `move_and_slide()`.
+
+`DivingWorld` should coordinate sea encounters and projectiles but not own
+narrative flags. `SeaStoryDirector` holds first-dive session beats, then
+requests dialogue via `DialogueManager`; NPC flags are stored with
+`NPCManager`. `SeaNPC` is the editor-placeable physical actor, with
+the existing `NPCData` resource controlling its fish/human representation.
+The temporary catch target is not a second visible NPC.
+
+For the opening sequence, the initial mullet is intentionally scripted:
+WASD cue → fish focus / click cue → net → forced line break → escaped fish
+swims left → Penni follows → persistent attached "Help me!" call → Silas
+dialogue → rescue → companion tutorial. A **story event must not be
+considered delivered until its UI target is available**, or the bubble
+may silently disappear for the rest of the session.
+
+## Runtime flow (existing island fishing)
+
 
 1. `Player` interacts with `Dock` and `FishingController` starts a cast.
 2. `FishingManager` selects a fish using the equipped `BaitData`.
@@ -87,9 +144,18 @@ each terminal tab before declaring a gameplay refactor complete.
 
 ## Editing guidelines
 
-- Work on `penni`; **do not push to `main` without explicit approval**.
+- Work only on `penni-diving` for underwater changes; **do not modify `main` or backup branches** without explicit approval.
 - Keep data in typed `.tres` resources, not hard-coded scene paths.
 - Don't mutate an autoload's arrays/flags from UI when an API can own it.
 - Pair every state-machine change with at least one test.
 - Add a signal when state changes; don't make UI poll or infer it indirectly.
 - Prefer small behavior-preserving changes over large system rewrites.
+
+## Underwater regression checks
+
+Run `res://tests/sea_storyboard_test.gd`,
+`res://tests/sea_level_layout_test.gd` and
+`res://tests/diving_island_transition_test.gd` from Godot's headless
+SceneTree runner before merging. The environment running this analysis
+cannot currently execute Godot; static references alone do not verify
+the rendering or real-game playback.

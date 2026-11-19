@@ -15,6 +15,12 @@ func _run() -> void:
 	var sea: DivingWorld = main.get_node("SubViewportContainer/SubViewport/World/Sea") as DivingWorld
 	var story: SeaStoryDirector = sea.get_node("StoryDirector") as SeaStoryDirector
 	var bubble: SeaSpeechBubble = main.get_node("SubViewportContainer/SubViewport/SeaSpeechBubble") as SeaSpeechBubble
+	_check(story.call("_bubble") == bubble,
+		"Story resolves speech bubble directly from its own game SubViewport")
+	bubble.remove_from_group("sea_speech_bubble")
+	_check(story.call("_bubble") == bubble,
+		"Bubble lookup is independent of global group registration")
+	bubble.add_to_group("sea_speech_bubble")
 	var cue: SeaTutorialCue = main.get_node(
 		"SubViewportContainer/SubViewport/World/Player/Camera2D/SeaTutorialCue"
 	) as SeaTutorialCue
