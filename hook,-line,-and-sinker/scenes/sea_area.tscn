@@ -102,6 +102,15 @@ position = Vector2(55, 182)
 [node name="SurfaceExit" type="Marker2D" parent="Points" unique_id=191450686]
 position = Vector2(55, 157)
 
+[node name="InteractPrompt" parent="Points/SurfaceExit" instance=ExtResource("interact_prompt")]
+position = Vector2(0, -18)
+
+[node name="SilasSurfaceApproach" type="Marker2D" parent="Points"]
+position = Vector2(53, 156)
+
+[node name="SilasDockWait" type="Marker2D" parent="Points"]
+position = Vector2(101, 112)
+
 [node name="FishSpawns" type="Node2D" parent="." unique_id=1684491983]
 
 [node name="FirstFish" type="Marker2D" parent="FishSpawns" unique_id=1269103562]

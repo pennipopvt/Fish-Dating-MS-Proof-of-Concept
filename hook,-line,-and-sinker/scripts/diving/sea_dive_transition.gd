@@ -1,6 +1,8 @@
 extends CanvasLayer
 class_name SeaDiveTransition
 
+signal surface_completed
+
 # Owns ONLY the physical one-world transitions: iris, dock jump,
 # sea descent and surfacing. FishCoOpeningSequence handles choices.
 const RIPPLE: Texture2D = preload("res://sprites/environment/medium_ripple_a.png")
@@ -38,6 +40,12 @@ func configure(world: Node2D, player: Player, sea: DivingWorld,
 	_shop_menu = shop
 	_opening = opening
 	_sea.surface_requested.connect(_on_surface_requested)
+	surface_completed.connect(_sea.on_surface_completed)
+	# Story can request fish/human portraits for a conversation without
+	# teaching this physical transition about any particular character.
+	(_sea.get_node("StoryDirector") as SeaStoryDirector).dialogue_mode_requested.connect(
+		_dialogue_ui.set_underwater_mode
+	)
 
 
 func begin_intro_to_dock(intro: FishCoIntro) -> void:
@@ -168,6 +176,7 @@ func _surface_from_dive() -> void:
 
 	transitioning = false
 	_world_player.busy = false
+	surface_completed.emit()
 
 
 func _normalized_screen_position(actor: Node2D) -> Vector2:

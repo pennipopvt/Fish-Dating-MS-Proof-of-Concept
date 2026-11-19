@@ -21,6 +21,7 @@ const WILD_FISH_SCRIPT = preload("res://scripts/diving/wild_fish.gd")
 @onready var _guide: SeaEditorGuide = $EditorGuide
 @onready var _entry: Marker2D = $Points/Entry
 @onready var _exit: Marker2D = $Points/SurfaceExit
+@onready var _exit_prompt: InteractPrompt = $Points/SurfaceExit/InteractPrompt
 @onready var _spawns: Node2D = $FishSpawns
 @onready var _actors: Node2D = $FishActors
 @onready var _story: SeaStoryDirector = $StoryDirector
@@ -166,6 +167,15 @@ func _process(delta: float) -> void:
 	if _player == null or not _player.swimming:
 		return
 	_encounter.step(delta)
+	# Reuse the original interaction bubble for the dock return.
+	# The marker lives at the waterline; the player cannot swim above
+	# the swim bounds, so its radius must work from BELOW the marker.
+	if _player.position.distance_to(_exit.position) <= SURFACE_REACH \
+			and not DialogueManager.is_active and not GameManager.is_modal_ui_open() \
+			and not _net.is_busy() and not _combat.is_active():
+		_exit_prompt.pop_in()
+	else:
+		_exit_prompt.pop_out()
 	if _battle.is_active() and (DialogueManager.is_active or _combat.is_active()):
 		_battle.stop()
 	_silas_behavior.on_combat_update(delta, _silas.can_strike_target())
@@ -368,9 +378,18 @@ func _try_companion_target(world_mouse: Vector2) -> bool:
 
 func _return_to_surface() -> void:
 	if _player != null and _player.swimming:
+		_exit_prompt.pop_out()
 		_encounter.leave_sea()
 		if _combat.is_active():
 			_combat.release()
 		if _battle.is_active():
 			_battle.stop()
 		surface_requested.emit()
+
+
+# The transition owns physical surfacing. Only AFTER it reports completion
+# do we ask the story whether this return needs a one-time character scene.
+func on_surface_completed() -> void:
+	_exit_prompt.pop_out()
+	if _story.can_begin_silas_surface_reveal():
+		_encounter.play_silas_surface_reveal()

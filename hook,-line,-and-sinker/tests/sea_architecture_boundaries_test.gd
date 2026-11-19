@@ -85,6 +85,14 @@ func _run() -> void:
 		and not battle.has_method("on_silas_attack_refused"),
 		"Shared combat class remains independent of Silas decisions")
 
+	_check(transition.surface_completed.is_connected(Callable(sea, "on_surface_completed"))
+		and (sea.get_node("Points/SurfaceExit/InteractPrompt") is InteractPrompt),
+		"Surfacing uses one completion event and an editor-placed return prompt")
+	_check(sea.get_node("Points/SilasSurfaceApproach") is Marker2D
+		and sea.get_node("Points/SilasDockWait") is Marker2D
+		and encounter.has_method("play_silas_surface_reveal"),
+		"Silas choreography stays with the existing encounter sequence")
+
 	main.queue_free()
 	await process_frame
 	print("FAILED: %d" % failures if failures > 0 else "Sea architecture boundaries passed")

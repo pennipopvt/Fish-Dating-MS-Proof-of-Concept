@@ -4,6 +4,9 @@ class_name SeaStoryDirector
 # Only one-time events live here. The fishing, NPC and dialogue systems
 # continue to own their normal behavior and persistent NPC state.
 signal silas_following_started
+signal silas_surface_warning_finished
+signal silas_surface_reveal_finished
+signal dialogue_mode_requested(underwater_portraits: bool)
 
 @export var silas_data: NPCData = preload("res://resources/npcs/silas.tres")
 
@@ -263,6 +266,16 @@ func _on_conversation_finished(finished_npc: NPCData) -> void:
 	elif _dialogue_stage == &"rescue":
 		_set_silas_flag(&"silas_following")
 		silas_following_started.emit()
+	elif _dialogue_stage == &"surface_warning":
+		_dialogue_stage = &""
+		silas_surface_warning_finished.emit()
+		return
+	elif _dialogue_stage == &"surface_reveal":
+		_set_silas_flag(&"silas_surface_transformed")
+		_set_silas_flag(&"silas_waiting_at_dock")
+		_dialogue_stage = &""
+		silas_surface_reveal_finished.emit()
+		return
 	_dialogue_stage = &""
 
 
@@ -303,3 +316,43 @@ func on_silas_attack_refused(_fish: DivingWildFish) -> void:
 	if ui != null:
 		ui.hide_call()
 	DialogueManager.request_conversation(silas_data, "res://dialogue/silas_refuses_attack.json")
+
+
+# Surfacing itself is always allowed. Only Silas's FIRST return adds a scene.
+func can_begin_silas_surface_reveal() -> bool:
+	return has_silas_flag(&"silas_following") \
+		and not has_silas_flag(&"silas_surface_transformed") \
+		and not has_event(&"silas_surface_scene_started") \
+		and not DialogueManager.is_active
+
+
+func begin_silas_surface_reveal() -> bool:
+	if not can_begin_silas_surface_reveal():
+		return false
+	_events[&"silas_surface_scene_started"] = true
+	return true
+
+
+func start_silas_surface_warning() -> void:
+	_dialogue_stage = &"surface_warning"
+	# Silas is still a fish for the warning conversation.
+	dialogue_mode_requested.emit(true)
+	DialogueManager.request_conversation(silas_data, "res://dialogue/silas_surface_warning.json")
+	if not DialogueManager.is_active:
+		DialogueManager.request_inline_conversation(
+			silas_data,
+			["Penni! Wait for me!", "I-I thought I could come with you..."],
+			"Silas"
+		)
+
+
+func on_silas_surface_transformed() -> void:
+	# Surface residence does NOT mean recruitment or placement in a house.
+	_npc_flags()[&"silas_following"] = false
+	_dialogue_stage = &"surface_reveal"
+	dialogue_mode_requested.emit(false)
+	DialogueManager.request_conversation(silas_data, "res://dialogue/silas_surface_reveal.json")
+	if not DialogueManager.is_active:
+		DialogueManager.request_inline_conversation(
+			silas_data, ["AAH! I have legs?!", "I guess I'll wait here for now."], "Silas"
+		)
