@@ -14,7 +14,7 @@ func _run() -> void:
 	await process_frame
 	var sea: DivingWorld = main.get_node("SubViewportContainer/SubViewport/World/Sea") as DivingWorld
 	var story: SeaStoryDirector = sea.get_node("StoryDirector") as SeaStoryDirector
-	var bubble: SeaSpeechBubble = main.get_node("SeaSpeechBubble") as SeaSpeechBubble
+	var bubble: SeaSpeechBubble = main.get_node("SubViewportContainer/SubViewport/SeaSpeechBubble") as SeaSpeechBubble
 	var cue: SeaTutorialCue = main.get_node(
 		"SubViewportContainer/SubViewport/World/Player/Camera2D/SeaTutorialCue"
 	) as SeaTutorialCue
@@ -91,14 +91,26 @@ func _run() -> void:
 		"Bubble tracks Silas's actual world actor")
 	_check((bubble.get_node("Call/Tail") as TextureRect).visible,
 		"Tail shows while tracking Silas")
-	_check(bubble.get("_game_display") == main.get_node("SubViewportContainer"),
-		"Speaker position maps from game viewport to UI viewport")
+	_check(bubble.get_viewport() == sea.get_viewport()
+		and bubble.get_viewport().get_visible_rect().size == Vector2(320, 180),
+		"Speech bubble renders at native 320x180 game resolution")
 	bubble.call("_update_attached_position")
-	var call_rect: Rect2 = (bubble.get_node("Call") as Control).get_global_rect()
-	var screen_rect: Rect2 = (main.get_node("SubViewportContainer") as Control).get_global_rect()
-	_check(call_rect.position.x >= screen_rect.position.x
-		and call_rect.end.x <= screen_rect.end.x,
-		"Offscreen speech bubble stays inside the visible play area")
+	var call: Control = bubble.get_node("Call") as Control
+	var call_rect: Rect2 = call.get_rect()
+	var screen_rect: Rect2 = bubble.get_viewport().get_visible_rect()
+	_check(call_rect.position.x >= 0.0 and call_rect.end.x <= screen_rect.end.x
+		and call_rect.position.y >= 0.0 and call_rect.end.y <= screen_rect.end.y,
+		"Offscreen speech bubble stays within the game viewport")
+	var tail: TextureRect = bubble.get_node("Call/Tail") as TextureRect
+	var base_position: Vector2 = tail.position + tail.pivot_offset + (
+		Vector2(tail.size.x * 0.5, 0.0) - tail.pivot_offset
+	).rotated(tail.rotation)
+	var edge_distance: float = minf(
+		minf(absf(base_position.x), absf(base_position.x - call.size.x)),
+		minf(absf(base_position.y), absf(base_position.y - call.size.y))
+	)
+	_check(edge_distance <= 2.5,
+		"The speech tail flat base connects at the outer bubble border")
 	_check(story.can_talk_to_silas(), "Silas can be found after hearing him")
 	_check(not story.can_net_silas(), "Silas is not net-catchable before speaking")
 	main.queue_free()

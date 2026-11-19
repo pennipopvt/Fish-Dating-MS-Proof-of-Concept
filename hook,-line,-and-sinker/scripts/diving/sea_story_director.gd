@@ -24,9 +24,8 @@ func _show_silas_bubble(message: String, seconds: float = 0.0) -> void:
 	if ui == null:
 		return
 	var speaker: Node2D = get_parent().get_node_or_null("NPCs/Silas") as Node2D
-	var display: SubViewportContainer = get_viewport().get_parent() as SubViewportContainer
-	if speaker != null and display != null:
-		ui.show_attached_call(message, speaker, display, seconds)
+	if speaker != null:
+		ui.show_attached_call(message, speaker, seconds)
 	else:
 		ui.show_call(message, false, seconds)
 

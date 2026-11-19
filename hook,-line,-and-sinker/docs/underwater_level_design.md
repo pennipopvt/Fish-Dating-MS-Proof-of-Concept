@@ -244,3 +244,23 @@ points toward his position. The first "Help me!" stays on screen without
 a timer until Penni interacts with Silas; companion help uses the same
 bubble with a 4.5s timeout. The regular dialogue UI, tutorial controls,
 and fish code remain untouched.
+
+
+## Speech bubble pixel scale and connected tail
+
+The existing `SeaSpeechBubble` CanvasLayer is instanced **inside**
+`Main/SubViewportContainer/SubViewport`, alongside `World`, so its
+nine-slice frame, Pixel Operator letters, and tail are now rendered at
+the same native **320x180** pixel resolution as Penni and the underwater
+scene. It still appears over the game, and the ordinary dialogue UI
+above the SubViewport remains unchanged.
+
+The bubble is 88x32 native pixels with 10px Pixel Operator text and
+7px horizontal/4px vertical padding. The offscreen clamp uses 12 native
+pixels of margin. As Silas enters the camera view, the bubble follows
+his position directly, without any rescaling through Main's UI.
+The user's 12x12 tail sprite now draws *behind* the nine-slice and
+connects via its flat top edge to the outside of the bubble, with a
+1px hidden seam. The old center-of-tail-over-the-border placement is
+gone. The bubble and tail art are still assigned in
+`scenes/sea_speech_bubble.tscn`.

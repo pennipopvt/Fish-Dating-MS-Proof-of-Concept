@@ -57,7 +57,8 @@ player_portrait = ExtResource("4_tbgi4")
 
 [node name="IllustrationScene" parent="." instance=ExtResource("10_illustration")]
 
-[node name="SeaSpeechBubble" parent="." instance=ExtResource("sea_speech_bubble")]
+# Draw the same speech bubble at the native 320x180 game resolution.
+[node name="SeaSpeechBubble" parent="SubViewportContainer/SubViewport" instance=ExtResource("sea_speech_bubble")]
 
 [node name="IntroLayer" type="CanvasLayer" parent="."]
 visible = false

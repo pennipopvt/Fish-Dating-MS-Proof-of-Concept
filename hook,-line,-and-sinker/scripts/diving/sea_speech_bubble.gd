@@ -1,8 +1,8 @@
 extends CanvasLayer
 class_name SeaSpeechBubble
 
-# A single speech bubble tracks its speaker, clamping to the screen edge
-# while offscreen. The separate tail points to the same world position.
+# Runs in the SAME 320x180 SubViewport as the sea. The bubble is screen-
+# fixed only while Silas is offscreen; once visible it stays beside him.
 @export var bubble_texture: Texture2D:
 	set(value):
 		bubble_texture = value
@@ -15,14 +15,15 @@ class_name SeaSpeechBubble
 		if is_node_ready():
 			_apply_frame()
 
-@export_range(1, 48, 1) var patch_margin: int = 6:
+@export_range(1, 16, 1) var patch_margin: int = 6:
 	set(value):
 		patch_margin = value
 		if is_node_ready():
 			_apply_frame()
 
-@export var bubble_offset: Vector2 = Vector2(36.0, -118.0)
-@export_range(0.0, 64.0, 1.0) var screen_margin: float = 12.0
+# Native game pixels, not outer-window UI pixels.
+@export var bubble_offset: Vector2 = Vector2(11.0, -42.0)
+@export_range(2.0, 24.0, 1.0) var screen_margin: float = 12.0
 
 @onready var _call: Control = $Call
 @onready var _frame: NinePatchRect = $Call/Frame
@@ -33,7 +34,6 @@ class_name SeaSpeechBubble
 
 var _call_serial: int = 0
 var _speaker: Node2D
-var _game_display: SubViewportContainer
 
 
 func _ready() -> void:
@@ -54,19 +54,18 @@ func _apply_frame() -> void:
 	_frame.visible = bubble_texture != null
 	_fallback.visible = bubble_texture == null
 	_tail.texture = tail_texture
-	_tail.visible = _call.visible and _speaker != null and tail_texture != null
+	_tail.visible = _call.visible and is_instance_valid(_speaker) and tail_texture != null
 
 
-# A fallback for messages without a world speaker.
+# Ordinary timed bubble, for callers with no scene speaker.
 func show_call(message: String, from_right: bool = true, seconds: float = 4.0) -> void:
 	_call_serial += 1
 	var serial: int = _call_serial
 	_stop_tracking()
-	var view_size: Vector2 = get_viewport().get_visible_rect().size
-	var call_width: float = _call.size.x
+	var size: Vector2 = get_viewport().get_visible_rect().size
 	_call.position = Vector2(
-		maxf(screen_margin, view_size.x - call_width - screen_margin) if from_right else screen_margin,
-		maxf(screen_margin, view_size.y * 0.24)
+		size.x - _call.size.x - screen_margin if from_right else screen_margin,
+		maxf(screen_margin, roundf(size.y * 0.24))
 	)
 	_text.text = message
 	_call.show()
@@ -76,17 +75,14 @@ func show_call(message: String, from_right: bool = true, seconds: float = 4.0) -
 			hide_call()
 
 
-# 0 seconds means persist until hide_call(), as for Silas's first cry.
-func show_attached_call(
-		message: String, speaker: Node2D,
-		display: SubViewportContainer, seconds: float = 0.0) -> void:
-	if not is_instance_valid(speaker) or not is_instance_valid(display):
+# 0 seconds keeps Silas's first cry onscreen until he is interacted with.
+func show_attached_call(message: String, speaker: Node2D, seconds: float = 0.0) -> void:
+	if not is_instance_valid(speaker):
 		show_call(message, false, seconds)
 		return
 	_call_serial += 1
 	var serial: int = _call_serial
 	_speaker = speaker
-	_game_display = display
 	_text.text = message
 	_call.show()
 	_tail.visible = tail_texture != null
@@ -103,59 +99,59 @@ func _process(_delta: float) -> void:
 
 
 func _update_attached_position() -> void:
-	if not is_instance_valid(_speaker) or not is_instance_valid(_game_display):
+	if not is_instance_valid(_speaker):
 		hide_call()
 		return
-	# The speaker is in the 320x180 game SubViewport, while this CanvasLayer
-	# is in Main's UI viewport. Map through the SubViewportContainer rect so
-	# camera movement and window resizing both work correctly.
-	var canvas_point: Vector2 = (
+	# Both Silas and this CanvasLayer belong to the game SubViewport.
+	# Godot's canvas transform already includes the active player camera.
+	var target_screen: Vector2 = (
 		_speaker.get_global_transform_with_canvas() * Vector2(0.0, -10.0)
 	)
-	var game_size: Vector2 = Vector2(_speaker.get_viewport().get_visible_rect().size)
-	if game_size.x <= 0.0 or game_size.y <= 0.0:
-		return
-	var display_rect: Rect2 = _game_display.get_global_rect()
-	var target_on_screen: Vector2 = display_rect.position + (
-		canvas_point * (display_rect.size / game_size)
-	)
-	var desired: Vector2 = target_on_screen + bubble_offset
-	var min_position: Vector2 = display_rect.position + Vector2.ONE * screen_margin
-	var max_position: Vector2 = display_rect.end - _call.size - Vector2.ONE * screen_margin
-	max_position.x = maxf(min_position.x, max_position.x)
-	max_position.y = maxf(min_position.y, max_position.y)
+	var game_size: Vector2 = get_viewport().get_visible_rect().size
+	var desired: Vector2 = target_screen + bubble_offset
+	var low: Vector2 = Vector2.ONE * screen_margin
+	var high: Vector2 = game_size - _call.size - low
+	high.x = maxf(low.x, high.x)
+	high.y = maxf(low.y, high.y)
 	_call.position = Vector2(
-		clampf(desired.x, min_position.x, max_position.x),
-		clampf(desired.y, min_position.y, max_position.y)
+		roundf(clampf(desired.x, low.x, high.x)),
+		roundf(clampf(desired.y, low.y, high.y))
 	)
-	_point_tail_toward(target_on_screen)
+	_point_tail_toward(target_screen)
 
 
 func _point_tail_toward(target_screen: Vector2) -> void:
 	if tail_texture == null:
 		return
-	var center: Vector2 = _call.position + _call.size * 0.5
-	var direction: Vector2 = target_screen - center
-	if direction.length_squared() < 1.0:
-		direction = Vector2(-1.0, 1.0)
 	var half: Vector2 = _call.size * 0.5
+	var direction: Vector2 = target_screen - (_call.position + half)
+	if direction.length_squared() < 0.01:
+		direction = Vector2(-1.0, 1.0)
 	var x_factor: float = half.x / maxf(absf(direction.x), 0.001)
 	var y_factor: float = half.y / maxf(absf(direction.y), 0.001)
-	var point: Vector2 = half + direction * minf(x_factor, y_factor)
-	# Keep the tail away from the bubble's corner pixels.
-	if point.x < 1.0 or point.x > _call.size.x - 1.0:
-		point.y = clampf(point.y, 16.0, _call.size.y - 16.0)
+	var edge: Vector2 = half + direction * minf(x_factor, y_factor)
+	# Connect along one side, not the sharp, rounded 9-slice corners.
+	if x_factor < y_factor:
+		edge.x = _call.size.x if direction.x > 0.0 else 0.0
+		edge.y = clampf(edge.y, 8.0, _call.size.y - 8.0)
 	else:
-		point.x = clampf(point.x, 16.0, _call.size.x - 16.0)
-	_tail.position = point - _tail.size * 0.5
-	_tail.pivot_offset = _tail.size * 0.5
-	# The user's tail image points down-left by default.
-	_tail.rotation = direction.angle() - Vector2(-5.5, 11.0).angle()
+		edge.y = _call.size.y if direction.y > 0.0 else 0.0
+		edge.x = clampf(edge.x, 8.0, _call.size.x - 8.0)
+
+	# The user's 12x12 tail has its FLAT BASE across the top edge and its
+	# tip pointing down-left. Align the base with the OUTSIDE of the box;
+	# the frame draws over a 1px seam so the tail appears attached.
+	var pivot: Vector2 = _tail.size * 0.5
+	var base_center: Vector2 = Vector2(_tail.size.x * 0.5, 0.0)
+	_tail.pivot_offset = pivot
+	_tail.rotation = direction.angle() - Vector2(-5.5, 5.5).angle()
+	var base_from_pivot: Vector2 = (base_center - pivot).rotated(_tail.rotation)
+	var attachment: Vector2 = edge - direction.normalized()
+	_tail.position = (attachment - pivot - base_from_pivot).round()
 
 
 func _stop_tracking() -> void:
 	_speaker = null
-	_game_display = null
 	_tail.hide()
 	set_process(false)
 
