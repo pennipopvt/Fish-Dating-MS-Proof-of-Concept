@@ -84,6 +84,7 @@ script = ExtResource("spawn")
 position = Vector2(-155, 240)
 species = ExtResource("mullet")
 random_seed = 3101
+is_first_dive_fish = true
 # Tutorial fish waits in place until hooked; it never runs the normal flee loop.
 preferred_player_distance = 0.0
 alert_distance = 0.0

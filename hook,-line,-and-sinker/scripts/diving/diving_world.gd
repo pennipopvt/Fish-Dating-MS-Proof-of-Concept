@@ -97,8 +97,11 @@ func _spawn_editor_fish() -> void:
 		fish.flee_speed = spawn.flee_speed
 		_wild_fish.append(fish)
 		_fish_data[fish] = data
-		if spawn.name == "FirstFish":
-			_encounter.register_tutorial_fish(fish)
+		if spawn.is_first_dive_fish:
+			if _encounter.tutorial_fish != null:
+				push_warning("[SEA STORY] Multiple fish spawns marked as first-dive fish.")
+			else:
+				_encounter.register_tutorial_fish(fish)
 
 
 func _make_silas_trap() -> void:

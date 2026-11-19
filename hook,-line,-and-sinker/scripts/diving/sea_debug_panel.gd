@@ -90,8 +90,9 @@ func _update_sea_debug() -> void:
 	if story != null:
 		events = story.get("_events") as Dictionary
 	var distance: float = _world_player.global_position.distance_to(silas.global_position) if silas != null else INF
-	var near_silas: bool = distance <= 108.0
 	var encounter: SeaEncounterSequence = _sea.get_node_or_null("EncounterSequence") as SeaEncounterSequence
+	var proximity_range: float = encounter.silas_help_nearby_range if encounter != null else 108.0
+	var near_silas: bool = distance <= proximity_range
 	var escaped: bool = encounter.first_fish_escape_finished if encounter != null else false
 	var follow_x: float = encounter.help_reveal_x if encounter != null else -INF
 	var followed: bool = escaped and _world_player.position.x <= follow_x
@@ -115,8 +116,8 @@ func _update_sea_debug() -> void:
 	lines.append("Player: %s   Silas: %s" % [
 		str(_world_player.global_position.round()),
 		str(silas.global_position.round()) if silas != null else "MISSING"])
-	lines.append("Silas distance: %.1f / 108   proximity trigger: %s" % [
-		distance, str(near_silas)])
+	lines.append("Silas distance: %.1f / %.1f   proximity trigger: %s" % [
+		distance, proximity_range, str(near_silas)])
 	lines.append("Line broke: %s   fish escaped: %s   followed left: %s" % [
 		str(line_broken), str(escaped), str(followed)])
 	lines.append("Player x: %.1f   follow threshold x: %.1f" % [

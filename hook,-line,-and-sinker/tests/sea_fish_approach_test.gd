@@ -44,8 +44,9 @@ func _run() -> void:
 	get_root().add_child(sea)
 	var tutorial: DivingFishSpawn = sea.get_node("FishSpawns/FirstFish") as DivingFishSpawn
 	var ordinary: DivingFishSpawn = sea.get_node("FishSpawns/MulletAfterSilas") as DivingFishSpawn
-	_check(is_zero_approx(tutorial.preferred_player_distance),
-		"Tutorial fish is exempt from the retreat tuning")
+	_check(is_zero_approx(tutorial.preferred_player_distance)
+		and tutorial.is_first_dive_fish and not ordinary.is_first_dive_fish,
+		"First dive fish is assigned by Inspector role, not spawn node name")
 	_check(is_equal_approx(ordinary.preferred_player_distance, 52.0)
 		and is_equal_approx(ordinary.alert_distance, 76.0)
 		and is_equal_approx(ordinary.flee_speed, 112.0),
