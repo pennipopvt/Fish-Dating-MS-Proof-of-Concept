@@ -82,7 +82,10 @@ func set_swimming(enabled: bool, bounds: Rect2 = Rect2()) -> void:
 	else:
 		collision_mask = _land_collision_mask
 		$FishingController.process_mode = Node.PROCESS_MODE_INHERIT
-		$FishingRod.show()
+		# Surfacing restores land controls, not an active rod cast. The
+		# FishingRod listens for FishingController state changes and draws
+		# itself only when an actual fishing session starts.
+		$FishingRod.hide()
 		_refresh_held_item()
 		animator.position.y = -16.0
 		animator.rotation = 0.0
