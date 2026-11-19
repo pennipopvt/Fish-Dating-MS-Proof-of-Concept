@@ -24,6 +24,7 @@ func _run() -> void:
 	var debug: SeaDebugPanel = main.get_node("SeaDebugLayer") as SeaDebugPanel
 	var bubble: SeaSpeechBubble = main.get_node("SeaSpeechBubble") as SeaSpeechBubble
 	var story: SeaStoryDirector = sea.get_node("StoryDirector") as SeaStoryDirector
+	var encounter: SeaEncounterSequence = sea.get_node("EncounterSequence") as SeaEncounterSequence
 
 	_check(main.has_method("request_dive") and not main.has_method("_begin_dive")
 		and not main.has_method("_start_contract_call")
@@ -61,6 +62,17 @@ func _run() -> void:
 		"Only one World and Player exist; Main reflects transition state")
 	_check(not sea.has_node("SeaDebugLayer") and not world.has_node("SeaSpeechBubble"),
 		"Developer UI and speech remain outside the world SubViewport")
+	_check(encounter != null and not sea.has_method("_start_first_fish_escape")
+		and not sea.has_method("_start_silas_rescue"),
+		"EncounterSequence owns scripted first-fish and Silas choreography")
+	_check(encounter.fish_remove_requested.is_connected(
+		Callable(sea, "_unregister_encounter_fish")),
+		"Encounter requests world fish removal via a signal")
+	_check(not encounter.has_method("_spawn_editor_fish")
+		and sea.has_method("_spawn_editor_fish"),
+		"World still owns fish spawning")
+	_check(story.get("_events") is Dictionary and encounter.get("_story") == story,
+		"StoryDirector remains the event and dialogue authority")
 
 	main.queue_free()
 	await process_frame

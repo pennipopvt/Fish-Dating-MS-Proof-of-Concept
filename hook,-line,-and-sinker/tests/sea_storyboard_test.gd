@@ -14,6 +14,7 @@ func _run() -> void:
 	await process_frame
 	var sea: DivingWorld = main.get_node("SubViewportContainer/SubViewport/World/Sea") as DivingWorld
 	var story: SeaStoryDirector = sea.get_node("StoryDirector") as SeaStoryDirector
+	var encounter: SeaEncounterSequence = sea.get_node("EncounterSequence") as SeaEncounterSequence
 	var bubble: SeaSpeechBubble = main.get_node("SeaSpeechBubble") as SeaSpeechBubble
 	_check(story.get("_speech_bubble") == bubble,
 		"Main binds the exact speech-bubble instance into the sea story")
@@ -70,7 +71,7 @@ func _run() -> void:
 	_check(cue.movement_sprite == null and cue.cast_sprite == null
 		and cue.reel_sprite == null and cue.right_click_sprite == null,
 		"Fallback art needs no imported files; Inspector sprites are replaceable")
-	var first_fish: DivingWildFish = sea.get("_tutorial_fish") as DivingWildFish
+	var first_fish: DivingWildFish = encounter.tutorial_fish
 	_check(first_fish != null, "FirstFish spawn creates the tutorial target")
 	_check(first_fish.trapped, "First tutorial fish waits in place for a cast")
 	story.on_dive_entered()
@@ -82,23 +83,23 @@ func _run() -> void:
 	# The movement pause always expires even if no mouse event arrives.
 	var player: Player = main.get_node("SubViewportContainer/SubViewport/World/Player") as Player
 	player.busy = true
-	sea.set("_fish_focus_locked", true)
-	sea.set("_fish_focus_timer", 0.1)
-	sea.call("_check_first_fish_focus", 0.2)
-	_check(not player.busy and not bool(sea.get("_fish_focus_locked")),
+	encounter.set("_fish_focus_locked", true)
+	encounter.set("_fish_focus_timer", 0.1)
+	encounter.call("_check_first_fish_focus", 0.2)
+	_check(not player.busy and not bool(encounter.get("_fish_focus_locked")),
 		"Focus pause automatically releases; no invisible softlock")
 	story.on_first_cast()
 	_check(cue.current_action == &"cast" and cue.visible,
 		"Casting fades out the click sprite rather than creating another HUD")
 	_check(story.wants_scripted_hook(first_fish, first_fish), "First hook is story-owned")
 	# The first fish must physically move inward over several scrolls.
-	sea.call("_start_tutorial_reel", first_fish)
+	encounter.call("_start_tutorial_reel", first_fish)
 	story.on_scripted_hook()
 	_check(cue.current_action == &"reel" and cue.visible,
 		"Hooking the first fish shows the scroll sprite")
 	var start_distance: float = player.position.distance_to(first_fish.position)
 	for i in range(3):
-		sea.call("_reel_scripted_target")
+		encounter.call("_reel_scripted_target")
 	_check(player.position.distance_to(first_fish.position) < start_distance,
 		"Three reels actually pull the first fish closer")
 	_check(not story.has_event(&"line_broken"),
@@ -106,16 +107,16 @@ func _run() -> void:
 	var net: DivingNetProjectile = sea.get_node("NetProjectile") as DivingNetProjectile
 	_check(net.line_tension > 0.0, "Reeling makes the line start to strain")
 	for i in range(10):
-		if sea.get("_scripted_reel_mode") != &"tutorial_reel":
+		if encounter.reel_mode != &"tutorial_reel":
 			break
-		sea.call("_reel_scripted_target")
-	_check(sea.get("_scripted_reel_mode") == &"tutorial_break",
+		encounter.call("_reel_scripted_target")
+	_check(encounter.reel_mode == &"tutorial_break",
 		"Near Penni, the tutorial enters a brief line-break panic")
 	var tension_before: float = net.line_tension
-	sea.call("_advance_scripted_break", 0.35)
+	encounter.call("_advance_scripted_break", 0.35)
 	_check(net.line_tension > tension_before,
 		"Tension rises rapidly while the fish panics")
-	sea.call("_advance_scripted_break", 0.4)
+	encounter.call("_advance_scripted_break", 0.4)
 	_check(story.has_event(&"line_broken"),
 		"Line breaks after actual reeling and the tension spike")
 	_check(not story.consume_first_reel(),
@@ -126,12 +127,12 @@ func _run() -> void:
 	_check(not story.can_talk_to_silas(),
 		"Silas encounter stays gated until the offscreen call")
 	_check(not (sea.get("_wild_fish") as Array).has(first_fish)
-		and sea.get("_tutorial_fish") == null,
+		and encounter.tutorial_fish == null,
 		"Escaping fish immediately leaves normal catch simulation")
-	_check(not bool(sea.get("_first_fish_escape_finished")),
+	_check(not bool(encounter.first_fish_escape_finished),
 		"Fish is still visible during the dash")
 	await create_timer(1.0).timeout
-	_check(bool(sea.get("_first_fish_escape_finished")),
+	_check(bool(encounter.first_fish_escape_finished),
 		"Fish finishes its leftward dash and disappears")
 	# The next line is delivered by the existing DialogueManager as Penni,
 	# not as Silas or a second popup system.
@@ -145,11 +146,11 @@ func _run() -> void:
 		"Escaped fish triggers Penni's own dialogue and portrait")
 	if DialogueManager.is_active:
 		DialogueManager.advance()
-	sea.call("_check_escape_followup")
+	encounter.call("_check_escape_followup")
 	_check(not story.has_event(&"help_called"),
 		"Waiting after the fish escapes does not summon Silas's bubble")
-	player.position.x = float(sea.get("_help_reveal_x")) - 2.0
-	sea.call("_check_escape_followup")
+	player.position.x = float(encounter.help_reveal_x) - 2.0
+	encounter.call("_check_escape_followup")
 	_check(story.has_event(&"help_called")
 		and bool(story.get("_help_ui_pending")),
 		"Silas trigger records help_called without depending on rendering")
@@ -216,10 +217,10 @@ func _run() -> void:
 	var session_events: Dictionary = story.get("_events")
 	session_events.erase(&"line_broken")
 	session_events.erase(&"help_called")
-	sea.set("_first_fish_escape_finished", false)
+	encounter.set("_first_fish_escape_finished", false)
 	var silas_actor: Node2D = sea.get_node("NPCs/Silas") as Node2D
 	player.position = silas_actor.position + Vector2(40.0, 0.0)
-	sea.call("_check_escape_followup")
+	encounter.call("_check_escape_followup")
 	_check(story.has_event(&"help_called") and bubble.is_call_shown(),
 		"Silas speech remains discoverable when the first fish is skipped")
 	_check((bubble.get_node("Call") as Control).size.x <= 132,

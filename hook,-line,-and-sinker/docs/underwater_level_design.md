@@ -508,3 +508,14 @@ from the authored scene, runtime fallback and story calls, not just
 hidden. Silas's speech call, the standalone circle marker, the normal
 NPC dialogue UI and the camera's graphical tutorial sprites
 (WASD, cast/reel, right-click) still function separately.
+
+
+## Scene-driven story sequence
+
+`Sea/StoryDirector` still owns flags, conditions and dialogue.
+`Sea/EncounterSequence` now owns the first-dive movement pause,
+intro reel/break/escape and Silas rescue animation, with Inspector
+parameters grouped by those beats. `DivingWorld` keeps fish registry
+ownership and ordinary net, fishing, and companion combat. The
+sequence requests fish removal with a signal; it never edits the
+world registry directly.

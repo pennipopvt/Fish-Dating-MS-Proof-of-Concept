@@ -307,3 +307,33 @@ Execute from the Godot project root with `godot --headless --path . -s
 res://tests/<file>.gd` (Godot 4). These remain subject to runtime
 verification in an installed editor; source-level checks alone do
 not prove the game plays correctly.
+
+
+## One-off sea encounter choreography
+
+The authored `World/Sea/EncounterSequence` Node
+(`scripts/diving/sea_encounter_sequence.gd`) owns only the first-dive
+choreography: the movement focus pause, first fish reel/tension
+break/escape, follow-left reveal and Silas's resistance-free rescue.
+It is NOT a global manager and has editable grouped Inspector tuning
+for the first-fish and rescue distances and timings.
+
+`SeaStoryDirector` is still the authority for event conditions,
+session flags, NPCManager's Silas flags and DialogueManager requests.
+EncounterSequence checks/report beats there; it does not keep duplicate
+story progression flags.
+
+`DivingWorld` still owns the one spawned fish registry,
+`FishSpawns`, input routing, sea bounds and the existing
+`DivingCombat` / `CompanionBattle` simulation. It forwards only
+the two exceptional net hits to EncounterSequence. The component emits
+`fish_remove_requested(fish)` so ONLY World removes entries from its
+`_wild_fish` and `_fish_data` collections. The World controller
+shrunk from 612 to about 372 lines without creating another Player,
+Camera2D, global manager or combat simulation.
+
+Use `Sea/EncounterSequence` to tune the first-fish and Silas
+tutorial sequence; use `Sea/FishSpawns` for species avoidance,
+`Sea/Combat` for normal fishing feel, and `Sea/StoryDirector` for
+dialogue and story conditions. F7 now reads the sequence's actual
+state, not deleted private World fields.
