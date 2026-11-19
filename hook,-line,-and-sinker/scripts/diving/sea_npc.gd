@@ -33,7 +33,7 @@ class_name SeaNPC
 			_refresh_sprite()
 
 @onready var _sprite: Sprite2D = $Sprite
-@onready var _indicator: Label = $InteractIndicator
+@onready var _indicator: InteractPrompt = $InteractPrompt
 
 var following: bool = false
 var _player: Player
@@ -46,7 +46,6 @@ var _last_swim_state: StringName = &"idle"
 
 func _ready() -> void:
 	_refresh_sprite()
-	_indicator.hide()
 	if Engine.is_editor_hint():
 		set_process(false)
 		return
@@ -70,7 +69,11 @@ func _refresh_sprite() -> void:
 func _process(delta: float) -> void:
 	if _player == null:
 		return
-	_indicator.visible = _player.swimming and _story != null and _story.can_talk_to_silas() and position.distance_to(_player.position) < 48.0
+	if _player.swimming and _story != null and _story.can_talk_to_silas() \
+			and not DialogueManager.is_active and position.distance_to(_player.position) < 48.0:
+		_indicator.pop_in()
+	else:
+		_indicator.pop_out()
 	_lunge_time = maxf(0.0, _lunge_time - delta)
 	_hurt_time = maxf(0.0, _hurt_time - delta)
 	_sprite.modulate = Color(1.0, 0.55, 0.5) if _hurt_time > 0.0 else Color.WHITE
