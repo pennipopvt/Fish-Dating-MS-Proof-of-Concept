@@ -112,21 +112,15 @@ camera panning and retains the original time-of-day animation. The water
 shader extends left across the entire sea.
 
 
-## Input tutorial polish (first dive)
+## First dive input sprites
 
-After entering the sea, a small **WASD** diagram fades in near the lower
-center of the screen and gently bobs. The tutorial fish starts at (-155, 240)
-so Penni has room to actually swim before seeing it. Once Penni has moved at
-least 50px and is within 104px of that fish, her swimming stops briefly
-(the follow camera settles too) and a pulsing **LMB / CAST NET** cue appears.
-A real left-click net cast immediately releases movement: there is no
-time-based lock. When the first fish is hooked, **SCROLL / DOWN TO REEL**
-replaces the icon. The original one-time line break and Silas's offscreen
-"Help me!" then proceed unchanged.
+The entire old tutorial panel hierarchy has been removed. The input cue is
+now ONLY `SeaSpeechBubble/InputSprite`, a centered, transparent TextureRect
+that fades its image in/out when the StoryDirector requests an action.
+No panel, background, caption or full-screen overlay is created.
 
-The reusable screen-space cue is `SeaSpeechBubble/InputPrompt` (script:
-`scripts/diving/sea_input_prompt.gd`). It exposes **Movement Sprite**,
-**Cast Sprite**, and **Reel Sprite** textures in the Godot Inspector, so
-you can replace the simple Pixel Operator placeholders later without
-changing any story code. The old persistent instruction label is now
-centered near the bottom of the screen instead of the upper-left corner.
+Set the **Movement Sprite**, **Cast Sprite** and **Reel Sprite** properties
+on the `SeaSpeechBubble` instance in `scenes/main.tscn`, or on the root
+of `scenes/sea_speech_bubble.tscn`. The SVGs in `sprites/ui/tutorial_*.svg`
+are temporary transparent symbols. Replace them with your own textures.
+The separate character call bubble still uses its replaceable nine-slice.

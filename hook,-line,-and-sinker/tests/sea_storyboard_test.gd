@@ -15,27 +15,29 @@ func _run() -> void:
 	var sea: DivingWorld = main.get_node("SubViewportContainer/SubViewport/World/Sea") as DivingWorld
 	var story: SeaStoryDirector = sea.get_node("StoryDirector") as SeaStoryDirector
 	var bubble: SeaSpeechBubble = main.get_node("SeaSpeechBubble") as SeaSpeechBubble
-	var prompt: SeaInputPrompt = bubble.get_node("InputPrompt") as SeaInputPrompt
+	var prompt: TextureRect = bubble.get_node("InputSprite") as TextureRect
+	_check(not prompt.visible and bubble.get_node_or_null("InputPrompt") == null,
+		"Only a hidden sprite exists; no full-screen tutorial panel")
 	var first_fish: DivingWildFish = sea.get("_tutorial_fish") as DivingWildFish
 	_check(first_fish != null, "FirstFish spawn creates the tutorial target")
 	_check(first_fish.trapped, "First tutorial fish waits in place for a cast")
 	story.on_dive_entered()
-	_check(prompt.visible and prompt.current_action == &"move",
-		"Entering the sea shows the animated WASD prompt, not the corner text")
+	_check(prompt.visible and bubble.current_action == &"move" and prompt.texture == bubble.movement_sprite,
+		"Entering the sea fades a standalone WASD sprite without a panel")
 	story.on_first_fish_seen()
-	_check(prompt.current_action == &"cast",
+	_check(bubble.current_action == &"cast" and prompt.texture == bubble.cast_sprite,
 		"Noticing the fish replaces movement with the left-click cue")
 	story.on_first_cast()
-	_check(prompt.current_action == &"",
+	_check(bubble.current_action == &"",
 		"Casting dismisses the input cue without a timer")
 	_check(story.wants_scripted_hook(first_fish, first_fish), "First hook is story-owned")
 	story.on_scripted_hook()
-	_check(prompt.current_action == &"reel",
+	_check(bubble.current_action == &"reel" and prompt.texture == bubble.reel_sprite,
 		"Hooking the first fish introduces the scrolling cue")
 	_check(story.consume_first_reel(), "First scroll triggers the one-time line break")
 	_check(not story.consume_first_reel(), "The same line-break cue cannot repeat")
 	_check(story.has_event(&"line_broken"), "The story event records its completion")
-	_check(prompt.current_action == &"", "The reel cue hides after the line breaks")
+	_check(bubble.current_action == &"", "The reel cue hides after the line breaks")
 	_check((bubble.get_node("Call") as Control).visible,
 		"Offscreen Help me bubble appears after the break")
 	_check(story.can_talk_to_silas(), "Silas can be found after the first escape")

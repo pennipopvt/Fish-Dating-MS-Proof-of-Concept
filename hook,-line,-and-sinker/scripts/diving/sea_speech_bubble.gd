@@ -1,8 +1,8 @@
 extends CanvasLayer
 class_name SeaSpeechBubble
 
-# Full-resolution screen-space bubble. Replace the Frame texture with your
-# nine-slice PNG later; the fallback panel and text margins work without art.
+# Dialogue calls use their own nine-slice frame. Tutorial controls are
+# a single transparent sprite, with no window, caption or background.
 @export var bubble_texture: Texture2D:
 	set(value):
 		bubble_texture = value
@@ -15,14 +15,21 @@ class_name SeaSpeechBubble
 		if is_node_ready():
 			_apply_frame()
 
+# Replace these textures in the SeaSpeechBubble Inspector later.
+@export var movement_sprite: Texture2D = preload("res://sprites/ui/tutorial_wasd.svg")
+@export var cast_sprite: Texture2D = preload("res://sprites/ui/tutorial_cast.svg")
+@export var reel_sprite: Texture2D = preload("res://sprites/ui/tutorial_reel.svg")
+
 @onready var _call: Control = $Call
 @onready var _frame: NinePatchRect = $Call/Frame
 @onready var _fallback: Panel = $Call/Fallback
 @onready var _text: Label = $Call/Message
 @onready var _arrow: Label = $Call/Direction
 @onready var _hint: Label = $Hint
-@onready var _input_prompt: SeaInputPrompt = $InputPrompt
+@onready var _input_sprite: TextureRect = get_node_or_null("InputSprite") as TextureRect
 
+var current_action: StringName = &""
+var _input_tween: Tween
 var _call_serial: int = 0
 
 
@@ -30,6 +37,8 @@ func _ready() -> void:
 	add_to_group("sea_speech_bubble")
 	_call.hide()
 	_hint.hide()
+	if _input_sprite != null:
+		_input_sprite.hide()
 	_apply_frame()
 
 
@@ -67,6 +76,7 @@ func hide_call() -> void:
 
 
 func show_hint(message: String) -> void:
+	hide_input_prompt()
 	_hint.text = message
 	_hint.visible = not message.is_empty()
 
@@ -75,12 +85,40 @@ func hide_hint() -> void:
 	_hint.hide()
 
 
-# Input diagrams are independent of the offscreen character speech bubble.
-# Narrative hints remain available, but are no longer in the top-left corner.
 func show_input_prompt(action: StringName) -> void:
 	_hint.hide()
-	_input_prompt.show_action(action)
+	if _input_sprite == null:
+		push_warning("SeaSpeechBubble is missing its InputSprite TextureRect.")
+		return
+	var graphic: Texture2D
+	match action:
+		&"move": graphic = movement_sprite
+		&"cast": graphic = cast_sprite
+		&"reel": graphic = reel_sprite
+		_:
+			hide_input_prompt()
+			return
+	if graphic == null:
+		hide_input_prompt()
+		return
+	if current_action == action and _input_sprite.visible:
+		return
+	current_action = action
+	_input_sprite.texture = graphic
+	if _input_tween != null and _input_tween.is_running():
+		_input_tween.kill()
+	_input_sprite.modulate.a = 0.0
+	_input_sprite.show()
+	_input_tween = create_tween()
+	_input_tween.tween_property(_input_sprite, "modulate:a", 1.0, 0.3)
 
 
 func hide_input_prompt() -> void:
-	_input_prompt.hide_action()
+	current_action = &""
+	if _input_sprite == null or not _input_sprite.visible:
+		return
+	if _input_tween != null and _input_tween.is_running():
+		_input_tween.kill()
+	_input_tween = create_tween()
+	_input_tween.tween_property(_input_sprite, "modulate:a", 0.0, 0.16)
+	_input_tween.tween_callback(_input_sprite.hide)
