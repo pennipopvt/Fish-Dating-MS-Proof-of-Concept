@@ -113,7 +113,7 @@ func _ensure_sea_speech_bubble() -> SeaSpeechBubble:
 	bubble.layer = 8
 	var call: Control = Control.new()
 	call.name = "Call"
-	call.size = Vector2(340.0, 100.0)
+	call.size = Vector2(96.0, 38.0)
 	call.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	call.hide()
 	bubble.add_child(call)
@@ -148,11 +148,11 @@ func _ensure_sea_speech_bubble() -> SeaSpeechBubble:
 
 	var message: Label = Label.new()
 	message.name = "Message"
-	message.position = Vector2(24.0, 17.0)
-	message.size = Vector2(292.0, 67.0)
+	message.position = Vector2(9.0, 6.0)
+	message.size = Vector2(78.0, 26.0)
 	message.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	message.add_theme_color_override("font_color", Color.BLACK)
-	message.add_theme_font_size_override("font_size", 27)
+	message.add_theme_font_size_override("font_size", 14)
 	message.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	message.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	call.add_child(message)
@@ -164,7 +164,7 @@ func _ensure_sea_speech_bubble() -> SeaSpeechBubble:
 
 	# Optional originals: never require these imports for a basic bubble.
 	bubble.bubble_texture = load("res://sprites/ui/speech_bubble.png") as Texture2D
-	bubble.tail_texture = load("res://sprites/ui/speech_tail.png") as Texture2D
+	bubble.tail_texture = load("res://sprites/ui/speech_marker.png") as Texture2D
 	var pixel_font: Font = load("res://fonts/pixel_operator(1)/PixelOperator.ttf") as Font
 	if pixel_font != null:
 		message.add_theme_font_override("font", pixel_font)

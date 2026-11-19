@@ -175,9 +175,12 @@ func on_tutorial_hook_cancelled() -> void:
 func on_first_fish_escaped() -> void:
 	if has_event(&"penni_fish_reaction") or DialogueManager.is_active:
 		return
-	_events[&"penni_fish_reaction"] = true
 	DialogueManager.request_player_monologue(["Damn, it got away."])
-	print("[SEA STORY] Penni reacts to the escaped fish")
+	# A missing/hidden DialogueUI must not silently consume the reaction.
+	# DivingWorld retries this event after the escape until it is received.
+	if DialogueManager.is_active:
+		_events[&"penni_fish_reaction"] = true
+		print("[SEA STORY] Penni reacts to the escaped fish")
 
 
 func consume_first_reel() -> bool:
