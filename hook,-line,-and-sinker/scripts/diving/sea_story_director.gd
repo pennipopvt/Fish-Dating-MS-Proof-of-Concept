@@ -72,7 +72,7 @@ func _set_silas_flag(id: StringName) -> void:
 
 
 func on_dive_entered() -> void:
-	if not has_event(&"line_broken"):
+	if not has_event(&"line_broken") and not has_event(&"help_called"):
 		var cue: SeaTutorialCue = _cue()
 		if cue == null:
 			push_warning("SeaTutorialCue is missing from the Player camera.")
@@ -102,7 +102,7 @@ func on_dive_entered() -> void:
 # controls are unchanged; the sea controller releases its own movement lock.
 func wants_first_fish_focus() -> bool:
 	return not has_event(&"fish_focus_seen") and not has_event(&"first_cast") \
-		and not has_event(&"line_broken")
+		and not has_event(&"line_broken") and not has_event(&"help_called")
 
 
 func on_first_fish_seen() -> bool:
@@ -126,7 +126,8 @@ func on_first_cast() -> void:
 
 
 func wants_scripted_hook(fish: DivingWildFish, tutorial_fish: DivingWildFish) -> bool:
-	return not has_event(&"line_broken") and fish != null and fish == tutorial_fish
+	return not has_event(&"line_broken") and not has_event(&"help_called") \
+		and fish != null and fish == tutorial_fish
 
 
 func on_scripted_hook() -> void:
@@ -149,11 +150,11 @@ func consume_first_reel() -> bool:
 	return true
 
 
-func on_followed_escape() -> void:
-	if not has_event(&"line_broken") or has_event(&"help_called"):
+func on_followed_escape(near_silas: bool = false) -> void:
+	if has_event(&"help_called") or (not has_event(&"line_broken") and not near_silas):
 		return
-	# Never mark the cry as played before the bubble exists. Previously a
-	# null UI lookup silently ate this one-time story moment forever.
+	# Prefer the scripted reel/escape beat. If Penni swims past that fish
+	# and reaches Silas anyway, his cry must still be discoverable.
 	if _show_silas_bubble("Help me!"):
 		_events[&"help_called"] = true
 

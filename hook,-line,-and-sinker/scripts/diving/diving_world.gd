@@ -17,6 +17,7 @@ const FISH_FOCUS_HOLD_SECONDS: float = 1.15
 const FIRST_FISH_ESCAPE_DISTANCE: float = 330.0
 const FIRST_FISH_ESCAPE_SECONDS: float = 0.85
 const FOLLOW_AFTER_ESCAPE_DISTANCE: float = 75.0
+const SILAS_HELP_NEARBY_RANGE: float = 108.0
 const SILAS_FISH: FishData = preload("res://resources/fish/silas.tres")
 const WILD_FISH_SCRIPT = preload("res://scripts/diving/wild_fish.gd")
 
@@ -218,11 +219,16 @@ func _release_first_fish_focus() -> void:
 
 
 func _check_escape_followup() -> void:
-	# The bubble is based on moving farther LEFT after seeing the fish flee,
-	# not on the reel action itself or a fixed speech timer.
-	if _first_fish_escape_finished and not _story.has_event(&"help_called") \
-			and _player.position.x <= _help_reveal_x:
+	if _story.has_event(&"help_called"):
+		return
+	# Preferred storyboard: first fish flees, then Penni follows it left.
+	if _first_fish_escape_finished and _player.position.x <= _help_reveal_x:
 		_story.on_followed_escape()
+	# Recovery path: the sea is explorable, so players can simply swim
+	# around the first fish. Silas should still call as they approach.
+	if not _story.has_event(&"help_called") \
+			and _player.position.distance_to(_silas.position) <= SILAS_HELP_NEARBY_RANGE:
+		_story.on_followed_escape(true)
 
 
 func _start_first_fish_escape() -> void:

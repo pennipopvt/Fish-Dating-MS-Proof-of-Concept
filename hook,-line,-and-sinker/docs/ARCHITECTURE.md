@@ -171,3 +171,26 @@ The `help_called` story flag is set only after `is_call_shown()` confirms
 the rendered bubble controls were made visible; otherwise the story event
 continues retrying rather than being silently lost. The hint uses fixed
 native-game coordinates instead of main-window anchors.
+
+
+## November speech bubble regression: safe baseline
+
+Silas's original "Help me!" popup was visible when its CanvasLayer was a
+direct child of Main, with a 340x100 Control measured in outer UI pixels.
+Moving the CanvasLayer into the game SubViewport caused the bubble to
+disappear; applying a dynamic CanvasLayer.scale/offset was not verified
+by an in-engine test. We have now restored the last visibly working
+rendering arrangement (CanvasLayer on Main, unscaled bubble and text),
+but retain the user's supplied white 9-slice artwork and separate
+rotatable tail. Only the Silas anchor point is projected through the
+SubViewportContainer's global display rect.
+
+Story beats have two paths: the intended initial fish escape followed by
+swimming left, or a near-Silas recovery trigger when the player reaches
+the eel without completing the first fish tutorial. This prevents a
+reached Silas from remaining silent. The renderer's is_call_shown() is
+checked before marking help_called; it must not be a hidden/failed event.
+
+Do not change viewport ownership or pixel scaling again without an
+actual Godot runtime test. First ensure the story beat and bubble draw
+are reliable. Tuning pixel art scale can be done after that.

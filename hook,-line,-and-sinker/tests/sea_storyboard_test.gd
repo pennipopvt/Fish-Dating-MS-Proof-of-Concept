@@ -98,19 +98,15 @@ func _run() -> void:
 	_check((bubble.get_node("Call/Tail") as TextureRect).visible,
 		"Tail shows while tracking Silas")
 	_check(bubble.get_viewport() == main.get_viewport(),
-		"Speech bubble uses the working outer UI viewport")
-	bubble.call("_sync_game_scale")
-	var display: SubViewportContainer = main.get_node("SubViewportContainer") as SubViewportContainer
-	var native: Vector2 = sea.get_viewport().get_visible_rect().size
-	var rendered: Vector2 = display.get_global_rect().size
-	_check((bubble.scale * native).distance_to(rendered) < 1.0,
-		"Speech bubble pixels scale exactly with the game viewport")
+		"Speech bubble uses the original working Main CanvasLayer")
+	_check(bubble.scale == Vector2.ONE,
+		"Silas bubble does not use fragile CanvasLayer scale transforms")
 	_check(bubble.is_call_shown(),
 		"Silas event leaves an actually visible speech bubble")
 	bubble.call("_update_attached_position")
 	var call: Control = bubble.get_node("Call") as Control
 	var call_rect: Rect2 = call.get_rect()
-	var screen_rect: Rect2 = Rect2(Vector2.ZERO, native)
+	var screen_rect: Rect2 = (main.get_node("SubViewportContainer") as Control).get_global_rect()
 	_check(call_rect.position.x >= 0.0 and call_rect.end.x <= screen_rect.end.x
 		and call_rect.position.y >= 0.0 and call_rect.end.y <= screen_rect.end.y,
 		"Offscreen speech bubble stays within the game viewport")
@@ -126,6 +122,17 @@ func _run() -> void:
 		"The speech tail flat base connects at the outer bubble border")
 	_check(story.can_talk_to_silas(), "Silas can be found after hearing him")
 	_check(not story.can_net_silas(), "Silas is not net-catchable before speaking")
+	# A player who simply swims past the first fish still hears Silas.
+	bubble.hide_call()
+	story.get("_events").erase(&"line_broken")
+	story.get("_events").erase(&"help_called")
+	sea.set("_first_fish_escape_finished", false)
+	player.position = sea.get_node("NPCs/Silas").position + Vector2(40, 0)
+	sea.call("_check_escape_followup")
+	_check(story.has_event(&"help_called") and bubble.is_call_shown(),
+		"Silas speech remains discoverable when the first fish is skipped")
+	_check((bubble.get_node("Call") as Control).size.x >= 300,
+		"Restored bubble has the readable size used in working builds")
 	main.queue_free()
 	print("FAILED: %d" % failures if failures > 0 else "Sea storyboard events passed")
 	quit(1 if failures > 0 else 0)
