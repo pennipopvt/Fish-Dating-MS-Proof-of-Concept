@@ -69,17 +69,11 @@ player_portrait = ExtResource("4_tbgi4")
 
 [node name="IllustrationScene" parent="." instance=ExtResource("10_illustration")]
 
-# To edit Silas's bubble, OPEN res://scenes/sea_speech_bubble.tscn
-# and select its root; all game-pixel sizing/positioning is in its Inspector.
-# It lives under Main (UI), NOT under sea_area.tscn (world SubViewport).
-# Outer UI scales from 320x180 to SubViewportContainer display size.
 [node name="SeaSpeechBubble" parent="." instance=ExtResource("sea_speech_bubble")]
 
 [node name="IntroLayer" type="CanvasLayer" parent="."]
 visible = false
 script = ExtResource("opening_script")
-# Below the existing DialogueUI CanvasLayer (layer 10), so its portraits
-# and standard textbox draw over the boat stage.
 layer = 9
 
 [node name="FishCoIntro" parent="IntroLayer" instance=ExtResource("fish_co_intro")]
@@ -105,12 +99,9 @@ stream = ExtResource("4_jyhfs")
 volume_db = 6.0
 autoplay = true
 
-# A single host repairs/binds the editable Main/SeaSpeechBubble.
 [node name="SeaSpeechBubbleHost" type="Node" parent="."]
 script = ExtResource("bubble_host")
 
-# This is developer-only UI. Its authored controls replace the old
-# hundreds of lines of procedural panel construction.
 [node name="SeaDebugLayer" type="CanvasLayer" parent="."]
 visible = false
 layer = 120

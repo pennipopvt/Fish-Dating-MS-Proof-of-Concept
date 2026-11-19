@@ -26,7 +26,6 @@ mouse_filter = 2
 offset_right = 83.0
 offset_bottom = 30.0
 
-# Independent circle marker, visually separated from the speech box.
 [node name="Tail" type="TextureRect" parent="Call"]
 visible = false
 mouse_filter = 2

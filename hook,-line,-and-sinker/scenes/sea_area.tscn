@@ -85,7 +85,6 @@ position = Vector2(-155, 240)
 species = ExtResource("mullet")
 random_seed = 3101
 is_first_dive_fish = true
-# Tutorial fish waits in place until hooked; it never runs the normal flee loop.
 preferred_player_distance = 0.0
 alert_distance = 0.0
 
@@ -94,7 +93,6 @@ script = ExtResource("spawn")
 position = Vector2(-502, 312)
 species = ExtResource("mullet")
 random_seed = 3102
-# First normal fish: keeps a nettable gap instead of allowing close chasing.
 preferred_player_distance = 52.0
 alert_distance = 76.0
 flee_speed = 112.0
@@ -130,7 +128,6 @@ theme_override_font_sizes/font_size = 12
 script = ExtResource("story")
 silas_data = ExtResource("silas_data")
 
-# Only authored tutorial/reel/rescue choreography, not persistent flags.
 [node name="EncounterSequence" type="Node" parent="."]
 script = ExtResource("encounter")
 
