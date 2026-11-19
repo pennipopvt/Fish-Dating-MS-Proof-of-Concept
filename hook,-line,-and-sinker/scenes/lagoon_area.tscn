@@ -3,19 +3,18 @@
 [ext_resource type="Script" uid="uid://byp4fou8kyseq" path="res://scripts/diving/diving_world.gd" id="1_world"]
 [ext_resource type="Texture2D" uid="uid://fur256i6ik5n" path="res://sprites/fish/silas_eel.png" id="3_silas"]
 [ext_resource type="Script" uid="uid://cuo1eyo7ijqpj" path="res://scripts/diving/companion_battle.gd" id="companion_battle"]
-[ext_resource type="Resource" path="res://resources/fish/flounder.tres" id="fish_flounder"]
-[ext_resource type="Resource" path="res://resources/fish/goby.tres" id="fish_goby"]
+[ext_resource type="Resource" uid="uid://c07358p6v641e" path="res://resources/fish/flounder.tres" id="fish_flounder"]
+[ext_resource type="Resource" uid="uid://bb7avevjoob3x" path="res://resources/fish/goby.tres" id="fish_goby"]
 [ext_resource type="Resource" uid="uid://bad7evmwitdpl" path="res://resources/fish/mullet.tres" id="fish_mullet"]
-[ext_resource type="Resource" path="res://resources/fish/needlefish.tres" id="fish_needle"]
-[ext_resource type="Resource" path="res://resources/fish/porgy.tres" id="fish_porgy"]
+[ext_resource type="Resource" uid="uid://dxqe8b75m583" path="res://resources/fish/needlefish.tres" id="fish_needle"]
+[ext_resource type="Resource" uid="uid://cu4aljcpk40a0" path="res://resources/fish/porgy.tres" id="fish_porgy"]
 [ext_resource type="Script" uid="uid://c57ont7cf2c3x" path="res://scripts/diving/fish_spawn.gd" id="fish_spawn"]
 [ext_resource type="Resource" uid="uid://c2argebsm6uyk" path="res://resources/fish/tuna.tres" id="fish_tuna"]
 [ext_resource type="Script" path="res://scripts/diving/lagoon_editor_guide.gd" id="lagoon_guide"]
-[ext_resource type="Script" uid="uid://cl58ec468rvsb" path="res://scripts/diving/net_projectile.gd" id="net_projectile"]
+[ext_resource type="Script" uid="uid://cwfjqeua3rqvh" path="res://scripts/diving/net_projectile.gd" id="net_projectile"]
 
 [node name="Lagoon" type="Node2D" unique_id=602994969]
 script = ExtResource("1_world")
-show_prototype_environment = false
 
 [node name="EditorGuide" type="Node2D" parent="." unique_id=1457841751]
 z_index = -10

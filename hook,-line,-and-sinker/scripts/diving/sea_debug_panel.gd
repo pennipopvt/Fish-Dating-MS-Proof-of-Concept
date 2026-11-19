@@ -200,4 +200,3 @@ func _force_test_bubble() -> void:
 		str((ui.get_node("Call") as Control).get_global_rect())])
 	show()
 	_update_sea_debug()
-

@@ -282,5 +282,3 @@ func hide_call() -> void:
 	_call.hide()
 	_tail.hide()
 	set_process(false)
-
-

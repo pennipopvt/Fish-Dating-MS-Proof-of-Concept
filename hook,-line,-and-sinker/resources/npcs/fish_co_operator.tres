@@ -1,7 +1,10 @@
-[gd_resource type="Resource" script_class="NPCData" format=3]
+[gd_resource type="Resource" script_class="NPCData" format=3 uid="uid://cugusudqaqlpk"]
 
-[ext_resource type="Script" path="res://resources/npc_data.gd" id="npc_script"]
+[ext_resource type="Script" uid="uid://vn5y8742mwkg" path="res://resources/npc_flag_data.gd" id="1_mdxnf"]
+[ext_resource type="Script" uid="uid://ejskb8h4mfwk" path="res://resources/npc_dialogue_rule_data.gd" id="2_s2n80"]
+[ext_resource type="Script" uid="uid://bh6g5wfjnt8fm" path="res://resources/encounter_rule_data.gd" id="3_4d51v"]
 [ext_resource type="Texture2D" uid="uid://dqnl5r2kigu3c" path="res://sprites/characters/fish co/fish-co.png" id="fish_co_portrait"]
+[ext_resource type="Script" uid="uid://cus4an4jfkhwc" path="res://resources/npc_data.gd" id="npc_script"]
 
 [resource]
 script = ExtResource("npc_script")

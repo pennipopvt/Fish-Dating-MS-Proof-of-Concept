@@ -1,4 +1,4 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene format=3 uid="uid://babjrrle5yvtt"]
 
 [sub_resource type="StyleBoxFlat" id="HUDCard"]
 bg_color = Color(0.035, 0.085, 0.12, 0.82)
@@ -12,9 +12,8 @@ corner_radius_top_right = 8
 corner_radius_bottom_right = 8
 corner_radius_bottom_left = 8
 
-
-[node name="DivingHUD" type="Control"]
-layout_mode = 1
+[node name="DivingHUD" type="Control" unique_id=759200381]
+layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -22,8 +21,9 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 
-[node name="HeaderBack" type="Panel" parent="."]
+[node name="HeaderBack" type="Panel" parent="." unique_id=1545775975]
 layout_mode = 1
+anchors_preset = -1
 anchor_right = 0.72
 offset_left = 22.0
 offset_top = 22.0
@@ -32,8 +32,9 @@ offset_bottom = 122.0
 mouse_filter = 2
 theme_override_styles/panel = SubResource("HUDCard")
 
-[node name="CatchBack" type="Panel" parent="."]
+[node name="CatchBack" type="Panel" parent="." unique_id=1602721473]
 layout_mode = 1
+anchors_preset = 1
 anchor_left = 1.0
 anchor_right = 1.0
 offset_left = -305.0
@@ -43,8 +44,9 @@ offset_bottom = 85.0
 mouse_filter = 2
 theme_override_styles/panel = SubResource("HUDCard")
 
-[node name="FooterBack" type="Panel" parent="."]
+[node name="FooterBack" type="Panel" parent="." unique_id=671740094]
 layout_mode = 1
+anchors_preset = -1
 anchor_left = 0.17
 anchor_top = 1.0
 anchor_right = 0.83
@@ -54,53 +56,52 @@ offset_bottom = -22.0
 mouse_filter = 2
 theme_override_styles/panel = SubResource("HUDCard")
 
-[node name="Location" type="Label" parent="."]
+[node name="Location" type="Label" parent="." unique_id=636066196]
 layout_mode = 1
 offset_left = 43.0
 offset_top = 32.0
 offset_right = 500.0
 offset_bottom = 74.0
-mouse_filter = 2
 theme_override_colors/font_color = Color(0.89, 0.98, 0.97, 1)
 theme_override_font_sizes/font_size = 28
 text = "THE SHALLOWS"
 
-[node name="StoryHint" type="Label" parent="."]
+[node name="StoryHint" type="Label" parent="." unique_id=1313442912]
 layout_mode = 1
+anchors_preset = -1
 anchor_right = 0.72
 offset_left = 43.0
 offset_top = 78.0
 offset_right = -45.0
 offset_bottom = 118.0
-mouse_filter = 2
 theme_override_colors/font_color = Color(0.78, 0.91, 0.92, 1)
 theme_override_font_sizes/font_size = 18
 text = "There's a voice somewhere to the east..."
 autowrap_mode = 3
 
-[node name="CatchCount" type="Label" parent="."]
+[node name="CatchCount" type="Label" parent="." unique_id=2074804081]
 layout_mode = 1
+anchors_preset = 1
 anchor_left = 1.0
 anchor_right = 1.0
 offset_left = -285.0
 offset_top = 36.0
 offset_right = -40.0
 offset_bottom = 75.0
-mouse_filter = 2
 theme_override_colors/font_color = Color(0.87, 0.98, 0.98, 1)
 theme_override_font_sizes/font_size = 22
 text = "NET CATCHES  0"
 horizontal_alignment = 2
 
-[node name="Prompt" type="Label" parent="."]
+[node name="Prompt" type="Label" parent="." unique_id=351792190]
 layout_mode = 1
+anchors_preset = -1
 anchor_left = 0.18
 anchor_top = 1.0
 anchor_right = 0.82
 anchor_bottom = 1.0
 offset_top = -72.0
 offset_bottom = -33.0
-mouse_filter = 2
 theme_override_colors/font_color = Color(0.89, 0.98, 0.93, 1)
 theme_override_font_sizes/font_size = 20
 text = "WASD Move  •  Click Catch  •  E Talk"
@@ -108,14 +109,14 @@ horizontal_alignment = 1
 vertical_alignment = 1
 autowrap_mode = 3
 
-[node name="Toast" type="Label" parent="."]
+[node name="Toast" type="Label" parent="." unique_id=726756769]
 visible = false
 layout_mode = 1
+anchors_preset = -1
 anchor_left = 0.22
 anchor_right = 0.78
 offset_top = 134.0
 offset_bottom = 200.0
-mouse_filter = 2
 theme_override_colors/font_color = Color(1, 0.91, 0.72, 1)
 theme_override_colors/font_shadow_color = Color(0.01, 0.04, 0.07, 0.95)
 theme_override_constants/shadow_offset_x = 2
