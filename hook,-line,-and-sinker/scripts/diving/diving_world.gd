@@ -112,6 +112,7 @@ func _spawn_editor_fish() -> void:
 		var fish: DivingWildFish = WILD_FISH_SCRIPT.new() as DivingWildFish
 		_actors.add_child(fish)
 		fish.setup(data.fish_id, data.item_data.sprite, spawn.position, _sea_bounds(), spawn.random_seed)
+		fish.is_open = _is_open_water
 		fish.set_max_health(data.max_health)
 		fish.preferred_player_distance = spawn.preferred_player_distance
 		fish.flee_radius = maxf(spawn.alert_distance, spawn.preferred_player_distance)

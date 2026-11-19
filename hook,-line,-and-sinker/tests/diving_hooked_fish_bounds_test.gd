@@ -5,12 +5,13 @@ extends SceneTree
 # HookedFishMover keeps it in open water: it slides along the waterline and
 # rock/ground, left and right stay open, and when pinned in a corner it
 # dashes back past Penni.
-# godot --headless --path . -s res://tests/diving_hooked_fish_bounds_test.gd
+# Uses DivingWildFish (autoload deps): run with the temp-scene runner, not -s.
 const WATERLINE: float = 166.0
 const GROUND: float = 400.0
 const WALL_X: float = 500.0  # rock from here to the right
 const DT: float = 1.0 / 60.0
 const MOVER_SCRIPT = preload("res://scripts/diving/hooked_fish_mover.gd")
+const WILD_FISH_SCRIPT = preload("res://scripts/diving/wild_fish.gd")
 var failures: int = 0
 
 
@@ -72,6 +73,26 @@ func _run() -> void:
 	_check(dashed, "Fish pinned between wall and surface dashes")
 	_check(fish.x < penni.x, "After the dash the fish is on the far side of Penni")
 	_check(not ever_blocked, "Fish never sits inside rock or above the water")
+
+	# Free-swimming fish (not hooked) also stay out of the wall and ground,
+	# both while wandering and while fleeing Penni toward the wall.
+	var wild: Node2D = WILD_FISH_SCRIPT.new()
+	root.add_child(wild)
+	var art := ImageTexture.create_from_image(Image.create(16, 8, false, Image.FORMAT_RGBA8))
+	wild.setup(&"test", art, Vector2(470, 380), Rect2(0, 154, 1000, 400), 7)
+	wild.is_open = _open
+	var wild_blocked := false
+	for i in 1200:
+		wild.swim(DT, Vector2(-500, -500), false)
+		wild_blocked = wild_blocked or not _open(wild.position)
+	_check(not wild_blocked, "Wandering fish never swims into the wall or ground")
+	wild.position = Vector2(480, 300)
+	var fled_blocked := false
+	for i in 300:
+		wild.swim(DT, Vector2(440, 300), false)
+		fled_blocked = fled_blocked or not _open(wild.position)
+	_check(not fled_blocked, "Fleeing fish slides along the wall instead of entering it")
+	wild.queue_free()
 
 	print("diving_hooked_fish_bounds_test: %s" % ("PASS" if failures == 0 else "%d FAILED" % failures))
 	quit(1 if failures > 0 else 0)
