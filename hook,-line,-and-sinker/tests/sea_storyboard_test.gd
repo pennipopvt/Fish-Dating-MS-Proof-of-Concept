@@ -124,10 +124,12 @@ func _run() -> void:
 	_check(not story.can_net_silas(), "Silas is not net-catchable before speaking")
 	# A player who simply swims past the first fish still hears Silas.
 	bubble.hide_call()
-	story.get("_events").erase(&"line_broken")
-	story.get("_events").erase(&"help_called")
+	var session_events: Dictionary = story.get("_events")
+	session_events.erase(&"line_broken")
+	session_events.erase(&"help_called")
 	sea.set("_first_fish_escape_finished", false)
-	player.position = sea.get_node("NPCs/Silas").position + Vector2(40, 0)
+	var silas_actor: Node2D = sea.get_node("NPCs/Silas") as Node2D
+	player.position = silas_actor.position + Vector2(40.0, 0.0)
 	sea.call("_check_escape_followup")
 	_check(story.has_event(&"help_called") and bubble.is_call_shown(),
 		"Silas speech remains discoverable when the first fish is skipped")
