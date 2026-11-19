@@ -1,0 +1,13 @@
+{
+  "entry": "regret",
+  "free_greeting": true,
+  "nodes": {
+    "regret": {
+      "lines": [
+        "N-no... Penni, it happened again.",
+        "I told myself I'd stop before it went too far.",
+        "...I'm sorry. I should've been more careful."
+      ]
+    }
+  }
+}
