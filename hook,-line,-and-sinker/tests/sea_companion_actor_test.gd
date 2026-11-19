@@ -64,6 +64,19 @@ func _run() -> void:
 	battle.step(2.0, silas.can_strike_target())
 	_check(is_equal_approx(fish.health, health_before),
 		"No invisible damage while Silas is still swimming toward the fish")
+
+	# Regression: the previous 22px chase destination matched the inclusive
+	# strike boundary, but movement stops within 1px of its destination.
+	# Silas could settle at 22.5px and never enable either attack timer.
+	silas.position = fish.position + Vector2(silas.combat_attack_range + 4.5, 0.0)
+	_check(not silas.can_strike_target(),
+		"At 0.5px outside strike range, a fight has not started landing hits")
+	silas._process(0.1)
+	_check(silas.can_strike_target(),
+		"Companion advances inside the strike range instead of stalling at its edge")
+
+	# Keep the separate long-distance chase test independent of the boundary case.
+	silas.position = fish.position + Vector2(82.0, 0.0)
 	var old_distance: float = silas.position.distance_to(fish.position)
 	for i in range(30):
 		silas._process(0.1)
