@@ -66,6 +66,15 @@ func _run() -> void:
 	var land: NPCInteractable = world.get_node_or_null("SilasDockActor") as NPCInteractable
 	_check(land != null and land.visible and not land.monitoring,
 		"Existing land Silas appears at the dock but cannot start the old romance route")
+	if land != null:
+		var marker: Marker2D = sea.get_node("Points/SilasDockWait") as Marker2D
+		var art: AnimatedSprite2D = land.get_node("Sprite") as AnimatedSprite2D
+		var frame: Texture2D = art.sprite_frames.get_frame_texture(art.animation, art.frame)
+		var feet_y: float = land.global_position.y + art.position.y
+		if art.centered:
+			feet_y += frame.get_height() * 0.5 * art.scale.y
+		_check(absf(feet_y - marker.global_position.y) < 1.0,
+			"Silas's human sprite feet align with the dock marker")
 	_check(not actor.visible and not actor.following,
 		"Underwater Silas is replaced by his land representation")
 	_check(DialogueManager.is_active and not bool(main.get_node("CanvasLayer/DialogueUI").get("_underwater_mode")),
