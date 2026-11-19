@@ -120,10 +120,12 @@ func _ensure_sea_speech_bubble() -> SeaSpeechBubble:
 
 	var tail: TextureRect = TextureRect.new()
 	tail.name = "Tail"
-	tail.size = Vector2(24.0, 24.0)
-	tail.pivot_offset = Vector2(12.0, 12.0)
+	tail.size = Vector2(12.0, 12.0)
+	tail.pivot_offset = Vector2(6.0, 6.0)
 	tail.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	tail.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	tail.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	tail.stretch_mode = TextureRect.STRETCH_KEEP
 	tail.hide()
 	call.add_child(tail)
 

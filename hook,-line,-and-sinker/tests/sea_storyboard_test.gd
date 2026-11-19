@@ -227,6 +227,11 @@ func _run() -> void:
 	_check(recovered.get_node_or_null("Call/Message") is Label
 		and recovered.get_node_or_null("Call/Frame") is NinePatchRect,
 		"Reconstructed bubble contains all expected UI children")
+	var recovered_marker: TextureRect = recovered.get_node("Call/Tail") as TextureRect
+	_check(recovered_marker.texture != null
+		and recovered_marker.size == Vector2(recovered_marker.texture.get_size())
+		and recovered_marker.scale == Vector2.ONE,
+		"Recovered speaker marker also keeps native game-pixel density")
 	recovered.show_call("Recovery test", false, 0.0)
 	_check(recovered.is_call_shown(),
 		"Recovered bubble actually becomes visible after show_call")

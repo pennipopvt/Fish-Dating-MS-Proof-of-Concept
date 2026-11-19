@@ -377,3 +377,22 @@ texture. The cue appears when companion help is offered and hides
 on the first valid target selection. F7 now includes scripted reel
 phase, number of scrolls, line tension, Penni's reaction flag and
 Silas's rescue flags.
+
+
+## Marker pixel density and Silas visual scale
+
+The authored speech frame is a **32x32** PNG with a 1-pixel outline;
+the independent circle marker is **12x12**, also with a 1-pixel outline.
+The runtime fallback in `Main._ensure_sea_speech_bubble()` previously
+created a **24x24 TextureRect** for that 12x12 marker, doubling its
+source pixels relative to the nine-slice. Both the authored and fallback
+paths now use the source texture's exact pixel dimensions, nearest
+filtering, and no additional local scale. All of the speech UI still
+shares the same 320x180 game canvas, and the circle remains separate
+from the frame.
+
+`SeaNPC.fish_sprite_width` is a per-instance visual export, default
+20 pixels as before; Silas overrides it to **30 pixels** in
+`scenes/sea_area.tscn`. Only `NPCs/Silas/Sprite.scale` changes:
+the actor position/scale, existing invisible rescue hit target,
+interaction radius, and companion battle distances are unchanged.

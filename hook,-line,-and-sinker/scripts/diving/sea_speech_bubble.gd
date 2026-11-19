@@ -75,7 +75,16 @@ func _apply_frame() -> void:
 	_frame.patch_margin_bottom = patch_margin
 	_frame.visible = bubble_texture != null
 	_fallback.visible = bubble_texture == null
+	# Never stretch the speaker marker: it is a 12x12 PNG drawn alongside
+	# the 32x32 nine-slice, and both use 1 source pixel = 1 game pixel.
+	# The runtime recovery used to inflate this 12px marker to 24px.
 	_tail.texture = tail_texture
+	_tail.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	_tail.stretch_mode = TextureRect.STRETCH_KEEP
+	_tail.scale = Vector2.ONE
+	if tail_texture != null:
+		_tail.size = Vector2(tail_texture.get_size())
+		_tail.pivot_offset = _tail.size * 0.5
 
 
 func _game_size() -> Vector2:

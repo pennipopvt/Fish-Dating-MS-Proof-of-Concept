@@ -98,6 +98,7 @@ random_seed = 3102
 position = Vector2(-391, 319)
 script = ExtResource("sea_npc")
 npc = ExtResource("silas_data")
+fish_sprite_width = 30.0
 human_world_sprite = ExtResource("silas_human")
 
 [node name="Sprite" type="Sprite2D" parent="NPCs/Silas"]

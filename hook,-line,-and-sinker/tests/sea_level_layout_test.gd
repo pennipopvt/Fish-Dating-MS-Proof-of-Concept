@@ -70,6 +70,18 @@ func _run() -> void:
 		"Speech bubble frame is nine-slice replaceable")
 	_check(bubble.get_node("Call/Tail") is TextureRect,
 		"Independent circle speaker marker replaces the long speech tail")
+	var marker: TextureRect = bubble.get_node("Call/Tail") as TextureRect
+	_check(marker.texture != null
+		and marker.size == Vector2(marker.texture.get_size())
+		and marker.scale == Vector2.ONE,
+		"The circle renders at exactly one game pixel per image pixel")
+	var silas_actor: SeaNPC = sea.get_node("NPCs/Silas") as SeaNPC
+	var silas_sprite: Sprite2D = silas_actor.get_node("Sprite") as Sprite2D
+	var authored_width: float = float(silas_sprite.texture.get_width() / silas_sprite.hframes)
+	_check(is_equal_approx(silas_actor.fish_sprite_width, 30.0)
+		and is_equal_approx(silas_sprite.scale.x * authored_width, 30.0)
+		and silas_actor.scale == Vector2.ONE,
+		"Silas fish sprite is 30px wide without scaling the NPC actor")
 	_check(bubble.get_node("Call/Direction") == null,
 		"No duplicate text arrow remains")
 	_check(bubble.get_node("Call/Message") is Label,

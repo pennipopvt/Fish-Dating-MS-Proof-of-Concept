@@ -35,6 +35,12 @@ func _run() -> void:
 	_check(fish != null and data != null, "A free wild fish is available to fight")
 	_check(silas.get("_player") == player and silas.get("_battle") == battle,
 		"Reusable SeaNPC resolves the one Player and CompanionBattle")
+	var fish_sprite: Sprite2D = silas.get_node("Sprite") as Sprite2D
+	_check(is_equal_approx(silas.fish_sprite_width, 30.0)
+		and is_equal_approx(fish_sprite.scale.x
+			* float(fish_sprite.texture.get_width() / fish_sprite.hframes), 30.0)
+		and silas.scale == Vector2.ONE,
+		"Silas renders larger using Sprite2D only, not the encounter node")
 	if fish == null or data == null:
 		main.queue_free()
 		quit(1)

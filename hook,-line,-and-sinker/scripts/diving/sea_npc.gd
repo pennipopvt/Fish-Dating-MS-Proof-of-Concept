@@ -18,6 +18,14 @@ class_name SeaNPC
 @export_range(40.0, 250.0, 1.0) var combat_swim_speed: float = 140.0
 @export_range(8.0, 30.0, 1.0) var combat_attack_range: float = 18.0
 
+# Visual size only. Do not change SeaNPC.scale, interaction range, or
+# the separate invisible net/combat target. Set per NPC in the Inspector.
+@export_range(12.0, 64.0, 1.0) var fish_sprite_width: float = 20.0:
+	set(value):
+		fish_sprite_width = value
+		if is_node_ready():
+			_refresh_sprite()
+
 @export var human_world_sprite: Texture2D:
 	set(value):
 		human_world_sprite = value
@@ -56,7 +64,7 @@ func _refresh_sprite() -> void:
 		return
 	_sprite.texture = chosen
 	_sprite.hframes = 1 if fish_mode else 2
-	_sprite.scale = Vector2.ONE * (20.0 / maxf(float(chosen.get_width() / _sprite.hframes), 1.0)) if fish_mode else Vector2.ONE
+	_sprite.scale = Vector2.ONE * (fish_sprite_width / maxf(float(chosen.get_width() / _sprite.hframes), 1.0)) if fish_mode else Vector2.ONE
 
 
 func _process(delta: float) -> void:
