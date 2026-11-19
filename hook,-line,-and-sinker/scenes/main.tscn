@@ -2,6 +2,8 @@
 
 [ext_resource type="PackedScene" uid="uid://bjt7lp2qss3qh" path="res://prefabs/world.tscn" id="1_sugp2"]
 [ext_resource type="Script" path="res://scripts/diving/dive_entry.gd" id="dive_entry"]
+[ext_resource type="Script" path="res://scripts/diving/sea_speech_bubble_host.gd" id="bubble_host"]
+[ext_resource type="Script" path="res://scripts/diving/sea_debug_panel.gd" id="sea_debug_panel"]
 [ext_resource type="PackedScene" path="res://scenes/fish_co_intro.tscn" id="fish_co_intro"]
 [ext_resource type="PackedScene" path="res://scenes/sea_speech_bubble.tscn" id="sea_speech_bubble"]
 [ext_resource type="Shader" path="res://shaders/iris_transition.gdshader" id="iris_shader"]
@@ -16,6 +18,14 @@ shader = ExtResource("iris_shader")
 shader_parameter/center_uv = Vector2(0.5, 0.5)
 shader_parameter/radius = 2.6
 shader_parameter/aspect_ratio = 1.7777778
+
+[sub_resource type="StyleBoxFlat" id="SeaDebugBackground"]
+bg_color = Color(0.015, 0.035, 0.06, 0.93)
+border_color = Color(0.5, 0.9, 1, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
 
 [node name="Main" type="Control" unique_id=51723177]
 script = ExtResource("dive_entry")
@@ -90,3 +100,39 @@ color = Color(1, 1, 1, 1)
 stream = ExtResource("4_jyhfs")
 volume_db = 6.0
 autoplay = true
+
+# A single host repairs/binds the editable Main/SeaSpeechBubble.
+[node name="SeaSpeechBubbleHost" type="Node" parent="."]
+script = ExtResource("bubble_host")
+
+# This is developer-only UI. Its authored controls replace the old
+# hundreds of lines of procedural panel construction.
+[node name="SeaDebugLayer" type="CanvasLayer" parent="."]
+visible = false
+layer = 120
+script = ExtResource("sea_debug_panel")
+
+[node name="Panel" type="Panel" parent="SeaDebugLayer"]
+offset_left = 10.0
+offset_top = 10.0
+offset_right = 810.0
+offset_bottom = 595.0
+mouse_filter = 0
+theme_override_styles/panel = SubResource("SeaDebugBackground")
+
+[node name="Diagnostics" type="Label" parent="SeaDebugLayer/Panel"]
+offset_left = 12.0
+offset_top = 10.0
+offset_right = 787.0
+offset_bottom = 515.0
+mouse_filter = 2
+theme_override_font_sizes/font_size = 17
+
+[node name="SkipDialogue" type="Button" parent="SeaDebugLayer/Panel"]
+offset_left = 574.0
+offset_top = 537.0
+offset_right = 780.0
+offset_bottom = 571.0
+mouse_filter = 0
+theme_override_font_sizes/font_size = 16
+text = "Skip Dialogue"

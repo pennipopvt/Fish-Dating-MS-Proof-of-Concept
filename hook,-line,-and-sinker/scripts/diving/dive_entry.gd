@@ -32,13 +32,13 @@ var _first_dive_call_finished: bool = false
 var _dock_confirmation_target: Node2D
 var _dock_confirmation_yes: bool = false
 
-# Diagnostic UI is created only under Main and starts hidden. F7 shows
-# trigger and bubble state; press B while F7 is open to test the renderer.
-var _sea_debug_layer: CanvasLayer
-var _sea_debug_label: Label
-var _sea_debug_elapsed: float = 0.0
-var _sea_debug_last_transition: String = ""
-var _sea_bubble_source: String = "uninitialized"
+@onready var _bubble_host: SeaSpeechBubbleHost = $SeaSpeechBubbleHost
+@onready var _debug: SeaDebugPanel = $SeaDebugLayer
+
+# Compatibility for existing playtests; state lives in the UI host now.
+var _sea_bubble_source: String:
+	get:
+		return _bubble_host.source
 
 
 func _ready() -> void:
@@ -52,10 +52,8 @@ func _ready() -> void:
 	# bubble is in Main's outer UI CanvasLayer. Pass the real instance in
 	# directly instead of trying to discover it across viewport parents.
 	var story: SeaStoryDirector = _sea.get_node_or_null("StoryDirector") as SeaStoryDirector
-	var speech: SeaSpeechBubble = _ensure_sea_speech_bubble()
-	if story != null:
-		story.bind_speech_bubble(speech)
-	_setup_sea_debug()
+	_bubble_host.configure(self, story)
+	_debug.configure(self, _world_player, _sea, _bubble_host)
 	# The sea is a child of the one live World; there is only one music player.
 	_ensure_intro_nodes()
 	if _intro_layer != null:
@@ -71,298 +69,13 @@ func _ready() -> void:
 
 
 
-# The live F7 screenshot proved the actual Main/SeaSpeechBubble node was
-# missing (not merely invisible). The authored scene is preferred, but
-# don't let a missing/partially imported scene swallow the story event.
+# Public test hook: recovery itself belongs to SeaSpeechBubbleHost.
 func _ensure_sea_speech_bubble() -> SeaSpeechBubble:
-	var existing: Node = get_node_or_null("SeaSpeechBubble")
-	if existing is SeaSpeechBubble and existing.is_node_ready():
-		_sea_bubble_source = "authored scene"
-		return existing as SeaSpeechBubble
-
-	if existing != null:
-		push_warning("[SEA UI] SeaSpeechBubble exists but is not a ready SeaSpeechBubble (class=%s); rebuilding." % existing.get_class())
-		existing.name = "UnusableSeaSpeechBubble"
-		existing.queue_free()
-	else:
-		push_warning("[SEA UI] Main/SeaSpeechBubble is missing; rebuilding it.")
-
-	# First try the exact existing authored PackedScene. This is a runtime
-	# load, not an extra scene dependency in Main.
-	var resource: PackedScene = load("res://scenes/sea_speech_bubble.tscn") as PackedScene
-	if resource != null:
-		var node: Node = resource.instantiate()
-		if node is SeaSpeechBubble and node.has_node("Call/Frame") and node.has_node("Call/Message") and node.has_node("Call/Tail"):
-			node.name = "SeaSpeechBubble"
-			add_child(node)
-			var result: SeaSpeechBubble = node as SeaSpeechBubble
-			if result.is_node_ready():
-				_sea_bubble_source = "recovered PackedScene"
-				print("[SEA UI] Recovered original bubble scene under Main.")
-				return result
-			node.name = "UnreadySeaSpeechBubble"
-			node.queue_free()
-		else:
-			node.free()
-
-	# Last resort: make the SAME SeaSpeechBubble class and expected child
-	# names in memory. It draws a plain fallback panel even when textures
-	# or scene imports are unavailable.
-	var bubble: SeaSpeechBubble = SeaSpeechBubble.new()
-	bubble.name = "SeaSpeechBubble"
-	bubble.layer = 8
-	var call: Control = Control.new()
-	call.name = "Call"
-	call.size = Vector2(83.0, 30.0)
-	call.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	call.hide()
-	bubble.add_child(call)
-
-	var tail: TextureRect = TextureRect.new()
-	tail.name = "Tail"
-	tail.size = Vector2(12.0, 12.0)
-	tail.pivot_offset = Vector2(6.0, 6.0)
-	tail.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	tail.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	tail.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	tail.stretch_mode = TextureRect.STRETCH_KEEP
-	tail.hide()
-	call.add_child(tail)
-
-	var fallback: Panel = Panel.new()
-	fallback.name = "Fallback"
-	fallback.size = call.size
-	fallback.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var style: StyleBoxFlat = StyleBoxFlat.new()
-	style.bg_color = Color.WHITE
-	style.border_color = Color.BLACK
-	style.set_border_width_all(3)
-	fallback.add_theme_stylebox_override("panel", style)
-	call.add_child(fallback)
-
-	var frame: NinePatchRect = NinePatchRect.new()
-	frame.name = "Frame"
-	frame.size = call.size
-	frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	frame.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	frame.hide()
-	call.add_child(frame)
-
-	var message: Label = Label.new()
-	message.name = "Message"
-	message.position = Vector2(7.0, 4.0)
-	message.size = Vector2(69.0, 22.0)
-	message.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	message.add_theme_color_override("font_color", Color.BLACK)
-	message.add_theme_font_size_override("font_size", 11)
-	message.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	message.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	call.add_child(message)
-
-	# Optional originals: never require these imports for a basic bubble.
-	bubble.bubble_texture = load("res://sprites/ui/speech_bubble.png") as Texture2D
-	bubble.tail_texture = load("res://sprites/ui/speech_marker.png") as Texture2D
-	var pixel_font: Font = load("res://fonts/pixel_operator(1)/PixelOperator.ttf") as Font
-	if pixel_font != null:
-		message.add_theme_font_override("font", pixel_font)
-	add_child(bubble)
-	_sea_bubble_source = "runtime fallback"
-	print("[SEA UI] Built fallback bubble under Main; ready=%s" % str(bubble.is_node_ready()))
-	return bubble
-
-
-# Debug controls are intentionally outside the SubViewport. in a dedicated
-# hidden CanvasLayer, so a missing game-viewport widget can't hide diagnostics.
-func _setup_sea_debug() -> void:
-	_sea_debug_layer = CanvasLayer.new()
-	_sea_debug_layer.name = "SeaDebugLayer"
-	_sea_debug_layer.layer = 120
-	_sea_debug_layer.visible = false
-	add_child(_sea_debug_layer)
-
-	var panel: Panel = Panel.new()
-	panel.name = "Panel"
-	panel.position = Vector2(10.0, 10.0)
-	panel.size = Vector2(800.0, 585.0)
-	# Stop panel clicks reaching fishing input; child debug buttons work.
-	panel.mouse_filter = Control.MOUSE_FILTER_STOP
-	var background: StyleBoxFlat = StyleBoxFlat.new()
-	background.bg_color = Color(0.015, 0.035, 0.06, 0.93)
-	background.border_color = Color(0.5, 0.9, 1.0, 1.0)
-	background.set_border_width_all(2)
-	panel.add_theme_stylebox_override("panel", background)
-	_sea_debug_layer.add_child(panel)
-
-	_sea_debug_label = Label.new()
-	_sea_debug_label.name = "Diagnostics"
-	_sea_debug_label.position = Vector2(12.0, 10.0)
-	_sea_debug_label.size = Vector2(775.0, 505.0)
-	_sea_debug_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_sea_debug_label.add_theme_font_size_override("font_size", 17)
-	panel.add_child(_sea_debug_label)
-
-	# A genuine clickable debug button, available only when F7 is open.
-	# Do not tie this to F8: that key is Godot's Stop shortcut.
-	var skip: Button = Button.new()
-	skip.name = "SkipDialogue"
-	skip.text = "Skip Dialogue"
-	skip.position = Vector2(574.0, 537.0)
-	skip.size = Vector2(206.0, 34.0)
-	skip.mouse_filter = Control.MOUSE_FILTER_STOP
-	skip.add_theme_font_size_override("font_size", 16)
-	skip.pressed.connect(_debug_skip_dialogue)
-	panel.add_child(skip)
+	return _bubble_host.ensure_bubble()
 
 
 func _debug_skip_dialogue() -> void:
-	if not DialogueManager.is_active:
-		print("[SEA DEBUG] Skip Dialogue: no active conversation")
-		return
-	var speaker_name: String = DialogueManager.current_npc.display_name \
-		if DialogueManager.current_npc != null else "unknown speaker"
-	print("[SEA DEBUG] Skipping current conversation with " + speaker_name)
-	# Use the existing manager; its conversation_finished signal must
-	# reach StoryDirector/Main and release movement locks as usual.
-	# Debug skipping deliberately bypasses unchosen dialogue choices.
-	DialogueManager.end_conversation()
-	_update_sea_debug()
-
-
-func _process(delta: float) -> void:
-	if not _underwater and (_sea_debug_layer == null or not _sea_debug_layer.visible):
-		return
-	_sea_debug_elapsed += delta
-	if _sea_debug_elapsed < 0.25:
-		return
-	_sea_debug_elapsed = 0.0
-	_update_sea_debug()
-
-
-func _update_sea_debug() -> void:
-	var story: SeaStoryDirector = _sea.get_node_or_null("StoryDirector") as SeaStoryDirector
-	var silas: Node2D = _sea.get_node_or_null("NPCs/Silas") as Node2D
-	var raw_bubble: Node = get_node_or_null("SeaSpeechBubble")
-	var ui: SeaSpeechBubble = raw_bubble as SeaSpeechBubble
-	var call: Control
-	var events: Dictionary = {}
-	var speaker: Node
-	var display: Node
-	if ui != null:
-		call = ui.get_node_or_null("Call") as Control
-		speaker = ui.get("_speaker") as Node
-		display = ui.get("_display") as Node
-	if story != null:
-		events = story.get("_events") as Dictionary
-	var distance: float = _world_player.global_position.distance_to(silas.global_position) if silas != null else INF
-	var near_silas: bool = distance <= 108.0
-	var escaped: bool = bool(_sea.get("_first_fish_escape_finished"))
-	var follow_x: float = float(_sea.get("_help_reveal_x"))
-	var followed: bool = escaped and _world_player.position.x <= follow_x
-	var line_broken: bool = bool(events.get(&"line_broken", false))
-	var help_called: bool = bool(events.get(&"help_called", false))
-	var bound: bool = story != null and ui != null and story.get("_speech_bubble") == ui
-	var ready: bool = ui != null and ui.is_node_ready()
-	var call_visible: bool = call != null and call.visible
-	var call_on_tree: bool = call != null and call.is_visible_in_tree()
-	var visible: bool = ui != null and ui.is_call_shown()
-	var rect: Rect2 = call.get_global_rect() if call != null else Rect2()
-	var battle: DivingCompanionBattle = _sea.get_node_or_null("CompanionBattle") as DivingCompanionBattle
-	var fish: DivingWildFish = battle.target if battle != null and battle.is_active() else null
-	var actor: SeaNPC = silas as SeaNPC
-	var combat: DivingCombat = _sea.get_node_or_null("Combat") as DivingCombat
-
-	var lines: PackedStringArray = PackedStringArray()
-	lines.append("SEA DEBUG | F7 show/hide | B: UI test | Skip Dialogue button below")
-	lines.append("Swimming: %s   Main underwater: %s   UI parent: Main" % [
-		str(_world_player.swimming), str(_underwater)])
-	lines.append("Player: %s   Silas: %s" % [
-		str(_world_player.global_position.round()),
-		str(silas.global_position.round()) if silas != null else "MISSING"])
-	lines.append("Silas distance: %.1f / 108   proximity trigger: %s" % [
-		distance, str(near_silas)])
-	lines.append("Line broke: %s   fish escaped: %s   followed left: %s" % [
-		str(line_broken), str(escaped), str(followed)])
-	lines.append("Player x: %.1f   follow threshold x: %.1f" % [
-		_world_player.position.x, follow_x])
-	lines.append("Expected help trigger now: %s   help_called flag: %s" % [
-		str(followed or near_silas), str(help_called)])
-	lines.append("Help UI pending: %s" % [
-		str(story.get("_help_ui_pending")) if story != null else "MISSING"])
-	lines.append("Story: %s   UI bound: %s   UI ready: %s" % [
-		str(story != null), str(bound), str(ready)])
-	lines.append("UI node: %s   source: %s" % [
-		raw_bubble.get_class() if raw_bubble != null else "MISSING",
-		_sea_bubble_source])
-	lines.append("Call node visible: %s   in tree: %s   renderer says: %s" % [
-		str(call_visible), str(call_on_tree), str(visible)])
-	lines.append("Speaker valid: %s   display valid: %s" % [
-		str(is_instance_valid(speaker)), str(is_instance_valid(display))])
-	lines.append("Call screen rect: %s   viewport size: %s" % [
-		str(rect), str(get_viewport_rect().size)])
-	if ui != null:
-		lines.append("Bubble: %s   active=%s" % [
-			ui.bubble_debug_state(), str(ui.is_call_active())])
-	lines.append("Silas following: %s   NPC refs (player/battle): %s/%s" % [
-		str(actor.following) if actor != null else "MISSING",
-		str(is_instance_valid(actor.get("_player"))) if actor != null else "false",
-		str(is_instance_valid(actor.get("_battle"))) if actor != null else "false"])
-	lines.append("Battle: %s   can fight: %s   exhausted: %s" % [
-		str(battle.is_active()) if battle != null else "MISSING",
-		str(battle.can_fight()) if battle != null else "false",
-		str(battle.exhausted) if battle != null else "MISSING"])
-	lines.append("Target: %s   fish HP: %.1f/%.1f   Silas HP: %.1f" % [
-		String(fish.fish_name) if fish != null else "none",
-		fish.health if fish != null else 0.0,
-		fish.max_health if fish != null else 0.0,
-		battle.health if battle != null else 0.0])
-	lines.append("Silas movement: %s" % [
-		actor.battle_debug_state() if actor != null else "MISSING"])
-	var net: DivingNetProjectile = _sea.get_node_or_null("NetProjectile") as DivingNetProjectile
-	lines.append("Net lesson: %s   reels=%d   line tension=%.2f" % [
-		str(_sea.get("_scripted_reel_mode")),
-		int(_sea.get("_scripted_reel_scrolls")),
-		net.line_tension if net != null else 0.0])
-	lines.append("Penni reaction=%s   Silas met/freed=%s/%s" % [
-		str(story.has_event(&"penni_fish_reaction")) if story != null else "MISSING",
-		str(story.has_silas_flag(&"silas_met")) if story != null else "MISSING",
-		str(story.has_silas_flag(&"silas_freed")) if story != null else "MISSING"])
-	lines.append("Combat: %s   last command: %s" % [
-		str(combat.is_active()) if combat != null else "MISSING",
-		str(_sea.get("_combat_debug_status"))])
-	lines.append("Dialogue active: %s   modal UI: %s" % [
-		str(DialogueManager.is_active), str(GameManager.is_modal_ui_open())])
-	if _sea_debug_label != null:
-		_sea_debug_label.text = "\n".join(lines)
-
-	# Print only when discrete trigger/UI state changes, not on every frame.
-	var transition: String = (
-		"swim=%s near=%s escape=%s follow=%s broken=%s help=%s bound=%s shown=%s battle=%s"
-		% [str(_world_player.swimming), str(near_silas), str(escaped),
-			str(followed), str(line_broken), str(help_called),
-			str(bound), str(visible), str(battle.is_active()) if battle != null else "MISSING"]
-	)
-	if transition != _sea_debug_last_transition:
-		_sea_debug_last_transition = transition
-		print("[SEA DEBUG] " + transition)
-
-
-func _force_test_bubble() -> void:
-	var ui: SeaSpeechBubble = get_node_or_null("SeaSpeechBubble") as SeaSpeechBubble
-	if ui == null:
-		ui = _ensure_sea_speech_bubble()
-		var story: SeaStoryDirector = _sea.get_node_or_null("StoryDirector") as SeaStoryDirector
-		if story != null:
-			story.bind_speech_bubble(ui)
-	if ui == null:
-		push_error("[SEA DEBUG] B test failed: unable to create speech bubble")
-		return
-	ui.show_call("UI TEST: Help me!", false, 0.0)
-	print("[SEA DEBUG] B test: ready=%s shown=%s Call rect=%s" % [
-		str(ui.is_node_ready()), str(ui.is_call_shown()),
-		str((ui.get_node("Call") as Control).get_global_rect())])
-	if _sea_debug_layer != null:
-		_sea_debug_layer.visible = true
-	_update_sea_debug()
+	_debug.skip_dialogue()
 
 
 # The authored IntroLayer is preferred; don't duplicate it in normal play.
@@ -594,28 +307,13 @@ func _spawn_splash(at: Vector2) -> void:
 
 # Main receives mouse events before SubViewportContainer can consume them.
 # Delegate underwater gameplay input to Sea; all land controls stay unchanged.
+# Keep Main the one input boundary; let its debug panel own debug keys.
 func _input(event: InputEvent) -> void:
-	# The debug panel's clickable button must not cast the sea net below it.
-	# Do not consume the event: GUI still needs it to press the button.
-	if _sea_debug_layer != null and _sea_debug_layer.visible \
-			and event is InputEventMouseButton:
-		var overlay_panel: Control = _sea_debug_layer.get_node_or_null("Panel") as Control
-		if overlay_panel != null and overlay_panel.get_global_rect().has_point(
-				(event as InputEventMouseButton).position):
-			return
-	var key: InputEventKey = event as InputEventKey
-	if key != null and key.pressed and not key.echo:
-		if key.keycode == KEY_F7:
-			if _sea_debug_layer != null:
-				_sea_debug_layer.visible = not _sea_debug_layer.visible
-				_update_sea_debug()
-			print("[SEA DEBUG] F7 diagnostics: %s" % str(_sea_debug_layer.visible))
-			get_viewport().set_input_as_handled()
-			return
-		if key.keycode == KEY_B and _sea_debug_layer != null and _sea_debug_layer.visible:
-			_force_test_bubble()
-			get_viewport().set_input_as_handled()
-			return
+	if _debug.is_pointer_over_panel(event):
+		return
+	if _debug.handle_input(event):
+		get_viewport().set_input_as_handled()
+		return
 	if _world_player.swimming and _underwater and not _transitioning:
 		if _sea.handle_input(event):
 			get_viewport().set_input_as_handled()
