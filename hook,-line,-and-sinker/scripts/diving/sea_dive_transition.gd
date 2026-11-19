@@ -15,7 +15,7 @@ var _world_player: Player
 var _sea: DivingWorld
 var _dialogue_ui: DialogueUI
 var _shop_menu: ShopMenu
-var _opening: FishCoOpeningSequence
+var _opening: CanvasLayer
 var underwater: bool = false
 var transitioning: bool = false
 var shore_return_position: Vector2 = Vector2(56.0, 112.0)
@@ -30,7 +30,7 @@ func _ready() -> void:
 
 
 func configure(world: Node2D, player: Player, sea: DivingWorld,
-		dialogue_ui: DialogueUI, shop: ShopMenu, opening: FishCoOpeningSequence) -> void:
+		dialogue_ui: DialogueUI, shop: ShopMenu, opening: CanvasLayer) -> void:
 	_world = world
 	_world_player = player
 	_sea = sea
@@ -64,7 +64,7 @@ func _transition_contract_to_dock(intro: FishCoIntro) -> void:
 	island_camera.reset_smoothing()
 	island_camera.force_update_scroll()
 	var terminal: ShopInteractable = _world.get_node("Shop") as ShopInteractable
-	terminal.setintro_quota_notice(true)
+	terminal.set_intro_quota_notice(true)
 
 	await _open_iris(_normalized_screen_position(_world_player))
 	transitioning = false
@@ -101,7 +101,7 @@ func _begin_dive(dock: Node2D) -> void:
 	# Penni from the dock through the same surface into the ocean.
 	underwater = true
 	GameManager.diving_session_active = true
-	_dialogue_ui.setunderwater_mode(true)
+	_dialogue_ui.set_underwater_mode(true)
 	var entry_marker: Marker2D = _sea.get_node_or_null("Points/Entry") as Marker2D
 	var entry: Vector2 = entry_marker.global_position if entry_marker != null else _sea.to_global(Vector2(55, 182))
 	var island_camera: Camera2D = _world_player.get_node("Camera2D") as Camera2D
@@ -162,7 +162,7 @@ func _surface_from_dive() -> void:
 	underwater = false
 	GameManager.diving_session_active = false
 	_sea.call("_set_camera_bounds", false)
-	_dialogue_ui.setunderwater_mode(false)
+	_dialogue_ui.set_underwater_mode(false)
 	# A dive costs one ordinary time action on surfacing.
 	GameManager.spend_actions(1)
 
