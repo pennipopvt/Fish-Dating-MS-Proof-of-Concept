@@ -18,6 +18,9 @@ const WILD_FISH_SCRIPT = preload("res://scripts/diving/wild_fish.gd")
 @export var reel_tutorial_sprite: Texture2D
 @export var right_click_tutorial_sprite: Texture2D
 
+@export_group("Sea Parry Feedback")
+@export_range(0.05, 1.0, 0.05) var perfect_parry_line_flash_seconds: float = 0.35
+
 @onready var _guide: SeaEditorGuide = $EditorGuide
 @onready var _entry: Marker2D = $Points/Entry
 @onready var _exit: Marker2D = $Points/SurfaceExit
@@ -38,6 +41,7 @@ var _cue: SeaTutorialCue
 var _wild_fish: Array[DivingWildFish] = []
 var _fish_data: Dictionary = {}
 var _combat_debug_status: String = "No companion command yet"
+var _perfect_parry_line_flash_left: float = 0.0
 
 
 func _ready() -> void:
@@ -49,6 +53,7 @@ func _ready() -> void:
 	_encounter.fish_remove_requested.connect(_unregister_encounter_fish)
 	_net.fish_hit.connect(_on_fish_hit)
 	_combat.finished.connect(_on_combat_finished)
+	_combat.parried.connect(_on_sea_parried)
 	_story.silas_following_started.connect(_on_silas_following_started)
 	_battle.started.connect(_on_battle_started)
 	_battle.ended.connect(_on_battle_ended)
@@ -183,7 +188,9 @@ func _process(delta: float) -> void:
 		_combat.step(delta)
 		if _combat.is_active():
 			_sync_hooked_fish()
-			_net.set_line_state(_combat.tension, _combat.phase == DivingCombat.Phase.STUN)
+			_perfect_parry_line_flash_left = maxf(0.0, _perfect_parry_line_flash_left - delta)
+			_net.set_line_state(_combat.tension,
+				_combat.phase == DivingCombat.Phase.STUN or _perfect_parry_line_flash_left > 0.0)
 	for fish in _wild_fish:
 		if not is_instance_valid(fish) or fish == _combat.target:
 			continue
@@ -277,7 +284,17 @@ func _on_fish_hit(fish: DivingWildFish) -> void:
 		_net.retract()
 
 
+func _on_sea_parried(result: StringName) -> void:
+	if result == &"perfect":
+		_perfect_parry_line_flash_left = perfect_parry_line_flash_seconds
+		# Show gold immediately, rather than waiting for the next frame.
+		_net.set_line_state(_combat.tension, true)
+	else:
+		_perfect_parry_line_flash_left = 0.0
+
+
 func _on_combat_finished(won: bool, fish: DivingWildFish) -> void:
+	_perfect_parry_line_flash_left = 0.0
 	_player.busy = false
 	_net.reset_net()
 	if not is_instance_valid(fish):
