@@ -7,9 +7,9 @@
 [ext_resource type="Script" uid="uid://clx8exr24iwjv" path="res://scripts/diving/sea_editor_guide.gd" id="guide"]
 [ext_resource type="Resource" uid="uid://bad7evmwitdpl" path="res://resources/fish/mullet.tres" id="mullet"]
 [ext_resource type="Script" uid="uid://cwfjqeua3rqvh" path="res://scripts/diving/net_projectile.gd" id="net"]
-[ext_resource type="FontFile" uid="uid://cfqlg706y55qj" path="res://fonts/pixel_operator(1)/PixelOperator.ttf" id="pixel"]
 [ext_resource type="Script" uid="uid://byp4fou8kyseq" path="res://scripts/diving/diving_world.gd" id="sea"]
 [ext_resource type="Script" uid="uid://eunpkr7lg6jl" path="res://scripts/diving/sea_npc.gd" id="sea_npc"]
+[ext_resource type="PackedScene" uid="uid://d4fhg8uyom630" path="res://prefabs/interact_prompt.tscn" id="interact_prompt"]
 [ext_resource type="Resource" uid="uid://cpv5vnhg17vg8" path="res://resources/npcs/silas.tres" id="silas_data"]
 [ext_resource type="Texture2D" uid="uid://fur256i6ik5n" path="res://sprites/fish/silas_eel.png" id="silas_fish"]
 [ext_resource type="Texture2D" uid="uid://b606v6feem3is" path="res://sprites/characters/silas/silas_idle.png" id="silas_human"]
@@ -137,16 +137,8 @@ texture_filter = 1
 scale = Vector2(0.15625, 0.15625)
 texture = ExtResource("silas_fish")
 
-[node name="InteractIndicator" type="Label" parent="NPCs/Silas" unique_id=1656409536]
-visible = false
-offset_left = -10.0
-offset_top = -32.0
-offset_right = 10.0
-offset_bottom = -14.0
-theme_override_fonts/font = ExtResource("pixel")
-theme_override_font_sizes/font_size = 12
-text = "E"
-horizontal_alignment = 1
+[node name="InteractPrompt" parent="NPCs/Silas" unique_id=1656409536 instance=ExtResource("interact_prompt")]
+position = Vector2(0, -24)
 
 [node name="StoryDirector" type="Node" parent="." unique_id=885138235]
 script = ExtResource("story")
