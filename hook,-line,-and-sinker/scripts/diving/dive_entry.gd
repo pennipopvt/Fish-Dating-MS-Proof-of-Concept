@@ -113,8 +113,16 @@ func _update_sea_debug() -> void:
 	var story: SeaStoryDirector = _sea.get_node_or_null("StoryDirector") as SeaStoryDirector
 	var silas: Node2D = _sea.get_node_or_null("NPCs/Silas") as Node2D
 	var ui: SeaSpeechBubble = get_node_or_null("SeaSpeechBubble") as SeaSpeechBubble
-	var call: Control = ui.get_node_or_null("Call") as Control if ui != null else null
-	var events: Dictionary = story.get("_events") if story != null else {}
+	var call: Control
+	var events: Dictionary = {}
+	var speaker: Node
+	var display: Node
+	if ui != null:
+		call = ui.get_node_or_null("Call") as Control
+		speaker = ui.get("_speaker") as Node
+		display = ui.get("_display") as Node
+	if story != null:
+		events = story.get("_events") as Dictionary
 	var distance: float = _world_player.global_position.distance_to(silas.global_position) if silas != null else INF
 	var near_silas: bool = distance <= 108.0
 	var escaped: bool = bool(_sea.get("_first_fish_escape_finished"))
@@ -127,8 +135,6 @@ func _update_sea_debug() -> void:
 	var call_visible: bool = call != null and call.visible
 	var call_on_tree: bool = call != null and call.is_visible_in_tree()
 	var visible: bool = ui != null and ui.is_call_shown()
-	var speaker: Node = ui.get("_speaker") as Node if ui != null else null
-	var display: Node = ui.get("_display") as Node if ui != null else null
 	var rect: Rect2 = call.get_global_rect() if call != null else Rect2()
 
 	var lines: PackedStringArray = PackedStringArray()
