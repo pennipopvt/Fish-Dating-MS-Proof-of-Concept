@@ -49,6 +49,9 @@ func _run() -> void:
 	await create_timer(1.05).timeout
 	_check(not player.swimming and not transition.underwater,
 		"Penni gets back onto the same shore")
+	var rod: FishingRod = player.get_node("FishingRod") as FishingRod
+	_check(rod != null and not rod.visible,
+		"Penni's fishing rod stays put away after returning from the sea")
 	_check(bool(story.get("_events").get(&"silas_surface_scene_started", false)),
 		"Only recruited-and-following Silas starts the reveal")
 
