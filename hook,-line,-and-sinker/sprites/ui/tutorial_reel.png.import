@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://daxobsglior74"
-path="res://.godot/imported/silas_caught.png-4d7ee9bb6d728c21623b1628c3cddc2a.ctex"
+uid="uid://bev7opdw4l0d1"
+path="res://.godot/imported/tutorial_reel.png-e8d20cc571462266fba7ab1894c8e051.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://sprites/characters/silas_caught.png"
-dest_files=["res://.godot/imported/silas_caught.png-4d7ee9bb6d728c21623b1628c3cddc2a.ctex"]
+source_file="res://sprites/ui/tutorial_reel.png"
+dest_files=["res://.godot/imported/tutorial_reel.png-e8d20cc571462266fba7ab1894c8e051.ctex"]
 
 [params]
 

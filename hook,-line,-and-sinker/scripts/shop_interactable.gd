@@ -22,6 +22,8 @@ const TERMINAL_GROUP := &"shop_terminal"
 
 var _player_in_range := false
 var _claim_notice: PanelContainer
+# First-time quota reminder shares the existing challenge-notice bubble.
+var _intro_quota_notice: bool = false
 var _pending: Array[ItemPickup] = []  # bought while the menu is open
 
 
@@ -33,6 +35,7 @@ func _ready() -> void:
 	ChallengeManager.challenge_claimed.connect(_on_challenge_notice_changed)
 	ChallengeManager.progress_reset.connect(_update_claim_notice)
 	ShopManager.shop_opened.connect(_update_prompt)
+	ShopManager.shop_opened.connect(_on_shop_opened)
 	ShopManager.shop_closed.connect(_update_prompt)
 	ShopManager.shop_closed.connect(_launch_drone)
 	# The autoload survives a world reload while the physical drone/packages
@@ -73,9 +76,21 @@ func _on_challenge_notice_changed(_challenge: ChallengeData) -> void:
 	_update_claim_notice()
 
 
+func set_intro_quota_notice(enabled: bool) -> void:
+	_intro_quota_notice = enabled
+	_update_claim_notice()
+
+
+func _on_shop_opened() -> void:
+	# The first visit acknowledges the onboarding prompt, even if the
+	# terminal later continues to show ordinary challenge notices.
+	if _intro_quota_notice:
+		set_intro_quota_notice(false)
+
+
 func _update_claim_notice() -> void:
 	if is_instance_valid(_claim_notice):
-		_claim_notice.visible = ChallengeManager.get_claimable_count() > 0
+		_claim_notice.visible = _intro_quota_notice or ChallengeManager.get_claimable_count() > 0
 
 
 func _on_body_entered(body: Node2D) -> void:

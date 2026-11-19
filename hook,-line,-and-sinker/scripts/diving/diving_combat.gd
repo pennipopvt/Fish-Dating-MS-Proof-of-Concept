@@ -21,6 +21,15 @@ enum Phase { WARNING, WINDUP, ATTACK, DASH, RECOVERY, STUN }
 # between attacks. Contested parried attacks use the faster authored escape_rate.
 @export_range(0.0, 4.0, 0.05) var passive_pull_multiplier: float = 1.5
 
+# Healthy fish are meant to be weakened by companions before netting.
+# Half health is the baseline rod difficulty for any species. Above that,
+# resistance rises sharply, while fully exhausted fish are a bit gentler.
+# This scales the existing authored species force/dash curve around 50% HP.
+@export_group("Health Difficulty")
+@export_range(1.0, 10.0, 0.25) var full_health_pressure: float = 4.5
+@export_range(0.2, 1.0, 0.05) var exhausted_pressure: float = 0.75
+
+@export_group("Stagger")
 # Keep the stagger behavior and tuning from revised-fishing.
 @export_range(1.0, 100.0, 1.0) var close_stagger_gain: float = 24.0
 @export_range(1.0, 100.0, 1.0) var perfect_stagger_gain: float = 48.0
@@ -34,6 +43,9 @@ const TENSION_RECOVERY := 0.20
 const RECOVERY_DELAY := 0.10
 const STRONG_REEL_SCROLLS := 3
 const STRONG_REEL_INTERVAL_MS := 150
+
+# Special rescue encounters don't increment the ordinary lost-fish records.
+var record_lost_fish: bool = true
 
 var target: DivingWildFish
 var fish_data: FishData
@@ -83,6 +95,20 @@ static func _sigmoid(x: float) -> float:
 	return 1.0 / (1.0 + exp(-x))
 
 
+# Normalize the species curve around half health, not zero health. At
+# 50% HP this returns 1.0 exactly (ordinary rod difficulty); at full HP
+# it returns full_health_pressure, and at zero HP exhausted_pressure.
+static func health_pressure(h: float, midpoint: float, steepness: float,
+		fresh: float, exhausted: float) -> float:
+	var current: float = health_curve(h, midpoint, steepness)
+	var halfway: float = health_curve(0.5, midpoint, steepness)
+	if h >= 0.5:
+		var upper: float = clampf((current - halfway) / maxf(1.0 - halfway, 0.0001), 0.0, 1.0)
+		return lerpf(1.0, fresh, upper)
+	var lower: float = clampf(current / maxf(halfway, 0.0001), 0.0, 1.0)
+	return lerpf(exhausted, 1.0, lower)
+
+
 func is_active() -> bool:
 	return target != null and is_instance_valid(target)
 
@@ -98,8 +124,18 @@ func begin(wild: DivingWildFish, data: FishData, initial_distance: float, net_ra
 	tension = 0.0
 	stagger = 0.0
 	var curve: float = health_curve(health_ratio, data.curve_midpoint, data.curve_steepness)
-	strength = data.min_strength * lerpf(1.0, data.force_range, curve)
-	dash_strength = data.min_strength * lerpf(1.0, data.dash_range, curve)
+	var half_curve: float = health_curve(0.5, data.curve_midpoint, data.curve_steepness)
+	var pressure: float = health_pressure(health_ratio, data.curve_midpoint,
+		data.curve_steepness, full_health_pressure, exhausted_pressure)
+	# Preserve the relative species-specific force/dash curves while making
+	# precisely 50% HP the normal-strength baseline. Fish above half health
+	# become very difficult; a full-health fish is not hard-gated.
+	var force_at_half: float = data.min_strength * lerpf(1.0, data.force_range, half_curve)
+	var dash_at_half: float = data.min_strength * lerpf(1.0, data.dash_range, half_curve)
+	strength = pressure * data.min_strength * lerpf(1.0, data.force_range, curve) / maxf(force_at_half, 0.001)
+	# A missed parry should still be readable. Dash distance increases
+	# with health, but more gently than pulling/tension resistance.
+	dash_strength = sqrt(pressure) * data.min_strength * lerpf(1.0, data.dash_range, curve) / maxf(dash_at_half, 0.001)
 	recovery_timer = 0.0
 	reel_open = false
 	free_reel = false
@@ -448,6 +484,6 @@ func _finish(won: bool) -> void:
 	fish_data = null
 	reel_open = false
 	free_reel = false
-	if previous_data != null and not won:
+	if previous_data != null and not won and record_lost_fish:
 		FishingManager.lose_fish(previous_data)
 	finished.emit(won, previous)

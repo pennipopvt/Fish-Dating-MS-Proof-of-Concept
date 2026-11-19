@@ -1,0 +1,13 @@
+[gd_resource type="TileSet" format=3 uid="uid://b76g6qel5pnd4"]
+
+[ext_resource type="Texture2D" uid="uid://db8n0op5wjolr" path="res://sprites/environment/sea_solid_block.svg" id="solid_block"]
+
+[sub_resource type="TileSetAtlasSource" id="single_block"]
+texture = ExtResource("solid_block")
+0:0/0 = 0
+0:0/0/physics_layer_0/polygon_0/points = PackedVector2Array(-8, -8, 8, -8, 8, 8, -8, 8)
+
+[resource]
+physics_layer_0/collision_layer = 2
+physics_layer_0/collision_mask = 0
+sources/0 = SubResource("single_block")

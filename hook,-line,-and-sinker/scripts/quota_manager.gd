@@ -80,8 +80,8 @@ func submit(item_id: StringName, amount: int = -1) -> int:
 	var remaining := get_remaining(item_id)
 	if remaining <= 0:
 		return 0
-	var available := FishingManager.count_in_storage(item_id)
-	var requested := available if amount < 0 else amount
+	var available: int = int(FishingManager.count_in_storage(item_id))
+	var requested: int = available if amount < 0 else amount
 	var take := mini(remaining, mini(available, requested))
 	if take <= 0 or not FishingManager.remove_from_storage(item_id, take):
 		return 0

@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://btn7uh1qk00jp"
-path="res://.godot/imported/kuda_idle.png-4cf40da193553d3e53bed7e692290702.ctex"
+uid="uid://brbtxpok0stsf"
+path="res://.godot/imported/tutorial_wasd.png-19771792b17c90833803b3eaa387f7b8.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://sprites/characters/kuda_idle.png"
-dest_files=["res://.godot/imported/kuda_idle.png-4cf40da193553d3e53bed7e692290702.ctex"]
+source_file="res://sprites/ui/tutorial_wasd.png"
+dest_files=["res://.godot/imported/tutorial_wasd.png-19771792b17c90833803b3eaa387f7b8.ctex"]
 
 [params]
 
