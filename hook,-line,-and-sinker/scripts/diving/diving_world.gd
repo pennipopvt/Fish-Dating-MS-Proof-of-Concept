@@ -159,7 +159,7 @@ func _set_camera_bounds(in_sea: bool) -> void:
 func _process(delta: float) -> void:
 	if _player == null or not _player.swimming:
 		return
-		_encounter.step(delta)
+	_encounter.step(delta)
 	if _battle.is_active() and (DialogueManager.is_active or _combat.is_active()):
 		_battle.stop()
 	_battle.step(delta, _silas.can_strike_target())
