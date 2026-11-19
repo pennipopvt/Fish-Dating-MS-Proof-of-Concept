@@ -127,14 +127,31 @@ func _run() -> void:
 		"Tail shows while tracking Silas")
 	_check(bubble.get_viewport() == main.get_viewport(),
 		"Speech bubble uses the original working Main CanvasLayer")
-	_check(bubble.scale == Vector2.ONE,
-		"Silas bubble does not use fragile CanvasLayer scale transforms")
+	_check((bubble.scale * sea.get_viewport().get_visible_rect().size).distance_to(
+		(main.get_node("SubViewportContainer") as Control).get_global_rect().size) < 1.0,
+		"Outer CanvasLayer renders in the native game's pixel grid")
 	_check(bubble.is_call_shown(),
 		"Silas event leaves an actually visible speech bubble")
+	_check(bubble.is_call_active(), "Help call stays active between repeated cries")
+	_check((bubble.get_node("Call/Message") as Label).visible_characters == 0,
+		"First cry begins with zero revealed letters")
+	bubble.call("_update_animation", 0.35)
+	var partial_letters: int = (bubble.get_node("Call/Message") as Label).visible_characters
+	var partial_width: float = (bubble.get_node("Call") as Control).size.x
+	bubble.call("_update_animation", 0.85)
+	_check((bubble.get_node("Call/Message") as Label).visible_characters > partial_letters
+		and (bubble.get_node("Call") as Control).size.x >= partial_width,
+		"Letters type in and the nine-slice grows with them")
+	bubble.call("_update_animation", 5.0)
+	_check(bubble.is_call_active() and not bubble.is_call_shown(),
+		"First cry fades out, then waits before repeating")
+	bubble.call("_update_animation", 7.0)
+	_check(bubble.is_call_active() and bubble.is_call_shown(),
+		"Silas's cry appears again without replaying the story event")
 	bubble.call("_update_attached_position")
 	var call: Control = bubble.get_node("Call") as Control
 	var call_rect: Rect2 = call.get_rect()
-	var screen_rect: Rect2 = (main.get_node("SubViewportContainer") as Control).get_global_rect()
+	var screen_rect: Rect2 = Rect2(Vector2.ZERO, sea.get_viewport().get_visible_rect().size)
 	_check(call_rect.position.x >= 0.0 and call_rect.end.x <= screen_rect.end.x
 		and call_rect.position.y >= 0.0 and call_rect.end.y <= screen_rect.end.y,
 		"Offscreen speech bubble stays within the game viewport")
@@ -165,8 +182,8 @@ func _run() -> void:
 	sea.call("_check_escape_followup")
 	_check(story.has_event(&"help_called") and bubble.is_call_shown(),
 		"Silas speech remains discoverable when the first fish is skipped")
-	_check((bubble.get_node("Call") as Control).size.x >= 300,
-		"Restored bubble has the readable size used in working builds")
+	_check((bubble.get_node("Call") as Control).size.x <= 132,
+		"Speech bubble uses native game-pixel dimensions")
 	# Deliberately remove the instance, reproducing the actual live bug.
 	bubble.name = "SimulatedMissingBubble"
 	bubble.hide_call()

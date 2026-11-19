@@ -51,7 +51,7 @@ var _fish_focus_locked: bool = false
 var _fish_focus_timer: float = 0.0
 var _first_fish_escape_finished: bool = false
 var _help_reveal_x: float = -INF
-var _battle_debug_last: String = ""
+var _combat_debug_status: String = "No companion command yet"
 
 
 func _ready() -> void:
@@ -395,12 +395,13 @@ func _on_silas_following_started() -> void:
 # Maintain the battle state in CompanionBattle, visual movement in SeaNPC,
 # and fish health in DivingWildFish. No duplicate combat authority.
 func _on_battle_started(fish: DivingWildFish) -> void:
-	print("[SEA COMBAT] Silas sent to %s at %s" % [
-		String(fish.fish_name), str(fish.global_position.round())])
+	_combat_debug_status = "Sent Silas to " + String(fish.fish_name)
+	print("[SEA COMBAT] " + _combat_debug_status + " at " + str(fish.global_position.round()))
 
 
 func _on_battle_ended() -> void:
-	print("[SEA COMBAT] Silas recalled / battle ended")
+	_combat_debug_status = "Battle ended / recalled"
+	print("[SEA COMBAT] " + _combat_debug_status)
 
 
 func _on_battle_hit(on_fish: bool, damage: float) -> void:
@@ -413,7 +414,8 @@ func _on_battle_hit(on_fish: bool, damage: float) -> void:
 func _on_battle_fish_knocked_out(fish: DivingWildFish) -> void:
 	_wild_fish.erase(fish)
 	_fish_data.erase(fish)
-	print("[SEA COMBAT] %s knocked out; removed from catchable fish" % String(fish.fish_name))
+	_combat_debug_status = String(fish.fish_name) + " knocked out"
+	print("[SEA COMBAT] " + _combat_debug_status)
 	var fade: Tween = fish.create_tween()
 	fade.tween_property(fish, "modulate:a", 0.0, 0.6)
 	fade.parallel().tween_property(fish, "position:y", fish.position.y - 10.0, 0.6)
@@ -421,12 +423,14 @@ func _on_battle_fish_knocked_out(fish: DivingWildFish) -> void:
 
 
 func _on_battle_companion_knocked_out() -> void:
-	print("[SEA COMBAT] Silas exhausted; rest to heal")
+	_combat_debug_status = "Silas exhausted; rest to heal"
+	print("[SEA COMBAT] " + _combat_debug_status)
 
 
 func _try_companion_target(world_mouse: Vector2) -> bool:
 	if not _story.has_silas_flag(&"silas_following"):
-		print("[SEA COMBAT] Command ignored: Silas has not joined yet")
+		_combat_debug_status = "Command ignored: Silas not recruited"
+		print("[SEA COMBAT] " + _combat_debug_status)
 		return false
 	var chosen: DivingWildFish
 	var nearest: float = 24.0
@@ -446,17 +450,20 @@ func _try_companion_target(world_mouse: Vector2) -> bool:
 		if _battle.is_active():
 			_battle.stop()
 			return true
-		print("[SEA COMBAT] No target under cursor (range <=145, hit radius <=24)")
+		_combat_debug_status = "No fish near right-click; range <=145"
+		print("[SEA COMBAT] " + _combat_debug_status + " at " + str(world_mouse.round()))
 		return false
 	if not _battle.can_fight():
-		print("[SEA COMBAT] Silas cannot fight: exhausted=%s health=%.1f" % [
-			str(_battle.exhausted), _battle.health])
+		_combat_debug_status = "Cannot fight; exhausted=%s health=%.1f" % [
+			str(_battle.exhausted), _battle.health]
+		print("[SEA COMBAT] " + _combat_debug_status)
 		return false
 	var data: FishData = _fish_data.get(chosen) as FishData
 	if data != null and _battle.start(chosen, data):
 		_story.on_companion_targeted()
 		return true
-	print("[SEA COMBAT] No FishData or battle.start refused target")
+	_combat_debug_status = "FishData missing or battle.start refused target"
+	print("[SEA COMBAT] " + _combat_debug_status)
 	return false
 
 

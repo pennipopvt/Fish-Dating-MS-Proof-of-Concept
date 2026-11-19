@@ -208,3 +208,37 @@ The director uses that explicit reference for all its messages.
 The historical `sea_speech_bubble` scene group is only a
 fallback for standalone use. The renderer and the user's bubble/tail
 textures were not changed as part of this wiring repair.
+
+
+## Native-pixel voice and physical companion battle
+
+The initial Silas cry uses **one** `SeaSpeechBubble` CanvasLayer owned
+by `Main`. The startup recovery in `Main._ensure_sea_speech_bubble()`
+must not be removed: it resolved a real user's missing-UI instance.
+The outer CanvasLayer is scaled and offset to match the
+`SubViewportContainer`'s 320×180 game image, so **12 native-pixel
+Pixel Operator text** and the user's 32px nine-slice art share Penni's
+pixel grid. No bubble node is moved inside the SubViewport. The text
+reveals character by character; the nine-slice grows from the width
+of visible letters. For the first cry, it holds, fades, waits, and repeats
+until the player interacts with Silas. The story's `_help_ui_pending`
+checks `is_call_active()`, **not** `is_call_shown()`, so the intended
+gap between repeated cries does not cause premature restarts.
+A later timed companion hint is one-shot.
+
+`DivingCompanionBattle` remains the existing `main` combat authority
+for species stats, HP, attack timers, exhaustion, recall, and signals.
+The reusable `SeaNPC` now owns **only** companion movement, sprite
+orientation/lunge and hit-flash presentation, chasing the battle target
+as on `main` instead of always following Penni.
+`DivingWorld` coordinates right-click target selection, listens for
+battle signals, and passes `SeaNPC.can_strike_target()` to
+`CompanionBattle.step(delta, in_attack_range)`. While approaching,
+battle timers do not advance and no contact damage is applied.
+This avoids a second combat loop or duplicating NPC stats.
+
+F7 now includes the bubble's reveal phase, animation size/scale,
+Silas following state, battle/target HP, movement state and attack-range
+readiness, and last right-click outcome. Output logs tag encounter events
+with `[SEA STORY]` and combat transitions/hits with `[SEA COMBAT]`.
+The F7+B isolated bubble test remains available; F8 remains Godot Stop.

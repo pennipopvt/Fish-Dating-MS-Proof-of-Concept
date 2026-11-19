@@ -36,7 +36,8 @@ func _process(delta: float) -> void:
 		return
 	_help_retry_time = 0.6
 	var ui: SeaSpeechBubble = _bubble()
-	if ui != null and ui.is_call_shown():
+	if ui != null and ui.is_call_active():
+		# Waiting between repeated cries is deliberate, not a missing UI.
 		return
 	if _show_silas_bubble("Help me!"):
 		print("[SEA STORY] Pending help bubble restored")

@@ -186,7 +186,7 @@ func _setup_sea_debug() -> void:
 	var panel: Panel = Panel.new()
 	panel.name = "Panel"
 	panel.position = Vector2(10.0, 10.0)
-	panel.size = Vector2(800.0, 310.0)
+	panel.size = Vector2(800.0, 465.0)
 	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var background: StyleBoxFlat = StyleBoxFlat.new()
 	background.bg_color = Color(0.015, 0.035, 0.06, 0.93)
@@ -198,7 +198,7 @@ func _setup_sea_debug() -> void:
 	_sea_debug_label = Label.new()
 	_sea_debug_label.name = "Diagnostics"
 	_sea_debug_label.position = Vector2(12.0, 10.0)
-	_sea_debug_label.size = Vector2(775.0, 285.0)
+	_sea_debug_label.size = Vector2(775.0, 440.0)
 	_sea_debug_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_sea_debug_label.add_theme_font_size_override("font_size", 17)
 	panel.add_child(_sea_debug_label)
@@ -242,6 +242,10 @@ func _update_sea_debug() -> void:
 	var call_on_tree: bool = call != null and call.is_visible_in_tree()
 	var visible: bool = ui != null and ui.is_call_shown()
 	var rect: Rect2 = call.get_global_rect() if call != null else Rect2()
+	var battle: DivingCompanionBattle = _sea.get_node_or_null("CompanionBattle") as DivingCompanionBattle
+	var fish: DivingWildFish = battle.target if battle != null and battle.is_active() else null
+	var actor: SeaNPC = silas as SeaNPC
+	var combat: DivingCombat = _sea.get_node_or_null("Combat") as DivingCombat
 
 	var lines: PackedStringArray = PackedStringArray()
 	lines.append("SEA DEBUG | F7 hide/show | B while open: UI TEST")
@@ -271,6 +275,27 @@ func _update_sea_debug() -> void:
 		str(is_instance_valid(speaker)), str(is_instance_valid(display))])
 	lines.append("Call screen rect: %s   viewport size: %s" % [
 		str(rect), str(get_viewport_rect().size)])
+	if ui != null:
+		lines.append("Bubble: %s   active=%s" % [
+			ui.bubble_debug_state(), str(ui.is_call_active())])
+	lines.append("Silas following: %s   NPC refs (player/battle): %s/%s" % [
+		str(actor.following) if actor != null else "MISSING",
+		str(is_instance_valid(actor.get("_player"))) if actor != null else "false",
+		str(is_instance_valid(actor.get("_battle"))) if actor != null else "false"])
+	lines.append("Battle: %s   can fight: %s   exhausted: %s" % [
+		str(battle.is_active()) if battle != null else "MISSING",
+		str(battle.can_fight()) if battle != null else "false",
+		str(battle.exhausted) if battle != null else "MISSING"])
+	lines.append("Target: %s   fish HP: %.1f/%.1f   Silas HP: %.1f" % [
+		String(fish.fish_name) if fish != null else "none",
+		fish.health if fish != null else 0.0,
+		fish.max_health if fish != null else 0.0,
+		battle.health if battle != null else 0.0])
+	lines.append("Silas movement: %s" % [
+		actor.battle_debug_state() if actor != null else "MISSING"])
+	lines.append("Combat: %s   last command: %s" % [
+		str(combat.is_active()) if combat != null else "MISSING",
+		str(_sea.get("_combat_debug_status"))])
 	lines.append("Dialogue active: %s   modal UI: %s" % [
 		str(DialogueManager.is_active), str(GameManager.is_modal_ui_open())])
 	if _sea_debug_label != null:
@@ -278,10 +303,10 @@ func _update_sea_debug() -> void:
 
 	# Print only when discrete trigger/UI state changes, not on every frame.
 	var transition: String = (
-		"swim=%s near=%s escape=%s follow=%s broken=%s help=%s bound=%s shown=%s"
+		"swim=%s near=%s escape=%s follow=%s broken=%s help=%s bound=%s shown=%s battle=%s"
 		% [str(_world_player.swimming), str(near_silas), str(escaped),
 			str(followed), str(line_broken), str(help_called),
-			str(bound), str(visible)]
+			str(bound), str(visible), str(battle.is_active()) if battle != null else "MISSING"]
 	)
 	if transition != _sea_debug_last_transition:
 		_sea_debug_last_transition = transition

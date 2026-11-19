@@ -60,7 +60,7 @@ func _run() -> void:
 		and sea.get_node("CompanionBattle") is DivingCompanionBattle,
 		"Existing separate gameplay systems reused")
 	_check(bubble.get_viewport() == main.get_viewport(),
-		"Speech bubble is hosted in the reliable root UI viewport")
+		"Speech bubble stays on the reliable Main UI canvas")
 	bubble.call("_sync_game_scale")
 	var game_rect: Rect2 = (main.get_node("SubViewportContainer") as Control).get_global_rect()
 	var native: Vector2 = sea.get_viewport().get_visible_rect().size
