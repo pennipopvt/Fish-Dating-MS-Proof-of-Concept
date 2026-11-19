@@ -433,3 +433,24 @@ branching dialogue progression is working. If there is no active
 conversation, it prints a harmless diagnostic message instead.
 The debug panel intercepts its own clicks so pressing Skip cannot
 simultaneously cast a net under the UI. F8 remains untouched.
+
+
+## Adjustable sea UI (Inspector) — Nov 19
+
+Use `Main/SeaSpeechBubble` in `scenes/main.tscn`. Its grouped
+export values are authored in *native 320x180 pixels*: **Call: Text
+and Size** (`font_pixels`, `call_max_width`, `call_height`,
+`call_wrapped_height`, `call_text_inset`), **Call: Position
+and Timing** (`bubble_offset`, `marker_offset`, speed/holds,
+`screen_margin`), and **Hint: Position and Size**
+(`hint_top_right_offset`, `hint_width`, `hint_height`,
+`hint_font_pixels`, `hint_padding`). Change these in the Inspector,
+run the scene, then iterate without editing GDScript.
+
+The tutorial hint no longer owns a separately stretched
+`NinePatchRect`; it is a bounded `Panel` with a pixel-width black
+border and white fill, in the existing UI. This prevents the
+intermittent full-screen white rectangle seen when the old frame
+stretched. The repeating Silas help call still uses its original
+nine-slice sprite and the independent circle marker. Both authored
+and recovery paths use the same small hint panel.

@@ -90,11 +90,15 @@ func _run() -> void:
 		"Speech bubble uses smaller, readable 11px Pixel Operator")
 	bubble.show_hint("Silas attacks automatically. Right click again to recall him.")
 	var hint: Label = bubble.get_node("Hint") as Label
-	_check(hint.get_theme_font_size("font_size") == 8 and hint.size.x <= 132
-		and hint.position.x > 160.0 and hint.position.y < 40.0,
+	_check(hint.get_theme_font_size("font_size") == bubble.hint_font_pixels
+		and hint.size.x <= bubble.hint_width and hint.position.x > 160.0
+		and hint.position.y < 40.0,
 		"Companion hint wraps in a small top-right box")
-	_check((bubble.get_node("HintFrame") as NinePatchRect).visible,
-		"Companion hint uses the existing nine-slice as a compact backing")
+	_check((bubble.get_node("HintFrame") as Panel).visible,
+		"Companion hint uses a bounded pixel-frame Panel")
+	_check((bubble.get_node("HintFrame") as Panel).size == Vector2(
+		bubble.hint_width, bubble.hint_height),
+		"Hint frame cannot grow larger than Inspector width and height")
 	bubble.hide_hint()
 	_check(sea.get_node("Points/Entry") is Marker2D
 		and sea.get_node("Points/SurfaceExit") is Marker2D,

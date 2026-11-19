@@ -19,13 +19,29 @@ class_name SeaSpeechBubble
 		patch_margin = value
 		if is_node_ready():
 			_apply_frame()
+# Designer tuning: ALL positions and sizes below are 320x180 game pixels.
+# Main scales this ONE CanvasLayer; do not scale individual child sprites.
+@export_group("Call: Text and Size")
 @export_range(9, 18, 1) var font_pixels: int = 11
+@export_range(20.0, 160.0, 1.0) var call_max_width: float = 112.0
+@export_range(16.0, 80.0, 1.0) var call_height: float = 30.0
+@export_range(16.0, 100.0, 1.0) var call_wrapped_height: float = 42.0
+@export var call_text_inset: Vector2 = Vector2(7.0, 4.0)
+@export_group("Call: Position and Timing")
 @export var bubble_offset: Vector2 = Vector2(25.0, -51.0)
+@export var marker_offset: Vector2 = Vector2(7.0, -8.0)
 @export_range(2.0, 24.0, 1.0) var screen_margin: float = 8.0
 @export_range(0.04, 0.3, 0.01) var letter_seconds: float = 0.09
 @export_range(0.5, 8.0, 0.1) var help_hold_seconds: float = 2.4
 @export_range(0.1, 2.0, 0.1) var fade_seconds: float = 0.7
 @export_range(0.2, 6.0, 0.1) var repeat_gap_seconds: float = 1.8
+@export_group("Hint: Position and Size")
+# Offset is measured from the TOP-RIGHT corner of the native game view.
+@export var hint_top_right_offset: Vector2 = Vector2(-9.0, 18.0)
+@export_range(60.0, 160.0, 1.0) var hint_width: float = 110.0
+@export_range(20.0, 68.0, 1.0) var hint_height: float = 34.0
+@export_range(6, 14, 1) var hint_font_pixels: int = 8
+@export var hint_padding: Vector2 = Vector2(5.0, 3.0)
 
 @onready var _call: Control = $Call
 @onready var _frame: NinePatchRect = $Call/Frame
@@ -33,7 +49,7 @@ class_name SeaSpeechBubble
 @onready var _text: Label = $Call/Message
 @onready var _tail: TextureRect = $Call/Tail
 @onready var _hint: Label = $Hint
-@onready var _hint_frame: NinePatchRect = get_node_or_null("HintFrame") as NinePatchRect
+@onready var _hint_frame: Panel = get_node_or_null("HintFrame") as Panel
 
 var _display: SubViewportContainer
 var _game_viewport: SubViewport
@@ -82,26 +98,14 @@ func _apply_frame() -> void:
 	# the 32x32 nine-slice, and both use 1 source pixel = 1 game pixel.
 	# The runtime recovery used to inflate this 12px marker to 24px.
 	_tail.texture = tail_texture
-	if _hint_frame != null:
-		_hint_frame.texture = bubble_texture
-		_hint_frame.patch_margin_left = patch_margin
-		_hint_frame.patch_margin_top = patch_margin
-		_hint_frame.patch_margin_right = patch_margin
-		_hint_frame.patch_margin_bottom = patch_margin
-	_hint_frame_placeholder()
+	# The small hint uses a simple 1-pixel framed Panel, not a second
+	# NinePatchRect whose stretch could cover the entire game view.
 	_tail.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	_tail.stretch_mode = TextureRect.STRETCH_KEEP
 	_tail.scale = Vector2.ONE
 	if tail_texture != null:
 		_tail.size = Vector2(tail_texture.get_size())
 		_tail.pivot_offset = _tail.size * 0.5
-
-
-# Runtime fallback still draws readable black text if the nine-slice
-# texture hasn't imported; never make the hint silently invisible.
-func _hint_frame_placeholder() -> void:
-	if _hint_frame != null:
-		_hint_frame.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 
 
 func _game_size() -> Vector2:
@@ -231,16 +235,17 @@ func _layout_for_characters(count: int) -> void:
 	var measured: float = float(count) * 6.0
 	if font != null and not shown.is_empty():
 		measured = font.get_string_size(shown, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x
-	var width: float = clampf(18.0 + measured, 26.0, 112.0)
-	var height: float = 30.0
-	if 18.0 + measured > 112.0:
-		height = 42.0
+	var x_padding: float = maxf(call_text_inset.x * 2.0 + 4.0, 8.0)
+	var width: float = clampf(x_padding + measured, 26.0, call_max_width)
+	var height: float = call_height
+	if x_padding + measured > call_max_width:
+		height = call_wrapped_height
 	_call.size = Vector2(ceilf(width), height)
 	# Runtime recovery also creates Panel/NinePatch without anchors.
 	_frame.size = _call.size
 	_fallback.size = _call.size
-	_text.position = Vector2(7.0, 4.0)
-	_text.size = _call.size - Vector2(14.0, 8.0)
+	_text.position = call_text_inset.round()
+	_text.size = _call.size - call_text_inset.round() * 2.0
 
 
 func _update_position() -> void:
@@ -276,7 +281,7 @@ func _place_speaker_marker(target: Vector2) -> void:
 	if tail_texture == null:
 		return
 	var screen: Vector2 = _game_size()
-	var marker: Vector2 = target + Vector2(7.0, -8.0 + sin(_cycle_time * 3.0) * 1.0)
+	var marker: Vector2 = target + marker_offset + Vector2(0.0, sin(_cycle_time * 3.0) * 1.0)
 	marker.x = clampf(marker.x, 7.0, screen.x - 7.0)
 	marker.y = clampf(marker.y, 7.0, screen.y - 7.0)
 	_tail.rotation = 0.0
@@ -296,23 +301,30 @@ func hide_call() -> void:
 
 func show_hint(message: String) -> void:
 	_sync_game_scale()
-	# Brief guidance uses a small, wrapped 8px Pixel Operator label in
-	# the top-right instead of an unreadable viewport-wide bottom banner.
-	_hint.add_theme_font_size_override("font_size", 8)
+	# Stable small native rect: no anchors, autosizing or full-screen
+	# nine-slice stretching. Exposed Inspector numbers control placement.
+	var size_pixels: Vector2 = Vector2(hint_width, hint_height)
+	var pos: Vector2 = Vector2(
+		_game_size().x + hint_top_right_offset.x - hint_width,
+		hint_top_right_offset.y
+	).round()
+	pos.x = clampf(pos.x, 0.0, maxf(0.0, _game_size().x - size_pixels.x))
+	pos.y = clampf(pos.y, 0.0, maxf(0.0, _game_size().y - size_pixels.y))
+	_hint.set_anchors_preset(Control.PRESET_TOP_LEFT)
+	_hint.position = pos + hint_padding
+	_hint.size = size_pixels - hint_padding * 2.0
+	_hint.add_theme_font_size_override("font_size", hint_font_pixels)
 	_hint.add_theme_color_override("font_color", Color.BLACK)
 	_hint.add_theme_constant_override("outline_size", 0)
-	_hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
-	_hint.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	_hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_hint.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	_hint.text = message
-	_hint.size = Vector2(132.0, 30.0)
-	_hint.position = Vector2(_game_size().x - 141.0, 18.0).round()
 	_hint.visible = not message.is_empty()
 	if _hint_frame != null:
-		_hint_frame.position = _hint.position - Vector2(5.0, 3.0)
-		_hint_frame.size = _hint.size + Vector2(10.0, 6.0)
-		_hint_frame.visible = _hint.visible and bubble_texture != null
-
+		_hint_frame.set_anchors_preset(Control.PRESET_TOP_LEFT)
+		_hint_frame.position = pos
+		_hint_frame.size = size_pixels
+		_hint_frame.visible = _hint.visible
 
 func hide_hint() -> void:
 	_hint.hide()

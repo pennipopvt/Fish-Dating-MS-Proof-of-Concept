@@ -159,10 +159,14 @@ func _ensure_sea_speech_bubble() -> SeaSpeechBubble:
 	message.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	call.add_child(message)
 
-	var hint_frame: NinePatchRect = NinePatchRect.new()
+	var hint_frame: Panel = Panel.new()
 	hint_frame.name = "HintFrame"
-	hint_frame.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	hint_frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var hint_style: StyleBoxFlat = StyleBoxFlat.new()
+	hint_style.bg_color = Color.WHITE
+	hint_style.border_color = Color.BLACK
+	hint_style.set_border_width_all(1)
+	hint_frame.add_theme_stylebox_override("panel", hint_style)
 	hint_frame.hide()
 	bubble.add_child(hint_frame)
 

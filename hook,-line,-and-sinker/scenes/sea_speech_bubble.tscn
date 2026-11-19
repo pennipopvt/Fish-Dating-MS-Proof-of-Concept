@@ -1,4 +1,4 @@
-[gd_scene load_steps=6 format=3]
+[gd_scene load_steps=7 format=3]
 
 [ext_resource type="Script" path="res://scripts/diving/sea_speech_bubble.gd" id="script"]
 [ext_resource type="FontFile" path="res://fonts/pixel_operator(1)/PixelOperator.ttf" id="pixel"]
@@ -11,6 +11,14 @@ border_width_left = 3
 border_width_top = 3
 border_width_right = 3
 border_width_bottom = 3
+border_color = Color(0, 0, 0, 1)
+
+[sub_resource type="StyleBoxFlat" id="hint_panel_style"]
+bg_color = Color(1, 1, 1, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
 border_color = Color(0, 0, 0, 1)
 
 [node name="SeaSpeechBubble" type="CanvasLayer"]
@@ -72,20 +80,15 @@ theme_override_font_sizes/font_size = 11
 autowrap_mode = 3
 vertical_alignment = 1
 
-# Uses the existing 9-slice art, but is independent of Silas's call.
-[node name="HintFrame" type="NinePatchRect" parent="."]
+# Fixed native-pixel panel so the hint cannot stretch into a giant rectangle.
+[node name="HintFrame" type="Panel" parent="."]
 visible = false
 mouse_filter = 2
-offset_left = 174.0
-offset_top = 15.0
-offset_right = 316.0
-offset_bottom = 51.0
-texture = ExtResource("bubble_art")
-patch_margin_left = 6
-patch_margin_top = 6
-patch_margin_right = 6
-patch_margin_bottom = 6
-texture_filter = 1
+offset_left = 201.0
+offset_top = 18.0
+offset_right = 311.0
+offset_bottom = 52.0
+theme_override_styles/panel = SubResource("hint_panel_style")
 
 [node name="Hint" type="Label" parent="."]
 visible = false
