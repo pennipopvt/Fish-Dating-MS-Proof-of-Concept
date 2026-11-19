@@ -348,7 +348,8 @@ func start_silas_surface_warning() -> void:
 
 func on_silas_surface_transformed() -> void:
 	# Surface residence does NOT mean recruitment or placement in a house.
-	_npc_flags()[&"silas_following"] = false
+	var flags: Dictionary = _npc_flags()
+	flags[&"silas_following"] = false
 	_dialogue_stage = &"surface_reveal"
 	dialogue_mode_requested.emit(false)
 	DialogueManager.request_conversation(silas_data, "res://dialogue/silas_surface_reveal.json")
