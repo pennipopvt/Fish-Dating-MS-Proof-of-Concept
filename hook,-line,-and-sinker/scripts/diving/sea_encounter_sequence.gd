@@ -443,16 +443,16 @@ func _make_silas_poof(world: Node2D, at: Vector2) -> AnimatedSprite2D:
 		var height: int = silas_poof_texture.get_height()
 		var horizontal: bool = width > height and width % height == 0
 		var vertical: bool = height > width and height % width == 0
-		var count: int = width / height if horizontal else (height / width if vertical else 1)
+		var count: int = int(width / height) if horizontal else (int(height / width) if vertical else 1)
 		for index in range(count):
 			var frame: AtlasTexture = AtlasTexture.new()
 			frame.atlas = silas_poof_texture
-			frame.region = Rect2(
-				Vector2(index * height, 0) if horizontal else
-				(Vector2(0, index * width) if vertical else Vector2.ZERO),
-				Vector2(height, height) if horizontal else
-				(Vector2(width, width) if vertical else Vector2(width, height))
-			)
+			var source_rect: Rect2 = Rect2(0.0, 0.0, width, height)
+			if horizontal:
+				source_rect = Rect2(index * height, 0, height, height)
+			elif vertical:
+				source_rect = Rect2(0, index * width, width, width)
+			frame.region = source_rect
 			frames.add_frame(&"poof", frame)
 	effect.sprite_frames = frames
 	world.add_child(effect)
