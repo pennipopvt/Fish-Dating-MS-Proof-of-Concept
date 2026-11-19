@@ -42,12 +42,21 @@ var _wild_fish: Array[DivingWildFish] = []
 var _fish_data: Dictionary = {}
 var _combat_debug_status: String = "No companion command yet"
 var _perfect_parry_line_flash_left: float = 0.0
+# Keeps the hooked fish in open water during the fight (see _is_open_water).
+var _hooked_mover := HookedFishMover.new()
+var _hooked_fish: DivingWildFish
+@onready var _solids: TileMapLayer = get_node_or_null("Solids") as TileMapLayer
+# Points around a hooked fish's center that must be clear of Solids tiles.
+const HOOKED_FISH_PROBES: Array[Vector2] = [
+	Vector2.ZERO, Vector2(-6.0, 0.0), Vector2(6.0, 0.0), Vector2(0.0, -4.0), Vector2(0.0, 4.0)
+]
 
 
 func _ready() -> void:
 	_player = get_parent().get_node_or_null("Player") as Player
 	if _player != null:
 		_camera = _player.get_node_or_null("Camera2D") as Camera2D
+	_hooked_mover.is_open = _is_open_water
 	_install_tutorial_cue()
 	_encounter.configure(_player, _story, _net, _silas, _cue)
 	_encounter.fish_remove_requested.connect(_unregister_encounter_fish)
@@ -187,7 +196,7 @@ func _process(delta: float) -> void:
 	if _combat.is_active():
 		_combat.step(delta)
 		if _combat.is_active():
-			_sync_hooked_fish()
+			_sync_hooked_fish(delta)
 			_perfect_parry_line_flash_left = maxf(0.0, _perfect_parry_line_flash_left - delta)
 			_net.set_line_state(_combat.tension,
 				_combat.phase == DivingCombat.Phase.STUN or _perfect_parry_line_flash_left > 0.0)
@@ -199,38 +208,35 @@ func _process(delta: float) -> void:
 		_story.maybe_offer_companion_help(_player.position, _wild_fish)
 
 
-func _sync_hooked_fish() -> void:
+func _sync_hooked_fish(delta: float) -> void:
 	var fish: DivingWildFish = _combat.target
 	if not is_instance_valid(fish):
 		return
-	var direction: Vector2 = (fish.position - _player.position).normalized()
-	if direction.length_squared() < 0.01:
-		direction = Vector2.RIGHT
-	fish.position = place_on_line_inside(_player.position, direction, _combat.line_distance,
-		fish.region.grow(-DivingWildFish.EDGE_MARGIN))
+	if fish != _hooked_fish:
+		_hooked_fish = fish
+		_hooked_mover.reset()
+	fish.position = _hooked_mover.step(delta, _player.position, fish.position, _combat.line_distance)
 	if fish == _encounter.silas_trap:
 		_silas.position = fish.position
 
 
-# Where a hooked fish sits: `length` out from `origin` along `direction`, but
-# never above the waterline or past the sea walls. A fish that would cross an
-# edge slides along it at the same line length, so the fight's distance (and
-# its escape rule) still matches what the player sees. Only in a corner, where
-# no point at that length fits, does the fish end up closer.
-static func place_on_line_inside(origin: Vector2, direction: Vector2, length: float, bounds: Rect2) -> Vector2:
-	var point: Vector2 = origin + direction * length
-	if point.y < bounds.position.y or point.y > bounds.end.y:
-		point.y = clampf(point.y, bounds.position.y, bounds.end.y)
-		var dy: float = point.y - origin.y
-		var side_x: float = signf(direction.x) if absf(direction.x) > 0.01 else 1.0
-		point.x = origin.x + side_x * sqrt(maxf(length * length - dy * dy, 0.0))
-	if point.x < bounds.position.x or point.x > bounds.end.x:
-		point.x = clampf(point.x, bounds.position.x, bounds.end.x)
-		var dx: float = point.x - origin.x
-		var side_y: float = signf(point.y - origin.y) if absf(point.y - origin.y) > 0.01 else 1.0
-		point.y = clampf(origin.y + side_y * sqrt(maxf(length * length - dx * dx, 0.0)),
-			bounds.position.y, bounds.end.y)
-	return point
+# Open water for a hooked fish: below the waterline, above the sea floor, and
+# clear of the Solids tiles (rock and ground). Left and right stay open.
+func _is_open_water(point: Vector2) -> bool:
+	if point.y < SEA_TOP + DivingWildFish.EDGE_MARGIN:
+		return false
+	if point.y > _sea_bounds().end.y - DivingWildFish.EDGE_MARGIN:
+		return false
+	if _solids == null:
+		return true
+	for probe in HOOKED_FISH_PROBES:
+		# Fish positions are in FishActors space; the tiles have their own.
+		var cell: Vector2i = _solids.local_to_map(_solids.to_local(_actors.to_global(point + probe)))
+		# Only tiles the player also collides with (decor tiles have no shape).
+		var tile: TileData = _solids.get_cell_tile_data(cell)
+		if tile != null and tile.get_collision_polygons_count(0) > 0:
+			return false
+	return true
 
 
 # Main forwards UI-scaled mouse/key events here; sea remains in the original

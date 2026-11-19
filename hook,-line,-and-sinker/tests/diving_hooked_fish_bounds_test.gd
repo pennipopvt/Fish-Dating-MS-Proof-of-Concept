@@ -1,11 +1,15 @@
 extends SceneTree
 
-# Regression: a hooked fish is placed straight out from Penni at the fight's
-# line length, so with Penni below it the fish used to rise above the
-# waterline. It must stay in the sea and slide along the edge instead.
-# DivingWorld uses autoloads, so run this with the temp-scene runner
-# (see AGENTS.md), not with -s.
-const BOUNDS := Rect2(Vector2(28.0, 166.0), Vector2(800.0, 400.0))  # top = waterline + margin
+# Regression: a hooked fish is placed out from Penni at the fight's line
+# length, so with Penni below it the fish used to rise above the waterline.
+# HookedFishMover keeps it in open water: it slides along the waterline and
+# rock/ground, left and right stay open, and when pinned in a corner it
+# dashes back past Penni.
+# godot --headless --path . -s res://tests/diving_hooked_fish_bounds_test.gd
+const WATERLINE: float = 166.0
+const GROUND: float = 400.0
+const WALL_X: float = 500.0  # rock from here to the right
+const DT: float = 1.0 / 60.0
 var failures: int = 0
 
 
@@ -13,36 +17,60 @@ func _initialize() -> void:
 	call_deferred("_run")
 
 
+func _open(p: Vector2) -> bool:
+	return p.y >= WATERLINE and p.y <= GROUND and p.x < WALL_X
+
+
+func _mover() -> HookedFishMover:
+	var m := HookedFishMover.new()
+	m.is_open = _open
+	return m
+
+
 func _run() -> void:
-	# Inside the sea: unchanged.
-	var inside: Vector2 = DivingWorld.place_on_line_inside(
-		Vector2(400.0, 400.0), Vector2.RIGHT, 100.0, BOUNDS)
-	_check(inside.is_equal_approx(Vector2(500.0, 400.0)), "Fish in open water stays on the line")
+	# Open water: the fish stays exactly on the line.
+	var m := _mover()
+	var fish: Vector2 = m.step(DT, Vector2(300, 300), Vector2(350, 300), 80.0)
+	_check(fish.is_equal_approx(Vector2(380, 300)), "Fish in open water stays on the line")
 
-	# Penni directly below the fish, line long enough to reach past the surface.
-	var origin := Vector2(400.0, 220.0)
-	var up: Vector2 = DivingWorld.place_on_line_inside(origin, Vector2.UP, 150.0, BOUNDS)
-	_check(up.y >= BOUNDS.position.y - 0.01, "Fish pulled straight up stays below the waterline")
-	_check(is_equal_approx(up.distance_to(origin), 150.0), "Sliding along the surface keeps the line length")
+	# Penni below the fish, line pulling it up through the surface.
+	m = _mover()
+	var penni := Vector2(200, 220)
+	fish = Vector2(201, 200)
+	var always_in_water := true
+	for i in 60:
+		fish = m.step(DT, penni, fish, 120.0)
+		always_in_water = always_in_water and fish.y >= WATERLINE
+	_check(always_in_water, "Fish pulled up never leaves the water")
+	_check(is_equal_approx(fish.distance_to(penni), 120.0), "Sliding along the surface keeps the line length")
 
-	# Pulling up and to the left slides left along the surface, not right.
-	var up_left: Vector2 = DivingWorld.place_on_line_inside(
-		origin, Vector2(-0.3, -1.0).normalized(), 150.0, BOUNDS)
-	_check(is_equal_approx(up_left.y, BOUNDS.position.y) and up_left.x < origin.x,
-		"Fish pulling up-left slides left along the surface")
-	_check(is_equal_approx(up_left.distance_to(origin), 150.0), "Up-left slide keeps the line length")
+	# Left is open: no border on that side.
+	m = _mover()
+	fish = m.step(DT, Vector2(40, 300), Vector2(10, 300), 200.0)
+	_check(fish.x < -100.0, "Fish can be pulled out past the left edge")
 
-	# Side wall: slides down the wall at the same length.
-	var near_wall := Vector2(BOUNDS.end.x - 40.0, 300.0)
-	var wall: Vector2 = DivingWorld.place_on_line_inside(near_wall, Vector2.RIGHT, 100.0, BOUNDS)
-	_check(BOUNDS.grow(0.01).has_point(wall), "Fish pulled into a wall stays inside the sea")
-	_check(is_equal_approx(wall.distance_to(near_wall), 100.0), "Wall slide keeps the line length")
+	# Pulled down into the ground: slides along it.
+	m = _mover()
+	penni = Vector2(200, 350)
+	fish = Vector2(200, 390)
+	for i in 60:
+		fish = m.step(DT, penni, fish, 90.0)
+	_check(fish.y <= GROUND and is_equal_approx(fish.distance_to(penni), 90.0),
+		"Fish pulled down slides along the ground at the same length")
 
-	# Corner: no point at that length fits, so it stays inside, just closer.
-	var corner_origin := Vector2(BOUNDS.end.x - 20.0, BOUNDS.position.y + 20.0)
-	var corner: Vector2 = DivingWorld.place_on_line_inside(
-		corner_origin, Vector2(1.0, -1.0).normalized(), 175.0, BOUNDS)
-	_check(BOUNDS.grow(0.01).has_point(corner), "Fish in a corner stays inside the sea")
+	# Pinned in the wall/surface corner: dashes back past Penni.
+	m = _mover()
+	penni = Vector2(470, 190)
+	fish = Vector2(490, 170)
+	var dashed := false
+	var ever_blocked := false
+	for i in 90:
+		fish = m.step(DT, penni, fish, 60.0)
+		dashed = dashed or m.is_dashing()
+		ever_blocked = ever_blocked or not _open(fish)
+	_check(dashed, "Fish pinned between wall and surface dashes")
+	_check(fish.x < penni.x, "After the dash the fish is on the far side of Penni")
+	_check(not ever_blocked, "Fish never sits inside rock or above the water")
 
 	print("diving_hooked_fish_bounds_test: %s" % ("PASS" if failures == 0 else "%d FAILED" % failures))
 	quit(1 if failures > 0 else 0)
