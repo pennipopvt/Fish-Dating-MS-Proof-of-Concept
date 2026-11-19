@@ -241,8 +241,15 @@ func on_silas_rescued() -> void:
 	_help_ui_pending = false
 	_set_silas_flag(&"silas_freed")
 	_dialogue_stage = &"rescue"
-	var lines: Array[String] = ["I'm free!", "Thank you... I thought I'd never get out."]
-	DialogueManager.request_inline_conversation(silas_data, lines, "Silas")
+	# Use the existing JSON dialogue system so this introduction can be edited
+	# without changing story or encounter scripts. Silas only follows after it ends.
+	DialogueManager.request_conversation(silas_data, "res://dialogue/silas_rescue_intro.json")
+	if not DialogueManager.is_active:
+		# Keep the existing rescue playable if the JSON gets edited incorrectly.
+		push_warning("Silas rescue dialogue unavailable; using short fallback.")
+		DialogueManager.request_inline_conversation(
+			silas_data, ["I'm free!", "Thank you... I thought I'd never get out."], "Silas"
+		)
 	var ui: SeaSpeechBubble = _bubble()
 	if ui != null:
 		ui.hide_call()
