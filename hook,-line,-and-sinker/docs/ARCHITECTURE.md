@@ -242,3 +242,68 @@ Silas following state, battle/target HP, movement state and attack-range
 readiness, and last right-click outcome. Output logs tag encounter events
 with `[SEA STORY]` and combat transitions/hits with `[SEA COMBAT]`.
 The F7+B isolated bubble test remains available; F8 remains Godot Stop.
+
+
+## Sea / Main refactor: ownership map (November 2026)
+
+The previous `scripts/diving/dive_entry.gd` reached **694 lines** and
+mixed gameplay transitions, Fish Co onboarding dialogue, UI recovery,
+and debugging. It is now a **78-line Main coordinator**, not the
+owner of those systems. The scene still uses **one** `World`,
+`Player`, `Camera2D`, `SubViewport`, `DialogueUI` and
+`ShopMenu`. We did **not** create new global singletons.
+
+| Scene node | Script | Owns |
+|---|---|---|
+| `Main` | `scripts/diving/dive_entry.gd` | Dependency wiring, the stable `request_dive(player,dock)` API used by `Dock`, and one input forwarding boundary |
+| `Main/IntroLayer` | `fish_co_opening_sequence.gd` | Fish Co opening/second phone call, first terminal visit, dock Yes/No confirmation, one-time onboarding flags |
+| `Main/TransitionLayer` | `sea_dive_transition.gd` | Iris, jump/splash, sea entry/surfacing, return position, movement locks, underwater mode |
+| `Main/SeaSpeechBubbleHost` | `sea_speech_bubble_host.gd` | Binding/recovering the **editable** `Main/SeaSpeechBubble` if the original scene is unavailable |
+| `Main/SeaSpeechBubble` | `sea_speech_bubble.gd` | Existing animated Pixel Operator message, nine-slice and circle marker; edits in its own `.tscn` |
+| `Main/SeaDebugLayer` | `sea_debug_panel.gd` | F7, B bubble test, the authored diagnostic panel, and Skip Dialogue |
+| `World/Sea` | `diving_world.gd` | Existing local sea world orchestration; still coordinates fish spawns, net input and tutorial targets |
+| `World/Sea/StoryDirector` | `sea_story_director.gd` | One-time encounter/story flags and Silas's introduction/rescue dialogue |
+| `World/Sea/Combat` | `diving_combat.gd` | Existing fishing reel/tension/parry combat, species attack timing |
+| `World/Sea/CompanionBattle` | `companion_battle.gd` | Existing companion health/attack simulation |
+| `World/Sea/NPCs/Silas` | `sea_npc.gd` | Silas's visuals and physical approach/attack presentation |
+
+**Call sequence:** Dock invokes `Main.request_dive` → IntroLayer
+decides whether the story allows it → `dive_confirmed(dock)`
+signal → TransitionLayer animates the *same* Player into the
+existing Sea. Surfacing uses `Sea.surface_requested` →
+TransitionLayer. The speech-bubble host injects the exact Main UI
+instance into StoryDirector. Debug reads state but doesn't own it.
+
+**Rules for future work:**
+- Do not add fishing, Fish Co dialogue, or UI drawing logic to
+  `dive_entry.gd`. Add code to its existing owner instead.
+- Do not create another `Player`, `GameManager`, `DialogueManager`,
+  global story flags, world scene, or second combat model.
+- Add repeatable fish/NPC/level tuning to editor-placeable resources
+  and Inspector exports; keep one-off storyboard conditions in
+  StoryDirector/sea encounter code rather than `Main`.
+- No new input route except the one on `Main`; sea input is
+  forwarded to `DivingWorld.handle_input` as before.
+- A bugfix must identify **which owner is broken**, include an
+  Output log or focused regression test, and avoid changing other
+  components as collateral.
+
+**Further cleanup candidates (not silently rewritten in this pass):**
+`diving_world.gd` (612 lines: tutorial state and world routing),
+`fishing_controller.gd` (legacy fishing feedback),
+`shop_menu.gd` and `dev_panel.gd` (each > 45 KB).
+The next gameplay task should restore reel/parry feel by working
+inside `DivingCombat` and its existing feedback utilities, rather
+than trying to rewrite the land fishing controller and sea fishing
+simultaneously.
+
+**Regression entry points:**
+`tests/sea_architecture_boundaries_test.gd`,
+`tests/diving_island_transition_test.gd`,
+`tests/sea_storyboard_test.gd`,
+`tests/sea_level_layout_test.gd`,
+`tests/sea_companion_actor_test.gd`.
+Execute from the Godot project root with `godot --headless --path . -s
+res://tests/<file>.gd` (Godot 4). These remain subject to runtime
+verification in an installed editor; source-level checks alone do
+not prove the game plays correctly.
