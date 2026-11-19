@@ -317,6 +317,9 @@ func _on_battle_fish_knocked_out(fish: DivingWildFish) -> void:
 	fade.tween_property(fish, "modulate:a", 0.0, 0.6)
 	fade.parallel().tween_property(fish, "position:y", fish.position.y - 10.0, 0.6)
 	fade.tween_callback(fish.queue_free)
+	# CompanionBattle has already ended the fight; the story manager owns
+	# Silas's remorse, not the fish/combat controllers.
+	_story.on_companion_fish_killed()
 
 
 func _on_battle_companion_knocked_out() -> void:
