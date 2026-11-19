@@ -105,6 +105,40 @@ func _run() -> void:
 		player.position + Vector2(-24.0, 6.0))
 	_check(after_return < before_return, "Silas returns toward Penni on recall")
 
+	# Silas's actual KO signal must open the existing dialogue UI, not just
+	# change a story flag. Later knockouts get the shorter repeat reaction.
+	if DialogueManager.is_active:
+		DialogueManager.end_conversation()
+	fish.health = 1.0
+	_check(battle.start(fish, data), "Silas can engage a weakened fish")
+	battle.step(DivingCompanionBattle.attack_interval(battle.stats.speed), true)
+	_check(not battle.is_active() and fish.health <= 0.0,
+		"Silas's lethal strike ends companion combat")
+	_check(DialogueManager.is_active and DialogueManager.current_npc == story.silas_data,
+		"Silas's first fish kill opens his normal dialogue UI")
+	var first_reaction: DialogueLineData = DialogueManager.get_current_line()
+	_check(first_reaction != null and first_reaction.text == "AH! Penni, you have to stop me!",
+		"First kill starts the remorseful dialogue")
+	_check(story.has_event(&"silas_fish_kill_seen"),
+		"Story remembers that Silas has seen the consequences")
+	if DialogueManager.is_active:
+		DialogueManager.end_conversation()
+
+	var second_fish: DivingWildFish = DivingWildFish.new()
+	sea.get_node("FishActors").add_child(second_fish)
+	second_fish.fish_name = data.fish_id
+	second_fish.set_max_health(1.0)
+	(sea.get("_wild_fish") as Array).append(second_fish)
+	(sea.get("_fish_data") as Dictionary)[second_fish] = data
+	_check(battle.start(second_fish, data), "Silas can engage another fish afterward")
+	battle.step(DivingCompanionBattle.attack_interval(battle.stats.speed), true)
+	var repeat_reaction: DialogueLineData = DialogueManager.get_current_line()
+	_check(DialogueManager.is_active and repeat_reaction != null
+		and repeat_reaction.text == "N-no... Penni, it happened again.",
+		"Later kills trigger a shorter, still-regretful dialogue")
+	if DialogueManager.is_active:
+		DialogueManager.end_conversation()
+
 	main.queue_free()
 	await process_frame
 	print("FAILED: %d" % failures if failures > 0 else "Sea companion actor tests passed")
