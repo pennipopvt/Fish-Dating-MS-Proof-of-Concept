@@ -60,6 +60,29 @@ func _run() -> void:
 		"Net resets and normal combat remains untouched")
 	_check(encounter.silas_trap == null,
 		"Temporary invisible rescue hit target is removed")
+	_check(DialogueManager.is_active and DialogueManager.current_npc == story.silas_data,
+		"Rescue opens Silas's existing dialogue UI")
+	var first_line: DialogueLineData = DialogueManager.get_current_line()
+	_check(first_line != null and first_line.text == "Ah—I'm free!",
+		"Rescue introduction begins with the new dialogue")
+	_check(not story.has_silas_flag(&"silas_following") and not silas.following,
+		"Silas waits for the introduction before becoming a companion")
+	var dialogue_steps: int = 0
+	while DialogueManager.is_active and not DialogueManager.is_awaiting_choice() and dialogue_steps < 24:
+		DialogueManager.advance()
+		dialogue_steps += 1
+	_check(DialogueManager.is_awaiting_choice() and DialogueManager.get_choices().size() == 2,
+		"Introduction offers two Penni responses")
+	if DialogueManager.is_awaiting_choice():
+		DialogueManager.select_choice(0)
+		dialogue_steps = 0
+		while DialogueManager.is_active and dialogue_steps < 24:
+			DialogueManager.advance()
+			dialogue_steps += 1
+	_check(not DialogueManager.is_active,
+		"Introduction can complete through the normal dialogue system")
+	_check(story.has_silas_flag(&"silas_following") and silas.following,
+		"Silas follows only after the introduction finishes")
 
 	if DialogueManager.is_active:
 		DialogueManager.end_conversation()
