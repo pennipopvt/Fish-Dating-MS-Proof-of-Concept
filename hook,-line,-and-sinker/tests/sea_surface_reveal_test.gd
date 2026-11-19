@@ -34,7 +34,7 @@ func _run() -> void:
 	GameManager.diving_session_active = true
 	sea._process(0.0)
 	_check(prompt.visible, "Near the dock waterline the exit prompt appears")
-	_check(player.position.distance_to(exit.position) <= sea.SURFACE_REACH,
+	_check(player.position.distance_to(exit.position) <= DivingWorld.SURFACE_REACH,
 		"Surface marker is within reachable swim range")
 	var flags: Dictionary = NPCManager.get_npc_state(story.silas_data.npc_id)["flags"]
 	flags[&"silas_met"] = true
