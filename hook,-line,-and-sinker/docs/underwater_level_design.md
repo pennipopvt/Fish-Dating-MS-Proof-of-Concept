@@ -186,3 +186,20 @@ instances the scene below `Player/Camera2D`; the actual Camera2D remains
 unscripted. The tutorial cue exports are on the instance's Sprite2D root.
 No new tutorial manager or overlay was introduced. The smoke test asserts
 the native type and verifies the camera script remains empty.
+
+
+## Tutorial cue loader repair
+
+To avoid a Godot missing-dependency error while opening `world.tscn`,
+the separate `scenes/sea_tutorial_cue.tscn` is no longer referenced.
+Instead, `DivingWorld._ready()` creates exactly one `SeaTutorialCue`
+Sprite2D under the existing `Player/Camera2D`. The 9-slice speech
+bubble remains independent. The sea inspector now exposes
+**Movement Tutorial Sprite**, **Cast Tutorial Sprite**, and
+**Reel Tutorial Sprite**. Leave them blank for the script-drawn symbols;
+assign PNG art to replace them without editing the world scene.
+
+`world_day_night.gd` now treats missing shader items safely instead of
+dereferencing a null material when the editor has partially loaded a
+broken scene. It continues the water reflection and sky cycle whenever
+their shader resources are present; underwater tint is optional.

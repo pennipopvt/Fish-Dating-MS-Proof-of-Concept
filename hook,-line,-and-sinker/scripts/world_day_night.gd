@@ -31,7 +31,7 @@ const REFLECTION_AT_SURFACE: float = 0.477
 @onready var _ambient: CanvasModulate = $DayNightTint
 @onready var _water: ColorRect = $Water
 @onready var _diver: Player = $Player
-@onready var _underwater_tint: ColorRect = $Player/Camera2D/UnderwaterTint
+@onready var _underwater_tint: ColorRect = get_node_or_null("Player/Camera2D/UnderwaterTint") as ColorRect
 
 var _sky_mat: ShaderMaterial
 var _stars_mat: ShaderMaterial
@@ -54,6 +54,15 @@ func _ready() -> void:
     _moon_glow_mat = _local_material(_moon_glow)
     _water_mat = _local_material(_water)
     _tint_mat = _local_material(_underwater_tint)
+
+    # A scene that failed to load used to crash at .material and then on
+    # every subsequent shader update. Keep normal play available even if a
+    # visual-only node is temporarily missing during an editor reload.
+    if _sky_mat == null or _stars_mat == null or _sun_glow_mat == null \
+            or _moon_mat == null or _moon_glow_mat == null or _water_mat == null:
+        push_warning("World day/night materials are incomplete; skipping animated visuals.")
+        set_process(false)
+        return
 
     _target_progress = _clock_progress()
     _apply_immediately(_visual_state(_target_progress))
@@ -83,12 +92,18 @@ func _process(_delta: float) -> void:
     )
     var surface_screen_y: float = _water.get_global_transform_with_canvas().origin.y
     _water_mat.set_shader_parameter("waterline_y", surface_screen_y)
-    _tint_mat.set_shader_parameter("submersion", submerged)
-    _tint_mat.set_shader_parameter("surface_y_uv", surface_screen_y / 180.0)
+    if _tint_mat != null:
+        _tint_mat.set_shader_parameter("submersion", submerged)
+        _tint_mat.set_shader_parameter("surface_y_uv", surface_screen_y / 180.0)
 
 
 func _local_material(item: CanvasItem) -> ShaderMaterial:
-    var material := (item.material as ShaderMaterial).duplicate() as ShaderMaterial
+    if item == null:
+        return null
+    var source: ShaderMaterial = item.material as ShaderMaterial
+    if source == null:
+        return null
+    var material: ShaderMaterial = source.duplicate() as ShaderMaterial
     item.material = material
     return material
 

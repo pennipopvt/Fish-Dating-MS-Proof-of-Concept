@@ -3,7 +3,6 @@ extends SceneTree
 # Small state-machine smoke test for the first fish and offscreen speech cue.
 # Run: godot --headless --path . -s res://tests/sea_storyboard_test.gd
 const MAIN: PackedScene = preload("res://scenes/main.tscn")
-const CUE_SCENE: PackedScene = preload("res://scenes/sea_tutorial_cue.tscn")
 var failures: int = 0
 
 func _initialize() -> void:
@@ -22,13 +21,11 @@ func _run() -> void:
 	_check(cue != null and not cue.visible,
 		"Camera has a hidden tutorial sprite before diving")
 	_check(cue is Sprite2D and cue.get_parent() is Camera2D,
-		"Tutorial script is attached to a Sprite2D scene instance, not Camera2D")
-	var isolated_cue: Node = CUE_SCENE.instantiate()
-	_check(isolated_cue is SeaTutorialCue and isolated_cue is Sprite2D,
-		"Standalone tutorial scene instantiates as Sprite2D with correct script")
-	isolated_cue.free()
+		"Sea controller creates a real Sprite2D under the Player camera")
 	_check((cue.get_parent() as Camera2D).get_script() == null,
-		"Existing player camera does not receive the tutorial script")
+		"Existing player camera remains unscripted")
+	_check(cue.get_parent().get_child_count() >= 2,
+		"Tutorial cue is an ordinary child, not a required PackedScene")
 	_check(cue.z_index > 80 and not cue.z_as_relative,
 		"Control cue renders above the underwater tint in the game viewport")
 	_check(cue.movement_sprite == null and cue.cast_sprite == null

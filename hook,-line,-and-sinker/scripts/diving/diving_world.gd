@@ -16,15 +16,18 @@ const FISH_FOCUS_HOLD_SECONDS: float = 1.15
 const SILAS_FISH: FishData = preload("res://resources/fish/silas.tres")
 const WILD_FISH_SCRIPT = preload("res://scripts/diving/wild_fish.gd")
 
+# Inspector texture slots remain editable even though the small cue is
+# created at runtime. No new PackedScene or imported file is required.
+@export var movement_tutorial_sprite: Texture2D
+@export var cast_tutorial_sprite: Texture2D
+@export var reel_tutorial_sprite: Texture2D
+
 @onready var _guide: SeaEditorGuide = $EditorGuide
 @onready var _entry: Marker2D = $Points/Entry
 @onready var _exit: Marker2D = $Points/SurfaceExit
 @onready var _spawns: Node2D = $FishSpawns
 @onready var _actors: Node2D = $FishActors
 @onready var _story: SeaStoryDirector = $StoryDirector
-@onready var _cue: SeaTutorialCue = get_parent().get_node_or_null(
-	"Player/Camera2D/SeaTutorialCue"
-) as SeaTutorialCue
 @onready var _net: DivingNetProjectile = $NetProjectile
 @onready var _combat: DivingCombat = $Combat
 @onready var _battle: DivingCompanionBattle = $CompanionBattle
@@ -32,6 +35,7 @@ const WILD_FISH_SCRIPT = preload("res://scripts/diving/wild_fish.gd")
 
 var _player: Player
 var _camera: Camera2D
+var _cue: SeaTutorialCue
 var _wild_fish: Array[DivingWildFish] = []
 var _fish_data: Dictionary = {}
 var _tutorial_fish: DivingWildFish
@@ -46,6 +50,7 @@ func _ready() -> void:
 	_player = get_parent().get_node_or_null("Player") as Player
 	if _player != null:
 		_camera = _player.get_node_or_null("Camera2D") as Camera2D
+	_install_tutorial_cue()
 	_silas_home = _silas.position
 	_net.fish_hit.connect(_on_fish_hit)
 	_combat.finished.connect(_on_combat_finished)
@@ -53,6 +58,27 @@ func _ready() -> void:
 	_spawn_editor_fish()
 	_make_silas_trap()
 	set_process(true)
+
+
+# Create exactly one lightweight Sprite2D after the World/Camera nodes exist.
+# This never participates in World scene parsing, so a missing tutorial
+# scene/PNG cannot take down the main game.
+func _install_tutorial_cue() -> void:
+	if _camera == null:
+		push_warning("Sea tutorial unavailable: Player Camera2D is missing.")
+		return
+	_cue = _camera.get_node_or_null("SeaTutorialCue") as SeaTutorialCue
+	if _cue == null:
+		_cue = SeaTutorialCue.new()
+		_cue.name = "SeaTutorialCue"
+		_camera.add_child(_cue)
+		_cue.position = Vector2(0.0, 52.0)
+		_cue.z_as_relative = false
+		_cue.z_index = 110
+		_cue.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	_cue.movement_sprite = movement_tutorial_sprite
+	_cue.cast_sprite = cast_tutorial_sprite
+	_cue.reel_sprite = reel_tutorial_sprite
 
 
 func _spawn_editor_fish() -> void:
