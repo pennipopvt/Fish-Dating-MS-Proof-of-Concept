@@ -95,7 +95,13 @@ func _process(delta: float) -> void:
 		_last_swim_state = &"returning"
 	if position.distance_to(destination) > 1.0:
 		position = position.move_toward(destination, speed * delta)
-	_sprite.flip_h = position.x < before.x - 0.01
+	# Preserve the last facing direction when stopped or moving vertically.
+	# A boolean assignment every frame used to force Silas facing right.
+	var horizontal_motion: float = position.x - before.x
+	if horizontal_motion < -0.01:
+		_sprite.flip_h = true
+	elif horizontal_motion > 0.01:
+		_sprite.flip_h = false
 	_sprite.rotation = sin(Time.get_ticks_msec() * 0.009) * (0.12 if _battle != null and _battle.is_active() else 0.07)
 	queue_redraw()
 

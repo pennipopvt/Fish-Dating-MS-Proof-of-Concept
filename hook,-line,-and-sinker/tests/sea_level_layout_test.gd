@@ -86,6 +86,16 @@ func _run() -> void:
 		"No duplicate text arrow remains")
 	_check(bubble.get_node("Call/Message") is Label,
 		"Pixel Operator speech bubble label is present")
+	_check((bubble.get_node("Call/Message") as Label).get_theme_font_size("font_size") == 11,
+		"Speech bubble uses smaller, readable 11px Pixel Operator")
+	bubble.show_hint("Silas attacks automatically. Right click again to recall him.")
+	var hint: Label = bubble.get_node("Hint") as Label
+	_check(hint.get_theme_font_size("font_size") == 8 and hint.size.x <= 132
+		and hint.position.x > 160.0 and hint.position.y < 40.0,
+		"Companion hint wraps in a small top-right box")
+	_check((bubble.get_node("HintFrame") as NinePatchRect).visible,
+		"Companion hint uses the existing nine-slice as a compact backing")
+	bubble.hide_hint()
 	_check(sea.get_node("Points/Entry") is Marker2D
 		and sea.get_node("Points/SurfaceExit") is Marker2D,
 		"Entry and surface return markers persist")

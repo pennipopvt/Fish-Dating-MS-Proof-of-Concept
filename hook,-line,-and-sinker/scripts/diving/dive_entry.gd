@@ -113,7 +113,7 @@ func _ensure_sea_speech_bubble() -> SeaSpeechBubble:
 	bubble.layer = 8
 	var call: Control = Control.new()
 	call.name = "Call"
-	call.size = Vector2(96.0, 38.0)
+	call.size = Vector2(83.0, 30.0)
 	call.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	call.hide()
 	bubble.add_child(call)
@@ -150,17 +150,25 @@ func _ensure_sea_speech_bubble() -> SeaSpeechBubble:
 
 	var message: Label = Label.new()
 	message.name = "Message"
-	message.position = Vector2(9.0, 6.0)
-	message.size = Vector2(78.0, 26.0)
+	message.position = Vector2(7.0, 4.0)
+	message.size = Vector2(69.0, 22.0)
 	message.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	message.add_theme_color_override("font_color", Color.BLACK)
-	message.add_theme_font_size_override("font_size", 14)
+	message.add_theme_font_size_override("font_size", 11)
 	message.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	message.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	call.add_child(message)
 
+	var hint_frame: NinePatchRect = NinePatchRect.new()
+	hint_frame.name = "HintFrame"
+	hint_frame.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	hint_frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	hint_frame.hide()
+	bubble.add_child(hint_frame)
+
 	var hint: Label = Label.new()
 	hint.name = "Hint"
+	hint.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	hint.hide()
 	bubble.add_child(hint)
 

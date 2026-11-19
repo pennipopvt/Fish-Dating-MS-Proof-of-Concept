@@ -396,3 +396,26 @@ from the frame.
 `scenes/sea_area.tscn`. Only `NPCs/Silas/Sprite.scale` changes:
 the actor position/scale, existing invisible rescue hit target,
 interaction radius, and companion battle distances are unchanged.
+
+
+## Compact sea dialogue and persistent facing
+
+The 11px Pixel Operator voice bubble now uses 30px height with 7px/4px
+padding, sits a little **higher/right** of Silas, and continues expanding
+as its letters type in. The circle marker is also shifted to the
+upper/right of Silas rather than below-left. The separate companion
+guidance is an **8px font in a 132x30 native-pixel label** with a small
+9-slice frame at the upper right. It wraps rather than overflowing
+across the entire bottom of the game.
+
+`SeaNPC._process` now changes `Sprite.flip_h` only after meaningful
+horizontal movement, preserving Silas's most recent facing when idle
+or swimming vertically.
+
+The sharp vertical change in water color near the sea boundary was
+caused by `Player/Camera2D/UnderwaterTint` following the Camera2D
+node rather than its *rendered* screen center when camera limits clamp
+the view. `world_day_night.gd` repositions the 320x180 tint rect
+relative to `Camera2D.get_screen_center_position()` each frame, so
+the same shader remains aligned across the full screen near the
+sea boundaries without changing map geometry.

@@ -76,10 +76,20 @@ func _ready() -> void:
 
 
 func _process(_delta: float) -> void:
+    # Camera limits can separate the actual screen center from the
+    # Camera2D node's world position. The tint is a child of Camera2D,
+    # so compensate for that difference to keep its entire 320x180
+    # rectangle attached to the visible game screen at sea boundaries.
+    var visible_center: Vector2 = _camera.get_screen_center_position()
+    if _underwater_tint != null:
+        _underwater_tint.position = (
+            visible_center - _camera.global_position
+            - _underwater_tint.size * 0.5
+        )
     # Horizontal parallax follows the camera, but the sky's BOTTOM stays at
     # the actual world-space waterline. It cannot follow Penni underwater.
     _sky_region.global_position = Vector2(
-        _camera.get_screen_center_position().x - 160.0,
+        visible_center.x - 160.0,
         _water.global_position.y - _sky_region.size.y
     )
     # Reflection exists at the surface, but dissolves as the original player
