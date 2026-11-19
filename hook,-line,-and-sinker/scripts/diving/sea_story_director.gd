@@ -298,4 +298,8 @@ func on_silas_spared_fish(_fish: DivingWildFish) -> void:
 func on_silas_attack_refused(_fish: DivingWildFish) -> void:
 	if DialogueManager.is_active:
 		return
+	# Dismiss his brief retreat bubble before opening the full conversation.
+	var ui: SeaSpeechBubble = _bubble()
+	if ui != null:
+		ui.hide_call()
 	DialogueManager.request_conversation(silas_data, "res://dialogue/silas_refuses_attack.json")
