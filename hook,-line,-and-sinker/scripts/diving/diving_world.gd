@@ -11,6 +11,8 @@ const SURFACE_REACH: float = 44.0
 # First encounter: only lock movement when the fish is close enough to cast.
 const FIRST_FISH_FOCUS_RANGE: float = 104.0
 const MIN_TUTORIAL_SWIM_DISTANCE: float = 50.0
+# Safety release: a tutorial must never leave the player unable to move.
+const FISH_FOCUS_HOLD_SECONDS: float = 1.15
 const SILAS_FISH: FishData = preload("res://resources/fish/silas.tres")
 const WILD_FISH_SCRIPT = preload("res://scripts/diving/wild_fish.gd")
 
@@ -34,6 +36,7 @@ var _silas_trap: DivingWildFish
 var _silas_home: Vector2
 var _tutorial_swim_origin: Vector2
 var _fish_focus_locked: bool = false
+var _fish_focus_timer: float = 0.0
 
 
 func _ready() -> void:
@@ -123,7 +126,7 @@ func _set_camera_bounds(in_sea: bool) -> void:
 func _process(delta: float) -> void:
 	if _player == null or not _player.swimming:
 		return
-	_check_first_fish_focus()
+	_check_first_fish_focus(delta)
 	_battle.step(delta)
 	if _combat.is_active():
 		_combat.step(delta)
@@ -141,8 +144,13 @@ func _process(delta: float) -> void:
 # The player learns movement freely first. When the introductory fish is
 # close enough for a real cast, pause Penni (and thus the follow camera)
 # until the player clicks. The mouse/net still receive input while busy.
-func _check_first_fish_focus() -> void:
-	if _fish_focus_locked or not _story.wants_first_fish_focus():
+func _check_first_fish_focus(delta: float) -> void:
+	if _fish_focus_locked:
+		_fish_focus_timer -= delta
+		if _fish_focus_timer <= 0.0:
+			_release_first_fish_focus()
+		return
+	if not _story.wants_first_fish_focus():
 		return
 	if not is_instance_valid(_tutorial_fish) or _player.busy:
 		return
@@ -152,9 +160,20 @@ func _check_first_fish_focus() -> void:
 		return
 	if _player.position.distance_to(_tutorial_fish.position) > FIRST_FISH_FOCUS_RANGE:
 		return
+	# The story only confirms the beat after a real visible sprite is shown.
+	if not _story.on_first_fish_seen():
+		return
 	_fish_focus_locked = true
+	_fish_focus_timer = FISH_FOCUS_HOLD_SECONDS
 	_player.busy = true
-	_story.on_first_fish_seen()
+
+
+func _release_first_fish_focus() -> void:
+	if not _fish_focus_locked:
+		return
+	_fish_focus_locked = false
+	_fish_focus_timer = 0.0
+	_player.busy = false
 
 
 func _sync_hooked_fish() -> void:
@@ -206,9 +225,9 @@ func handle_input(event: InputEvent) -> bool:
 		var cast_started: bool = _net.cast_net(
 			_player, _player.get_global_mouse_position(), candidates
 		)
-		if _fish_focus_locked and cast_started:
-			_fish_focus_locked = false
-			_player.busy = false
+		if cast_started and not _story.has_event(&"first_cast") \
+				and not _story.has_event(&"line_broken"):
+			_release_first_fish_focus()
 			_story.on_first_cast()
 		return true
 	if mouse.button_index == MOUSE_BUTTON_WHEEL_DOWN:
@@ -308,6 +327,7 @@ func _try_companion_target(world_mouse: Vector2) -> bool:
 
 func _return_to_surface() -> void:
 	if _player != null and _player.swimming:
+		_release_first_fish_focus()
 		if _combat.is_active():
 			_combat.release()
 		if _battle.is_active():

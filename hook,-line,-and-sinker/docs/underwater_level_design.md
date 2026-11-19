@@ -124,3 +124,20 @@ on the `SeaSpeechBubble` instance in `scenes/main.tscn`, or on the root
 of `scenes/sea_speech_bubble.tscn`. The SVGs in `sprites/ui/tutorial_*.svg`
 are temporary transparent symbols. Replace them with your own textures.
 The separate character call bubble still uses its replaceable nine-slice.
+
+
+## Tutorial sprite visibility / softlock fix
+
+The previous SVGs were replaced with transparent PNG placeholders
+(`sprites/ui/tutorial_wasd.png`, `tutorial_cast.png`, `tutorial_reel.png`).
+The **single** `InputSprite` TextureRect is hidden at scene startup,
+given a non-null default PNG in the scene, and explicitly positioned
+around 72% down the root viewport. It is a 120×80px image, not a panel
+or full-screen graphic. Swap textures through the SeaSpeechBubble
+Inspector's Movement / Cast / Reel Sprite exports later.
+
+The fish-focus pause now lasts **at most 1.15 seconds** and always
+releases movement. The icon remains available afterward until a
+successful net cast. The story refuses to lock Penni if the input sprite
+is missing, hidden with its parent, or has no texture. This also avoids
+getting stuck at the first fish if its tutorial cue fails to render.

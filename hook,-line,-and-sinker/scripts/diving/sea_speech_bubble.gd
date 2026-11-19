@@ -16,9 +16,9 @@ class_name SeaSpeechBubble
 			_apply_frame()
 
 # Replace these textures in the SeaSpeechBubble Inspector later.
-@export var movement_sprite: Texture2D = preload("res://sprites/ui/tutorial_wasd.svg")
-@export var cast_sprite: Texture2D = preload("res://sprites/ui/tutorial_cast.svg")
-@export var reel_sprite: Texture2D = preload("res://sprites/ui/tutorial_reel.svg")
+@export var movement_sprite: Texture2D = preload("res://sprites/ui/tutorial_wasd.png")
+@export var cast_sprite: Texture2D = preload("res://sprites/ui/tutorial_cast.png")
+@export var reel_sprite: Texture2D = preload("res://sprites/ui/tutorial_reel.png")
 
 @onready var _call: Control = $Call
 @onready var _frame: NinePatchRect = $Call/Frame
@@ -39,7 +39,26 @@ func _ready() -> void:
 	_hint.hide()
 	if _input_sprite != null:
 		_input_sprite.hide()
+		_place_input_sprite()
+		get_viewport().size_changed.connect(_place_input_sprite)
 	_apply_frame()
+
+
+# Put the one sprite in actual viewport pixels. This doesn't rely on
+# CanvasLayer anchoring inside a dynamically stretched SubViewportContainer.
+func _place_input_sprite() -> void:
+	if _input_sprite == null:
+		return
+	var screen_size: Vector2 = get_viewport().get_visible_rect().size
+	_input_sprite.position = Vector2(
+		roundf((screen_size.x - _input_sprite.size.x) * 0.5),
+		roundf(screen_size.y * 0.72 - _input_sprite.size.y * 0.5)
+	)
+
+
+func is_input_prompt_visible(action: StringName) -> bool:
+	return _input_sprite != null and _input_sprite.is_visible_in_tree() \
+		and _input_sprite.texture != null and current_action == action
 
 
 func _apply_frame() -> void:
@@ -85,11 +104,11 @@ func hide_hint() -> void:
 	_hint.hide()
 
 
-func show_input_prompt(action: StringName) -> void:
+func show_input_prompt(action: StringName) -> bool:
 	_hint.hide()
 	if _input_sprite == null:
 		push_warning("SeaSpeechBubble is missing its InputSprite TextureRect.")
-		return
+		return false
 	var graphic: Texture2D
 	match action:
 		&"move": graphic = movement_sprite
@@ -97,12 +116,12 @@ func show_input_prompt(action: StringName) -> void:
 		&"reel": graphic = reel_sprite
 		_:
 			hide_input_prompt()
-			return
+			return false
 	if graphic == null:
 		hide_input_prompt()
-		return
+		return false
 	if current_action == action and _input_sprite.visible:
-		return
+		return is_input_prompt_visible(action)
 	current_action = action
 	_input_sprite.texture = graphic
 	if _input_tween != null and _input_tween.is_running():
@@ -111,6 +130,7 @@ func show_input_prompt(action: StringName) -> void:
 	_input_sprite.show()
 	_input_tween = create_tween()
 	_input_tween.tween_property(_input_sprite, "modulate:a", 1.0, 0.3)
+	return is_input_prompt_visible(action)
 
 
 func hide_input_prompt() -> void:

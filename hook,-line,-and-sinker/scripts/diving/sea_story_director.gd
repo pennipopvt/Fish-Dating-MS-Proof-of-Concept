@@ -58,16 +58,19 @@ func on_dive_entered() -> void:
 # The camera/player pause is deliberately a one-time moment. Core player
 # controls are unchanged; the sea controller releases its own movement lock.
 func wants_first_fish_focus() -> bool:
-	return not has_event(&"fish_focus_seen") and not has_event(&"line_broken")
+	return not has_event(&"fish_focus_seen") and not has_event(&"first_cast") \
+		and not has_event(&"line_broken")
 
 
-func on_first_fish_seen() -> void:
+func on_first_fish_seen() -> bool:
 	if not wants_first_fish_focus():
-		return
-	_events[&"fish_focus_seen"] = true
+		return false
 	var ui: SeaSpeechBubble = _bubble()
-	if ui != null:
-		ui.show_input_prompt(&"cast")
+	# Never take control unless the prompt can actually be displayed.
+	if ui == null or not ui.show_input_prompt(&"cast"):
+		return false
+	_events[&"fish_focus_seen"] = true
+	return true
 
 
 func on_first_cast() -> void:

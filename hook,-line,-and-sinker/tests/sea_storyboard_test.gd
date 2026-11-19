@@ -18,15 +18,25 @@ func _run() -> void:
 	var prompt: TextureRect = bubble.get_node("InputSprite") as TextureRect
 	_check(not prompt.visible and bubble.get_node_or_null("InputPrompt") == null,
 		"Only a hidden sprite exists; no full-screen tutorial panel")
+	_check(prompt.texture != null and bubble.movement_sprite != null,
+		"Transparent PNG tutorial art is ready before the first dive")
 	var first_fish: DivingWildFish = sea.get("_tutorial_fish") as DivingWildFish
 	_check(first_fish != null, "FirstFish spawn creates the tutorial target")
 	_check(first_fish.trapped, "First tutorial fish waits in place for a cast")
 	story.on_dive_entered()
 	_check(prompt.visible and bubble.current_action == &"move" and prompt.texture == bubble.movement_sprite,
 		"Entering the sea fades a standalone WASD sprite without a panel")
-	story.on_first_fish_seen()
+	_check(story.on_first_fish_seen(), "First fish focus is allowed only if the icon is visible")
 	_check(bubble.current_action == &"cast" and prompt.texture == bubble.cast_sprite,
 		"Noticing the fish replaces movement with the left-click cue")
+	# The movement pause always expires even if no mouse event arrives.
+	var player: Player = main.get_node("SubViewportContainer/SubViewport/World/Player") as Player
+	player.busy = true
+	sea.set("_fish_focus_locked", true)
+	sea.set("_fish_focus_timer", 0.1)
+	sea.call("_check_first_fish_focus", 0.2)
+	_check(not player.busy and not bool(sea.get("_fish_focus_locked")),
+		"Focus pause automatically releases; no invisible softlock")
 	story.on_first_cast()
 	_check(bubble.current_action == &"",
 		"Casting dismisses the input cue without a timer")
