@@ -17,10 +17,12 @@ func _ready() -> void:
 
 
 func _bubble() -> SeaSpeechBubble:
-	# SeaStoryDirector lives at SubViewport/World/Sea/StoryDirector.
-	# The bubble is the SubViewport's *sibling* of World. Resolve it in
-	# that exact viewport, never by a global group lookup across canvases.
-	return get_viewport().get_node_or_null("SeaSpeechBubble") as SeaSpeechBubble
+	# SeaStoryDirector runs inside the game SubViewport. The visual lives
+	# in Main alongside SubViewportContainer (the previously working
+	# screen layer). Resolve the exact scene branch, not a global group.
+	var container: Node = get_viewport().get_parent()
+	var main: Node = container.get_parent() if container != null else null
+	return main.get_node_or_null("SeaSpeechBubble") as SeaSpeechBubble if main != null else null
 
 
 func _show_silas_bubble(message: String, seconds: float = 0.0) -> bool:
@@ -38,6 +40,9 @@ func _show_silas_bubble(message: String, seconds: float = 0.0) -> bool:
 		ui.show_attached_call(message, speaker, seconds)
 	else:
 		ui.show_call(message, false, seconds)
+	if not ui.is_call_shown():
+		push_warning("Silas speech bubble did not become visible; will retry the story beat.")
+		return false
 	return true
 
 

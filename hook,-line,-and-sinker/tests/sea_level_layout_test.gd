@@ -19,7 +19,7 @@ func _run() -> void:
 	var player: Player = world.get_node("Player") as Player
 	var guide: SeaEditorGuide = sea.get_node("EditorGuide") as SeaEditorGuide
 	var solids: TileMapLayer = sea.get_node("Solids") as TileMapLayer
-	var bubble: SeaSpeechBubble = main.get_node("SubViewportContainer/SubViewport/SeaSpeechBubble") as SeaSpeechBubble
+	var bubble: SeaSpeechBubble = main.get_node("SeaSpeechBubble") as SeaSpeechBubble
 	var fish_list: Array = sea.get("_wild_fish")
 
 	_check(sea.get_parent() == world and not sea.has_node("Player"),
@@ -59,8 +59,13 @@ func _run() -> void:
 		and sea.get_node("Combat") is DivingCombat
 		and sea.get_node("CompanionBattle") is DivingCompanionBattle,
 		"Existing separate gameplay systems reused")
-	_check(bubble.get_viewport() == sea.get_viewport(),
-		"Speech bubble uses the same pixel resolution as the sea")
+	_check(bubble.get_viewport() == main.get_viewport(),
+		"Speech bubble is hosted in the reliable root UI viewport")
+	bubble.call("_sync_game_scale")
+	var game_rect: Rect2 = (main.get_node("SubViewportContainer") as Control).get_global_rect()
+	var native: Vector2 = sea.get_viewport().get_visible_rect().size
+	_check((bubble.scale * native).distance_to(game_rect.size) < 1.0,
+		"Root UI matches native game pixels through canvas scaling")
 	_check(bubble.get_node("Call/Frame") is NinePatchRect,
 		"Speech bubble frame is nine-slice replaceable")
 	_check(bubble.get_node("Call/Tail") is TextureRect,

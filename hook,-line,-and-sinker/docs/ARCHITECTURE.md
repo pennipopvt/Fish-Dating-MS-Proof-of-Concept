@@ -23,22 +23,24 @@ Main (Control, scripts/diving/dive_entry.gd)
 │       │       ├── StoryDirector (first-dive event flags)
 │       │       ├── NetProjectile / Combat / CompanionBattle
 │       │       └── editor guide / entry and exit markers
-│       └── SeaSpeechBubble (CanvasLayer, layer 8)
 ├── CanvasLayer (ShopMenu, DialogueUI which uses layer 10)
+├── SeaSpeechBubble (CanvasLayer, layer 8; pixel-scaled to game)
 ├── IllustrationScene
 ├── IntroLayer (FishCoIntro backdrop, layer 9)
 └── TransitionLayer (iris, layer 100)
 ```
 
-**Important:** `SeaSpeechBubble` belongs directly to the *game*
-`SubViewport`, **not** to `World` or Main's outer CanvasLayer. Retrieve it
-from underwater logic using
-`get_viewport().get_node_or_null("SeaSpeechBubble")`. Global scene groups
-are not an authoritative node path. Its coordinates are already native
-game-screen pixels; map Silas via `get_global_transform_with_canvas()`
-and clamp in the same 320×180 viewport. The separate nine-slice + tail
-are user-supplied sprites. Do not attach the bubble script to the player
-camera or create a second bubble scene.
+**Important:** `SeaSpeechBubble` lives directly under `Main`, on the
+screen UI layer that previously rendered reliably. Its `CanvasLayer.scale`
+and `offset` are computed from the game's `SubViewportContainer` rect,
+so its drawing coordinates remain **320×180 native game pixels**, despite
+being hosted in the main viewport. Find it from the sea with
+`get_viewport().get_parent().get_parent().get_node_or_null("SeaSpeechBubble")`
+(or equivalent null-safe traversal). Map Silas using
+`get_global_transform_with_canvas()` from his game SubViewport and clamp
+against the 320×180 virtual game size. The one nine-slice + tail retains
+the original user-supplied art. Do not add a duplicate bubble or attach
+a scripted UI node directly to the camera.
 
 `Main/dive_entry.gd` owns island ↔ sea transitions and forwards input
 into `DivingWorld.handle_input`, because the SubViewportContainer may
@@ -159,3 +161,13 @@ Run `res://tests/sea_storyboard_test.gd`,
 SceneTree runner before merging. The environment running this analysis
 cannot currently execute Godot; static references alone do not verify
 the rendering or real-game playback.
+
+## Speech visibility regression fix
+
+The attempt to move `SeaSpeechBubble` into the 320×180 `SubViewport`
+caused it to disappear in user playtests. This change restores the last
+working Main-level CanvasLayer and applies display-relative pixel scaling.
+The `help_called` story flag is set only after `is_call_shown()` confirms
+the rendered bubble controls were made visible; otherwise the story event
+continues retrying rather than being silently lost. The hint uses fixed
+native-game coordinates instead of main-window anchors.

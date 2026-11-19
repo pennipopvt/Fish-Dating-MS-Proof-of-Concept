@@ -14,7 +14,7 @@ func _run() -> void:
 	await process_frame
 	var sea: DivingWorld = main.get_node("SubViewportContainer/SubViewport/World/Sea") as DivingWorld
 	var story: SeaStoryDirector = sea.get_node("StoryDirector") as SeaStoryDirector
-	var bubble: SeaSpeechBubble = main.get_node("SubViewportContainer/SubViewport/SeaSpeechBubble") as SeaSpeechBubble
+	var bubble: SeaSpeechBubble = main.get_node("SeaSpeechBubble") as SeaSpeechBubble
 	_check(story.call("_bubble") == bubble,
 		"Story resolves speech bubble directly from its own game SubViewport")
 	bubble.remove_from_group("sea_speech_bubble")
@@ -97,13 +97,20 @@ func _run() -> void:
 		"Bubble tracks Silas's actual world actor")
 	_check((bubble.get_node("Call/Tail") as TextureRect).visible,
 		"Tail shows while tracking Silas")
-	_check(bubble.get_viewport() == sea.get_viewport()
-		and bubble.get_viewport().get_visible_rect().size == Vector2(320, 180),
-		"Speech bubble renders at native 320x180 game resolution")
+	_check(bubble.get_viewport() == main.get_viewport(),
+		"Speech bubble uses the working outer UI viewport")
+	bubble.call("_sync_game_scale")
+	var display: SubViewportContainer = main.get_node("SubViewportContainer") as SubViewportContainer
+	var native: Vector2 = sea.get_viewport().get_visible_rect().size
+	var rendered: Vector2 = display.get_global_rect().size
+	_check((bubble.scale * native).distance_to(rendered) < 1.0,
+		"Speech bubble pixels scale exactly with the game viewport")
+	_check(bubble.is_call_shown(),
+		"Silas event leaves an actually visible speech bubble")
 	bubble.call("_update_attached_position")
 	var call: Control = bubble.get_node("Call") as Control
 	var call_rect: Rect2 = call.get_rect()
-	var screen_rect: Rect2 = bubble.get_viewport().get_visible_rect()
+	var screen_rect: Rect2 = Rect2(Vector2.ZERO, native)
 	_check(call_rect.position.x >= 0.0 and call_rect.end.x <= screen_rect.end.x
 		and call_rect.position.y >= 0.0 and call_rect.end.y <= screen_rect.end.y,
 		"Offscreen speech bubble stays within the game viewport")

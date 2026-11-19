@@ -1,8 +1,9 @@
 extends CanvasLayer
 class_name SeaSpeechBubble
 
-# Runs in the SAME 320x180 SubViewport as the sea. The bubble is screen-
-# fixed only while Silas is offscreen; once visible it stays beside him.
+# Lives in Main's proven UI viewport, but ALL positions and sizes are
+# virtual 320x180 game pixels. CanvasLayer.scale/offset keep the pixel
+# density identical to the SubViewportContainer, with no cross-canvas drift.
 @export var bubble_texture: Texture2D:
 	set(value):
 		bubble_texture = value
@@ -32,17 +33,48 @@ class_name SeaSpeechBubble
 @onready var _tail: TextureRect = $Call/Tail
 @onready var _hint: Label = $Hint
 
+var _game_display: SubViewportContainer
+var _game_viewport: SubViewport
 var _call_serial: int = 0
 var _speaker: Node2D
 
 
 func _ready() -> void:
 	add_to_group("sea_speech_bubble")
+	_game_display = get_parent().get_node_or_null("SubViewportContainer") as SubViewportContainer
+	if _game_display != null:
+		_game_viewport = _game_display.get_node_or_null("SubViewport") as SubViewport
+		_game_display.resized.connect(_sync_game_scale)
+		get_viewport().size_changed.connect(_sync_game_scale)
+	_sync_game_scale()
 	_call.hide()
 	_tail.hide()
 	_hint.hide()
 	_apply_frame()
 	set_process(false)
+
+
+# The bubble stays on the root UI canvas (where it worked previously),
+# but one UI pixel always equals one game pixel after the display scale.
+func _sync_game_scale() -> void:
+	if not is_instance_valid(_game_display) or not is_instance_valid(_game_viewport):
+		return
+	var logical: Vector2 = Vector2(_game_viewport.size)
+	var rect: Rect2 = _game_display.get_global_rect()
+	if logical.x <= 0.0 or logical.y <= 0.0:
+		return
+	scale = Vector2(rect.size.x / logical.x, rect.size.y / logical.y)
+	offset = rect.position
+
+
+func _game_size() -> Vector2:
+	if is_instance_valid(_game_viewport):
+		return Vector2(_game_viewport.get_visible_rect().size)
+	return Vector2(320.0, 180.0)
+
+
+func is_call_shown() -> bool:
+	return visible and _call.visible and (_frame.visible or _fallback.visible)
 
 
 func _apply_frame() -> void:
@@ -62,7 +94,8 @@ func show_call(message: String, from_right: bool = true, seconds: float = 4.0) -
 	_call_serial += 1
 	var serial: int = _call_serial
 	_stop_tracking()
-	var size: Vector2 = get_viewport().get_visible_rect().size
+	_sync_game_scale()
+	var size: Vector2 = _game_size()
 	_call.position = Vector2(
 		size.x - _call.size.x - screen_margin if from_right else screen_margin,
 		maxf(screen_margin, roundf(size.y * 0.24))
@@ -82,8 +115,10 @@ func show_attached_call(message: String, speaker: Node2D, seconds: float = 0.0) 
 		return
 	_call_serial += 1
 	var serial: int = _call_serial
+	_sync_game_scale()
 	_speaker = speaker
 	_text.text = message
+	show()
 	_call.show()
 	_tail.visible = tail_texture != null
 	set_process(true)
@@ -102,12 +137,13 @@ func _update_attached_position() -> void:
 	if not is_instance_valid(_speaker):
 		hide_call()
 		return
-	# Both Silas and this CanvasLayer belong to the game SubViewport.
-	# Godot's canvas transform already includes the active player camera.
+	# Silas supplies native game-viewport coordinates, even though this
+	# layer is in Main. The layer's scale/offset maps them to the display.
+	_sync_game_scale()
 	var target_screen: Vector2 = (
 		_speaker.get_global_transform_with_canvas() * Vector2(0.0, -10.0)
 	)
-	var game_size: Vector2 = get_viewport().get_visible_rect().size
+	var game_size: Vector2 = _game_size()
 	var desired: Vector2 = target_screen + bubble_offset
 	var low: Vector2 = Vector2.ONE * screen_margin
 	var high: Vector2 = game_size - _call.size - low
