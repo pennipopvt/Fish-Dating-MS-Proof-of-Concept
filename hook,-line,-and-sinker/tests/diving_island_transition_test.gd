@@ -22,6 +22,10 @@ func _run() -> void:
 	var iris: ColorRect = main.get_node("TransitionLayer/Iris") as ColorRect
 	var dialogue_ui: DialogueUI = main.get_node("CanvasLayer/DialogueUI") as DialogueUI
 	var intro: FishCoIntro = main.get_node("IntroLayer/FishCoIntro") as FishCoIntro
+	_check(main.get("_intro_layer") is CanvasLayer and main.get("_intro") is FishCoIntro,
+		"Main initializes references to both Fish Co intro nodes")
+	_check((main.get("_intro_layer") as CanvasLayer).get_node_or_null("FishCoIntro") == intro,
+		"Fish Co intro belongs to the correctly layered CanvasLayer")
 	var terminal: ShopMenu = main.get_node("CanvasLayer/ShopMenu") as ShopMenu
 	var tabs: VBoxContainer = terminal.get_node("TerminalRoot/NavTabs") as VBoxContainer
 	_check(intro.visible and player.busy and not bool(main.get("_contract_call_finished")),

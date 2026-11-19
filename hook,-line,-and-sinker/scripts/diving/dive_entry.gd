@@ -5,6 +5,7 @@ extends Control
 const FISH_CO_OPERATOR: NPCData = preload("res://resources/npcs/fish_co_operator.tres")
 const DOCK_CONFIRM: NPCData = preload("res://resources/npcs/dock_dive_prompt.tres")
 const RIPPLE: Texture2D = preload("res://sprites/environment/medium_ripple_a.png")
+const FISH_CO_INTRO_SCENE: PackedScene = preload("res://scenes/fish_co_intro.tscn")
 const DIVE_DURATION: float = 0.43
 const IRIS_DURATION: float = 0.52
 const IRIS_OPEN_RADIUS: float = 2.6
@@ -15,8 +16,10 @@ const IRIS_OPEN_RADIUS: float = 2.6
 @onready var _iris: ColorRect = $TransitionLayer/Iris
 @onready var _dialogue_ui: DialogueUI = $CanvasLayer/DialogueUI
 @onready var _shop_menu: ShopMenu = $CanvasLayer/ShopMenu
-@onready var _intro_layer: CanvasLayer = $IntroLayer
-@onready var _intro: FishCoIntro = $IntroLayer/FishCoIntro
+# A partially loaded/hot-reloaded scene can omit the optional intro subtree.
+# Resolve it safely and restore only those nodes when they are missing.
+@onready var _intro_layer: CanvasLayer = get_node_or_null("IntroLayer") as CanvasLayer
+@onready var _intro: FishCoIntro = get_node_or_null("IntroLayer/FishCoIntro") as FishCoIntro
 
 var _iris_material: ShaderMaterial
 var _underwater: bool = false
@@ -38,7 +41,9 @@ func _ready() -> void:
 	_set_iris_radius(IRIS_OPEN_RADIUS)
 	_sea.surface_requested.connect(_on_surface_requested)
 	# The sea is a child of the one live World; there is only one music player.
-	_intro_layer.hide()
+	_ensure_intro_nodes()
+	if _intro_layer != null:
+		_intro_layer.hide()
 	DialogueManager.conversation_finished.connect(_on_contract_conversation_finished)
 	DialogueManager.conversation_finished.connect(_on_first_dive_conversation_finished)
 	DialogueManager.choice_resolved.connect(_on_dock_choice_resolved)
@@ -48,6 +53,24 @@ func _ready() -> void:
 	_start_contract_call.call_deferred()
 
 
+# The authored IntroLayer is preferred; don't duplicate it in normal play.
+# If a partial scene import omitted it, recover the same FishCoIntro scene
+# instead of crashing before the main menu/dialogue can initialize.
+func _ensure_intro_nodes() -> void:
+	_intro_layer = get_node_or_null("IntroLayer") as CanvasLayer
+	if _intro_layer == null:
+		_intro_layer = CanvasLayer.new()
+		_intro_layer.name = "IntroLayer"
+		_intro_layer.layer = 9
+		add_child(_intro_layer)
+	_intro = _intro_layer.get_node_or_null("FishCoIntro") as FishCoIntro
+	if _intro == null:
+		_intro = FISH_CO_INTRO_SCENE.instantiate() as FishCoIntro
+		if _intro != null:
+			_intro.name = "FishCoIntro"
+			_intro_layer.add_child(_intro)
+
+
 func _start_contract_call() -> void:
 	# The opening assumes Penni has already entered the competition. She
 	# learns she is employed through the phone call, not a separate signup.
@@ -55,8 +78,13 @@ func _start_contract_call() -> void:
 		return
 	_world_player.busy = true
 	_shop_menu.set_quota_only(true)
-	_intro_layer.show()
-	_intro.play()
+	if _intro_layer == null or _intro == null:
+		_ensure_intro_nodes()
+	if _intro_layer != null and _intro != null:
+		_intro_layer.show()
+		_intro.play()
+	else:
+		push_warning("Fish Co intro backdrop unavailable; continuing the phone call.")
 	# The same DialogueManager/DialogueUI, NPCData, and graph loader used for
 	# every other conversation. Speaker tags in the JSON distinguish Penni
 	# from the Fish Co representative while both normal portraits remain.
@@ -84,8 +112,10 @@ func _on_contract_call_finished() -> void:
 
 func _transition_contract_to_dock() -> void:
 	await _close_iris(Vector2(0.5, 0.5))
-	_intro.end()
-	_intro_layer.hide()
+	if is_instance_valid(_intro):
+		_intro.end()
+	if is_instance_valid(_intro_layer):
+		_intro_layer.hide()
 
 	# The existing island and dock are already loaded under the backdrop.
 	# This is not a new scene or a duplicate starting environment.
