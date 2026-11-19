@@ -18,7 +18,7 @@ Sea
 ├── Details              empty for your custom sprites
 ├── ForegroundSprites    three replaceable Seaweed Sprite2Ds
 ├── Points               Entry and SurfaceExit markers
-├── FishSpawns           three movable fish species markers
+├── FishSpawns           tutorial mullet and later companion mullet markers
 ├── FishActors           spawned dynamically; don't paint here
 ├── NPCs
 │   └── Silas            reusable SeaNPC, references existing silas.tres
@@ -218,3 +218,9 @@ animation is finished, `SeaStoryDirector.on_followed_escape()` plays
 Silas's one-time, left-directed “Help me!” bubble. This also gates his
 initial interaction until the call has happened. No extra trigger scene,
 new manager, or artwork dependency is introduced.
+
+## Extra bottom fish removed
+
+Removed the `GobyNearBottom` marker at (-236,315), which put an unrelated
+fish under Penni during Silas's initial offscreen call. `FirstFish` and
+`MulletAfterSilas` remain for their respective tutorial beats.

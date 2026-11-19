@@ -1,4 +1,4 @@
-[gd_scene load_steps=17 format=3]
+[gd_scene load_steps=16 format=3]
 
 [ext_resource type="Script" path="res://scripts/diving/diving_world.gd" id="sea"]
 [ext_resource type="Script" path="res://scripts/diving/sea_editor_guide.gd" id="guide"]
@@ -10,7 +10,6 @@
 [ext_resource type="Script" path="res://scripts/diving/diving_combat.gd" id="combat"]
 [ext_resource type="Script" path="res://scripts/diving/companion_battle.gd" id="battle"]
 [ext_resource type="Resource" path="res://resources/fish/mullet.tres" id="mullet"]
-[ext_resource type="Resource" path="res://resources/fish/goby.tres" id="goby"]
 [ext_resource type="Resource" path="res://resources/npcs/silas.tres" id="silas_data"]
 [ext_resource type="Texture2D" path="res://sprites/fish/silas_eel.png" id="silas_fish"]
 [ext_resource type="Texture2D" path="res://sprites/characters/silas/silas_idle.png" id="silas_human"]
@@ -90,12 +89,6 @@ script = ExtResource("spawn")
 position = Vector2(-502, 312)
 species = ExtResource("mullet")
 random_seed = 3102
-
-[node name="GobyNearBottom" type="Marker2D" parent="FishSpawns"]
-script = ExtResource("spawn")
-position = Vector2(-236, 315)
-species = ExtResource("goby")
-random_seed = 3103
 
 [node name="FishActors" type="Node2D" parent="."]
 

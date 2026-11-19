@@ -46,9 +46,12 @@ func _run() -> void:
 		"Two editable dock support placeholders exist")
 	_check(sea.get_node("ForegroundSprites").get_child_count() == 3,
 		"Three replaceable seaweed foreground sprites exist")
-	_check(sea.get_node("FishSpawns").get_child_count() == 3,
-		"Three species-defined editor fish spawn markers")
-	_check(fish_list.size() == 4, "Three wild fish and one trapped Silas hit target")
+	_check(sea.get_node("FishSpawns").get_child_count() == 2
+		and sea.has_node("FishSpawns/FirstFish")
+		and sea.has_node("FishSpawns/MulletAfterSilas")
+		and not sea.has_node("FishSpawns/GobyNearBottom"),
+		"Only first tutorial fish and later companion tutorial fish spawn")
+	_check(fish_list.size() == 3, "Two wild fish and one trapped Silas hit target")
 	_check(sea.get_node("NPCs/Silas") is SeaNPC, "Silas is a reusable NPC scene actor")
 	_check(sea.get_node("StoryDirector") is SeaStoryDirector,
 		"One-time story conditions live outside core fishing")
