@@ -203,3 +203,18 @@ assign PNG art to replace them without editing the world scene.
 dereferencing a null material when the editor has partially loaded a
 broken scene. It continues the water reflection and sky cycle whenever
 their shader resources are present; underwater tint is optional.
+
+
+## Escaping first fish / deferred Silas call
+
+On the scripted first scroll, the net releases, the tutorial cue disappears,
+and the first fish accelerates **330px left in 0.85s** before being removed
+once offscreen. The fish is removed from normal catchable/wandering actors
+at the start of that animation, so it cannot swim back or be re-hooked.
+
+**No bubble appears during the reel or dash.** Penni must follow the fish
+another 75px and move a little past its former position. Once the escape
+animation is finished, `SeaStoryDirector.on_followed_escape()` plays
+Silas's one-time, left-directed “Help me!” bubble. This also gates his
+initial interaction until the call has happened. No extra trigger scene,
+new manager, or artwork dependency is introduced.

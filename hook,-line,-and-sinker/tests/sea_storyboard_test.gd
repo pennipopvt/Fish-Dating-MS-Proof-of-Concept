@@ -59,9 +59,29 @@ func _run() -> void:
 	_check(not story.consume_first_reel(), "The same line-break cue cannot repeat")
 	_check(story.has_event(&"line_broken"), "The story event records its completion")
 	_check(cue.visible, "The reel cue fades out after the line breaks")
+	_check(not (bubble.get_node("Call") as Control).visible,
+		"No premature Help me bubble on the first reel")
+	_check(not story.can_talk_to_silas(),
+		"Silas encounter stays gated until the offscreen call")
+	sea.call("_start_first_fish_escape")
+	_check(not (sea.get("_wild_fish") as Array).has(first_fish)
+		and sea.get("_tutorial_fish") == null,
+		"Escaping fish leaves normal swim/catch simulation immediately")
+	_check(not bool(sea.get("_first_fish_escape_finished")),
+		"Fish is still visible during the dash")
+	await create_timer(1.0).timeout
+	_check(bool(sea.get("_first_fish_escape_finished")),
+		"Fish finishes its leftward dash and disappears")
+	sea.call("_check_escape_followup")
+	_check(not story.has_event(&"help_called"),
+		"Waiting after the fish escapes does not summon Silas's bubble")
+	player.position.x = float(sea.get("_help_reveal_x")) - 2.0
+	sea.call("_check_escape_followup")
+	_check(story.has_event(&"help_called"),
+		"Swimming farther left triggers Silas's one-time help call")
 	_check((bubble.get_node("Call") as Control).visible,
-		"Offscreen Help me bubble appears after the break")
-	_check(story.can_talk_to_silas(), "Silas can be found after the first escape")
+		"Offscreen Help me bubble appears only after following the fish")
+	_check(story.can_talk_to_silas(), "Silas can be found after hearing him")
 	_check(not story.can_net_silas(), "Silas is not net-catchable before speaking")
 	main.queue_free()
 	print("FAILED: %d" % failures if failures > 0 else "Sea storyboard events passed")

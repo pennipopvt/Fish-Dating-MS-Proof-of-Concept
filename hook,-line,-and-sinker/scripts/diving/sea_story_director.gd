@@ -56,6 +56,9 @@ func on_dive_entered() -> void:
 		elif not has_event(&"first_cast"):
 			cue.show_action(&"move")
 		return
+	# Stay quiet after the line breaks until Penni follows the escaping fish.
+	if not has_event(&"help_called"):
+		return
 	var ui: SeaSpeechBubble = _bubble()
 	if ui == null:
 		return
@@ -113,15 +116,23 @@ func consume_first_reel() -> bool:
 	var cue: SeaTutorialCue = _cue()
 	if cue != null:
 		cue.hide_action()
-	var ui: SeaSpeechBubble = _bubble()
-	if ui != null:
-		ui.show_hint("Follow the voice to the left.")
-		ui.show_call("Help me!", false, 5.0)
+	# Fish escape animation and player movement run in DivingWorld.
+	# The actual offscreen voice is a separate one-time story beat.
 	return true
 
 
+func on_followed_escape() -> void:
+	if not has_event(&"line_broken") or has_event(&"help_called"):
+		return
+	var ui: SeaSpeechBubble = _bubble()
+	if ui == null:
+		return
+	_events[&"help_called"] = true
+	ui.show_call("Help me!", false, 5.0)
+
+
 func can_talk_to_silas() -> bool:
-	return has_event(&"line_broken") and not has_silas_flag(&"silas_freed")
+	return has_event(&"help_called") and not has_silas_flag(&"silas_freed")
 
 
 func can_net_silas() -> bool:

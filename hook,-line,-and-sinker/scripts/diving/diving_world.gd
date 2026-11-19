@@ -13,6 +13,10 @@ const FIRST_FISH_FOCUS_RANGE: float = 110.0
 const MIN_TUTORIAL_SWIM_DISTANCE: float = 50.0
 # Safety release: a tutorial must never leave the player unable to move.
 const FISH_FOCUS_HOLD_SECONDS: float = 1.15
+# Only the first storyboard fish bolts away on the forced line break.
+const FIRST_FISH_ESCAPE_DISTANCE: float = 330.0
+const FIRST_FISH_ESCAPE_SECONDS: float = 0.85
+const FOLLOW_AFTER_ESCAPE_DISTANCE: float = 75.0
 const SILAS_FISH: FishData = preload("res://resources/fish/silas.tres")
 const WILD_FISH_SCRIPT = preload("res://scripts/diving/wild_fish.gd")
 
@@ -44,6 +48,8 @@ var _silas_home: Vector2
 var _tutorial_swim_origin: Vector2
 var _fish_focus_locked: bool = false
 var _fish_focus_timer: float = 0.0
+var _first_fish_escape_finished: bool = false
+var _help_reveal_x: float = -INF
 
 
 func _ready() -> void:
@@ -161,6 +167,7 @@ func _process(delta: float) -> void:
 			and not _story.has_event(&"first_cast") and not _story.has_event(&"line_broken"):
 		_story.on_dive_entered()
 	_check_first_fish_focus(delta)
+	_check_escape_followup()
 	_battle.step(delta)
 	if _combat.is_active():
 		_combat.step(delta)
@@ -208,6 +215,46 @@ func _release_first_fish_focus() -> void:
 	_fish_focus_locked = false
 	_fish_focus_timer = 0.0
 	_player.busy = false
+
+
+func _check_escape_followup() -> void:
+	# The bubble is based on moving farther LEFT after seeing the fish flee,
+	# not on the reel action itself or a fixed speech timer.
+	if _first_fish_escape_finished and not _story.has_event(&"help_called") \
+			and _player.position.x <= _help_reveal_x:
+		_story.on_followed_escape()
+
+
+func _start_first_fish_escape() -> void:
+	_help_reveal_x = _player.position.x - FOLLOW_AFTER_ESCAPE_DISTANCE
+	_first_fish_escape_finished = false
+	if not is_instance_valid(_tutorial_fish):
+		_first_fish_escape_finished = true
+		return
+	var fish: DivingWildFish = _tutorial_fish
+	# Penni must also swim a little past the fish's old position.
+	_help_reveal_x = minf(_help_reveal_x, fish.position.x - 20.0)
+	_tutorial_fish = null
+	_wild_fish.erase(fish)
+	_fish_data.erase(fish)
+	# Remove it from normal fish simulation / catch candidates so the
+	# escape tween is the sole owner of its movement.
+	fish.trapped = true
+	var graphic: Sprite2D = fish.get_node_or_null("FishSprite") as Sprite2D
+	if graphic != null:
+		graphic.flip_h = true
+	fish.rotation = 0.0
+	var dash: Tween = create_tween().set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	dash.tween_property(fish, "position",
+		fish.position + Vector2(-FIRST_FISH_ESCAPE_DISTANCE, -12.0),
+		FIRST_FISH_ESCAPE_SECONDS)
+	dash.tween_callback(_finish_first_fish_escape.bind(fish))
+
+
+func _finish_first_fish_escape(fish: DivingWildFish) -> void:
+	if is_instance_valid(fish):
+		fish.queue_free()
+	_first_fish_escape_finished = true
 
 
 func _sync_hooked_fish() -> void:
@@ -267,10 +314,7 @@ func handle_input(event: InputEvent) -> bool:
 	if mouse.button_index == MOUSE_BUTTON_WHEEL_DOWN:
 		if _net.is_latched() and _story.consume_first_reel():
 			_net.reset_net()
-			if is_instance_valid(_tutorial_fish):
-				_tutorial_fish.position += Vector2(-55, -4)
-				_tutorial_fish.trapped = false
-				_tutorial_fish.catch_cooldown = 7.0
+			_start_first_fish_escape()
 			return true
 		if _combat.is_active():
 			_combat.reel_scroll()
