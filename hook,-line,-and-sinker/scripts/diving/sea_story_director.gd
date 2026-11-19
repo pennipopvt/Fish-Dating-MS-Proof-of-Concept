@@ -10,6 +10,7 @@ signal silas_following_started
 var _events: Dictionary = {}
 var _dialogue_stage: StringName = &""
 var _missing_bubble_warned: bool = false
+var _help_trigger_logged: bool = false
 var _speech_bubble: SeaSpeechBubble
 
 
@@ -161,10 +162,15 @@ func consume_first_reel() -> bool:
 func on_followed_escape(near_silas: bool = false) -> void:
 	if has_event(&"help_called") or (not has_event(&"line_broken") and not near_silas):
 		return
-	# Prefer the scripted reel/escape beat. If Penni swims past that fish
-	# and reaches Silas anyway, his cry must still be discoverable.
+	# Print one trigger entry so the Output panel proves the proximity or
+	# fish-follow condition actually reached the story.
+	if not _help_trigger_logged:
+		_help_trigger_logged = true
+		print("[SEA STORY] Help trigger reached: near_silas=%s line_broken=%s" % [
+			str(near_silas), str(has_event(&"line_broken"))])
 	if _show_silas_bubble("Help me!"):
 		_events[&"help_called"] = true
+		print("[SEA STORY] Help call delivered to the bubble")
 
 
 func can_talk_to_silas() -> bool:

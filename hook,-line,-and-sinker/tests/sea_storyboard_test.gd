@@ -17,6 +17,26 @@ func _run() -> void:
 	var bubble: SeaSpeechBubble = main.get_node("SeaSpeechBubble") as SeaSpeechBubble
 	_check(story.get("_speech_bubble") == bubble,
 		"Main binds the exact speech-bubble instance into the sea story")
+	var debug_layer: CanvasLayer = main.get_node_or_null("SeaDebugLayer") as CanvasLayer
+	_check(debug_layer != null and not debug_layer.visible,
+		"F7 diagnostics start hidden and cannot obstruct the game")
+	var f7: InputEventKey = InputEventKey.new()
+	f7.keycode = KEY_F7
+	f7.pressed = true
+	main.call("_input", f7)
+	_check(debug_layer.visible
+		and (main.get_node("SeaDebugLayer/Panel/Diagnostics") as Label).text.contains("Silas distance"),
+		"F7 exposes live trigger and UI-state diagnostics")
+	main.call("_input", f7)
+	_check(not debug_layer.visible, "F7 also hides diagnostics")
+	var f8: InputEventKey = InputEventKey.new()
+	f8.keycode = KEY_F8
+	f8.pressed = true
+	main.call("_input", f8)
+	_check(bubble.is_call_shown(),
+		"F8 can draw a standalone test bubble without any story trigger")
+	bubble.hide_call()
+	debug_layer.visible = false
 	_check(story.call("_bubble") == bubble,
 		"Story resolves the explicitly injected speech-bubble instance")
 	bubble.remove_from_group("sea_speech_bubble")

@@ -110,6 +110,7 @@ func _process(_delta: float) -> void:
 
 func _update_attached_position() -> void:
 	if not is_instance_valid(_speaker) or not is_instance_valid(_display):
+		push_warning("[SEA BUBBLE] Hiding attached call: Silas or display reference invalid")
 		hide_call()
 		return
 	var game_view: Vector2 = Vector2(_speaker.get_viewport().get_visible_rect().size)

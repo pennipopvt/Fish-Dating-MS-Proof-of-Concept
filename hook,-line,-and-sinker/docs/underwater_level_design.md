@@ -264,3 +264,30 @@ connects via its flat top edge to the outside of the bubble, with a
 1px hidden seam. The old center-of-tail-over-the-border placement is
 gone. The bubble and tail art are still assigned in
 `scenes/sea_speech_bubble.tscn`.
+
+
+## Silas encounter diagnostics (F7/F8)
+
+The *trigger is code*, not an Area2D: `DivingWorld._process()`
+calls `_check_escape_followup()` every swimming frame. It requests
+`SeaStoryDirector.on_followed_escape()` when the initial fish has escaped
+and Penni crossed the follow threshold; it also calls the same event
+when she comes within **108 world pixels** of `Sea/NPCs/Silas`, even
+if the first fish was skipped. The story should mark `help_called`
+only after the UI accepts the call.
+
+**F7** toggles a temporary debug panel on Main's outer UI CanvasLayer
+(layer 120), showing Silas distance, escape/follow flags, whether the
+story has consumed the event, whether Main bound the real bubble,
+its visibility and screen rect. **F8** bypasses the story completely
+and draws a persistent `UI TEST: Help me!` bubble at a fixed onscreen
+position. Pressing F8 also displays the panel. The Output console logs
+`[SEA DEBUG]` only on trigger-state transitions, `[SEA STORY]`
+when the story trigger is actually entered or delivered, and
+`[SEA BUBBLE]` if its speaker/display reference is lost.
+
+Interpretation: F8 invisible = renderer/layer/scene issue; F8 visible
+but `proximity trigger: false` = player/trigger issue; proximity true
+but `help_called: false` = story/UI delivery issue; help true but
+call invisible = bubble was hidden after delivery.
+No story conditions or normal artwork are changed by diagnostics.

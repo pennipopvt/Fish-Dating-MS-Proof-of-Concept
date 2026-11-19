@@ -32,6 +32,13 @@ var _first_dive_call_finished: bool = false
 var _dock_confirmation_target: Node2D
 var _dock_confirmation_yes: bool = false
 
+# Diagnostic UI is created only under Main and starts hidden. F7 shows
+# trigger and bubble state; F8 tests the renderer without story flags.
+var _sea_debug_layer: CanvasLayer
+var _sea_debug_label: Label
+var _sea_debug_elapsed: float = 0.0
+var _sea_debug_last_transition: String = ""
+
 
 func _ready() -> void:
 	_iris.hide()
@@ -47,6 +54,7 @@ func _ready() -> void:
 	var speech: SeaSpeechBubble = get_node_or_null("SeaSpeechBubble") as SeaSpeechBubble
 	if story != null:
 		story.bind_speech_bubble(speech)
+	_setup_sea_debug()
 	# The sea is a child of the one live World; there is only one music player.
 	_ensure_intro_nodes()
 	if _intro_layer != null:
@@ -58,6 +66,123 @@ func _ready() -> void:
 	ShopManager.shop_opened.connect(_on_first_quota_opened)
 	ShopManager.shop_closed.connect(_on_first_quota_closed)
 	_start_contract_call.call_deferred()
+
+
+
+# Debug controls are intentionally outside the SubViewport, in a dedicated
+# hidden CanvasLayer, so a missing game-viewport widget can't hide diagnostics.
+func _setup_sea_debug() -> void:
+	_sea_debug_layer = CanvasLayer.new()
+	_sea_debug_layer.name = "SeaDebugLayer"
+	_sea_debug_layer.layer = 120
+	_sea_debug_layer.visible = false
+	add_child(_sea_debug_layer)
+
+	var panel: Panel = Panel.new()
+	panel.name = "Panel"
+	panel.position = Vector2(10.0, 10.0)
+	panel.size = Vector2(800.0, 310.0)
+	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var background: StyleBoxFlat = StyleBoxFlat.new()
+	background.bg_color = Color(0.015, 0.035, 0.06, 0.93)
+	background.border_color = Color(0.5, 0.9, 1.0, 1.0)
+	background.set_border_width_all(2)
+	panel.add_theme_stylebox_override("panel", background)
+	_sea_debug_layer.add_child(panel)
+
+	_sea_debug_label = Label.new()
+	_sea_debug_label.name = "Diagnostics"
+	_sea_debug_label.position = Vector2(12.0, 10.0)
+	_sea_debug_label.size = Vector2(775.0, 285.0)
+	_sea_debug_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_sea_debug_label.add_theme_font_size_override("font_size", 17)
+	panel.add_child(_sea_debug_label)
+
+
+func _process(delta: float) -> void:
+	if not _underwater and (_sea_debug_layer == null or not _sea_debug_layer.visible):
+		return
+	_sea_debug_elapsed += delta
+	if _sea_debug_elapsed < 0.25:
+		return
+	_sea_debug_elapsed = 0.0
+	_update_sea_debug()
+
+
+func _update_sea_debug() -> void:
+	var story: SeaStoryDirector = _sea.get_node_or_null("StoryDirector") as SeaStoryDirector
+	var silas: Node2D = _sea.get_node_or_null("NPCs/Silas") as Node2D
+	var ui: SeaSpeechBubble = get_node_or_null("SeaSpeechBubble") as SeaSpeechBubble
+	var call: Control = ui.get_node_or_null("Call") as Control if ui != null else null
+	var events: Dictionary = story.get("_events") if story != null else {}
+	var distance: float = _world_player.global_position.distance_to(silas.global_position) if silas != null else INF
+	var near_silas: bool = distance <= 108.0
+	var escaped: bool = bool(_sea.get("_first_fish_escape_finished"))
+	var follow_x: float = float(_sea.get("_help_reveal_x"))
+	var followed: bool = escaped and _world_player.position.x <= follow_x
+	var line_broken: bool = bool(events.get(&"line_broken", false))
+	var help_called: bool = bool(events.get(&"help_called", false))
+	var bound: bool = story != null and ui != null and story.get("_speech_bubble") == ui
+	var ready: bool = ui != null and ui.is_node_ready()
+	var call_visible: bool = call != null and call.visible
+	var call_on_tree: bool = call != null and call.is_visible_in_tree()
+	var visible: bool = ui != null and ui.is_call_shown()
+	var speaker: Node = ui.get("_speaker") as Node if ui != null else null
+	var display: Node = ui.get("_display") as Node if ui != null else null
+	var rect: Rect2 = call.get_global_rect() if call != null else Rect2()
+
+	var lines: PackedStringArray = PackedStringArray()
+	lines.append("SEA DEBUG | F7 hide/show | F8 force visible UI TEST")
+	lines.append("Swimming: %s   Main underwater: %s   UI parent: Main" % [
+		str(_world_player.swimming), str(_underwater)])
+	lines.append("Player: %s   Silas: %s" % [
+		str(_world_player.global_position.round()),
+		str(silas.global_position.round()) if silas != null else "MISSING"])
+	lines.append("Silas distance: %.1f / 108   proximity trigger: %s" % [
+		distance, str(near_silas)])
+	lines.append("Line broke: %s   fish escaped: %s   followed left: %s" % [
+		str(line_broken), str(escaped), str(followed)])
+	lines.append("Player x: %.1f   follow threshold x: %.1f" % [
+		_world_player.position.x, follow_x])
+	lines.append("Expected help trigger now: %s   help_called flag: %s" % [
+		str(followed or near_silas), str(help_called)])
+	lines.append("Story: %s   UI bound: %s   UI ready: %s" % [
+		str(story != null), str(bound), str(ready)])
+	lines.append("Call node visible: %s   in tree: %s   renderer says: %s" % [
+		str(call_visible), str(call_on_tree), str(visible)])
+	lines.append("Speaker valid: %s   display valid: %s" % [
+		str(is_instance_valid(speaker)), str(is_instance_valid(display))])
+	lines.append("Call screen rect: %s   viewport size: %s" % [
+		str(rect), str(get_viewport_rect().size)])
+	lines.append("Dialogue active: %s   modal UI: %s" % [
+		str(DialogueManager.is_active), str(GameManager.is_modal_ui_open())])
+	if _sea_debug_label != null:
+		_sea_debug_label.text = "\n".join(lines)
+
+	# Print only when discrete trigger/UI state changes, not on every frame.
+	var transition: String = (
+		"swim=%s near=%s escape=%s follow=%s broken=%s help=%s bound=%s shown=%s"
+		% [str(_world_player.swimming), str(near_silas), str(escaped),
+			str(followed), str(line_broken), str(help_called),
+			str(bound), str(visible)]
+	)
+	if transition != _sea_debug_last_transition:
+		_sea_debug_last_transition = transition
+		print("[SEA DEBUG] " + transition)
+
+
+func _force_test_bubble() -> void:
+	var ui: SeaSpeechBubble = get_node_or_null("SeaSpeechBubble") as SeaSpeechBubble
+	if ui == null:
+		push_error("[SEA DEBUG] F8 failed: Main/SeaSpeechBubble does not exist")
+		return
+	ui.show_call("UI TEST: Help me!", false, 0.0)
+	print("[SEA DEBUG] F8 test: ready=%s shown=%s Call rect=%s" % [
+		str(ui.is_node_ready()), str(ui.is_call_shown()),
+		str((ui.get_node("Call") as Control).get_global_rect())])
+	if _sea_debug_layer != null:
+		_sea_debug_layer.visible = true
+	_update_sea_debug()
 
 
 # The authored IntroLayer is preferred; don't duplicate it in normal play.
@@ -290,6 +415,19 @@ func _spawn_splash(at: Vector2) -> void:
 # Main receives mouse events before SubViewportContainer can consume them.
 # Delegate underwater gameplay input to Sea; all land controls stay unchanged.
 func _input(event: InputEvent) -> void:
+	var key: InputEventKey = event as InputEventKey
+	if key != null and key.pressed and not key.echo:
+		if key.keycode == KEY_F7:
+			if _sea_debug_layer != null:
+				_sea_debug_layer.visible = not _sea_debug_layer.visible
+				_update_sea_debug()
+			print("[SEA DEBUG] F7 diagnostics: %s" % str(_sea_debug_layer.visible))
+			get_viewport().set_input_as_handled()
+			return
+		if key.keycode == KEY_F8:
+			_force_test_bubble()
+			get_viewport().set_input_as_handled()
+			return
 	if _world_player.swimming and _underwater and not _transitioning:
 		if _sea.handle_input(event):
 			get_viewport().set_input_as_handled()
