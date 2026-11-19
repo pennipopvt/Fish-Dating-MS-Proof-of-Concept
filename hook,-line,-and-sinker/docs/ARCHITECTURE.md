@@ -194,3 +194,17 @@ checked before marking help_called; it must not be a hidden/failed event.
 Do not change viewport ownership or pixel scaling again without an
 actual Godot runtime test. First ensure the story beat and bubble draw
 are reliable. Tuning pixel art scale can be done after that.
+
+## Silas bubble ownership wiring (confirmed branch constraint)
+
+`SeaStoryDirector` is a descendant of `World` inside the game
+`SubViewport`, but `SeaSpeechBubble` is a sibling of
+`SubViewportContainer` in the outer `Main` scene. It should not try
+to discover the screen UI by guessing the parent chain of
+`get_viewport()`. At `Main._ready()`, obtain the exact instance at
+`Main/SeaSpeechBubble` and call
+`Sea/StoryDirector.bind_speech_bubble(speech)`.
+The director uses that explicit reference for all its messages.
+The historical `sea_speech_bubble` scene group is only a
+fallback for standalone use. The renderer and the user's bubble/tail
+textures were not changed as part of this wiring repair.

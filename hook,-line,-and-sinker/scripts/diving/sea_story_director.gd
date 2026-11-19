@@ -10,6 +10,15 @@ signal silas_following_started
 var _events: Dictionary = {}
 var _dialogue_stage: StringName = &""
 var _missing_bubble_warned: bool = false
+var _speech_bubble: SeaSpeechBubble
+
+
+func bind_speech_bubble(bubble: SeaSpeechBubble) -> void:
+	# Main owns the UI. Inject its exact scene instance once Main is ready.
+	_speech_bubble = bubble
+	if _speech_bubble == null:
+		push_warning("Main has no SeaSpeechBubble to bind to the story.")
+
 
 
 func _ready() -> void:
@@ -17,12 +26,11 @@ func _ready() -> void:
 
 
 func _bubble() -> SeaSpeechBubble:
-	# SeaStoryDirector runs inside the game SubViewport. The visual lives
-	# in Main alongside SubViewportContainer (the previously working
-	# screen layer). Resolve the exact scene branch, not a global group.
-	var container: Node = get_viewport().get_parent()
-	var main: Node = container.get_parent() if container != null else null
-	return main.get_node_or_null("SeaSpeechBubble") as SeaSpeechBubble if main != null else null
+	# Do not walk across viewports here. Main injects the real UI node.
+	# The group fallback keeps standalone sea tests/dev scenes safe.
+	if is_instance_valid(_speech_bubble):
+		return _speech_bubble
+	return get_tree().get_first_node_in_group("sea_speech_bubble") as SeaSpeechBubble
 
 
 func _show_silas_bubble(message: String, seconds: float = 0.0) -> bool:
@@ -31,7 +39,7 @@ func _show_silas_bubble(message: String, seconds: float = 0.0) -> bool:
 		# The story beat must not be consumed when the presentation is
 		# missing. DivingWorld will retry the trigger on a later frame.
 		if not _missing_bubble_warned:
-			push_warning("SeaSpeechBubble missing from the game SubViewport; run scenes/main.tscn.")
+			push_warning("SeaSpeechBubble was not bound from Main; Silas call will retry.")
 			_missing_bubble_warned = true
 		return false
 	_missing_bubble_warned = false

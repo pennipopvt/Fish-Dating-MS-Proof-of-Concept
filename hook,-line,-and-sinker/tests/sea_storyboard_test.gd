@@ -15,11 +15,13 @@ func _run() -> void:
 	var sea: DivingWorld = main.get_node("SubViewportContainer/SubViewport/World/Sea") as DivingWorld
 	var story: SeaStoryDirector = sea.get_node("StoryDirector") as SeaStoryDirector
 	var bubble: SeaSpeechBubble = main.get_node("SeaSpeechBubble") as SeaSpeechBubble
+	_check(story.get("_speech_bubble") == bubble,
+		"Main binds the exact speech-bubble instance into the sea story")
 	_check(story.call("_bubble") == bubble,
-		"Story resolves speech bubble directly from its own game SubViewport")
+		"Story resolves the explicitly injected speech-bubble instance")
 	bubble.remove_from_group("sea_speech_bubble")
 	_check(story.call("_bubble") == bubble,
-		"Bubble lookup is independent of global group registration")
+		"Speech bubble remains bound even when group registration changes")
 	bubble.add_to_group("sea_speech_bubble")
 	var cue: SeaTutorialCue = main.get_node(
 		"SubViewportContainer/SubViewport/World/Player/Camera2D/SeaTutorialCue"

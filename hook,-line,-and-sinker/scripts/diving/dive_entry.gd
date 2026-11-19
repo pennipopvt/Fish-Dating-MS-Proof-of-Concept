@@ -40,6 +40,13 @@ func _ready() -> void:
 	_iris.material = _iris_material
 	_set_iris_radius(IRIS_OPEN_RADIUS)
 	_sea.surface_requested.connect(_on_surface_requested)
+	# SeaStoryDirector is inside the game SubViewport, but this speech
+	# bubble is in Main's outer UI CanvasLayer. Pass the real instance in
+	# directly instead of trying to discover it across viewport parents.
+	var story: SeaStoryDirector = _sea.get_node_or_null("StoryDirector") as SeaStoryDirector
+	var speech: SeaSpeechBubble = get_node_or_null("SeaSpeechBubble") as SeaSpeechBubble
+	if story != null:
+		story.bind_speech_bubble(speech)
 	# The sea is a child of the one live World; there is only one music player.
 	_ensure_intro_nodes()
 	if _intro_layer != null:
