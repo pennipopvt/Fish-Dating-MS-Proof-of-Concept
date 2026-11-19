@@ -1,29 +1,31 @@
 extends CanvasLayer
 class_name SeaSpeechBubble
 
-# Keep this one bubble on Main's proven UI canvas. Silas lives in the
-# 320x180 SubViewport: only his point is mapped into Main coordinates.
-# Never alter CanvasLayer.scale/offset or instance another bubble.
+# One bubble, rendered by Main (never moved into the game SubViewport).
+# All local UI coordinates are in NATIVE 320x180 pixels; the CanvasLayer
+# maps them to Main's SubViewportContainer, nearest-filtered for pixel art.
 @export var bubble_texture: Texture2D:
 	set(value):
 		bubble_texture = value
 		if is_node_ready():
 			_apply_frame()
-
 @export var tail_texture: Texture2D:
 	set(value):
 		tail_texture = value
 		if is_node_ready():
 			_apply_frame()
-
 @export_range(1, 16, 1) var patch_margin: int = 6:
 	set(value):
 		patch_margin = value
 		if is_node_ready():
 			_apply_frame()
-
-@export var bubble_offset: Vector2 = Vector2(44.0, -115.0)
-@export_range(8.0, 48.0, 1.0) var screen_margin: float = 16.0
+@export_range(9, 18, 1) var font_pixels: int = 12
+@export var bubble_offset: Vector2 = Vector2(12.0, -39.0)
+@export_range(2.0, 24.0, 1.0) var screen_margin: float = 8.0
+@export_range(0.04, 0.3, 0.01) var letter_seconds: float = 0.09
+@export_range(0.5, 8.0, 0.1) var help_hold_seconds: float = 2.4
+@export_range(0.1, 2.0, 0.1) var fade_seconds: float = 0.7
+@export_range(0.2, 6.0, 0.1) var repeat_gap_seconds: float = 1.8
 
 @onready var _call: Control = $Call
 @onready var _frame: NinePatchRect = $Call/Frame
@@ -32,18 +34,35 @@ class_name SeaSpeechBubble
 @onready var _tail: TextureRect = $Call/Tail
 @onready var _hint: Label = $Hint
 
-var _call_serial: int = 0
-var _speaker: Node2D
 var _display: SubViewportContainer
+var _game_viewport: SubViewport
+var _speaker: Node2D
+var _message: String = ""
+var _session_active: bool = false
+var _repeating: bool = false
+var _cycle_time: float = 0.0
+var _hold_time: float = 0.0
+var _origin: Vector2 = Vector2(10.0, 35.0)
+var _last_state: StringName = &"idle"
+var _call_serial: int = 0
 
 
 func _ready() -> void:
 	add_to_group("sea_speech_bubble")
 	_display = get_parent().get_node_or_null("SubViewportContainer") as SubViewportContainer
+	if _display != null:
+		_game_viewport = _display.get_node_or_null("SubViewport") as SubViewport
+	# The fallback created in Main at runtime uses the same child names.
+	_text.add_theme_font_size_override("font_size", font_pixels)
+	_text.add_theme_color_override("font_color", Color.BLACK)
+	_text.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_tail.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	_frame.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	_apply_frame()
 	_call.hide()
 	_tail.hide()
 	_hint.hide()
-	_apply_frame()
+	_sync_game_scale()
 	set_process(false)
 
 
@@ -56,79 +75,172 @@ func _apply_frame() -> void:
 	_frame.visible = bubble_texture != null
 	_fallback.visible = bubble_texture == null
 	_tail.texture = tail_texture
-	_tail.visible = _call.visible and is_instance_valid(_speaker) and tail_texture != null
 
 
+func _game_size() -> Vector2:
+	if is_instance_valid(_game_viewport):
+		return Vector2(_game_viewport.get_visible_rect().size)
+	return Vector2(320.0, 180.0)
+
+
+func _sync_game_scale() -> void:
+	if not is_instance_valid(_display):
+		return
+	var size: Vector2 = _game_size()
+	var rect: Rect2 = _display.get_global_rect()
+	if size.x <= 0.0 or size.y <= 0.0 or rect.size.x <= 0.0:
+		return
+	scale = rect.size / size
+	offset = rect.position
+
+
+# "Shown" describes the actual visible portion of the cycle; "active"
+# remains true during the intentional gap between repeated cries.
 func is_call_shown() -> bool:
 	return is_node_ready() and visible and _call.is_visible_in_tree() \
 		and (_frame.visible or _fallback.visible)
 
 
-# This is the same draw path as the last screenshot in which "Help me!"
-# appeared. It also works if the sea actor is temporarily unavailable.
+func is_call_active() -> bool:
+	return _session_active and is_instance_valid(_call)
+
+
+func bubble_debug_state() -> String:
+	return "%s chars=%d/%d repeat=%s size=%s scale=%s" % [
+		String(_last_state), _text.visible_characters, _message.length(),
+		str(_repeating), str(_call.size), str(scale)]
+
+
 func show_call(message: String, from_right: bool = true, seconds: float = 4.0) -> void:
-	_call_serial += 1
-	var serial: int = _call_serial
-	_stop_tracking()
-	var view_size: Vector2 = get_viewport().get_visible_rect().size
-	var width: float = _call.size.x
-	_call.position = Vector2(
-		maxf(16.0, view_size.x - width - screen_margin) if from_right else screen_margin,
-		maxf(20.0, view_size.y * 0.24)
-	)
-	_text.text = message
-	show()
-	_call.show()
-	if seconds > 0.0:
-		await get_tree().create_timer(seconds).timeout
-		if serial == _call_serial and is_instance_valid(_call):
-			hide_call()
+	_speaker = null
+	_sync_game_scale()
+	var game_size: Vector2 = _game_size()
+	_origin = Vector2(game_size.x - 100.0 if from_right else 10.0, 34.0)
+	# A zero-duration test call stays up until explicitly hidden.
+	_begin_message(message, false, -1.0 if seconds <= 0.0 else seconds)
 
 
+# Repeating, persistent cries when seconds is zero; a timed one-shot
+# message for later companion advice when seconds is positive.
 func show_attached_call(message: String, speaker: Node2D, seconds: float = 0.0) -> void:
-	if not is_instance_valid(speaker) or not is_instance_valid(_display):
+	if not is_instance_valid(speaker):
 		show_call(message, false, seconds)
 		return
-	_call_serial += 1
-	var serial: int = _call_serial
 	_speaker = speaker
+	_begin_message(message, seconds <= 0.0, help_hold_seconds if seconds <= 0.0 else seconds)
+
+
+func _begin_message(message: String, repeat: bool, hold: float) -> void:
+	_call_serial += 1
+	_message = message
+	_repeating = repeat
+	_hold_time = hold
+	_cycle_time = 0.0
+	_session_active = true
+	_last_state = &"reveal"
 	_text.text = message
+	_text.visible_characters = 0
 	show()
 	_call.show()
-	_tail.visible = tail_texture != null
+	_call.modulate.a = 1.0
+	_tail.visible = tail_texture != null and is_instance_valid(_speaker)
+	_update_animation(0.0)
+	_update_position()
 	set_process(true)
-	_update_attached_position()
-	if seconds > 0.0:
-		await get_tree().create_timer(seconds).timeout
-		if serial == _call_serial and is_instance_valid(_call):
-			hide_call()
 
 
-func _process(_delta: float) -> void:
-	_update_attached_position()
+func _process(delta: float) -> void:
+	if not _session_active:
+		return
+	_sync_game_scale()
+	_cycle_time += delta
+	_update_animation(_cycle_time)
+	if _session_active and _call.visible:
+		_update_position()
+
+
+func _update_animation(elapsed: float) -> void:
+	var reveal_duration: float = maxf(float(_message.length()) * letter_seconds, 0.1)
+	var duration: float = reveal_duration + _hold_time + fade_seconds
+	if _hold_time < 0.0:
+		duration = INF
+	var total_cycle: float = duration + repeat_gap_seconds
+	if _repeating and elapsed >= total_cycle:
+		_cycle_time = fmod(elapsed, total_cycle)
+		elapsed = _cycle_time
+	if not _repeating and elapsed >= duration and _hold_time >= 0.0:
+		hide_call()
+		return
+	if _repeating and elapsed >= duration:
+		_last_state = &"waiting"
+		_call.hide()
+		return
+	_call.show()
+	if elapsed < reveal_duration:
+		_last_state = &"reveal"
+		var shown: int = mini(int(floor(elapsed / letter_seconds)), _message.length())
+		_text.visible_characters = shown
+		_layout_for_characters(shown)
+		_call.modulate.a = 1.0
+	elif elapsed < reveal_duration + _hold_time or _hold_time < 0.0:
+		_last_state = &"hold"
+		_text.visible_characters = _message.length()
+		_layout_for_characters(_message.length())
+		_call.modulate.a = 1.0
+	else:
+		_last_state = &"fade"
+		_text.visible_characters = _message.length()
+		_layout_for_characters(_message.length())
+		_call.modulate.a = clampf(
+			1.0 - (elapsed - reveal_duration - _hold_time) / fade_seconds, 0.0, 1.0)
+
+
+func _layout_for_characters(count: int) -> void:
+	# Measure the currently revealed text, not the final string: this makes
+	# the nine-slice frame physically grow with the typewriter animation.
+	var shown: String = _message.substr(0, count)
+	var font: Font = _text.get_theme_font("font")
+	var font_size: int = _text.get_theme_font_size("font_size")
+	var measured: float = float(count) * 6.0
+	if font != null and not shown.is_empty():
+		measured = font.get_string_size(shown, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x
+	var width: float = clampf(18.0 + measured, 28.0, 132.0)
+	var height: float = 30.0
+	if 18.0 + measured > 132.0:
+		height = 44.0
+	_call.size = Vector2(ceilf(width), height)
+	# Runtime recovery also creates Panel/NinePatch without anchors.
+	_frame.size = _call.size
+	_fallback.size = _call.size
+	_text.position = Vector2(8.0, 4.0)
+	_text.size = _call.size - Vector2(16.0, 8.0)
+
+
+func _update_position() -> void:
+	var target: Vector2 = Vector2.ZERO
+	var tracked: bool = is_instance_valid(_speaker)
+	if tracked:
+		target = _speaker.get_global_transform_with_canvas() * Vector2(0.0, -10.0)
+	else:
+		target = _origin
+	var desired: Vector2 = target + bubble_offset if tracked else target
+	var min_pos: Vector2 = Vector2.ONE * screen_margin
+	var max_pos: Vector2 = _game_size() - _call.size - min_pos
+	max_pos.x = maxf(min_pos.x, max_pos.x)
+	max_pos.y = maxf(min_pos.y, max_pos.y)
+	_call.position = Vector2(
+		roundf(clampf(desired.x, min_pos.x, max_pos.x)),
+		roundf(clampf(desired.y, min_pos.y, max_pos.y)))
+	_tail.visible = tracked and tail_texture != null
+	if _tail.visible:
+		_point_tail_at(target)
 
 
 func _update_attached_position() -> void:
-	if not is_instance_valid(_speaker) or not is_instance_valid(_display):
-		push_warning("[SEA BUBBLE] Hiding attached call: Silas or display reference invalid")
-		hide_call()
-		return
-	var game_view: Vector2 = Vector2(_speaker.get_viewport().get_visible_rect().size)
-	if game_view.x <= 0.0 or game_view.y <= 0.0:
-		return
-	var view_rect: Rect2 = _display.get_global_rect()
-	var point_in_game: Vector2 = _speaker.get_global_transform_with_canvas() * Vector2(0.0, -10.0)
-	var target: Vector2 = view_rect.position + point_in_game * (view_rect.size / game_view)
-	var wanted: Vector2 = target + bubble_offset
-	var low: Vector2 = view_rect.position + Vector2.ONE * screen_margin
-	var high: Vector2 = view_rect.end - _call.size - Vector2.ONE * screen_margin
-	high.x = maxf(low.x, high.x)
-	high.y = maxf(low.y, high.y)
-	_call.position = Vector2(
-		roundf(clampf(wanted.x, low.x, high.x)),
-		roundf(clampf(wanted.y, low.y, high.y))
-	)
-	_point_tail_at(target)
+	# Existing storyboard/debug tests call this method explicitly.
+	if _session_active:
+		_sync_game_scale()
+		_update_position()
 
 
 func _point_tail_at(target: Vector2) -> void:
@@ -136,17 +248,17 @@ func _point_tail_at(target: Vector2) -> void:
 		return
 	var half: Vector2 = _call.size * 0.5
 	var direction: Vector2 = target - (_call.position + half)
-	if direction.length_squared() < 0.001:
+	if direction.length_squared() < 0.01:
 		direction = Vector2(-1.0, 1.0)
-	var x_hit: float = half.x / maxf(absf(direction.x), 0.001)
-	var y_hit: float = half.y / maxf(absf(direction.y), 0.001)
-	var edge: Vector2 = half + direction * minf(x_hit, y_hit)
-	if x_hit < y_hit:
+	var factor_x: float = half.x / maxf(absf(direction.x), 0.001)
+	var factor_y: float = half.y / maxf(absf(direction.y), 0.001)
+	var edge: Vector2 = half + direction * minf(factor_x, factor_y)
+	if factor_x < factor_y:
 		edge.x = _call.size.x if direction.x > 0.0 else 0.0
-		edge.y = clampf(edge.y, 12.0, _call.size.y - 12.0)
+		edge.y = clampf(edge.y, 8.0, maxf(8.0, _call.size.y - 8.0))
 	else:
 		edge.y = _call.size.y if direction.y > 0.0 else 0.0
-		edge.x = clampf(edge.x, 12.0, _call.size.x - 12.0)
+		edge.x = clampf(edge.x, 8.0, maxf(8.0, _call.size.x - 8.0))
 	var pivot: Vector2 = _tail.size * 0.5
 	var base_center: Vector2 = Vector2(_tail.size.x * 0.5, 0.0)
 	_tail.pivot_offset = pivot
@@ -155,20 +267,23 @@ func _point_tail_at(target: Vector2) -> void:
 	_tail.position = (edge - direction.normalized() - pivot - rotated_base).round()
 
 
-func _stop_tracking() -> void:
+func hide_call() -> void:
+	_call_serial += 1
+	_session_active = false
+	_repeating = false
 	_speaker = null
+	_last_state = &"idle"
+	_call.hide()
 	_tail.hide()
 	set_process(false)
 
 
-func hide_call() -> void:
-	_call_serial += 1
-	_stop_tracking()
-	_call.hide()
-
-
 func show_hint(message: String) -> void:
+	_sync_game_scale()
+	_hint.add_theme_font_size_override("font_size", 10)
 	_hint.text = message
+	_hint.position = Vector2(8.0, _game_size().y - 26.0)
+	_hint.size = Vector2(_game_size().x - 16.0, 18.0)
 	_hint.visible = not message.is_empty()
 
 

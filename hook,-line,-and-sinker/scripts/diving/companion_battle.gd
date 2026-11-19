@@ -8,6 +8,7 @@ class_name DivingCompanionBattle
 # exhausted until the player rests (GameManager.day_started -> rest()).
 
 signal hit(on_fish: bool, damage: float)
+signal started(fish: DivingWildFish)
 signal fish_knocked_out(fish: DivingWildFish)
 signal companion_knocked_out()
 signal ended()
@@ -58,6 +59,7 @@ func start(fish: DivingWildFish, data: FishData) -> bool:
 	# feels responsive; the fish answers on its own full interval.
 	_companion_timer = attack_interval(stats.speed) * 0.5
 	_fish_timer = attack_interval(data.speed)
+	started.emit(fish)
 	return true
 
 
@@ -76,13 +78,17 @@ func rest() -> void:
 	exhausted = false
 
 
-func step(delta: float) -> void:
+func step(delta: float, in_attack_range: bool = true) -> void:
 	if target != null and not is_instance_valid(target):
 		# The fish was freed elsewhere (caught, surfaced scene, etc.).
 		stop()
 	if not is_active():
 		if not exhausted:
 			health = minf(stats.max_health, health + stats.regen_per_second * delta)
+		return
+	# World combat is physical: timers start when Silas reaches the fish,
+	# rather than damaging a target from anywhere in the sea.
+	if not in_attack_range:
 		return
 	_companion_timer -= delta
 	if _companion_timer <= 0.0:

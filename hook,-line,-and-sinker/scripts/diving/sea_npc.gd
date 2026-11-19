@@ -14,6 +14,10 @@ class_name SeaNPC
 		form = value
 		if is_node_ready():
 			_refresh_sprite()
+# Match main's physical chase and 140px/s combat approach.
+@export_range(40.0, 250.0, 1.0) var combat_swim_speed: float = 140.0
+@export_range(8.0, 30.0, 1.0) var combat_attack_range: float = 18.0
+
 @export var human_world_sprite: Texture2D:
 	set(value):
 		human_world_sprite = value
@@ -27,6 +31,9 @@ var following: bool = false
 var _player: Player
 var _story: SeaStoryDirector
 var _battle: DivingCompanionBattle
+var _lunge_time: float = 0.0
+var _hurt_time: float = 0.0
+var _last_swim_state: StringName = &"idle"
 
 
 func _ready() -> void:
@@ -56,11 +63,52 @@ func _process(delta: float) -> void:
 	if _player == null:
 		return
 	_indicator.visible = _player.swimming and _story != null and _story.can_talk_to_silas() and position.distance_to(_player.position) < 48.0
-	if following and _player.swimming:
-		var target: Vector2 = _player.position + Vector2(-24.0 if _player.last_direction >= 0.0 else 24.0, 6.0)
-		if position.distance_to(target) > 10.0:
-			position = position.move_toward(target, 74.0 * delta)
-		queue_redraw()
+	_lunge_time = maxf(0.0, _lunge_time - delta)
+	_hurt_time = maxf(0.0, _hurt_time - delta)
+	_sprite.modulate = Color(1.0, 0.55, 0.5) if _hurt_time > 0.0 else Color.WHITE
+	if not following or not _player.swimming:
+		return
+	var before: Vector2 = position
+	var destination: Vector2
+	var speed: float
+	if _battle != null and _battle.is_active():
+		var fish: DivingWildFish = _battle.target
+		var side: Vector2 = (_player.position - fish.position).normalized()
+		if side.length_squared() < 0.01:
+			side = Vector2.LEFT
+		# The same hit lunge as main, now on the actual SeaNPC actor.
+		var lunge: float = 7.0 * (_lunge_time / 0.15)
+		destination = fish.position + side * (22.0 - lunge)
+		speed = combat_swim_speed
+		_last_swim_state = &"approach" if position.distance_to(destination) > combat_attack_range else &"engaged"
+	else:
+		destination = _player.position + Vector2(-24.0 if _player.last_direction >= 0.0 else 24.0, 6.0)
+		speed = 114.0 if position.distance_to(destination) > 95.0 else 74.0
+		_last_swim_state = &"returning"
+	if position.distance_to(destination) > 1.0:
+		position = position.move_toward(destination, speed * delta)
+	_sprite.flip_h = position.x < before.x - 0.01
+	_sprite.rotation = sin(Time.get_ticks_msec() * 0.009) * (0.12 if _battle != null and _battle.is_active() else 0.07)
+	queue_redraw()
+
+
+func can_strike_target() -> bool:
+	return following and _battle != null and _battle.is_active() \
+		and position.distance_to(_battle.target.position) <= combat_attack_range + 4.0
+
+
+func on_battle_hit(on_fish: bool) -> void:
+	if on_fish:
+		_lunge_time = 0.15
+	else:
+		_hurt_time = 0.12
+
+
+func battle_debug_state() -> String:
+	var distance: float = position.distance_to(_battle.target.position) \
+		if _battle != null and _battle.is_active() else -1.0
+	return "%s distance=%.1f strike=%s" % [
+		String(_last_swim_state), distance, str(can_strike_target())]
 
 
 func _draw() -> void:
