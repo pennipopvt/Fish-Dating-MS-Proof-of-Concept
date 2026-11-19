@@ -454,3 +454,38 @@ intermittent full-screen white rectangle seen when the old frame
 stretched. The repeating Silas help call still uses its original
 nine-slice sprite and the independent circle marker. Both authored
 and recovery paths use the same small hint panel.
+
+
+## Editable fish avoidance — small first fishing pass
+
+For normal fish, select `Sea/FishSpawns/<fish>` in
+`scenes/sea_area.tscn` and use the **Fish Approach and Flee**
+Inspector group:
+
+- `preferred_player_distance` (game pixels): minimum comfortable
+  distance before a wary fish retreats at full speed; **0** disables
+  the stronger distancing and allows close fish
+- `alert_distance`: begins retreat before that preferred distance
+- `flee_speed` (game pixels/sec): preferably above Penni's
+  **78 px/sec** swim speed for cautious species
+
+The ordinary `MulletAfterSilas` starts at **52px preferred,
+76px alert, 112px/sec**. `FirstFish` uses **0px** and remains trapped
+by the one-time tutorial until scripted capture. The NPC rescue
+target remains trapped and unaffected. `DivingWorld` copies
+these exports into `DivingWildFish`, whose existing `swim` loop
+retains all existing wander, cooldown, companion concealment,
+and region bounds behavior. A wary fish backs away physically when
+Penni gets close; it does not teleport and it can still be netted
+from a distance. Near walls or the sea boundary, a trapped fish
+can still be approached; consider avoidance around tile collisions
+as a separate iteration.
+
+The normal fishing state authority stays in `DivingCombat`
+(phase timings, reel distance, tension, parry and feedback state).
+Its existing Inspector exports at `Sea/Combat` are the source for
+combat pacing changes; avoid adding duplicates to `DivingWorld`.
+Restoring audio, impact, line vibration and more legible parry
+effects should be a **separate gameplay feedback pass** after
+testing the distancing numbers. Do not couple lighting or a new
+combat controller to this small behavior change.

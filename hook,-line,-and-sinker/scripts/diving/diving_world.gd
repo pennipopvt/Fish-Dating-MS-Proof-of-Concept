@@ -119,7 +119,9 @@ func _spawn_editor_fish() -> void:
 		_actors.add_child(fish)
 		fish.setup(data.fish_id, data.item_data.sprite, spawn.position, _sea_bounds(), spawn.random_seed)
 		fish.set_max_health(data.max_health)
-		fish.flee_radius = 32.0
+		fish.preferred_player_distance = spawn.preferred_player_distance
+		fish.flee_radius = maxf(spawn.alert_distance, spawn.preferred_player_distance)
+		fish.flee_speed = spawn.flee_speed
 		_wild_fish.append(fish)
 		_fish_data[fish] = data
 		if spawn.name == "FirstFish":
