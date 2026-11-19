@@ -151,7 +151,7 @@ func _setup_challenge_notification() -> void:
 func _update_challenge_notification() -> void:
 	if not is_instance_valid(_challenge_notification):
 		return
-	var needs_claim := ChallengeManager.get_claimable_count() > 0
+	var needs_claim: bool = ChallengeManager.get_claimable_count() > 0
 	_challenge_notification.visible = needs_claim
 	# Never show both the ! bubble and the ordinary Challenges image.
 	var normal_icon := _challenges_tab.get_node_or_null("Icon") as TextureRect
@@ -997,7 +997,7 @@ func _collect_challenges() -> void:
 	for challenge in ChallengeManager.challenges:
 		if challenge == null:
 			continue
-		var hidden := challenge.hidden and not challenge.completed
+		var hidden: bool = challenge.hidden and not challenge.completed
 		var art: Texture2D = challenge.icon
 		if not challenge.completed and challenge.locked_icon != null:
 			art = challenge.locked_icon
@@ -1193,7 +1193,7 @@ func _show_fish_details(fish: FishData) -> void:
 
 
 func _show_challenge_details(challenge: ChallengeData) -> void:
-	var hidden := challenge.hidden and not challenge.completed
+	var hidden: bool = challenge.hidden and not challenge.completed
 	if hidden:
 		_description.text = "Keep fishing to reveal this challenge."
 		_status.text = "HIDDEN CHALLENGE"
