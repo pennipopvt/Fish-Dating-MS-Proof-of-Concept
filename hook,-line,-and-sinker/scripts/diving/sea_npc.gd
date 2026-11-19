@@ -87,9 +87,11 @@ func _process(delta: float) -> void:
 		var side: Vector2 = (_player.position - fish.position).normalized()
 		if side.length_squared() < 0.01:
 			side = Vector2.LEFT
-		# The same hit lunge as main, now on the actual SeaNPC actor.
+		# Approach INSIDE the hit threshold. The old 22px destination was
+		# exactly can_strike_target's outer limit; move_toward's 1px stop
+		# tolerance could leave Silas at 22-23px, freezing both attack timers.
 		var lunge: float = 7.0 * (_lunge_time / 0.15)
-		destination = fish.position + side * (22.0 - lunge)
+		destination = fish.position + side * maxf(0.0, combat_attack_range - lunge)
 		speed = combat_swim_speed
 		_last_swim_state = &"approach" if position.distance_to(destination) > combat_attack_range else &"engaged"
 	else:
