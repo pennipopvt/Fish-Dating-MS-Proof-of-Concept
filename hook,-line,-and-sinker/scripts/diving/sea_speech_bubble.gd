@@ -21,6 +21,7 @@ class_name SeaSpeechBubble
 @onready var _text: Label = $Call/Message
 @onready var _arrow: Label = $Call/Direction
 @onready var _hint: Label = $Hint
+@onready var _input_prompt: SeaInputPrompt = $InputPrompt
 
 var _call_serial: int = 0
 
@@ -72,3 +73,14 @@ func show_hint(message: String) -> void:
 
 func hide_hint() -> void:
 	_hint.hide()
+
+
+# Input diagrams are independent of the offscreen character speech bubble.
+# Narrative hints remain available, but are no longer in the top-left corner.
+func show_input_prompt(action: StringName) -> void:
+	_hint.hide()
+	_input_prompt.show_action(action)
+
+
+func hide_input_prompt() -> void:
+	_input_prompt.hide_action()

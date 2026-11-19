@@ -41,13 +41,42 @@ func on_dive_entered() -> void:
 	if ui == null:
 		return
 	if not has_event(&"line_broken"):
-		ui.show_hint("LEFT CLICK: cast your net at the first fish")
+		if has_event(&"tutorial_hooked"):
+			ui.show_input_prompt(&"reel")
+		elif has_event(&"fish_focus_seen") and not has_event(&"first_cast"):
+			ui.show_input_prompt(&"cast")
+		else:
+			ui.show_input_prompt(&"move")
 	elif not has_silas_flag(&"silas_met"):
 		ui.show_hint("Follow the voice. Press E near the eel.")
 	elif not has_silas_flag(&"silas_freed"):
 		ui.show_hint("LEFT CLICK: net Silas to pull him free")
 	elif has_silas_flag(&"silas_following") and not has_event(&"companion_targeted"):
 		ui.show_hint("RIGHT CLICK a fish to send Silas")
+
+
+# The camera/player pause is deliberately a one-time moment. Core player
+# controls are unchanged; the sea controller releases its own movement lock.
+func wants_first_fish_focus() -> bool:
+	return not has_event(&"fish_focus_seen") and not has_event(&"line_broken")
+
+
+func on_first_fish_seen() -> void:
+	if not wants_first_fish_focus():
+		return
+	_events[&"fish_focus_seen"] = true
+	var ui: SeaSpeechBubble = _bubble()
+	if ui != null:
+		ui.show_input_prompt(&"cast")
+
+
+func on_first_cast() -> void:
+	if has_event(&"first_cast"):
+		return
+	_events[&"first_cast"] = true
+	var ui: SeaSpeechBubble = _bubble()
+	if ui != null:
+		ui.hide_input_prompt()
 
 
 func wants_scripted_hook(fish: DivingWildFish, tutorial_fish: DivingWildFish) -> bool:
@@ -58,7 +87,7 @@ func on_scripted_hook() -> void:
 	_events[&"tutorial_hooked"] = true
 	var ui: SeaSpeechBubble = _bubble()
 	if ui != null:
-		ui.show_hint("SCROLL DOWN: reel the fish")
+		ui.show_input_prompt(&"reel")
 
 
 func consume_first_reel() -> bool:
@@ -68,7 +97,8 @@ func consume_first_reel() -> bool:
 	_events[&"line_broken"] = true
 	var ui: SeaSpeechBubble = _bubble()
 	if ui != null:
-		ui.show_hint("The line broke! Follow the voice to the left.")
+		ui.hide_input_prompt()
+		ui.show_hint("Follow the voice to the left.")
 		ui.show_call("Help me!", false, 5.0)
 	return true
 

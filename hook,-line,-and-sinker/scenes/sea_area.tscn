@@ -81,7 +81,7 @@ position = Vector2(55, 157)
 
 [node name="FirstFish" type="Marker2D" parent="FishSpawns"]
 script = ExtResource("spawn")
-position = Vector2(-59, 240)
+position = Vector2(-155, 240)
 species = ExtResource("mullet")
 random_seed = 3101
 
