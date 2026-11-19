@@ -1,391 +1,77 @@
 extends Control
 
-# Keeps the existing island as the real overworld. Only the dock's fishing
-# interaction changes: jump -> circular iris -> persistent diving sea.
-const FISH_CO_OPERATOR: NPCData = preload("res://resources/npcs/fish_co_operator.tres")
-const DOCK_CONFIRM: NPCData = preload("res://resources/npcs/dock_dive_prompt.tres")
-const RIPPLE: Texture2D = preload("res://sprites/environment/medium_ripple_a.png")
-const FISH_CO_INTRO_SCENE: PackedScene = preload("res://scenes/fish_co_intro.tscn")
-const DIVE_DURATION: float = 0.43
-const IRIS_DURATION: float = 0.52
-const IRIS_OPEN_RADIUS: float = 2.6
-
+# The ONE owner of the existing World/SubViewport and its UI.
+# No story state, shader tween, bubble reconstruction, or diagnostic
+# rendering lives here. The Dock still calls request_dive() on Main.
 @onready var _world: Node2D = $SubViewportContainer/SubViewport/World
 @onready var _world_player: Player = $SubViewportContainer/SubViewport/World/Player
 @onready var _sea: DivingWorld = $SubViewportContainer/SubViewport/World/Sea
-@onready var _iris: ColorRect = $TransitionLayer/Iris
-@onready var _dialogue_ui: DialogueUI = $CanvasLayer/DialogueUI
-@onready var _shop_menu: ShopMenu = $CanvasLayer/ShopMenu
-# A partially loaded/hot-reloaded scene can omit the optional intro subtree.
-# Resolve it safely and restore only those nodes when they are missing.
-@onready var _intro_layer: CanvasLayer = get_node_or_null("IntroLayer") as CanvasLayer
-@onready var _intro: FishCoIntro = get_node_or_null("IntroLayer/FishCoIntro") as FishCoIntro
-
-var _iris_material: ShaderMaterial
-var _underwater: bool = false
-var _transitioning: bool = false
-var _shore_return_position: Vector2 = Vector2(56.0, 112.0)
-var _contract_call_finished: bool = false
-var _first_quota_opened: bool = false
-var _first_dive_call_started: bool = false
-var _first_dive_call_finished: bool = false
-var _dock_confirmation_target: Node2D
-var _dock_confirmation_yes: bool = false
-
+@onready var _transition: SeaDiveTransition = $TransitionLayer
 @onready var _bubble_host: SeaSpeechBubbleHost = $SeaSpeechBubbleHost
 @onready var _debug: SeaDebugPanel = $SeaDebugLayer
+var _opening: FishCoOpeningSequence
 
-# Compatibility for existing playtests; state lives in the UI host now.
+# Read-only compatibility properties for existing in-engine playtests.
+# Actual state is held by the one owning component, not duplicated here.
+var _underwater: bool:
+	get: return _transition.underwater
+var _transitioning: bool:
+	get: return _transition.transitioning
+var _contract_call_finished: bool:
+	get: return _opening._contract_call_finished
+var _first_dive_call_finished: bool:
+	get: return _opening._first_dive_call_finished
+var _intro_layer: CanvasLayer:
+	get: return _opening
+var _intro: FishCoIntro:
+	get: return _opening.get_node_or_null("FishCoIntro") as FishCoIntro
 var _sea_bubble_source: String:
-	get:
-		return _bubble_host.source
+	get: return _bubble_host.source
 
 
 func _ready() -> void:
-	_iris.hide()
-	_iris.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_iris_material = (_iris.material as ShaderMaterial).duplicate() as ShaderMaterial
-	_iris.material = _iris_material
-	_set_iris_radius(IRIS_OPEN_RADIUS)
-	_sea.surface_requested.connect(_on_surface_requested)
-	# SeaStoryDirector is inside the game SubViewport, but this speech
-	# bubble is in Main's outer UI CanvasLayer. Pass the real instance in
-	# directly instead of trying to discover it across viewport parents.
-	var story: SeaStoryDirector = _sea.get_node_or_null("StoryDirector") as SeaStoryDirector
-	_bubble_host.configure(self, story)
+	_opening = get_node_or_null("IntroLayer") as FishCoOpeningSequence
+	if _opening == null:
+		# Repair a partially missing opening layer without duplicating
+		# FishCoIntro in normal play.
+		var old_layer: Node = get_node_or_null("IntroLayer")
+		if old_layer != null:
+			old_layer.name = "UnusableIntroLayer"
+			old_layer.queue_free()
+		_opening = FishCoOpeningSequence.new()
+		_opening.name = "IntroLayer"
+		_opening.layer = 9
+		add_child(_opening)
+	_transition.configure(_world, _world_player, _sea,
+		$CanvasLayer/DialogueUI, $CanvasLayer/ShopMenu, _opening)
+	_opening.configure(_world, _world_player, $CanvasLayer/ShopMenu, _transition)
+	_opening.dive_confirmed.connect(_transition.start_confirmed_dive)
+	_bubble_host.configure(self, _sea.get_node_or_null("StoryDirector") as SeaStoryDirector)
 	_debug.configure(self, _world_player, _sea, _bubble_host)
-	# The sea is a child of the one live World; there is only one music player.
-	_ensure_intro_nodes()
-	if _intro_layer != null:
-		_intro_layer.hide()
-	DialogueManager.conversation_finished.connect(_on_contract_conversation_finished)
-	DialogueManager.conversation_finished.connect(_on_first_dive_conversation_finished)
-	DialogueManager.choice_resolved.connect(_on_dock_choice_resolved)
-	DialogueManager.conversation_finished.connect(_on_dock_confirmation_finished)
-	ShopManager.shop_opened.connect(_on_first_quota_opened)
-	ShopManager.shop_closed.connect(_on_first_quota_closed)
-	_start_contract_call.call_deferred()
+	_opening.start.call_deferred()
 
 
-
-
-# Public test hook: recovery itself belongs to SeaSpeechBubbleHost.
-func _ensure_sea_speech_bubble() -> SeaSpeechBubble:
-	return _bubble_host.ensure_bubble()
-
-
-func _debug_skip_dialogue() -> void:
-	_debug.skip_dialogue()
-
-
-# The authored IntroLayer is preferred; don't duplicate it in normal play.
-# If a partial scene import omitted it, recover the same FishCoIntro scene
-# instead of crashing before the main menu/dialogue can initialize.
-func _ensure_intro_nodes() -> void:
-	_intro_layer = get_node_or_null("IntroLayer") as CanvasLayer
-	if _intro_layer == null:
-		_intro_layer = CanvasLayer.new()
-		_intro_layer.name = "IntroLayer"
-		_intro_layer.layer = 9
-		add_child(_intro_layer)
-	_intro = _intro_layer.get_node_or_null("FishCoIntro") as FishCoIntro
-	if _intro == null:
-		_intro = FISH_CO_INTRO_SCENE.instantiate() as FishCoIntro
-		if _intro != null:
-			_intro.name = "FishCoIntro"
-			_intro_layer.add_child(_intro)
-
-
-func _start_contract_call() -> void:
-	# The opening assumes Penni has already entered the competition. She
-	# learns she is employed through the phone call, not a separate signup.
-	if _contract_call_finished:
-		return
-	_world_player.busy = true
-	_shop_menu.set_quota_only(true)
-	if _intro_layer == null or _intro == null:
-		_ensure_intro_nodes()
-	if _intro_layer != null and _intro != null:
-		_intro_layer.show()
-		_intro.play()
-	else:
-		push_warning("Fish Co intro backdrop unavailable; continuing the phone call.")
-	# The same DialogueManager/DialogueUI, NPCData, and graph loader used for
-	# every other conversation. Speaker tags in the JSON distinguish Penni
-	# from the Fish Co representative while both normal portraits remain.
-	DialogueManager.request_conversation(FISH_CO_OPERATOR, "res://dialogue/fish_co_phone_intro.json")
-	if not DialogueManager.is_active:
-		push_error("Fish Co. introductory dialogue failed to open.")
-		_on_contract_call_finished()
-
-
-func _on_contract_conversation_finished(npc: NPCData) -> void:
-	if _contract_call_finished or npc != FISH_CO_OPERATOR:
-		return
-	_on_contract_call_finished()
-
-
-func _on_contract_call_finished() -> void:
-	# Close the SAME iris used for diving, switch from boat to dock while
-	# black, then reveal the island. Don't auto-open the terminal: its
-	# familiar exclamation bubble guides the player's first interaction.
-	_contract_call_finished = true
-	_transitioning = true
-	_world_player.busy = true
-	_transition_contract_to_dock()
-
-
-func _transition_contract_to_dock() -> void:
-	await _close_iris(Vector2(0.5, 0.5))
-	if is_instance_valid(_intro):
-		_intro.end()
-	if is_instance_valid(_intro_layer):
-		_intro_layer.hide()
-
-	# The existing island and dock are already loaded under the backdrop.
-	# This is not a new scene or a duplicate starting environment.
-	var dock: Node2D = _world.get_node("Dock") as Node2D
-	_world_player.global_position = dock.global_position + Vector2(22.0, 11.0)
-	_world_player.animator.play(&"idle_l")
-	var island_camera: Camera2D = _world_player.get_node("Camera2D") as Camera2D
-	island_camera.reset_smoothing()
-	island_camera.force_update_scroll()
-	var terminal: ShopInteractable = _world.get_node("Shop") as ShopInteractable
-	terminal.set_intro_quota_notice(true)
-
-	await _open_iris(_normalized_screen_position(_world_player))
-	_transitioning = false
-	_world_player.busy = false
-
-
-# The first terminal visit is the prerequisite for the second Fish Co call.
-# Reuse ShopManager signals instead of inventing a second terminal or flag
-# inside the menu; subsequent visits must never replay the call.
-func _on_first_quota_opened() -> void:
-	if _contract_call_finished and not _transitioning and not _first_dive_call_started:
-		_first_quota_opened = true
-
-
-func _on_first_quota_closed() -> void:
-	if not _first_quota_opened or _first_dive_call_started or _first_dive_call_finished:
-		return
-	_first_dive_call_started = true
-	_start_first_dive_call.call_deferred()
-
-
-func _start_first_dive_call() -> void:
-	if not _first_dive_call_started or _first_dive_call_finished or _transitioning or _underwater:
-		return
-	if DialogueManager.is_active or ShopManager.is_shop_open:
-		return
-	_world_player.busy = true
-	DialogueManager.request_conversation(
-		FISH_CO_OPERATOR, "res://dialogue/fish_co_first_dive.json"
-	)
-	if not DialogueManager.is_active:
-		push_error("Fish Co. first-dive onboarding dialogue could not open.")
-		# Don't leave Penni permanently locked if dialogue data is missing.
-		_finish_first_dive_call()
-
-
-func _on_first_dive_conversation_finished(npc: NPCData) -> void:
-	if npc != FISH_CO_OPERATOR or not _first_dive_call_started or _first_dive_call_finished:
-		return
-	_finish_first_dive_call()
-
-
-func _finish_first_dive_call() -> void:
-	_first_dive_call_finished = true
-	_world_player.busy = false
-	var dock: Node2D = _world.get_node("Dock") as Node2D
-	# Existing InteractPrompt is visible from a distance the first time,
-	# then returns to ordinary proximity behavior once diving begins.
-	dock.call("set_first_dive_prompt", true)
-
-
-# Called by Dock.interact using the real world Player and Dock instances.
+# A stable island Dock API. All confirmation belongs to the opening flow.
 func request_dive(fisher: Player, dock: Node2D) -> void:
-	if not _first_dive_call_finished or _transitioning or _underwater or fisher != _world_player:
-		return
-	if not GameManager.can_act() or DialogueManager.is_active or GameManager.is_modal_ui_open():
-		return
-	if _dock_confirmation_target != null:
-		return
-	# A normal dialogue graph provides the Yes/No choice; the player does
-	# not dive until the Yes choice finishes through DialogueManager.
-	_dock_confirmation_target = dock
-	_dock_confirmation_yes = false
-	DialogueManager.request_conversation(
-		DOCK_CONFIRM, "res://dialogue/dock_dive_confirmation.json"
-	)
-	if not DialogueManager.is_active:
-		_dock_confirmation_target = null
+	_opening.request_dive(fisher, dock)
 
 
-func _on_dock_choice_resolved(npc: NPCData, choice: Dictionary) -> void:
-	if npc != DOCK_CONFIRM or _dock_confirmation_target == null:
-		return
-	_dock_confirmation_yes = str(choice.get("dive_decision", "")) == "yes"
-
-
-func _on_dock_confirmation_finished(npc: NPCData) -> void:
-	if npc != DOCK_CONFIRM or _dock_confirmation_target == null:
-		return
-	var dock: Node2D = _dock_confirmation_target
-	var confirmed: bool = _dock_confirmation_yes
-	_dock_confirmation_target = null
-	_dock_confirmation_yes = false
-	if confirmed:
-		_start_confirmed_dive(dock)
-
-
-func _start_confirmed_dive(dock: Node2D) -> void:
-	if _transitioning or _underwater:
-		return
-	_transitioning = true
-	# Other terminal pages become available only once the player actually
-	# chooses to dive, never when they merely read the dock prompt.
-	_shop_menu.set_quota_only(false)
-	dock.call("mark_dive_started")
-	_world_player.busy = true
-	_shore_return_position = dock.global_position + Vector2(21.0, 11.0)
-	_begin_dive(dock)
-
-
-func _begin_dive(dock: Node2D) -> void:
-	var jump_start: Vector2 = _world_player.global_position
-	var landing: Vector2 = dock.global_position + Vector2(-11.0, 46.0)
-	_world_player.animator.play(&"walk_l")
-	var jump: Tween = create_tween()
-	jump.tween_method(
-		_update_dive_jump.bind(jump_start, landing),
-		0.0, 1.0, DIVE_DURATION
-	).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-	await jump.finished
-	_spawn_splash(landing)
-
-	# No second world, teleport or viewport switch. The camera follows
-	# Penni from the dock through the same surface into the ocean.
-	_underwater = true
-	GameManager.diving_session_active = true
-	_dialogue_ui.set_underwater_mode(true)
-	var entry_marker: Marker2D = _sea.get_node_or_null("Points/Entry") as Marker2D
-	var entry: Vector2 = entry_marker.global_position if entry_marker != null else _sea.to_global(Vector2(55, 182))
-	var island_camera: Camera2D = _world_player.get_node("Camera2D") as Camera2D
-	var descent: Tween = create_tween().set_parallel(true)
-	descent.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-	descent.tween_property(_world_player, "global_position", entry, 0.85)
-	descent.tween_property(island_camera, "position", Vector2.ZERO, 0.85)
-	await descent.finished
-	_world_player.animator.rotation = 0.0
-	_sea.enter_from_dock()
-	_world_player.busy = false
-	_transitioning = false
-
-
-func _update_dive_jump(t: float, start: Vector2, landing: Vector2) -> void:
-	# A readable leap above the dock before splashing below its waterline.
-	_world_player.global_position = start.lerp(landing, t) + Vector2(0.0, -29.0 * sin(PI * t))
-	_world_player.animator.rotation = -0.25 * sin(PI * t)
-
-
-func _spawn_splash(at: Vector2) -> void:
-	_world_player.animator.rotation = 0.0
-	var splash := Sprite2D.new()
-	splash.texture = RIPPLE
-	splash.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	splash.z_index = 20
-	splash.global_position = at
-	splash.scale = Vector2(0.7, 0.35)
-	_world.add_child(splash)
-	var tween: Tween = create_tween()
-	tween.set_parallel(true)
-	tween.tween_property(splash, "scale", Vector2(1.55, 0.7), 0.37)
-	tween.tween_property(splash, "modulate:a", 0.0, 0.37)
-	tween.chain().tween_callback(splash.queue_free)
-
-
-# Main receives mouse events before SubViewportContainer can consume them.
-# Delegate underwater gameplay input to Sea; all land controls stay unchanged.
-# Keep Main the one input boundary; let its debug panel own debug keys.
+# Single input boundary; debug controls and underwater input are delegated.
 func _input(event: InputEvent) -> void:
 	if _debug.is_pointer_over_panel(event):
 		return
 	if _debug.handle_input(event):
 		get_viewport().set_input_as_handled()
 		return
-	if _world_player.swimming and _underwater and not _transitioning:
+	if _world_player.swimming and _transition.underwater and not _transition.transitioning:
 		if _sea.handle_input(event):
 			get_viewport().set_input_as_handled()
 
 
-func _on_surface_requested() -> void:
-	if _transitioning or not _underwater:
-		return
-	_transitioning = true
-	_world_player.busy = true
-	_surface_from_dive()
+# Existing debug/regression hooks delegate to their actual owners.
+func _ensure_sea_speech_bubble() -> SeaSpeechBubble:
+	return _bubble_host.ensure_bubble()
 
 
-func _surface_from_dive() -> void:
-	# Return through the SAME water surface. Sky stays visible in the camera;
-	# there is no fade-to-black or replacement scene.
-	var island_camera: Camera2D = _world_player.get_node("Camera2D") as Camera2D
-	var ascent: Tween = create_tween().set_parallel(true)
-	ascent.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-	ascent.tween_property(_world_player, "global_position", _shore_return_position, 0.85)
-	ascent.tween_property(island_camera, "position", Vector2(0.0, -22.0), 0.85)
-	await ascent.finished
-	_world_player.set_swimming(false)
-	_world_player.animator.rotation = 0.0
-	_world_player.animator.play(&"idle_l")
-	_underwater = false
-	GameManager.diving_session_active = false
-	_sea.call("_set_camera_bounds", false)
-	_dialogue_ui.set_underwater_mode(false)
-	# A dive costs one ordinary time action on surfacing.
-	GameManager.spend_actions(1)
-
-	_transitioning = false
-	_world_player.busy = false
-
-
-func _normalized_screen_position(actor: Node2D) -> Vector2:
-	# The boat/intro iris still uses the single island-world viewport.
-	var point: Vector2 = actor.get_global_transform_with_canvas().origin
-	var view_size: Vector2 = Vector2(actor.get_viewport().get_visible_rect().size)
-	return Vector2(
-		clampf(point.x / maxf(view_size.x, 1.0), 0.0, 1.0),
-		clampf(point.y / maxf(view_size.y, 1.0), 0.0, 1.0)
-	)
-
-
-func _close_iris(at: Vector2) -> void:
-	_configure_iris(at)
-	_iris.show()
-	await _animate_iris(IRIS_OPEN_RADIUS, 0.0)
-
-
-func _open_iris(at: Vector2) -> void:
-	_configure_iris(at)
-	await _animate_iris(0.0, IRIS_OPEN_RADIUS)
-	_iris.hide()
-
-
-func _configure_iris(at: Vector2) -> void:
-	var view_size: Vector2 = get_viewport_rect().size
-	_iris_material.set_shader_parameter("center_uv", at)
-	_iris_material.set_shader_parameter(
-		"aspect_ratio", view_size.x / maxf(view_size.y, 1.0)
-	)
-
-
-func _animate_iris(start_radius: float, end_radius: float) -> void:
-	_set_iris_radius(start_radius)
-	var tween: Tween = create_tween()
-	tween.tween_method(_set_iris_radius, start_radius, end_radius, IRIS_DURATION).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-	await tween.finished
-
-
-func _set_iris_radius(value: float) -> void:
-	_iris_material.set_shader_parameter("radius", value)
+func _debug_skip_dialogue() -> void:
+	_debug.skip_dialogue()
