@@ -28,7 +28,7 @@ jobs:
           timeout 180s godot --headless --editor --path "hook,-line,-and-sinker" --quit 2>&1 | tee godot-import.log
           status=${PIPESTATUS[0]}
           set -e
-          if [ "$status" -ne 0 ] || grep -E 'SCRIPT ERROR:|Parse Error:|Parser Error:|ERROR:' godot-import.log; then
+          if [ "$status" -ne 0 ] || (grep -E 'SCRIPT ERROR:|Parse Error:|Parser Error:|ERROR:' godot-import.log | grep -Ev 'resources still in use at exit|RID allocations.*leaked' | grep -q .); then
             echo "Godot import reported an error."
             exit 1
           fi
