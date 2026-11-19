@@ -188,6 +188,8 @@ func _show_line(line: DialogueLineData) -> void:
 	)
 	_player_portrait.texture = player_portrait
 	_npc_portrait.texture = _get_portrait(line)
+	# A Penni-only reaction has no second speaker or NPC portrait.
+	_npc_portrait.visible = not (_npc != null and _npc.npc_id == &"penni_monologue")
 	_npc_portrait.flip_h = _underwater_mode and _npc != null and _npc.underwater_sprite != null
 
 	# Light up whoever is speaking; dim the listener.

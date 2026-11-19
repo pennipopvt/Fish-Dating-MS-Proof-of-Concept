@@ -44,6 +44,29 @@ func request_inline_conversation(
 	_requested_inline_alias = ""
 
 
+# Player-only reaction using the existing DialogueUI and its Penni portrait.
+# Use a transient NPCData context so Silas's flags/conversation callbacks
+# cannot be mistaken for Penni's monologue.
+func request_player_monologue(lines: Array[String]) -> void:
+	if lines.is_empty() or is_active:
+		return
+	var context: NPCData = NPCData.new()
+	context.npc_id = &"penni_monologue"
+	context.display_name = "Penni"
+	var entries: Array[Dictionary] = []
+	for message in lines:
+		entries.append({"speaker": "player", "text": message})
+	_requested_inline_graph = {
+		"entry": "start",
+		"free_greeting": true,
+		"nodes": {"start": {"lines": entries}}
+	}
+	_requested_inline_alias = ""
+	dialogue_requested.emit(context)
+	_requested_inline_graph = {}
+	_requested_inline_alias = ""
+
+
 func get_current_speaker_name() -> String:
 	if not _current_speaker_alias.is_empty():
 		return _current_speaker_alias

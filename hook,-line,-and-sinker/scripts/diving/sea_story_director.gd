@@ -165,6 +165,21 @@ func on_scripted_hook() -> void:
 		cue.show_action(&"reel")
 
 
+func on_tutorial_hook_cancelled() -> void:
+	_events.erase(&"tutorial_hooked")
+	var cue: SeaTutorialCue = _cue()
+	if cue != null:
+		cue.show_action(&"cast")
+
+
+func on_first_fish_escaped() -> void:
+	if has_event(&"penni_fish_reaction") or DialogueManager.is_active:
+		return
+	_events[&"penni_fish_reaction"] = true
+	DialogueManager.request_player_monologue(["Damn, it got away."])
+	print("[SEA STORY] Penni reacts to the escaped fish")
+
+
 func consume_first_reel() -> bool:
 	if not has_event(&"tutorial_hooked") or has_event(&"line_broken"):
 		return false
@@ -217,9 +232,22 @@ func talk_to_silas() -> void:
 		DialogueManager.request_inline_conversation(silas_data, reminder, "Silas")
 
 
+func on_silas_rescue_started() -> void:
+	var cue: SeaTutorialCue = _cue()
+	if cue != null:
+		cue.show_action(&"reel")
+
+
+func on_silas_rescue_cancelled() -> void:
+	var cue: SeaTutorialCue = _cue()
+	if cue != null:
+		cue.hide_action()
+
+
 func on_silas_rescued() -> void:
 	if has_silas_flag(&"silas_freed"):
 		return
+	on_silas_rescue_cancelled()
 	_help_ui_pending = false
 	_set_silas_flag(&"silas_freed")
 	_dialogue_stage = &"rescue"
