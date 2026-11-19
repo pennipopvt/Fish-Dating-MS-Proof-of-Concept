@@ -16,6 +16,10 @@ var busy: bool = false;
 var swimming: bool = false
 var swim_bounds: Rect2 = Rect2(Vector2(16, 154), Vector2(888, 460))
 var _land_collision_mask: int = 1
+# Land walking border (global x): the left and right ends of the sibling
+# Ground tiles, read at start so it follows the map if the ground changes.
+var walk_limits: Vector2 = Vector2(-INF, INF)
+const WALK_EDGE_MARGIN: float = 6.0  # half the body width
 var last_direction : float;
 
 var _pickup_visual: Sprite2D
@@ -27,6 +31,7 @@ var _pickup_time_left := 0.0
 
 func _ready() -> void:
 	_land_collision_mask = collision_mask
+	_read_walk_limits.call_deferred()
 	held_item_visual = Sprite2D.new()
 	held_item_visual.position = Vector2(0, -39)
 	held_item_visual.z_index = 5
@@ -144,7 +149,33 @@ func _physics_process(delta: float) -> void:
 		else:
 			animator.play("idle_carry_r" if _is_carrying() else "idle_r")
 
+	var previous_x: float = global_position.x
 	move_and_slide()
+	_keep_inside_walk_limits(previous_x)
+
+
+func _read_walk_limits() -> void:
+	var ground := get_parent().get_node_or_null("Ground") as TileMapLayer
+	if ground == null or ground.tile_set == null:
+		return
+	var used: Rect2i = ground.get_used_rect()
+	if used.size.x <= 0:
+		return
+	var half_tile: float = float(ground.tile_set.tile_size.x) * 0.5 * ground.global_scale.x
+	var left: float = ground.to_global(ground.map_to_local(used.position)).x - half_tile
+	var right: float = ground.to_global(ground.map_to_local(used.end - Vector2i.ONE)).x + half_tile
+	walk_limits = Vector2(left + WALK_EDGE_MARGIN, right - WALK_EDGE_MARGIN)
+
+
+# Stops walking past the ends of the ground. Only blocks moving outward, so
+# a scripted move past the edge (like the ship date venue) is left alone.
+func _keep_inside_walk_limits(previous_x: float) -> void:
+	if previous_x >= walk_limits.x and global_position.x < walk_limits.x:
+		global_position.x = walk_limits.x
+		velocity.x = 0.0
+	elif previous_x <= walk_limits.y and global_position.x > walk_limits.y:
+		global_position.x = walk_limits.y
+		velocity.x = 0.0
 
 
 # Mouse input can be consumed by the SubViewportContainer before
