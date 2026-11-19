@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://c3426ih2exaq8"]
 
 [ext_resource type="PackedScene" uid="uid://bjt7lp2qss3qh" path="res://prefabs/world.tscn" id="1_sugp2"]
-[ext_resource type="Script" path="res://scripts/diving/dive_entry.gd" id="dive_entry"]
+[ext_resource type="Script" path="res://scripts/main_controller.gd" id="dive_entry"]
 [ext_resource type="Script" path="res://scripts/diving/fish_co_opening_sequence.gd" id="opening_script"]
 [ext_resource type="Script" path="res://scripts/diving/sea_dive_transition.gd" id="transition_script"]
 [ext_resource type="Script" path="res://scripts/diving/sea_speech_bubble_host.gd" id="bubble_host"]

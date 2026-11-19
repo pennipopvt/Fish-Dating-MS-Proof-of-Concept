@@ -12,7 +12,7 @@ scripts. For the current prototype, gameplay progression is **session-only**.
 ## Actual scene tree and viewport ownership
 
 ```text
-Main (Control, scripts/diving/dive_entry.gd)
+Main (Control, scripts/main_controller.gd)
 ├── SubViewportContainer (stretch_shrink=6)
 │   └── SubViewport (native 320×180)
 │       ├── World (prefabs/world.tscn)
@@ -246,7 +246,7 @@ The F7+B isolated bubble test remains available; F8 remains Godot Stop.
 
 ## Sea / Main refactor: ownership map (November 2026)
 
-The previous `scripts/diving/dive_entry.gd` reached **694 lines** and
+The previous `scripts/main_controller.gd` reached **694 lines** and
 mixed gameplay transitions, Fish Co onboarding dialogue, UI recovery,
 and debugging. It is now a **78-line Main coordinator**, not the
 owner of those systems. The scene still uses **one** `World`,
@@ -255,7 +255,7 @@ owner of those systems. The scene still uses **one** `World`,
 
 | Scene node | Script | Owns |
 |---|---|---|
-| `Main` | `scripts/diving/dive_entry.gd` | Dependency wiring, the stable `request_dive(player,dock)` API used by `Dock`, and one input forwarding boundary |
+| `Main` | `scripts/main_controller.gd` | Dependency wiring, the stable `request_dive(player,dock)` API used by `Dock`, and one input forwarding boundary |
 | `Main/IntroLayer` | `fish_co_opening_sequence.gd` | Fish Co opening/second phone call, first terminal visit, dock Yes/No confirmation, one-time onboarding flags |
 | `Main/TransitionLayer` | `sea_dive_transition.gd` | Iris, jump/splash, sea entry/surfacing, return position, movement locks, underwater mode |
 | `Main/SeaSpeechBubbleHost` | `sea_speech_bubble_host.gd` | Binding/recovering the **editable** `Main/SeaSpeechBubble` if the original scene is unavailable |
