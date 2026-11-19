@@ -29,6 +29,7 @@ enum Phase { WARNING, WINDUP, ATTACK, DASH, RECOVERY, STUN }
 @export_range(1.0, 10.0, 0.25) var full_health_pressure: float = 4.5
 @export_range(0.2, 1.0, 0.05) var exhausted_pressure: float = 0.75
 
+@export_group("Stagger")
 # Keep the stagger behavior and tuning from revised-fishing.
 @export_range(1.0, 100.0, 1.0) var close_stagger_gain: float = 24.0
 @export_range(1.0, 100.0, 1.0) var perfect_stagger_gain: float = 48.0
