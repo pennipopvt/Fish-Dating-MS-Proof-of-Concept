@@ -287,3 +287,26 @@ func on_companion_targeted() -> void:
 	var ui: SeaSpeechBubble = _bubble()
 	if ui != null:
 		ui.hide_call()
+
+
+
+# CompanionBattle decides when a fish is knocked out; this director owns
+# Silas's story response, using the same JSON conversations as his rescue.
+func on_companion_fish_killed() -> void:
+	if DialogueManager.is_active:
+		return
+	var first_time: bool = not has_event(&"silas_fish_kill_seen")
+	var path: String = (
+		"res://dialogue/silas_fish_kill_first.json" if first_time
+		else "res://dialogue/silas_fish_kill_repeat.json"
+	)
+	DialogueManager.request_conversation(silas_data, path)
+	if not DialogueManager.is_active:
+		push_warning("Silas kill reaction dialogue unavailable; using short fallback.")
+		DialogueManager.request_inline_conversation(
+			silas_data,
+			["Penni... I didn't mean to. Please stop me before I hurt another fish."],
+			"Silas"
+		)
+	if first_time and DialogueManager.is_active:
+		_events[&"silas_fish_kill_seen"] = true
