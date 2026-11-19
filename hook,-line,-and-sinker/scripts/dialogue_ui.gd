@@ -7,6 +7,8 @@ extends CanvasLayer
 signal conversation_ended(npc: NPCData)
 
 const PLAYER_NAME := "Penni"
+# Conversations with no second character to show (see _show_line).
+const NO_PORTRAIT_NPCS: Array[StringName] = [&"penni_monologue", &"dock_dive_prompt"]
 const NPC_NAME_COLOR := Color(1.0, 0.85, 0.5)
 const PLAYER_NAME_COLOR := Color(0.6, 0.85, 1.0)
 const SPEAKING_MODULATE := Color.WHITE
@@ -188,8 +190,9 @@ func _show_line(line: DialogueLineData) -> void:
 	)
 	_player_portrait.texture = player_portrait
 	_npc_portrait.texture = _get_portrait(line)
-	# A Penni-only reaction has no second speaker or NPC portrait.
-	_npc_portrait.visible = not (_npc != null and _npc.npc_id == &"penni_monologue")
+	# A Penni-only reaction, or a prompt from an object (the dock), has no
+	# second character, so no NPC portrait (not even the placeholder one).
+	_npc_portrait.visible = not (_npc != null and _npc.npc_id in NO_PORTRAIT_NPCS)
 	_npc_portrait.flip_h = _underwater_mode and _npc != null and _npc.underwater_sprite != null
 
 	# Light up whoever is speaking; dim the listener.
