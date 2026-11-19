@@ -62,7 +62,7 @@ func _run() -> void:
 	_check(cue.z_index > 80 and not cue.z_as_relative,
 		"Control cue renders above the underwater tint in the game viewport")
 	_check(cue.movement_sprite == null and cue.cast_sprite == null
-		and cue.reel_sprite == null,
+		and cue.reel_sprite == null and cue.right_click_sprite == null,
 		"Fallback art needs no imported files; Inspector sprites are replaceable")
 	var first_fish: DivingWildFish = sea.get("_tutorial_fish") as DivingWildFish
 	_check(first_fish != null, "FirstFish spawn creates the tutorial target")
@@ -85,26 +85,60 @@ func _run() -> void:
 	_check(cue.current_action == &"cast" and cue.visible,
 		"Casting fades out the click sprite rather than creating another HUD")
 	_check(story.wants_scripted_hook(first_fish, first_fish), "First hook is story-owned")
+	# The first fish must physically move inward over several scrolls.
+	sea.call("_start_tutorial_reel", first_fish)
 	story.on_scripted_hook()
 	_check(cue.current_action == &"reel" and cue.visible,
 		"Hooking the first fish shows the scroll sprite")
-	_check(story.consume_first_reel(), "First scroll triggers the one-time line break")
-	_check(not story.consume_first_reel(), "The same line-break cue cannot repeat")
-	_check(story.has_event(&"line_broken"), "The story event records its completion")
-	_check(cue.visible, "The reel cue fades out after the line breaks")
+	var start_distance: float = player.position.distance_to(first_fish.position)
+	for i in range(3):
+		sea.call("_reel_scripted_target")
+	_check(player.position.distance_to(first_fish.position) < start_distance,
+		"Three reels actually pull the first fish closer")
+	_check(not story.has_event(&"line_broken"),
+		"Fish does not break the line on the first reel")
+	var net: DivingNetProjectile = sea.get_node("NetProjectile") as DivingNetProjectile
+	_check(net.line_tension > 0.0, "Reeling makes the line start to strain")
+	for i in range(10):
+		if sea.get("_scripted_reel_mode") != &"tutorial_reel":
+			break
+		sea.call("_reel_scripted_target")
+	_check(sea.get("_scripted_reel_mode") == &"tutorial_break",
+		"Near Penni, the tutorial enters a brief line-break panic")
+	var tension_before: float = net.line_tension
+	sea.call("_advance_scripted_break", 0.35)
+	_check(net.line_tension > tension_before,
+		"Tension rises rapidly while the fish panics")
+	sea.call("_advance_scripted_break", 0.4)
+	_check(story.has_event(&"line_broken"),
+		"Line breaks after actual reeling and the tension spike")
+	_check(not story.consume_first_reel(),
+		"The one-time scripted line break cannot repeat")
+	_check(not player.busy, "Movement unlocks as the fish escapes")
 	_check(not (bubble.get_node("Call") as Control).visible,
-		"No premature Help me bubble on the first reel")
+		"No premature Silas voice during the reel or escape")
 	_check(not story.can_talk_to_silas(),
 		"Silas encounter stays gated until the offscreen call")
-	sea.call("_start_first_fish_escape")
 	_check(not (sea.get("_wild_fish") as Array).has(first_fish)
 		and sea.get("_tutorial_fish") == null,
-		"Escaping fish leaves normal swim/catch simulation immediately")
+		"Escaping fish immediately leaves normal catch simulation")
 	_check(not bool(sea.get("_first_fish_escape_finished")),
 		"Fish is still visible during the dash")
 	await create_timer(1.0).timeout
 	_check(bool(sea.get("_first_fish_escape_finished")),
 		"Fish finishes its leftward dash and disappears")
+	# The next line is delivered by the existing DialogueManager as Penni,
+	# not as Silas or a second popup system.
+	if DialogueManager.is_active and DialogueManager.current_npc != null \
+			and DialogueManager.current_npc.npc_id != &"penni_monologue":
+		DialogueManager.end_conversation()
+		story.on_first_fish_escaped()
+	var reaction: DialogueLineData = DialogueManager.get_current_line()
+	_check(reaction != null and reaction.speaker == DialogueLineData.Speaker.PLAYER
+		and reaction.text == "Damn, it got away.",
+		"Escaped fish triggers Penni's own dialogue and portrait")
+	if DialogueManager.is_active:
+		DialogueManager.advance()
 	sea.call("_check_escape_followup")
 	_check(not story.has_event(&"help_called"),
 		"Waiting after the fish escapes does not summon Silas's bubble")
@@ -117,14 +151,14 @@ func _run() -> void:
 		"Offscreen Help me bubble appears only after following the fish")
 	_check(bubble.get_node("Call/Direction") == null
 		and bubble.get_node("Call/Tail") is TextureRect,
-		"Silas speech bubble uses the supplied tail, not a separate arrow")
+		"Silas speech bubble uses the circle marker, not a direction arrow")
 	_check((bubble.get_node("Call/Frame") as NinePatchRect).texture != null
 		and (bubble.get_node("Call/Tail") as TextureRect).texture != null,
-		"User-supplied bubble and tail textures loaded")
+		"User-supplied bubble and circle textures loaded")
 	_check(bubble.get("_speaker") == sea.get_node("NPCs/Silas"),
 		"Bubble tracks Silas's actual world actor")
 	_check((bubble.get_node("Call/Tail") as TextureRect).visible,
-		"Tail shows while tracking Silas")
+		"Circle marker follows the speaker independently of the bubble")
 	_check(bubble.get_viewport() == main.get_viewport(),
 		"Speech bubble uses the original working Main CanvasLayer")
 	_check((bubble.scale * sea.get_viewport().get_visible_rect().size).distance_to(
@@ -155,16 +189,15 @@ func _run() -> void:
 	_check(call_rect.position.x >= 0.0 and call_rect.end.x <= screen_rect.end.x
 		and call_rect.position.y >= 0.0 and call_rect.end.y <= screen_rect.end.y,
 		"Offscreen speech bubble stays within the game viewport")
-	var tail: TextureRect = bubble.get_node("Call/Tail") as TextureRect
-	var base_position: Vector2 = tail.position + tail.pivot_offset + (
-		Vector2(tail.size.x * 0.5, 0.0) - tail.pivot_offset
-	).rotated(tail.rotation)
-	var edge_distance: float = minf(
-		minf(absf(base_position.x), absf(base_position.x - call.size.x)),
-		minf(absf(base_position.y), absf(base_position.y - call.size.y))
-	)
-	_check(edge_distance <= 2.5,
-		"The speech tail flat base connects at the outer bubble border")
+	var marker: TextureRect = bubble.get_node("Call/Tail") as TextureRect
+	var actual_marker_position: Vector2 = call.position + marker.position + marker.size * 0.5
+	var silas: Node2D = sea.get_node("NPCs/Silas") as Node2D
+	var expected_marker_position: Vector2 = silas.get_global_transform_with_canvas() * Vector2(0.0, -10.0)
+	expected_marker_position.x = clampf(expected_marker_position.x, 7.0, screen_rect.size.x - 7.0)
+	expected_marker_position.y = clampf(expected_marker_position.y, 7.0, screen_rect.size.y - 7.0)
+	_check(actual_marker_position.distance_to(expected_marker_position) < 6.0,
+		"Detached circle marker stays near Silas rather than connecting to the frame")
+	_check(is_zero_approx(marker.rotation), "The circle marker never rotates into a long tail")
 	_check(story.can_talk_to_silas(), "Silas can be found after hearing him")
 	_check(not story.can_net_silas(), "Silas is not net-catchable before speaking")
 	bubble.hide_call()

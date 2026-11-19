@@ -186,7 +186,7 @@ func _setup_sea_debug() -> void:
 	var panel: Panel = Panel.new()
 	panel.name = "Panel"
 	panel.position = Vector2(10.0, 10.0)
-	panel.size = Vector2(800.0, 465.0)
+	panel.size = Vector2(800.0, 535.0)
 	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var background: StyleBoxFlat = StyleBoxFlat.new()
 	background.bg_color = Color(0.015, 0.035, 0.06, 0.93)
@@ -198,7 +198,7 @@ func _setup_sea_debug() -> void:
 	_sea_debug_label = Label.new()
 	_sea_debug_label.name = "Diagnostics"
 	_sea_debug_label.position = Vector2(12.0, 10.0)
-	_sea_debug_label.size = Vector2(775.0, 440.0)
+	_sea_debug_label.size = Vector2(775.0, 505.0)
 	_sea_debug_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_sea_debug_label.add_theme_font_size_override("font_size", 17)
 	panel.add_child(_sea_debug_label)
@@ -293,6 +293,15 @@ func _update_sea_debug() -> void:
 		battle.health if battle != null else 0.0])
 	lines.append("Silas movement: %s" % [
 		actor.battle_debug_state() if actor != null else "MISSING"])
+	var net: DivingNetProjectile = _sea.get_node_or_null("NetProjectile") as DivingNetProjectile
+	lines.append("Net lesson: %s   reels=%d   line tension=%.2f" % [
+		str(_sea.get("_scripted_reel_mode")),
+		int(_sea.get("_scripted_reel_scrolls")),
+		net.line_tension if net != null else 0.0])
+	lines.append("Penni reaction=%s   Silas met/freed=%s/%s" % [
+		str(story.has_event(&"penni_fish_reaction")) if story != null else "MISSING",
+		str(story.has_silas_flag(&"silas_met")) if story != null else "MISSING",
+		str(story.has_silas_flag(&"silas_freed")) if story != null else "MISSING"])
 	lines.append("Combat: %s   last command: %s" % [
 		str(combat.is_active()) if combat != null else "MISSING",
 		str(_sea.get("_combat_debug_status"))])

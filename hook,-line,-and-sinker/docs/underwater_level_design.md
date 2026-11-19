@@ -343,3 +343,37 @@ companion attack range and last click-command result.
 These tests have not yet been executed in an installed Godot runtime.
 In particular, scene load/typing and animation rendering still need
 an actual playtest before treating the changes as stable.
+
+
+## November scripted net sequence, solo reaction and circle marker
+
+The first fish now has a **small scripted reel state** in `DivingWorld`:
+the existing latched `NetProjectile` remains visible, each scroll physically
+retrieves 12 world pixels, and after at least three scrolls near Penni
+(or a conservative maximum of eight) tension ramps from 0.55 to 1.0
+over 0.7 seconds. Only then does `line_broken` fire and the fish escape
+left; `SeaStoryDirector.on_first_fish_escaped()` requests a Penni-only
+dialogue line: **“Damn, it got away.”** It uses `DialogueManager`'s
+new `request_player_monologue` and the normal `DialogueUI`, with
+a temporary player context so Silas's dialogue flags are unaffected.
+The help call cannot interrupt an active conversation.
+
+After Silas's introduction, netting the trapped eel uses a separate
+`silas_rescue` state. It retrieves Silas by 13 pixels per scroll with
+**zero tension, no attack phases, and no outward fish pull**. At 17 pixels
+the original `SeaStoryDirector.on_silas_rescued()` is called. F/Escape
+cancels a scripted reel and safely resets the net/state.
+
+The user's new 12x12 white/black `speech_marker.png` is used as a
+small independent circle at Silas's projected on-screen position (or
+clamped to the game viewport boundary). It no longer rotates or joins
+the speech box, but fades with the call. The nine-slice retains its
+typewriter growth; text is Pixel Operator 14 native pixels with more
+padding and nearest-neighbor filtering.
+
+`SeaTutorialCue` now accepts `command` with a replaceable
+`right_click_sprite`; `DivingWorld` exposes a matching Inspector
+texture. The cue appears when companion help is offered and hides
+on the first valid target selection. F7 now includes scripted reel
+phase, number of scrolls, line tension, Penni's reaction flag and
+Silas's rescue flags.
