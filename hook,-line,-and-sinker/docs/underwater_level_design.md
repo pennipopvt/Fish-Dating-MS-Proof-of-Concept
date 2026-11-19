@@ -174,3 +174,15 @@ The fish-focus check uses the full 110px net-casting reach and the sea
 retries the initial WASD cue after the dive if the usual transition
 notification occurred before its UI became available. The existing focus
 safety timeout prevents a gameplay softlock.
+
+## Sprite2D / Camera2D script type repair
+
+The first camera-native cue was embedded as a scripted Sprite2D directly
+within `prefabs/world.tscn`, which produced a script/native-type mismatch
+while loading the parent camera on the user's Godot build. The cue is now
+a separate `res://scenes/sea_tutorial_cue.tscn` with a Sprite2D **root**
+and the `sea_tutorial_cue.gd` script attached to that root. The world
+instances the scene below `Player/Camera2D`; the actual Camera2D remains
+unscripted. The tutorial cue exports are on the instance's Sprite2D root.
+No new tutorial manager or overlay was introduced. The smoke test asserts
+the native type and verifies the camera script remains empty.

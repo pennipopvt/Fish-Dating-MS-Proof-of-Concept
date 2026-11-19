@@ -1,0 +1,13 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/diving/sea_tutorial_cue.gd" id="cue_script"]
+
+# Script is attached to the Sprite2D root of its own scene, never a Camera2D.
+# The World only instances this tiny scene as a child of the existing camera.
+[node name="SeaTutorialCue" type="Sprite2D"]
+visible = false
+z_as_relative = false
+z_index = 110
+position = Vector2(0, 52)
+texture_filter = 1
+script = ExtResource("cue_script")

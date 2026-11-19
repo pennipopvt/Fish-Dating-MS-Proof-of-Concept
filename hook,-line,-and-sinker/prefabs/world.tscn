@@ -21,7 +21,7 @@
 [ext_resource type="Shader" uid="uid://bv2isyw6ln31h" path="res://shaders/moon.gdshader" id="moon_shader"]
 [ext_resource type="Shader" uid="uid://cli6ci0c4km7b" path="res://shaders/night_stars.gdshader" id="night_stars"]
 [ext_resource type="Script" uid="uid://cba27f3x60a3r" path="res://scripts/world_day_night.gd" id="world_day_night"]
-[ext_resource type="Script" path="res://scripts/diving/sea_tutorial_cue.gd" id="sea_tutorial_cue"]
+[ext_resource type="PackedScene" path="res://scenes/sea_tutorial_cue.tscn" id="sea_tutorial_scene"]
 [ext_resource type="PackedScene" path="res://scenes/sea_area.tscn" id="sea_area"]
 [ext_resource type="TileSet" path="res://resources/tilesets/world_tiles.tres" id="world_tiles"]
 [ext_resource type="Shader" path="res://shaders/underwater_tint.gdshader" id="water_tint_shader"]
@@ -86,15 +86,9 @@ position = Vector2(0, -22)
 editor_draw_limits = true
 editor_draw_drag_margin = true
 
-# One small tutorial sprite in the actual game viewport. Its z-index
-# is above the blue underwater screen tint (80), never a full-screen panel.
-[node name="SeaTutorialCue" type="Sprite2D" parent="Player/Camera2D"]
-visible = false
-z_as_relative = false
-z_index = 110
-position = Vector2(0, 52)
-texture_filter = 1
-script = ExtResource("sea_tutorial_cue")
+# A standalone Sprite2D scene: prevents a child script from being
+# misassigned to the existing Camera2D during scene instancing.
+[node name="SeaTutorialCue" parent="Player/Camera2D" instance=ExtResource("sea_tutorial_scene")]
 
 [node name="UnderwaterTint" type="ColorRect" parent="Player/Camera2D"]
 material = SubResource("UnderwaterTintMaterial")
