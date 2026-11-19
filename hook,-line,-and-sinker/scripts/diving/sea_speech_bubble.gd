@@ -250,7 +250,7 @@ func _place_speaker_marker(target: Vector2) -> void:
 	if tail_texture == null:
 		return
 	var screen: Vector2 = _game_size()
-	var marker: Vector2 = target + Vector2(0.0, -2.0 + sin(_cycle_time * 3.0) * 1.0)
+	var marker: Vector2 = target + Vector2(-8.0, 9.0 + sin(_cycle_time * 3.0) * 1.0)
 	marker.x = clampf(marker.x, 7.0, screen.x - 7.0)
 	marker.y = clampf(marker.y, 7.0, screen.y - 7.0)
 	_tail.rotation = 0.0

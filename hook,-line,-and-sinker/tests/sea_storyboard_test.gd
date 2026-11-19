@@ -193,6 +193,7 @@ func _run() -> void:
 	var actual_marker_position: Vector2 = call.position + marker.position + marker.size * 0.5
 	var silas: Node2D = sea.get_node("NPCs/Silas") as Node2D
 	var expected_marker_position: Vector2 = silas.get_global_transform_with_canvas() * Vector2(0.0, -10.0)
+	expected_marker_position += Vector2(-8.0, 9.0)
 	expected_marker_position.x = clampf(expected_marker_position.x, 7.0, screen_rect.size.x - 7.0)
 	expected_marker_position.y = clampf(expected_marker_position.y, 7.0, screen_rect.size.y - 7.0)
 	_check(actual_marker_position.distance_to(expected_marker_position) < 6.0,
