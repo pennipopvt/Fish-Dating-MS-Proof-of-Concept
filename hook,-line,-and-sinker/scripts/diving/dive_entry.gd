@@ -38,6 +38,7 @@ var _sea_debug_layer: CanvasLayer
 var _sea_debug_label: Label
 var _sea_debug_elapsed: float = 0.0
 var _sea_debug_last_transition: String = ""
+var _sea_bubble_source: String = "uninitialized"
 
 
 func _ready() -> void:
@@ -51,7 +52,7 @@ func _ready() -> void:
 	# bubble is in Main's outer UI CanvasLayer. Pass the real instance in
 	# directly instead of trying to discover it across viewport parents.
 	var story: SeaStoryDirector = _sea.get_node_or_null("StoryDirector") as SeaStoryDirector
-	var speech: SeaSpeechBubble = get_node_or_null("SeaSpeechBubble") as SeaSpeechBubble
+	var speech: SeaSpeechBubble = _ensure_sea_speech_bubble()
 	if story != null:
 		story.bind_speech_bubble(speech)
 	_setup_sea_debug()
@@ -69,7 +70,111 @@ func _ready() -> void:
 
 
 
-# Debug controls are intentionally outside the SubViewport, in a dedicated
+
+# The live F7 screenshot proved the actual Main/SeaSpeechBubble node was
+# missing (not merely invisible). The authored scene is preferred, but
+# don't let a missing/partially imported scene swallow the story event.
+func _ensure_sea_speech_bubble() -> SeaSpeechBubble:
+	var existing: Node = get_node_or_null("SeaSpeechBubble")
+	if existing is SeaSpeechBubble and existing.is_node_ready():
+		_sea_bubble_source = "authored scene"
+		return existing as SeaSpeechBubble
+
+	if existing != null:
+		push_warning("[SEA UI] SeaSpeechBubble exists but is not a ready SeaSpeechBubble (class=%s); rebuilding." % existing.get_class())
+		existing.name = "UnusableSeaSpeechBubble"
+		existing.queue_free()
+	else:
+		push_warning("[SEA UI] Main/SeaSpeechBubble is missing; rebuilding it.")
+
+	# First try the exact existing authored PackedScene. This is a runtime
+	# load, not an extra scene dependency in Main.
+	var resource: PackedScene = load("res://scenes/sea_speech_bubble.tscn") as PackedScene
+	if resource != null:
+		var node: Node = resource.instantiate()
+		if node is SeaSpeechBubble and node.has_node("Call/Frame") and node.has_node("Call/Message") and node.has_node("Call/Tail") and node.has_node("Hint"):
+			node.name = "SeaSpeechBubble"
+			add_child(node)
+			var result: SeaSpeechBubble = node as SeaSpeechBubble
+			if result.is_node_ready():
+				_sea_bubble_source = "recovered PackedScene"
+				print("[SEA UI] Recovered original bubble scene under Main.")
+				return result
+			node.name = "UnreadySeaSpeechBubble"
+			node.queue_free()
+		else:
+			node.free()
+
+	# Last resort: make the SAME SeaSpeechBubble class and expected child
+	# names in memory. It draws a plain fallback panel even when textures
+	# or scene imports are unavailable.
+	var bubble: SeaSpeechBubble = SeaSpeechBubble.new()
+	bubble.name = "SeaSpeechBubble"
+	bubble.layer = 8
+	var call: Control = Control.new()
+	call.name = "Call"
+	call.size = Vector2(340.0, 100.0)
+	call.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	call.hide()
+	bubble.add_child(call)
+
+	var tail: TextureRect = TextureRect.new()
+	tail.name = "Tail"
+	tail.size = Vector2(24.0, 24.0)
+	tail.pivot_offset = Vector2(12.0, 12.0)
+	tail.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	tail.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	tail.hide()
+	call.add_child(tail)
+
+	var fallback: Panel = Panel.new()
+	fallback.name = "Fallback"
+	fallback.size = call.size
+	fallback.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var style: StyleBoxFlat = StyleBoxFlat.new()
+	style.bg_color = Color.WHITE
+	style.border_color = Color.BLACK
+	style.set_border_width_all(3)
+	fallback.add_theme_stylebox_override("panel", style)
+	call.add_child(fallback)
+
+	var frame: NinePatchRect = NinePatchRect.new()
+	frame.name = "Frame"
+	frame.size = call.size
+	frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	frame.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	frame.hide()
+	call.add_child(frame)
+
+	var message: Label = Label.new()
+	message.name = "Message"
+	message.position = Vector2(24.0, 17.0)
+	message.size = Vector2(292.0, 67.0)
+	message.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	message.add_theme_color_override("font_color", Color.BLACK)
+	message.add_theme_font_size_override("font_size", 27)
+	message.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	message.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	call.add_child(message)
+
+	var hint: Label = Label.new()
+	hint.name = "Hint"
+	hint.hide()
+	bubble.add_child(hint)
+
+	# Optional originals: never require these imports for a basic bubble.
+	bubble.bubble_texture = load("res://sprites/ui/speech_bubble.png") as Texture2D
+	bubble.tail_texture = load("res://sprites/ui/speech_tail.png") as Texture2D
+	var pixel_font: Font = load("res://fonts/pixel_operator(1)/PixelOperator.ttf") as Font
+	if pixel_font != null:
+		message.add_theme_font_override("font", pixel_font)
+	add_child(bubble)
+	_sea_bubble_source = "runtime fallback"
+	print("[SEA UI] Built fallback bubble under Main; ready=%s" % str(bubble.is_node_ready()))
+	return bubble
+
+
+# Debug controls are intentionally outside the SubViewport. in a dedicated
 # hidden CanvasLayer, so a missing game-viewport widget can't hide diagnostics.
 func _setup_sea_debug() -> void:
 	_sea_debug_layer = CanvasLayer.new()
@@ -112,7 +217,8 @@ func _process(delta: float) -> void:
 func _update_sea_debug() -> void:
 	var story: SeaStoryDirector = _sea.get_node_or_null("StoryDirector") as SeaStoryDirector
 	var silas: Node2D = _sea.get_node_or_null("NPCs/Silas") as Node2D
-	var ui: SeaSpeechBubble = get_node_or_null("SeaSpeechBubble") as SeaSpeechBubble
+	var raw_bubble: Node = get_node_or_null("SeaSpeechBubble")
+	var ui: SeaSpeechBubble = raw_bubble as SeaSpeechBubble
 	var call: Control
 	var events: Dictionary = {}
 	var speaker: Node
@@ -156,6 +262,9 @@ func _update_sea_debug() -> void:
 		str(story.get("_help_ui_pending")) if story != null else "MISSING"])
 	lines.append("Story: %s   UI bound: %s   UI ready: %s" % [
 		str(story != null), str(bound), str(ready)])
+	lines.append("UI node: %s   source: %s" % [
+		raw_bubble.get_class() if raw_bubble != null else "MISSING",
+		_sea_bubble_source])
 	lines.append("Call node visible: %s   in tree: %s   renderer says: %s" % [
 		str(call_visible), str(call_on_tree), str(visible)])
 	lines.append("Speaker valid: %s   display valid: %s" % [
@@ -182,7 +291,12 @@ func _update_sea_debug() -> void:
 func _force_test_bubble() -> void:
 	var ui: SeaSpeechBubble = get_node_or_null("SeaSpeechBubble") as SeaSpeechBubble
 	if ui == null:
-		push_error("[SEA DEBUG] F8 failed: Main/SeaSpeechBubble does not exist")
+		ui = _ensure_sea_speech_bubble()
+		var story: SeaStoryDirector = _sea.get_node_or_null("StoryDirector") as SeaStoryDirector
+		if story != null:
+			story.bind_speech_bubble(ui)
+	if ui == null:
+		push_error("[SEA DEBUG] B test failed: unable to create speech bubble")
 		return
 	ui.show_call("UI TEST: Help me!", false, 0.0)
 	print("[SEA DEBUG] B test: ready=%s shown=%s Call rect=%s" % [

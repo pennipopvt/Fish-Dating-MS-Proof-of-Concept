@@ -17,6 +17,10 @@ func _run() -> void:
 	var bubble: SeaSpeechBubble = main.get_node("SeaSpeechBubble") as SeaSpeechBubble
 	_check(story.get("_speech_bubble") == bubble,
 		"Main binds the exact speech-bubble instance into the sea story")
+	_check(main.get("_sea_bubble_source") == "authored scene"
+		or main.get("_sea_bubble_source") == "recovered PackedScene"
+		or main.get("_sea_bubble_source") == "runtime fallback",
+		"Main reports the actual origin of its initialized bubble")
 	var debug_layer: CanvasLayer = main.get_node_or_null("SeaDebugLayer") as CanvasLayer
 	_check(debug_layer != null and not debug_layer.visible,
 		"F7 diagnostics start hidden and cannot obstruct the game")
@@ -163,6 +167,18 @@ func _run() -> void:
 		"Silas speech remains discoverable when the first fish is skipped")
 	_check((bubble.get_node("Call") as Control).size.x >= 300,
 		"Restored bubble has the readable size used in working builds")
+	# Deliberately remove the instance, reproducing the actual live bug.
+	bubble.name = "SimulatedMissingBubble"
+	bubble.hide_call()
+	var recovered: SeaSpeechBubble = main.call("_ensure_sea_speech_bubble") as SeaSpeechBubble
+	_check(recovered != null and recovered != bubble and recovered.is_node_ready(),
+		"Main reconstructs speech UI when its authored instance is missing")
+	_check(recovered.get_node_or_null("Call/Message") is Label
+		and recovered.get_node_or_null("Call/Frame") is NinePatchRect,
+		"Reconstructed bubble contains all expected UI children")
+	recovered.show_call("Recovery test", false, 0.0)
+	_check(recovered.is_call_shown(),
+		"Recovered bubble actually becomes visible after show_call")
 	main.queue_free()
 	print("FAILED: %d" % failures if failures > 0 else "Sea storyboard events passed")
 	quit(1 if failures > 0 else 0)

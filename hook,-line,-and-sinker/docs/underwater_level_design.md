@@ -303,3 +303,24 @@ when `SeaSpeechBubble` cannot be drawn. The independent
 `_help_ui_pending` state retries the popup every 0.6 seconds if it is
 missing until Penni talks to Silas. The F7 panel shows both states,
 distinguishing a failed proximity trigger from a failed renderer.
+
+
+## Missing SeaSpeechBubble node recovery
+
+An actual F7 screenshot showed `help_called=true`, proximity=true,
+but `UI bound=false`, `UI ready=false`, and an empty Call rect. That
+proves the issue is a missing/unusable `Main/SeaSpeechBubble` instance,
+not the story trigger or tail geometry.
+
+`Main._ready()` now calls `_ensure_sea_speech_bubble()` before
+binding the director. It uses the authored scene if valid, otherwise
+instantiates `scenes/sea_speech_bubble.tscn` under Main at runtime.
+If loading that scene also fails, it creates the same `SeaSpeechBubble`
+class and the minimum required child nodes directly, with a visible
+white fallback Panel and optional original 9-slice/tail textures.
+No new scene is referenced from `main.tscn`; art and layout remain
+unchanged for healthy projects.
+
+F7 now reports `UI node` and `source` so we can see which recovery
+path was used. The B test (with F7 open) can also restore the missing
+node and rebind the director if necessary.
