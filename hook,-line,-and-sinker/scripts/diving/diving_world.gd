@@ -8,22 +8,6 @@ signal surface_requested
 
 const SEA_TOP: float = 154.0
 const SURFACE_REACH: float = 44.0
-# First encounter: only lock movement when the fish is close enough to cast.
-const FIRST_FISH_FOCUS_RANGE: float = 110.0
-const MIN_TUTORIAL_SWIM_DISTANCE: float = 50.0
-# Safety release: a tutorial must never leave the player unable to move.
-const FISH_FOCUS_HOLD_SECONDS: float = 1.15
-# Only the first storyboard fish bolts away on the forced line break.
-const FIRST_FISH_ESCAPE_DISTANCE: float = 330.0
-const FIRST_FISH_ESCAPE_SECONDS: float = 0.85
-const FOLLOW_AFTER_ESCAPE_DISTANCE: float = 75.0
-const SILAS_HELP_NEARBY_RANGE: float = 108.0
-# Scripted introductory net lessons, without changing the normal fish combat.
-const TUTORIAL_REEL_PER_SCROLL: float = 12.0
-const TUTORIAL_BREAK_DISTANCE: float = 44.0
-const TUTORIAL_BREAK_SECONDS: float = 0.7
-const RESCUE_REEL_PER_SCROLL: float = 13.0
-const RESCUE_FINISH_DISTANCE: float = 17.0
 const SILAS_FISH: FishData = preload("res://resources/fish/silas.tres")
 const WILD_FISH_SCRIPT = preload("res://scripts/diving/wild_fish.gd")
 
@@ -44,26 +28,14 @@ const WILD_FISH_SCRIPT = preload("res://scripts/diving/wild_fish.gd")
 @onready var _combat: DivingCombat = $Combat
 @onready var _battle: DivingCompanionBattle = $CompanionBattle
 @onready var _silas: SeaNPC = $NPCs/Silas
+@onready var _encounter: SeaEncounterSequence = $EncounterSequence
 
 var _player: Player
 var _camera: Camera2D
 var _cue: SeaTutorialCue
 var _wild_fish: Array[DivingWildFish] = []
 var _fish_data: Dictionary = {}
-var _tutorial_fish: DivingWildFish
-var _silas_trap: DivingWildFish
-var _silas_home: Vector2
-var _tutorial_swim_origin: Vector2
-var _fish_focus_locked: bool = false
-var _fish_focus_timer: float = 0.0
-var _first_fish_escape_finished: bool = false
-var _help_reveal_x: float = -INF
 var _combat_debug_status: String = "No companion command yet"
-# Only the first fish and trapped Silas use these authored story states.
-# All other fish still use DivingCombat / FishData normally.
-var _scripted_reel_mode: StringName = &""
-var _scripted_reel_scrolls: int = 0
-var _scripted_break_elapsed: float = 0.0
 
 
 func _ready() -> void:
@@ -71,7 +43,8 @@ func _ready() -> void:
 	if _player != null:
 		_camera = _player.get_node_or_null("Camera2D") as Camera2D
 	_install_tutorial_cue()
-	_silas_home = _silas.position
+	_encounter.configure(_player, _story, _net, _silas, _cue)
+	_encounter.fish_remove_requested.connect(_unregister_encounter_fish)
 	_net.fish_hit.connect(_on_fish_hit)
 	_combat.finished.connect(_on_combat_finished)
 	_story.silas_following_started.connect(_on_silas_following_started)
@@ -125,26 +98,30 @@ func _spawn_editor_fish() -> void:
 		_wild_fish.append(fish)
 		_fish_data[fish] = data
 		if spawn.name == "FirstFish":
-			_tutorial_fish = fish
-			# Make the introductory cast readable instead of chasing a fish
-			# that swims away during the movement lesson.
-			fish.trapped = not _story.has_event(&"line_broken")
+			_encounter.register_tutorial_fish(fish)
 
 
 func _make_silas_trap() -> void:
 	if SILAS_FISH.item_data == null or SILAS_FISH.item_data.sprite == null:
 		return
-	_silas_trap = WILD_FISH_SCRIPT.new() as DivingWildFish
-	_actors.add_child(_silas_trap)
-	_silas_trap.setup(SILAS_FISH.fish_id, SILAS_FISH.item_data.sprite,
-		_silas_home, _sea_bounds(), 8805)
-	_silas_trap.trapped = true
-	_silas_trap.set_max_health(SILAS_FISH.max_health)
-	# The editor-placeable SeaNPC sprite is the visible eel. This second,
-	# invisible node is only its fishing/combat hit target.
-	(_silas_trap.get_node("FishSprite") as Sprite2D).hide()
-	_wild_fish.append(_silas_trap)
-	_fish_data[_silas_trap] = SILAS_FISH
+	var trap: DivingWildFish = WILD_FISH_SCRIPT.new() as DivingWildFish
+	_actors.add_child(trap)
+	trap.setup(SILAS_FISH.fish_id, SILAS_FISH.item_data.sprite,
+		_silas.position, _sea_bounds(), 8805)
+	trap.trapped = true
+	trap.set_max_health(SILAS_FISH.max_health)
+	# The editor-placeable SeaNPC is the visible eel. This hidden actor
+	# only provides its net hit target; the sequence tracks its identity.
+	(trap.get_node("FishSprite") as Sprite2D).hide()
+	_wild_fish.append(trap)
+	_fish_data[trap] = SILAS_FISH
+	_encounter.register_silas_trap(trap)
+
+
+# World alone mutates its fish registry. EncounterSequence requests removal.
+func _unregister_encounter_fish(fish: DivingWildFish) -> void:
+	_wild_fish.erase(fish)
+	_fish_data.erase(fish)
 
 
 func enter_from_dock() -> void:
@@ -153,8 +130,7 @@ func enter_from_dock() -> void:
 		return
 	_set_camera_bounds(true)
 	_player.set_swimming(true, _sea_bounds())
-	_tutorial_swim_origin = _player.position
-	_story.on_dive_entered()
+	_encounter.on_dive_entered()
 
 
 func _sea_bounds() -> Rect2:
@@ -183,17 +159,7 @@ func _set_camera_bounds(in_sea: bool) -> void:
 func _process(delta: float) -> void:
 	if _player == null or not _player.swimming:
 		return
-	# If the dive transition ran before its UI was ready, the Sea itself
-	# starts the movement lesson on the next swimming frame.
-	if _cue != null and _cue.current_action == &"" and not _story.has_event(&"fish_focus_seen") \
-			and not _story.has_event(&"first_cast") and not _story.has_event(&"line_broken"):
-		_story.on_dive_entered()
-	_check_first_fish_focus(delta)
-	_advance_scripted_break(delta)
-	if _first_fish_escape_finished and _story.has_event(&"line_broken") \
-			and not _story.has_event(&"penni_fish_reaction"):
-		_story.on_first_fish_escaped()
-	_check_escape_followup()
+		_encounter.step(delta)
 	if _battle.is_active() and (DialogueManager.is_active or _combat.is_active()):
 		_battle.stop()
 	_battle.step(delta, _silas.can_strike_target())
@@ -210,190 +176,6 @@ func _process(delta: float) -> void:
 		_story.maybe_offer_companion_help(_player.position, _wild_fish)
 
 
-# The player learns movement freely first. When the introductory fish is
-# close enough for a real cast, pause Penni (and thus the follow camera)
-# until the player clicks. The mouse/net still receive input while busy.
-func _check_first_fish_focus(delta: float) -> void:
-	if _fish_focus_locked:
-		_fish_focus_timer -= delta
-		if _fish_focus_timer <= 0.0:
-			_release_first_fish_focus()
-		return
-	if not _story.wants_first_fish_focus():
-		return
-	if not is_instance_valid(_tutorial_fish) or _player.busy:
-		return
-	if DialogueManager.is_active or GameManager.is_modal_ui_open() or _net.is_busy():
-		return
-	if _player.position.distance_to(_tutorial_swim_origin) < MIN_TUTORIAL_SWIM_DISTANCE:
-		return
-	if _player.position.distance_to(_tutorial_fish.position) > FIRST_FISH_FOCUS_RANGE:
-		return
-	# The story only confirms the beat after a real visible sprite is shown.
-	if not _story.on_first_fish_seen():
-		return
-	_fish_focus_locked = true
-	_fish_focus_timer = FISH_FOCUS_HOLD_SECONDS
-	_player.busy = true
-
-
-func _release_first_fish_focus() -> void:
-	if not _fish_focus_locked:
-		return
-	_fish_focus_locked = false
-	_fish_focus_timer = 0.0
-	_player.busy = false
-
-
-func _check_escape_followup() -> void:
-	# Penni's first personal reaction completes before the next voice cue.
-	if DialogueManager.is_active:
-		return
-	if _story.has_event(&"help_called"):
-		return
-	# Preferred storyboard: first fish flees, then Penni follows it left.
-	if _first_fish_escape_finished and _player.position.x <= _help_reveal_x:
-		_story.on_followed_escape()
-	# Recovery path: the sea is explorable, so players can simply swim
-	# around the first fish. Silas should still call as they approach.
-	if not _story.has_event(&"help_called") \
-			and _player.position.distance_to(_silas.position) <= SILAS_HELP_NEARBY_RANGE:
-		_story.on_followed_escape(true)
-
-
-func _start_first_fish_escape() -> void:
-	_help_reveal_x = _player.position.x - FOLLOW_AFTER_ESCAPE_DISTANCE
-	_first_fish_escape_finished = false
-	if not is_instance_valid(_tutorial_fish):
-		_first_fish_escape_finished = true
-		return
-	var fish: DivingWildFish = _tutorial_fish
-	# Penni must also swim a little past the fish's old position.
-	_help_reveal_x = minf(_help_reveal_x, fish.position.x - 20.0)
-	_tutorial_fish = null
-	_wild_fish.erase(fish)
-	_fish_data.erase(fish)
-	# Remove it from normal fish simulation / catch candidates so the
-	# escape tween is the sole owner of its movement.
-	fish.trapped = true
-	var graphic: Sprite2D = fish.get_node_or_null("FishSprite") as Sprite2D
-	if graphic != null:
-		graphic.flip_h = true
-	fish.rotation = 0.0
-	var dash: Tween = create_tween().set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
-	dash.tween_property(fish, "position",
-		fish.position + Vector2(-FIRST_FISH_ESCAPE_DISTANCE, -12.0),
-		FIRST_FISH_ESCAPE_SECONDS)
-	dash.tween_callback(_finish_first_fish_escape.bind(fish))
-
-
-func _finish_first_fish_escape(fish: DivingWildFish) -> void:
-	if is_instance_valid(fish):
-		fish.queue_free()
-	_first_fish_escape_finished = true
-	_story.on_first_fish_escaped()
-
-
-# Real net movement for the first tutorial fish, then a visibly escalating
-# tension break near Penni. Silas's scripted rescue shares net retrieval but
-# deliberately has NO outward pulling or tension/resistance.
-func _start_tutorial_reel(fish: DivingWildFish) -> void:
-	_scripted_reel_mode = &"tutorial_reel"
-	_scripted_reel_scrolls = 0
-	_scripted_break_elapsed = 0.0
-	fish.trapped = true
-	_player.busy = true
-	_net.set_line_state(0.06)
-	print("[SEA NET] First fish hooked; scroll to reel it closer")
-
-
-func _start_silas_rescue() -> void:
-	_scripted_reel_mode = &"silas_rescue"
-	_scripted_reel_scrolls = 0
-	_player.busy = true
-	_net.set_line_state(0.0)
-	_story.on_silas_rescue_started()
-	print("[SEA NET] Silas rescue hooked; no fighting or pullback")
-
-
-func _reel_scripted_target() -> void:
-	var fish: DivingWildFish = _tutorial_fish if _scripted_reel_mode == &"tutorial_reel" else _silas_trap
-	if not is_instance_valid(fish):
-		_cancel_scripted_reel()
-		return
-	_scripted_reel_scrolls += 1
-	var offset: Vector2 = fish.position - _player.position
-	var direction: Vector2 = offset.normalized() if offset.length_squared() > 0.01 else Vector2.LEFT
-	var amount: float = RESCUE_REEL_PER_SCROLL if _scripted_reel_mode == &"silas_rescue" else TUTORIAL_REEL_PER_SCROLL
-	var remaining: float = maxf(RESCUE_FINISH_DISTANCE, offset.length() - amount)
-	fish.position = _player.position + direction * remaining
-	if _scripted_reel_mode == &"silas_rescue":
-		_silas.position = fish.position
-		_net.set_line_state(0.0)
-		if remaining <= RESCUE_FINISH_DISTANCE + 0.1:
-			_finish_silas_rescue()
-		return
-	_net.set_line_state(minf(0.48, 0.06 + float(_scripted_reel_scrolls) * 0.065))
-	print("[SEA NET] Tutorial reel %d: remaining %.1f px" % [_scripted_reel_scrolls, remaining])
-	# Several genuine inward reels must happen before the authored panic.
-	if (_scripted_reel_scrolls >= 3 and remaining <= TUTORIAL_BREAK_DISTANCE) \
-			or _scripted_reel_scrolls >= 8:
-		_scripted_reel_mode = &"tutorial_break"
-		_scripted_break_elapsed = 0.0
-		print("[SEA NET] Fish panics as it gets close; tension surging")
-
-
-func _advance_scripted_break(delta: float) -> void:
-	if _scripted_reel_mode != &"tutorial_break":
-		return
-	_scripted_break_elapsed += delta
-	var ratio: float = clampf(_scripted_break_elapsed / TUTORIAL_BREAK_SECONDS, 0.0, 1.0)
-	_net.set_line_state(lerpf(0.55, 1.0, ratio))
-	if is_instance_valid(_tutorial_fish):
-		_tutorial_fish.position += Vector2(-8.0 * delta, -2.0 * delta)
-	if ratio >= 1.0:
-		_scripted_reel_mode = &""
-		_scripted_reel_scrolls = 0
-		_player.busy = false
-		_story.consume_first_reel()
-		_net.reset_net()
-		_start_first_fish_escape()
-		print("[SEA NET] Scripted tension break; first fish escapes left")
-
-
-func _finish_silas_rescue() -> void:
-	_scripted_reel_mode = &""
-	_scripted_reel_scrolls = 0
-	_player.busy = false
-	_net.reset_net()
-	var fish: DivingWildFish = _silas_trap
-	_silas_trap = null
-	if is_instance_valid(fish):
-		_wild_fish.erase(fish)
-		_fish_data.erase(fish)
-		fish.queue_free()
-	_story.on_silas_rescued()
-	print("[SEA NET] Silas rescued without resistance")
-
-
-func _cancel_scripted_reel() -> void:
-	var was_rescue: bool = _scripted_reel_mode == &"silas_rescue"
-	var was_tutorial: bool = _scripted_reel_mode == &"tutorial_reel" \
-		or _scripted_reel_mode == &"tutorial_break"
-	_scripted_reel_mode = &""
-	_scripted_reel_scrolls = 0
-	_player.busy = false
-	_net.reset_net()
-	if was_rescue:
-		_silas.position = _silas_home
-		if is_instance_valid(_silas_trap):
-			_silas_trap.position = _silas_home
-		_story.on_silas_rescue_cancelled()
-	elif was_tutorial:
-		_story.on_tutorial_hook_cancelled()
-	print("[SEA NET] Scripted reel cancelled")
-
-
 func _sync_hooked_fish() -> void:
 	var fish: DivingWildFish = _combat.target
 	if not is_instance_valid(fish):
@@ -402,7 +184,7 @@ func _sync_hooked_fish() -> void:
 	if direction.length_squared() < 0.01:
 		direction = Vector2.RIGHT
 	fish.position = _player.position + direction * _combat.line_distance
-	if fish == _silas_trap:
+	if fish == _encounter.silas_trap:
 		_silas.position = fish.position
 
 
@@ -423,8 +205,7 @@ func handle_input(event: InputEvent) -> bool:
 				_return_to_surface()
 				return true
 		elif key.keycode == KEY_ESCAPE or key.keycode == KEY_F:
-			if _scripted_reel_mode != &"":
-				_cancel_scripted_reel()
+			if _encounter.cancel_if_scripted():
 				return true
 			if _combat.is_active():
 				_combat.release()
@@ -441,22 +222,16 @@ func handle_input(event: InputEvent) -> bool:
 		var candidates: Array[DivingWildFish] = []
 		for fish in _wild_fish:
 			if is_instance_valid(fish) and fish.catch_cooldown <= 0.0:
-				if fish != _silas_trap or _story.can_net_silas():
+				if fish != _encounter.silas_trap or _story.can_net_silas():
 					candidates.append(fish)
 		var cast_started: bool = _net.cast_net(
 			_player, _player.get_global_mouse_position(), candidates
 		)
-		if cast_started and not _story.has_event(&"first_cast") \
-				and not _story.has_event(&"line_broken"):
-			_release_first_fish_focus()
-			_story.on_first_cast()
+		if cast_started:
+			_encounter.on_cast_started()
 		return true
 	if mouse.button_index == MOUSE_BUTTON_WHEEL_DOWN:
-		if _net.is_latched() and (_scripted_reel_mode == &"tutorial_reel" \
-				or _scripted_reel_mode == &"silas_rescue"):
-			_reel_scripted_target()
-			return true
-		if _scripted_reel_mode == &"tutorial_break":
+		if _encounter.reel_if_scripted():
 			return true
 		if _combat.is_active():
 			_combat.reel_scroll()
@@ -470,15 +245,7 @@ func _on_fish_hit(fish: DivingWildFish) -> void:
 	if not is_instance_valid(fish):
 		_net.retract()
 		return
-	if _story.wants_scripted_hook(fish, _tutorial_fish):
-		_start_tutorial_reel(fish)
-		_story.on_scripted_hook()
-		return
-	if fish == _silas_trap:
-		if not _story.can_net_silas():
-			_net.retract()
-			return
-		_start_silas_rescue()
+	if _encounter.handle_fish_hit(fish):
 		return
 	var data: FishData = _fish_data.get(fish) as FishData
 	if data == null:
@@ -486,7 +253,7 @@ func _on_fish_hit(fish: DivingWildFish) -> void:
 		return
 	if _battle.is_active():
 		_battle.stop()
-	_combat.record_lost_fish = fish != _silas_trap
+	_combat.record_lost_fish = fish != _encounter.silas_trap
 	if _combat.begin(fish, data, _player.position.distance_to(fish.position),
 			_net.max_range, fish.health_ratio()):
 		_player.busy = true
@@ -501,12 +268,8 @@ func _on_combat_finished(won: bool, fish: DivingWildFish) -> void:
 		return
 	var data: FishData = _fish_data.get(fish) as FishData
 	if won:
-		if fish == _silas_trap:
-			_wild_fish.erase(fish)
-			_fish_data.erase(fish)
-			_silas_trap = null
-			fish.queue_free()
-			_story.on_silas_rescued()
+		if fish == _encounter.silas_trap:
+			_encounter.finish_silas_rescue_from_combat()
 		else:
 			FishingManager.catch_fish(data)
 			_wild_fish.erase(fish)
@@ -514,9 +277,8 @@ func _on_combat_finished(won: bool, fish: DivingWildFish) -> void:
 			fish.queue_free()
 	else:
 		fish.catch_cooldown = 1.3
-		if fish == _silas_trap:
-			fish.position = _silas_home
-			_silas.position = _silas_home
+		if fish == _encounter.silas_trap:
+			_encounter.restore_silas_position()
 
 
 func _on_silas_following_started() -> void:
@@ -601,9 +363,7 @@ func _try_companion_target(world_mouse: Vector2) -> bool:
 
 func _return_to_surface() -> void:
 	if _player != null and _player.swimming:
-		_release_first_fish_focus()
-		if _scripted_reel_mode != &"":
-			_cancel_scripted_reel()
+		_encounter.leave_sea()
 		if _combat.is_active():
 			_combat.release()
 		if _battle.is_active():

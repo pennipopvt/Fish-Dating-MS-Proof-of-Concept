@@ -91,8 +91,9 @@ func _update_sea_debug() -> void:
 		events = story.get("_events") as Dictionary
 	var distance: float = _world_player.global_position.distance_to(silas.global_position) if silas != null else INF
 	var near_silas: bool = distance <= 108.0
-	var escaped: bool = bool(_sea.get("_first_fish_escape_finished"))
-	var follow_x: float = float(_sea.get("_help_reveal_x"))
+	var encounter: SeaEncounterSequence = _sea.get_node_or_null("EncounterSequence") as SeaEncounterSequence
+	var escaped: bool = encounter.first_fish_escape_finished if encounter != null else false
+	var follow_x: float = encounter.help_reveal_x if encounter != null else -INF
 	var followed: bool = escaped and _world_player.position.x <= follow_x
 	var line_broken: bool = bool(events.get(&"line_broken", false))
 	var help_called: bool = bool(events.get(&"help_called", false))
@@ -155,8 +156,8 @@ func _update_sea_debug() -> void:
 		actor.battle_debug_state() if actor != null else "MISSING"])
 	var net: DivingNetProjectile = _sea.get_node_or_null("NetProjectile") as DivingNetProjectile
 	lines.append("Net lesson: %s   reels=%d   line tension=%.2f" % [
-		str(_sea.get("_scripted_reel_mode")),
-		int(_sea.get("_scripted_reel_scrolls")),
+		str(encounter.reel_mode) if encounter != null else "MISSING",
+		encounter.reel_scrolls if encounter != null else 0,
 		net.line_tension if net != null else 0.0])
 	lines.append("Penni reaction=%s   Silas met/freed=%s/%s" % [
 		str(story.has_event(&"penni_fish_reaction")) if story != null else "MISSING",

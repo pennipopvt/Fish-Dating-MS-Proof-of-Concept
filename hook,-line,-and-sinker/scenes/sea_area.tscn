@@ -5,6 +5,7 @@
 [ext_resource type="TileSet" path="res://resources/tilesets/sea_solids.tres" id="walls"]
 [ext_resource type="Script" path="res://scripts/diving/fish_spawn.gd" id="spawn"]
 [ext_resource type="Script" path="res://scripts/diving/sea_story_director.gd" id="story"]
+[ext_resource type="Script" path="res://scripts/diving/sea_encounter_sequence.gd" id="encounter"]
 [ext_resource type="Script" path="res://scripts/diving/sea_npc.gd" id="sea_npc"]
 [ext_resource type="Script" path="res://scripts/diving/net_projectile.gd" id="net"]
 [ext_resource type="Script" path="res://scripts/diving/diving_combat.gd" id="combat"]
@@ -127,6 +128,10 @@ theme_override_font_sizes/font_size = 12
 [node name="StoryDirector" type="Node" parent="."]
 script = ExtResource("story")
 silas_data = ExtResource("silas_data")
+
+# Only authored tutorial/reel/rescue choreography, not persistent flags.
+[node name="EncounterSequence" type="Node" parent="."]
+script = ExtResource("encounter")
 
 [node name="NetProjectile" type="Node2D" parent="."]
 script = ExtResource("net")
