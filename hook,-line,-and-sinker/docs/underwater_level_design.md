@@ -291,3 +291,15 @@ but `proximity trigger: false` = player/trigger issue; proximity true
 but `help_called: false` = story/UI delivery issue; help true but
 call invisible = bubble was hidden after delivery.
 No story conditions or normal artwork are changed by diagnostics.
+
+
+## Encounter debug fix: editor Stop conflict and story/render separation
+
+Godot F8 is Stop. F7 still toggles the debug panel; **B** while
+the panel is open forces a standalone `UI TEST: Help me!` bubble.
+
+The game sets `help_called` when the encounter trigger fires, even
+when `SeaSpeechBubble` cannot be drawn. The independent
+`_help_ui_pending` state retries the popup every 0.6 seconds if it is
+missing until Penni talks to Silas. The F7 panel shows both states,
+distinguishing a failed proximity trigger from a failed renderer.

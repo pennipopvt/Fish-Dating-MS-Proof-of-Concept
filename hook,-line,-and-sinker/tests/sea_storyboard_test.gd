@@ -29,12 +29,13 @@ func _run() -> void:
 		"F7 exposes live trigger and UI-state diagnostics")
 	main.call("_input", f7)
 	_check(not debug_layer.visible, "F7 also hides diagnostics")
-	var f8: InputEventKey = InputEventKey.new()
-	f8.keycode = KEY_F8
-	f8.pressed = true
-	main.call("_input", f8)
+	main.call("_input", f7)
+	var bubble_key: InputEventKey = InputEventKey.new()
+	bubble_key.keycode = KEY_B
+	bubble_key.pressed = true
+	main.call("_input", bubble_key)
 	_check(bubble.is_call_shown(),
-		"F8 can draw a standalone test bubble without any story trigger")
+		"B while F7 is open tests UI without the story")
 	bubble.hide_call()
 	debug_layer.visible = false
 	_check(story.call("_bubble") == bubble,
@@ -105,8 +106,9 @@ func _run() -> void:
 		"Waiting after the fish escapes does not summon Silas's bubble")
 	player.position.x = float(sea.get("_help_reveal_x")) - 2.0
 	sea.call("_check_escape_followup")
-	_check(story.has_event(&"help_called"),
-		"Swimming farther left triggers Silas's one-time help call")
+	_check(story.has_event(&"help_called")
+		and bool(story.get("_help_ui_pending")),
+		"Silas trigger records help_called without depending on rendering")
 	_check((bubble.get_node("Call") as Control).visible,
 		"Offscreen Help me bubble appears only after following the fish")
 	_check(bubble.get_node("Call/Direction") == null
@@ -144,6 +146,10 @@ func _run() -> void:
 		"The speech tail flat base connects at the outer bubble border")
 	_check(story.can_talk_to_silas(), "Silas can be found after hearing him")
 	_check(not story.can_net_silas(), "Silas is not net-catchable before speaking")
+	bubble.hide_call()
+	story.call("_process", 1.0)
+	_check(bubble.is_call_shown(),
+		"Help popup retries after being unexpectedly hidden")
 	# A player who simply swims past the first fish still hears Silas.
 	bubble.hide_call()
 	var session_events: Dictionary = story.get("_events")

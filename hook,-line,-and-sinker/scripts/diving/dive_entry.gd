@@ -33,7 +33,7 @@ var _dock_confirmation_target: Node2D
 var _dock_confirmation_yes: bool = false
 
 # Diagnostic UI is created only under Main and starts hidden. F7 shows
-# trigger and bubble state; F8 tests the renderer without story flags.
+# trigger and bubble state; press B while F7 is open to test the renderer.
 var _sea_debug_layer: CanvasLayer
 var _sea_debug_label: Label
 var _sea_debug_elapsed: float = 0.0
@@ -138,7 +138,7 @@ func _update_sea_debug() -> void:
 	var rect: Rect2 = call.get_global_rect() if call != null else Rect2()
 
 	var lines: PackedStringArray = PackedStringArray()
-	lines.append("SEA DEBUG | F7 hide/show | F8 force visible UI TEST")
+	lines.append("SEA DEBUG | F7 hide/show | B while open: UI TEST")
 	lines.append("Swimming: %s   Main underwater: %s   UI parent: Main" % [
 		str(_world_player.swimming), str(_underwater)])
 	lines.append("Player: %s   Silas: %s" % [
@@ -152,6 +152,8 @@ func _update_sea_debug() -> void:
 		_world_player.position.x, follow_x])
 	lines.append("Expected help trigger now: %s   help_called flag: %s" % [
 		str(followed or near_silas), str(help_called)])
+	lines.append("Help UI pending: %s" % [
+		str(story.get("_help_ui_pending")) if story != null else "MISSING"])
 	lines.append("Story: %s   UI bound: %s   UI ready: %s" % [
 		str(story != null), str(bound), str(ready)])
 	lines.append("Call node visible: %s   in tree: %s   renderer says: %s" % [
@@ -183,7 +185,7 @@ func _force_test_bubble() -> void:
 		push_error("[SEA DEBUG] F8 failed: Main/SeaSpeechBubble does not exist")
 		return
 	ui.show_call("UI TEST: Help me!", false, 0.0)
-	print("[SEA DEBUG] F8 test: ready=%s shown=%s Call rect=%s" % [
+	print("[SEA DEBUG] B test: ready=%s shown=%s Call rect=%s" % [
 		str(ui.is_node_ready()), str(ui.is_call_shown()),
 		str((ui.get_node("Call") as Control).get_global_rect())])
 	if _sea_debug_layer != null:
@@ -430,7 +432,7 @@ func _input(event: InputEvent) -> void:
 			print("[SEA DEBUG] F7 diagnostics: %s" % str(_sea_debug_layer.visible))
 			get_viewport().set_input_as_handled()
 			return
-		if key.keycode == KEY_F8:
+		if key.keycode == KEY_B and _sea_debug_layer != null and _sea_debug_layer.visible:
 			_force_test_bubble()
 			get_viewport().set_input_as_handled()
 			return

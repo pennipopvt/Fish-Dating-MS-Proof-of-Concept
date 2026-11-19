@@ -12,6 +12,8 @@ var _dialogue_stage: StringName = &""
 var _missing_bubble_warned: bool = false
 var _help_trigger_logged: bool = false
 var _speech_bubble: SeaSpeechBubble
+var _help_ui_pending: bool = false
+var _help_retry_time: float = 0.0
 
 
 func bind_speech_bubble(bubble: SeaSpeechBubble) -> void:
@@ -24,6 +26,22 @@ func bind_speech_bubble(bubble: SeaSpeechBubble) -> void:
 
 func _ready() -> void:
 	DialogueManager.conversation_finished.connect(_on_conversation_finished)
+
+
+func _process(delta: float) -> void:
+	if not _help_ui_pending:
+		return
+	_help_retry_time -= delta
+	if _help_retry_time > 0.0:
+		return
+	_help_retry_time = 0.6
+	var ui: SeaSpeechBubble = _bubble()
+	if ui != null and ui.is_call_shown():
+		return
+	if _show_silas_bubble("Help me!"):
+		print("[SEA STORY] Pending help bubble restored")
+	else:
+		print("[SEA STORY] Help triggered; bubble still unavailable")
 
 
 func _bubble() -> SeaSpeechBubble:
@@ -162,15 +180,16 @@ func consume_first_reel() -> bool:
 func on_followed_escape(near_silas: bool = false) -> void:
 	if has_event(&"help_called") or (not has_event(&"line_broken") and not near_silas):
 		return
-	# Print one trigger entry so the Output panel proves the proximity or
-	# fish-follow condition actually reached the story.
-	if not _help_trigger_logged:
-		_help_trigger_logged = true
-		print("[SEA STORY] Help trigger reached: near_silas=%s line_broken=%s" % [
-			str(near_silas), str(has_event(&"line_broken"))])
+	# A story event must not depend on whether the graphics can render.
+	_events[&"help_called"] = true
+	_help_ui_pending = true
+	_help_retry_time = 0.6
+	print("[SEA STORY] Help trigger FIRED: near_silas=%s line_broken=%s" % [
+		str(near_silas), str(has_event(&"line_broken"))])
 	if _show_silas_bubble("Help me!"):
-		_events[&"help_called"] = true
-		print("[SEA STORY] Help call delivered to the bubble")
+		print("[SEA STORY] Help bubble visible")
+	else:
+		print("[SEA STORY] Help bubble unavailable; will retry")
 
 
 func can_talk_to_silas() -> bool:
@@ -184,6 +203,7 @@ func can_net_silas() -> bool:
 func talk_to_silas() -> void:
 	if not can_talk_to_silas() or DialogueManager.is_active:
 		return
+	_help_ui_pending = false
 	var ui: SeaSpeechBubble = _bubble()
 	if ui != null:
 		ui.hide_call()
@@ -199,6 +219,7 @@ func talk_to_silas() -> void:
 func on_silas_rescued() -> void:
 	if has_silas_flag(&"silas_freed"):
 		return
+	_help_ui_pending = false
 	_set_silas_flag(&"silas_freed")
 	_dialogue_stage = &"rescue"
 	var lines: Array[String] = ["I'm free!", "Thank you... I thought I'd never get out."]
