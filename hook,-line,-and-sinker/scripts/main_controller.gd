@@ -52,10 +52,16 @@ func _ready() -> void:
 	var terminal_menu: ShopMenu = $CanvasLayer/ShopMenu
 	var terminal_actor: ShopInteractable = _world.get_node("Shop") as ShopInteractable
 	terminal_menu.progression_notice_changed.connect(terminal_actor.set_progression_notice)
+	terminal_menu.challenges_availability_changed.connect(
+		terminal_actor.set_challenge_notice_enabled
+	)
 	(_sea.get_node("StoryDirector") as SeaStoryDirector).silas_surface_reveal_finished.connect(
 		terminal_menu.unlock_post_dive_storage
 	)
 	terminal_actor.set_progression_notice(terminal_menu._pending_progression_notice())
+	terminal_actor.set_challenge_notice_enabled(
+		terminal_menu.is_page_unlocked(ShopMenu.Page.CHALLENGES)
+	)
 	_debug.configure(self, _world_player, _sea, _bubble_host)
 	_opening.start.call_deferred()
 
