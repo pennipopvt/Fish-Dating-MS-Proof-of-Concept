@@ -5,6 +5,9 @@ class_name DivingWorld
 # here: fish/net/combat are separate reusable nodes; one-time beats belong to
 # StoryDirector. We never create a second Player or Camera2D.
 signal surface_requested
+signal oxygen_return_requested
+
+const OXYGEN_HUD_SCENE: PackedScene = preload("res://prefabs/sea_oxygen_hud.tscn")
 
 const SEA_TOP: float = 154.0
 const SURFACE_REACH: float = 44.0
@@ -28,6 +31,8 @@ const FISH_COMBAT_VISUAL_SCENE: PackedScene = preload("res://prefabs/sea_fish_co
 @onready var _exit_prompt: InteractPrompt = $Points/SurfaceExit/InteractPrompt
 @onready var _spawns: Node2D = $FishSpawns
 @onready var _population: SeaPopulation = $SeaPopulation
+@onready var _oxygen: SeaOxygen = $SeaOxygen
+@onready var _dive_inventory: SeaDiveInventory = $SeaDiveInventory
 @onready var _actors: Node2D = $FishActors
 @onready var _story: SeaStoryDirector = $StoryDirector
 @onready var _net: DivingNetProjectile = $NetProjectile
@@ -39,6 +44,7 @@ const FISH_COMBAT_VISUAL_SCENE: PackedScene = preload("res://prefabs/sea_fish_co
 
 var _player: Player
 var _camera: Camera2D
+var _oxygen_hud: SeaOxygenHud
 var _cue: SeaTutorialCue
 var _wild_fish: Array[DivingWildFish] = []
 # Only fish spawned by editable habitat regions are replaced each period.
@@ -72,6 +78,10 @@ func _ready() -> void:
 	_sfx = SEA_SFX_SCENE.instantiate()
 	add_child(_sfx)
 	_install_tutorial_cue()
+	_install_oxygen_hud()
+	_oxygen.oxygen_changed.connect(_update_oxygen_hud)
+	_oxygen.oxygen_depleted.connect(_on_oxygen_depleted)
+	_story.first_companion_catch_completed.connect(_on_first_companion_catch_oxygen)
 	_encounter.configure(_player, _story, _net, _silas, _cue)
 	_encounter.fish_remove_requested.connect(_unregister_encounter_fish)
 	_net.fish_hit.connect(_on_fish_hit)
@@ -90,6 +100,39 @@ func _ready() -> void:
 	_spawn_editor_fish()
 	_make_silas_trap()
 	set_process(true)
+
+
+# The visual stays attached to the same camera as the tutorial cue.
+func _install_oxygen_hud() -> void:
+	if _camera == null:
+		return
+	_oxygen_hud = _camera.get_node_or_null("SeaOxygenHud") as SeaOxygenHud
+	if _oxygen_hud == null:
+		_oxygen_hud = OXYGEN_HUD_SCENE.instantiate() as SeaOxygenHud
+		_camera.add_child(_oxygen_hud)
+	_update_oxygen_hud(_oxygen.ratio(), _oxygen.enabled)
+
+
+func _update_oxygen_hud(fraction: float, is_enabled: bool) -> void:
+	if _oxygen_hud != null:
+		_oxygen_hud.show_oxygen(fraction, is_enabled, _oxygen.warning_fraction)
+
+
+func _on_first_companion_catch_oxygen() -> void:
+	# Full oxygen begins AFTER the first Silas-assisted catch.
+	_oxygen.activate()
+
+
+func _on_oxygen_depleted() -> void:
+	# The same transition owns the physical return; the oxygen component
+	# only supplies the failure event. No separate underwater world.
+	_encounter.leave_sea()
+	if _combat.is_active():
+		_combat.release()
+	if _battle.is_active():
+		_battle.stop()
+	_net.reset_net()
+	oxygen_return_requested.emit()
 
 
 # Create exactly one lightweight Sprite2D after the World/Camera nodes exist.
@@ -222,6 +265,8 @@ func enter_from_dock() -> void:
 		return
 	_set_camera_bounds(true)
 	_player.set_swimming(true, _sea_bounds())
+	_dive_inventory.begin_dive()
+	_oxygen.begin_dive(_story.has_event(&"first_companion_catch"))
 	# The first dive remains scripted until Silas helps with a catch.
 	# Every subsequent period gets a fresh habitat population only on entry,
 	# once the descent finishes and the camera is already in the sea.
@@ -258,6 +303,10 @@ func _process(delta: float) -> void:
 		if _sfx != null:
 			_sfx.set_swimming(false)
 		return
+	# Oxygen pauses during dialogue and menus so reading is never punished,
+	# but otherwise continues draining during fishing combat.
+	if not DialogueManager.is_active and not GameManager.is_modal_ui_open():
+		_oxygen.step(delta)
 	_sfx.set_swimming(not _player.busy and _player.velocity.length() > 8.0)
 	_encounter.step(delta)
 	# Reuse the original interaction bubble for the dock return.
@@ -426,7 +475,10 @@ func _on_combat_finished(won: bool, fish: DivingWildFish) -> void:
 			_encounter.finish_silas_rescue_from_combat()
 		else:
 			_story.on_first_companion_catch(fish)
-			FishingManager.catch_fish(data)
+			# Record species discovery/challenges immediately, but the fish
+			# remains carried until the dive is successfully completed.
+			FishingManager.catch_fish(data, false)
+			_dive_inventory.record_fish(data)
 			_wild_fish.erase(fish)
 			_fish_data.erase(fish)
 			fish.queue_free()
@@ -522,6 +574,7 @@ func _return_to_surface() -> void:
 			_story.on_surface_blocked()
 			return
 		play_sfx(&"surface")
+		_oxygen.pause()
 		_exit_prompt.pop_out()
 		_encounter.leave_sea()
 		if _combat.is_active():

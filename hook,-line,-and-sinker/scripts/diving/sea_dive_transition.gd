@@ -44,6 +44,7 @@ func configure(world: Node2D, player: Player, sea: DivingWorld,
 	_shop_menu = shop
 	_opening = opening
 	_sea.surface_requested.connect(_on_surface_requested)
+	_sea.oxygen_return_requested.connect(_on_oxygen_return_requested)
 	surface_completed.connect(_sea.on_surface_completed)
 	# Story can request fish/human portraits for a conversation without
 	# teaching this physical transition about any particular character.
@@ -186,9 +187,47 @@ func _surface_from_dive() -> void:
 	underwater = false
 	_sea.call("_set_camera_bounds", false)
 	_dialogue_ui.set_underwater_mode(false)
+	# Catch safety is settled BEFORE the terminal and story process the return.
+	(_sea.get_node("SeaDiveInventory") as SeaDiveInventory).secure_catch()
+	(_sea.get_node("SeaOxygen") as SeaOxygen).end_dive()
 	# Every completed dive uses the remaining morning/afternoon/night period.
 	GameManager.finish_dive_period()
 
+	transitioning = false
+	_world_player.busy = false
+	surface_completed.emit()
+
+
+func _on_oxygen_return_requested() -> void:
+	if transitioning or not underwater:
+		return
+	transitioning = true
+	_world_player.busy = true
+	_blackout_from_oxygen()
+
+
+func _blackout_from_oxygen() -> void:
+	# The ScreenFade already used by beds/relationship scenes gives the
+	# failure a simple blackout. We do not perform the ordinary swim ascent.
+	var fade := ScreenFade.new()
+	get_tree().root.add_child(fade)
+	await fade.fade_to(1.0, 0.45)
+	(_sea.get_node("SeaDiveInventory") as SeaDiveInventory).lose_catch()
+	(_sea.get_node("SeaOxygen") as SeaOxygen).end_dive()
+	_world_player.global_position = shore_return_position
+	_world_player.set_swimming(false)
+	_world_player.animator.rotation = 0.0
+	_world_player.animator.play(&"idle_l")
+	var island_camera: Camera2D = _world_player.get_node("Camera2D") as Camera2D
+	island_camera.position = Vector2(0.0, -22.0)
+	island_camera.reset_smoothing()
+	island_camera.force_update_scroll()
+	underwater = false
+	_sea.call("_set_camera_bounds", false)
+	_dialogue_ui.set_underwater_mode(false)
+	GameManager.finish_dive_period()
+	await fade.fade_to(0.0, 0.55)
+	fade.queue_free()
 	transitioning = false
 	_world_player.busy = false
 	surface_completed.emit()

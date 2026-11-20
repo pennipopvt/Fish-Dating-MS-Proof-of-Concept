@@ -20,6 +20,8 @@
 [ext_resource type="Script" path="res://scripts/diving/sea_spawn_option.gd" id="spawn_option"]
 [ext_resource type="Script" path="res://scripts/diving/sea_spawn_region.gd" id="spawn_region"]
 [ext_resource type="Script" path="res://scripts/diving/sea_population.gd" id="sea_population"]
+[ext_resource type="Script" path="res://scripts/diving/sea_oxygen.gd" id="sea_oxygen"]
+[ext_resource type="Script" path="res://scripts/diving/sea_dive_inventory.gd" id="sea_dive_inventory"]
 [ext_resource type="Resource" path="res://resources/fish/porgy.tres" id="porgy"]
 [ext_resource type="Resource" path="res://resources/fish/flounder.tres" id="flounder"]
 [ext_resource type="Resource" path="res://resources/fish/goby.tres" id="goby"]
@@ -226,6 +228,14 @@ species_options = Array[ExtResource("spawn_option")]([SubResource("habitat_deep_
 
 [node name="SeaPopulation" type="Node" parent="."]
 script = ExtResource("sea_population")
+
+[node name="SeaOxygen" type="Node" parent="."]
+script = ExtResource("sea_oxygen")
+capacity_seconds = 120.0
+warning_fraction = 0.25
+
+[node name="SeaDiveInventory" type="Node" parent="."]
+script = ExtResource("sea_dive_inventory")
 
 [node name="FishActors" type="Node2D" parent="." unique_id=1103972822]
 
