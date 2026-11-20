@@ -42,12 +42,30 @@ var _wild_fish: Array[DivingWildFish] = []
 var _fish_data: Dictionary = {}
 var _combat_debug_status: String = "No companion command yet"
 var _perfect_parry_line_flash_left: float = 0.0
+# Keeps the hooked fish in open water during the fight (see _is_open_water).
+# Loaded by path (like WILD_FISH_SCRIPT) so it works before the editor has
+# registered the HookedFishMover class name.
+const HOOKED_FISH_MOVER_SCRIPT = preload("res://scripts/diving/hooked_fish_mover.gd")
+var _hooked_mover := HOOKED_FISH_MOVER_SCRIPT.new()
+var _hooked_fish: DivingWildFish
+# Sea sound effects (prefabs/sea_sfx.tscn; empty slots are silent).
+const SEA_SFX_SCENE = preload("res://prefabs/sea_sfx.tscn")
+var _sfx: Node
+var _last_combat_phase: int = -1
+@onready var _solids: TileMapLayer = get_node_or_null("Solids") as TileMapLayer
+# Points around a hooked fish's center that must be clear of Solids tiles.
+const HOOKED_FISH_PROBES: Array[Vector2] = [
+	Vector2.ZERO, Vector2(-6.0, 0.0), Vector2(6.0, 0.0), Vector2(0.0, -4.0), Vector2(0.0, 4.0)
+]
 
 
 func _ready() -> void:
 	_player = get_parent().get_node_or_null("Player") as Player
 	if _player != null:
 		_camera = _player.get_node_or_null("Camera2D") as Camera2D
+	_hooked_mover.is_open = _is_open_water
+	_sfx = SEA_SFX_SCENE.instantiate()
+	add_child(_sfx)
 	_install_tutorial_cue()
 	_encounter.configure(_player, _story, _net, _silas, _cue)
 	_encounter.fish_remove_requested.connect(_unregister_encounter_fish)
@@ -100,6 +118,7 @@ func _spawn_editor_fish() -> void:
 		var fish: DivingWildFish = WILD_FISH_SCRIPT.new() as DivingWildFish
 		_actors.add_child(fish)
 		fish.setup(data.fish_id, data.item_data.sprite, spawn.position, _sea_bounds(), spawn.random_seed)
+		fish.is_open = _is_open_water
 		fish.set_max_health(data.max_health)
 		fish.preferred_player_distance = spawn.preferred_player_distance
 		fish.flee_radius = maxf(spawn.alert_distance, spawn.preferred_player_distance)
@@ -170,7 +189,10 @@ func _set_camera_bounds(in_sea: bool) -> void:
 
 func _process(delta: float) -> void:
 	if _player == null or not _player.swimming:
+		if _sfx != null:
+			_sfx.set_swimming(false)
 		return
+	_sfx.set_swimming(not _player.busy and _player.velocity.length() > 8.0)
 	_encounter.step(delta)
 	# Reuse the original interaction bubble for the dock return.
 	# The marker lives at the waterline; the player cannot swim above
@@ -186,8 +208,9 @@ func _process(delta: float) -> void:
 	_silas_behavior.on_combat_update(delta, _silas.can_strike_target())
 	if _combat.is_active():
 		_combat.step(delta)
+		_play_combat_phase_sfx()
 		if _combat.is_active():
-			_sync_hooked_fish()
+			_sync_hooked_fish(delta)
 			_perfect_parry_line_flash_left = maxf(0.0, _perfect_parry_line_flash_left - delta)
 			_net.set_line_state(_combat.tension,
 				_combat.phase == DivingCombat.Phase.STUN or _perfect_parry_line_flash_left > 0.0)
@@ -199,16 +222,35 @@ func _process(delta: float) -> void:
 		_story.maybe_offer_companion_help(_player.position, _wild_fish)
 
 
-func _sync_hooked_fish() -> void:
+func _sync_hooked_fish(delta: float) -> void:
 	var fish: DivingWildFish = _combat.target
 	if not is_instance_valid(fish):
 		return
-	var direction: Vector2 = (fish.position - _player.position).normalized()
-	if direction.length_squared() < 0.01:
-		direction = Vector2.RIGHT
-	fish.position = _player.position + direction * _combat.line_distance
+	if fish != _hooked_fish:
+		_hooked_fish = fish
+		_hooked_mover.reset()
+	fish.position = _hooked_mover.step(delta, _player.position, fish.position, _combat.line_distance)
 	if fish == _encounter.silas_trap:
 		_silas.position = fish.position
+
+
+# Open water for a hooked fish: below the waterline, above the sea floor, and
+# clear of the Solids tiles (rock and ground). Left and right stay open.
+func _is_open_water(point: Vector2) -> bool:
+	if point.y < SEA_TOP + DivingWildFish.EDGE_MARGIN:
+		return false
+	if point.y > _sea_bounds().end.y - DivingWildFish.EDGE_MARGIN:
+		return false
+	if _solids == null:
+		return true
+	for probe in HOOKED_FISH_PROBES:
+		# Fish positions are in FishActors space; the tiles have their own.
+		var cell: Vector2i = _solids.local_to_map(_solids.to_local(_actors.to_global(point + probe)))
+		# Only tiles the player also collides with (decor tiles have no shape).
+		var tile: TileData = _solids.get_cell_tile_data(cell)
+		if tile != null and tile.get_collision_polygons_count(0) > 0:
+			return false
+	return true
 
 
 # Main forwards UI-scaled mouse/key events here; sea remains in the original
@@ -258,6 +300,7 @@ func handle_input(event: InputEvent) -> bool:
 			return true
 		if _combat.is_active():
 			_combat.reel_scroll()
+			play_sfx(&"reel")
 			return true
 	if mouse.button_index == MOUSE_BUTTON_RIGHT:
 		return _try_companion_target(_player.get_global_mouse_position())
@@ -280,11 +323,15 @@ func _on_fish_hit(fish: DivingWildFish) -> void:
 	if _combat.begin(fish, data, _player.position.distance_to(fish.position),
 			_net.max_range, fish.health_ratio()):
 		_player.busy = true
+		_last_combat_phase = -1
+		play_sfx(&"hook")
 	else:
 		_net.retract()
 
 
 func _on_sea_parried(result: StringName) -> void:
+	if result == &"perfect" or result == &"close":
+		play_sfx(&"counter")
 	if result == &"perfect":
 		_perfect_parry_line_flash_left = perfect_parry_line_flash_seconds
 		# Show gold immediately, rather than waiting for the next frame.
@@ -294,6 +341,7 @@ func _on_sea_parried(result: StringName) -> void:
 
 
 func _on_combat_finished(won: bool, fish: DivingWildFish) -> void:
+	play_sfx(&"catch" if won else &"lose")
 	_perfect_parry_line_flash_left = 0.0
 	_player.busy = false
 	_net.reset_net()
@@ -332,6 +380,7 @@ func _on_battle_ended() -> void:
 
 
 func _on_battle_hit(on_fish: bool, damage: float) -> void:
+	play_sfx(&"battle_hit")
 	_silas.on_battle_hit(on_fish)
 	print("[SEA COMBAT] %s hit for %.1f; companion HP %.1f/%0.1f" % [
 		"Silas" if on_fish else "Fish", damage,
@@ -395,6 +444,7 @@ func _try_companion_target(world_mouse: Vector2) -> bool:
 
 func _return_to_surface() -> void:
 	if _player != null and _player.swimming:
+		play_sfx(&"surface")
 		_exit_prompt.pop_out()
 		_encounter.leave_sea()
 		if _combat.is_active():
@@ -410,3 +460,20 @@ func on_surface_completed() -> void:
 	_exit_prompt.pop_out()
 	if _story.can_begin_silas_surface_reveal():
 		_encounter.play_silas_surface_reveal()
+
+
+# Sea sound hub; SeaDiveTransition also calls this for the dive splash.
+func play_sfx(event: StringName) -> void:
+	if _sfx != null:
+		_sfx.play(event)
+
+
+# Windup and attack sounds when the hooked fish enters those phases.
+func _play_combat_phase_sfx() -> void:
+	if not _combat.is_active() or _combat.phase == _last_combat_phase:
+		return
+	_last_combat_phase = _combat.phase
+	if _combat.phase == DivingCombat.Phase.WINDUP:
+		play_sfx(&"windup")
+	elif _combat.phase == DivingCombat.Phase.ATTACK:
+		play_sfx(&"attack")

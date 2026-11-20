@@ -3,6 +3,8 @@ class_name DivingWildFish
 
 # Tiny autonomous fish for the diving vertical slice. They wander on their
 # own, notice the player, and flee unless Silas is concealing the approach.
+# How far inside `region` the fish's center stays (free swimming and hooked).
+const EDGE_MARGIN: float = 12.0
 var fish_name: StringName = &""
 var swim_speed: float = 20.0
 var capture_radius: float = 13.0
@@ -24,6 +26,9 @@ var battling: bool = false:
 		queue_redraw()
 var _hit_flash: float = 0.0
 var region: Rect2 = Rect2(24, 35, 860, 430)
+# Optional (set by DivingWorld): true where the fish's center is open water.
+# Free swimming slides along rock and ground and turns away from them.
+var is_open: Callable
 var home: Vector2 = Vector2.ZERO
 var _rng := RandomNumberGenerator.new()
 var _heading: Vector2 = Vector2.RIGHT
@@ -88,12 +93,35 @@ func swim(delta: float, player_position: Vector2, concealed: bool) -> void:
 			retreat *= 0.82
 		speed = maxf(speed, retreat)
 	_sprite.position.x = 0.0
-	position += direction * speed * delta
-	position.x = clampf(position.x, region.position.x + 12.0, region.end.x - 12.0)
-	position.y = clampf(position.y, region.position.y + 12.0, region.end.y - 12.0)
+	var next: Vector2 = position + direction * speed * delta
+	next.x = clampf(next.x, region.position.x + EDGE_MARGIN, region.end.x - EDGE_MARGIN)
+	next.y = clampf(next.y, region.position.y + EDGE_MARGIN, region.end.y - EDGE_MARGIN)
+	position = _avoid_solids(position, next)
 	_sprite.flip_h = direction.x < -0.01
 	_sprite.position.y = sin(_t * 3.2 + float(_rng.seed % 10)) * 1.4
 	rotation = clampf(direction.y * 0.15, -0.20, 0.20)
+
+# Step from `from` to `to` without entering rock or ground: slide along the
+# blocking side, and bounce the wander heading off it so the fish turns away
+# instead of nosing into the wall. A fish that starts inside rock (bad spawn)
+# moves freely so it can swim out.
+func _avoid_solids(from: Vector2, to: Vector2) -> Vector2:
+	if not is_open.is_valid() or not is_open.call(from) or is_open.call(to):
+		return to
+	var along_x := Vector2(to.x, from.y)
+	var along_y := Vector2(from.x, to.y)
+	var x_open: bool = is_open.call(along_x)
+	var y_open: bool = is_open.call(along_y)
+	if not x_open:
+		_heading.x = -_heading.x
+	if not y_open:
+		_heading.y = -_heading.y
+	if x_open and absf(to.x - from.x) > 0.001:
+		return along_x
+	if y_open and absf(to.y - from.y) > 0.001:
+		return along_y
+	return from
+
 
 func set_max_health(value: float) -> void:
 	max_health = maxf(value, 1.0)
