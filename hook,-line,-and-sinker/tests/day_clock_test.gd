@@ -20,12 +20,12 @@ func _ready() -> void:
 
 	_test_casts_per_action()
 	_test_period_advancement()
-	_test_one_dive_per_period_and_free_talk()
 	_test_night_blocks_actions()
 	_test_rest_and_rollover()
 	await _test_bed()
 	_test_dependents_read_new_values()
 	_test_session_only_clock()
+	_test_one_dive_per_period_and_free_talk()
 
 	print("day_clock_test: %s" % ("PASS" if _failures == 0 else "%d FAILED" % _failures))
 	get_tree().quit(1 if _failures > 0 else 0)

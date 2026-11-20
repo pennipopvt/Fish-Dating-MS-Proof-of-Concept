@@ -58,6 +58,18 @@ jobs:
           set -o pipefail
           timeout 120s godot --headless --path "hook,-line,-and-sinker" res://tests/terminal_shop_challenges_test.tscn 2>&1 | tee terminal-challenge-test.log
           ! (grep -E 'SCRIPT ERROR:|Parse Error:|Parser Error:|ERROR:|FAIL ' terminal-challenge-test.log | grep -Ev 'resources still in use at exit|RID allocations.*leaked' | grep -q .)
+      - name: Test dive clock and free conversations
+        shell: bash
+        run: |
+          set -o pipefail
+          timeout 120s godot --headless --path "hook,-line,-and-sinker" res://tests/day_clock_test.tscn 2>&1 | tee day-clock-test.log
+          ! (grep -E 'SCRIPT ERROR:|Parse Error:|Parser Error:|ERROR:|FAIL ' day-clock-test.log | grep -Ev 'resources still in use at exit|RID allocations.*leaked' | grep -q .)
+      - name: Test date bookings and period costs
+        shell: bash
+        run: |
+          set -o pipefail
+          timeout 120s godot --headless --path "hook,-line,-and-sinker" res://tests/date_schedule_test.tscn 2>&1 | tee date-schedule-test.log
+          ! (grep -E 'SCRIPT ERROR:|Parse Error:|Parser Error:|ERROR:|FAIL ' date-schedule-test.log | grep -Ev 'resources still in use at exit|RID allocations.*leaked' | grep -q .)
       - name: Test quota deliveries and deadlines
         shell: bash
         run: |
