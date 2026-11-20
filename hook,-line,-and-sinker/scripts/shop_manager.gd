@@ -25,9 +25,6 @@ var gifts_unlocked: bool = false
 func _ready() -> void:
 	GameManager.day_started.connect(on_day_start)
 
-func _ready() -> void:
-	GameManager.day_started.connect(on_day_start)
-
 func request_shop() -> void:
 	if not is_shop_open:
 		shop_requested.emit()
