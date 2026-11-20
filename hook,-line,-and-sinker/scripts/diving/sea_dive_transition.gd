@@ -88,9 +88,8 @@ func start_confirmed_dive(dock: Node2D) -> void:
 	if transitioning or underwater:
 		return
 	transitioning = true
-	# Other terminal pages become available only once the player actually
-	# chooses to dive, never when they merely read the dock prompt.
-	_shop_menu.set_quota_only(false)
+	# Keep the quota-only terminal during the first dive. Main unlocks
+	# Storage only once Silas's first shore reveal dialogue has finished.
 	dock.call("mark_dive_started")
 	_world_player.busy = true
 	shore_return_position = dock.global_position + Vector2(21.0, 11.0)

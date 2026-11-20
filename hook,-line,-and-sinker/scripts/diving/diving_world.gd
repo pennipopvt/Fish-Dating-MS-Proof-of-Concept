@@ -352,6 +352,7 @@ func _on_combat_finished(won: bool, fish: DivingWildFish) -> void:
 		if fish == _encounter.silas_trap:
 			_encounter.finish_silas_rescue_from_combat()
 		else:
+			_story.on_first_companion_catch(fish)
 			FishingManager.catch_fish(data)
 			_wild_fish.erase(fish)
 			_fish_data.erase(fish)
@@ -444,6 +445,9 @@ func _try_companion_target(world_mouse: Vector2) -> bool:
 
 func _return_to_surface() -> void:
 	if _player != null and _player.swimming:
+		if not _story.can_surface():
+			_story.on_surface_blocked()
+			return
 		play_sfx(&"surface")
 		_exit_prompt.pop_out()
 		_encounter.leave_sea()

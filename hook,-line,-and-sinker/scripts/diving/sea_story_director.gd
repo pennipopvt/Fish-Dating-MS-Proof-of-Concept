@@ -319,6 +319,33 @@ func on_silas_attack_refused(_fish: DivingWildFish) -> void:
 
 
 # Surfacing itself is always allowed. Only Silas's FIRST return adds a scene.
+# The first departure is part of the companion tutorial, not a free exit.
+# The condition is a successful net catch of a fish Silas actually damaged.
+func can_surface() -> bool:
+	return has_event(&"first_companion_catch") or has_silas_flag(&"silas_surface_transformed")
+
+
+func on_first_companion_catch(fish: DivingWildFish) -> void:
+	if fish == null or not fish.companion_weakened or not has_silas_flag(&"silas_following"):
+		return
+	_events[&"first_companion_catch"] = true
+	var cue: SeaTutorialCue = _cue()
+	if cue != null:
+		cue.hide_action()
+
+
+func on_surface_blocked() -> void:
+	if DialogueManager.is_active:
+		return
+	var message: String = "I should help that fish first." if has_silas_flag(&"silas_met") \
+		and not has_silas_flag(&"silas_freed") else (
+		"We should try catching a fish together before going back."
+		if has_silas_flag(&"silas_following") else
+		"I don't think I'm done down here yet."
+	)
+	DialogueManager.request_player_monologue([message])
+
+
 func can_begin_silas_surface_reveal() -> bool:
 	return has_silas_flag(&"silas_following") \
 		and not has_silas_flag(&"silas_surface_transformed") \
