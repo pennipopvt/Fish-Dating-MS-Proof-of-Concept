@@ -1,6 +1,10 @@
 class_name ShopMenu
 extends CanvasLayer
 
+# True while there is a newly unlocked terminal page that hasn't been seen.
+# Main connects this to the existing physical terminal exclamation bubble.
+signal progression_notice_changed(pending: bool)
+
 # FISH CO. terminal: shop, inventory and calendar pages share one scene.
 # Tabs and borders are laid out in shop_menu.tscn and styled by terminal_theme.tres.
 # This script only fills in the grid, item details, and actions.
@@ -64,8 +68,15 @@ const TABS_HIDDEN_X_OFFSET := 12.0
 var _nav_buttons: Array[Button] = []
 var _page: int = Page.QUOTA
 var _selected_quota_fish: StringName = &""
-# First-minute onboarding: show exactly one terminal tab until the first dive.
+# Tutorial progression is deliberately held by the existing terminal UI.
+# Quota first; Storage after the first Silas shore scene; Upgrades after the
+# first quota. Other existing terminal pages open with Upgrades for now.
 var _quota_only: bool = true
+var _post_dive_storage_unlocked: bool = false
+var _storage_seen: bool = false
+var _upgrades_seen: bool = false
+var _storage_notification: PanelContainer
+var _shop_notification: PanelContainer
 var _entries: Array[Dictionary] = []
 var _entry_buttons: Array[Button] = []
 var _selected_index: int = 0
@@ -119,11 +130,15 @@ func _ready() -> void:
 	FishingManager.fish_caught.connect(_on_inventory_changed)  # collection/dex, incl. NPC catches
 	DateManager.bookings_changed.connect(_on_schedule_changed)
 	QuotaManager.quota_changed.connect(_on_quota_changed)
+	QuotaManager.quota_completed.connect(_on_first_quota_completed)
 	GameManager.time_changed.connect(func(_day: int, _period: GameManager.Times) -> void: _on_schedule_changed())
 	GameManager.actions_changed.connect(func(_actions: int) -> void: _on_schedule_changed())
 	_setup_challenge_notification()
+	_storage_notification = _make_progression_tab_notice(_storage_tab, "StorageNoticeBubble")
+	_shop_notification = _make_progression_tab_notice(_shop_tab, "UpgradeNoticeBubble")
 	_refresh_page()
 	_update_nav_tabs(false)
+	_update_progression_notifications()
 
 
 func _setup_challenge_notification() -> void:
@@ -157,6 +172,78 @@ func _update_challenge_notification() -> void:
 	var normal_icon := _challenges_tab.get_node_or_null("Icon") as TextureRect
 	if normal_icon != null:
 		normal_icon.visible = not needs_claim
+
+
+# Reuse the same compact exclamation badge/hidden-tab-icon presentation as
+# the existing Challenges notice. No new notification manager or scene.
+func _make_progression_tab_notice(tab: Button, name_for_node: String) -> PanelContainer:
+	var notice := PanelContainer.new()
+	notice.name = name_for_node
+	notice.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	notice.custom_minimum_size = Vector2(30, 30)
+	notice.position = Vector2(21, 21)
+	notice.add_theme_stylebox_override("panel", PixelUI.notification_bubble_style(PixelUI.SCALE))
+	var mark := Label.new()
+	mark.text = "!"
+	mark.add_theme_font_override("font", PixelUI.FONT_SMALL_BOLD)
+	mark.add_theme_font_size_override("font_size", 15)
+	mark.add_theme_color_override("font_color", PixelUI.CYAN)
+	mark.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	mark.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	mark.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	notice.add_child(mark)
+	tab.add_child(notice)
+	return notice
+
+
+func _show_tab_notice(tab: Button, notice: PanelContainer, pending: bool) -> void:
+	if notice == null:
+		return
+	notice.visible = pending
+	var icon: TextureRect = tab.get_node_or_null("Icon") as TextureRect
+	if icon != null:
+		icon.visible = not pending
+
+
+func _pending_progression_notice() -> bool:
+	return (_post_dive_storage_unlocked and not _storage_seen) \
+		or (QuotaManager.first_quota_completed and not _upgrades_seen)
+
+
+func _update_progression_notifications() -> void:
+	_show_tab_notice(_storage_tab, _storage_notification,
+		_post_dive_storage_unlocked and not _storage_seen)
+	_show_tab_notice(_shop_tab, _shop_notification,
+		QuotaManager.first_quota_completed and not _upgrades_seen)
+	progression_notice_changed.emit(_pending_progression_notice())
+
+
+# Connected by Main to the EXISTING Silas reveal completion signal.
+func unlock_post_dive_storage() -> void:
+	if _post_dive_storage_unlocked:
+		return
+	_post_dive_storage_unlocked = true
+	set_quota_only(false)
+	_update_progression_notifications()
+
+
+func _on_first_quota_completed(cycle: int) -> void:
+	if cycle != 1:
+		return
+	_update_nav_tabs(false)
+	if visible:
+		_refresh_page()
+	_update_progression_notifications()
+
+
+func is_page_unlocked(page: int) -> bool:
+	if page == Page.QUOTA:
+		return true
+	if not _post_dive_storage_unlocked:
+		return false
+	if page == Page.STORAGE:
+		return true
+	return QuotaManager.first_quota_completed
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -291,9 +378,14 @@ func _select_shop_section(section: int) -> void:
 
 
 func _select_page(page: int) -> void:
-	if _quota_only and page != Page.QUOTA:
+	if not is_page_unlocked(page):
 		return
 	_page = page
+	if page == Page.STORAGE:
+		_storage_seen = true
+	elif page == Page.SHOP:
+		_upgrades_seen = true
+	_update_progression_notifications()
 	_selected_index = 0
 	_last_order_message = ""
 	if page == Page.SCHEDULE:
@@ -316,7 +408,7 @@ func _update_nav_tabs(animate: bool) -> void:
 
 	for i in range(_nav_buttons.size()):
 		var tab: Button = _nav_buttons[i]
-		tab.visible = not _quota_only or i == Page.QUOTA
+		tab.visible = is_page_unlocked(i)
 		var caption: Label = tab.get_node("VerticalTitle") as Label
 		var text_width: float = _layout_vertical_caption(caption)
 		var padded_height: float = TAB_CLOSED_HEIGHT + TAB_TEXT_GAP + text_width + TAB_TEXT_PADDING

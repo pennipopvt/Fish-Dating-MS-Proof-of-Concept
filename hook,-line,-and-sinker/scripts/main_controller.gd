@@ -47,6 +47,15 @@ func _ready() -> void:
 	_opening.configure(_world, _world_player, $CanvasLayer/ShopMenu, _transition)
 	_opening.dive_confirmed.connect(_transition.start_confirmed_dive)
 	_bubble_host.configure(self, _sea.get_node_or_null("StoryDirector") as SeaStoryDirector)
+	# Main only connects existing story, terminal UI, and world notice signals.
+	# No tutorial flags or shop logic belong in the world transition.
+	var terminal_menu: ShopMenu = $CanvasLayer/ShopMenu
+	var terminal_actor: ShopInteractable = _world.get_node("Shop") as ShopInteractable
+	terminal_menu.progression_notice_changed.connect(terminal_actor.set_progression_notice)
+	(_sea.get_node("StoryDirector") as SeaStoryDirector).silas_surface_reveal_finished.connect(
+		terminal_menu.unlock_post_dive_storage
+	)
+	terminal_actor.set_progression_notice(terminal_menu._pending_progression_notice())
 	_debug.configure(self, _world_player, _sea, _bubble_host)
 	_opening.start.call_deferred()
 
