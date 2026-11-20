@@ -19,7 +19,7 @@ func _ready() -> void:
 	var story: SeaStoryDirector = sea.get_node("StoryDirector") as SeaStoryDirector
 	var population: SeaPopulation = sea.get_node("SeaPopulation") as SeaPopulation
 	var regions: Node2D = sea.get_node("SpawnRegions") as Node2D
-		var pool: Array = sea.get("_wild_fish")
+	var pool: Array = sea.get("_wild_fish")
 	_check(regions.get_child_count() >= 5,
 		"Expanded sea has five editable habitat regions, including the far and deep areas")
 	var guide: SeaEditorGuide = sea.get_node("EditorGuide") as SeaEditorGuide
