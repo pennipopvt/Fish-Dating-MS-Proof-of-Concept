@@ -23,10 +23,26 @@ func _ready() -> void:
 	_check(regions.get_child_count() >= 5,
 		"Expanded sea has five editable habitat regions, including the far and deep areas")
 	var guide: SeaEditorGuide = sea.get_node("EditorGuide") as SeaEditorGuide
-	_check(guide.map_origin == Vector2(-1280, 0)
-		and guide.map_size == Vector2(1472, 760)
-		and sea.call("_sea_bounds").has_point(Vector2(-1150, 670)),
-		"Expanded sea extends left and below without moving the original dock")
+	_check(guide.map_origin == Vector2(-1792, 0)
+		and guide.map_size == Vector2(1984, 760)
+		and sea.call("_sea_bounds").has_point(Vector2(-1650, 670)),
+		"Sea now extends 512 more pixels left with its dock-side boundary intact")
+	var water: ColorRect = sea.get_parent().get_node("Water") as ColorRect
+	_check(water.position == Vector2(-2052, 140)
+		and water.size == Vector2(4852, 660),
+		"Water visual automatically includes the larger sea and original shoreline")
+	# Changing the guide in Inspector must resize the Water in this same
+	# world scene, without reloading or manually editing World/Water.
+	guide.map_origin = Vector2(-2048, 0)
+	guide.map_size = Vector2(2240, 900)
+	_check(water.position == Vector2(-2308, 140)
+		and water.size == Vector2(5108, 800),
+		"Live guide edits automatically expand water horizontally and downward")
+	guide.map_origin = Vector2(-1792, 0)
+	guide.map_size = Vector2(1984, 760)
+	_check(water.position == Vector2(-2052, 140)
+		and water.size == Vector2(4852, 660),
+		"Restoring sea bounds restores the water coverage automatically")
 	_check(not population.has_generated() and pool.size() == 3,
 		"Tutorial begins with only two authored fish and hidden Silas target")
 	var original_ids: Dictionary = {}

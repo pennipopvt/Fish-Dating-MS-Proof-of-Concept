@@ -22,6 +22,7 @@
 [ext_resource type="Shader" uid="uid://cli6ci0c4km7b" path="res://shaders/night_stars.gdshader" id="night_stars"]
 [ext_resource type="Script" uid="uid://cba27f3x60a3r" path="res://scripts/world_day_night.gd" id="world_day_night"]
 [ext_resource type="PackedScene" path="res://scenes/sea_area.tscn" id="sea_area"]
+[ext_resource type="Script" path="res://scripts/diving/sea_water_bounds.gd" id="sea_water_bounds"]
 [ext_resource type="TileSet" path="res://resources/tilesets/world_tiles.tres" id="world_tiles"]
 [ext_resource type="Shader" path="res://shaders/underwater_tint.gdshader" id="water_tint_shader"]
 
@@ -200,13 +201,15 @@ tile_set = ExtResource("world_tiles")
 # Screen-texture reflections capture what was drawn BEFORE Water.
 # Sea geometry, Penni, land NPCs and the net all render below this.
 # Camera/UnderwaterTint remains above it at z=80.
+# Water follows Sea/EditorGuide, including live Inspector edits.
 z_index = 10
 material = SubResource("ShaderMaterial_23sxu")
 custom_minimum_size = Vector2(320, 180)
-offset_left = -1540.0
+offset_left = -2052.0
 offset_top = 140.0
 offset_right = 2800.0
 offset_bottom = 800.0
+script = ExtResource("sea_water_bounds")
 
 
 [node name="Sea" parent="." instance=ExtResource("sea_area")]

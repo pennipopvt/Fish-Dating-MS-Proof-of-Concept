@@ -2,16 +2,22 @@
 extends Node2D
 class_name SeaEditorGuide
 
+# The World/Water visual listens to these changes in the editor AND runtime.
+# Sea bounds remain the single source of truth for map dimensions.
+signal bounds_changed
+
 # Editor-only guide; never draws prototype rocks or a fake seabed.
-@export var map_origin: Vector2 = Vector2(-1280.0, 0.0):
+@export var map_origin: Vector2 = Vector2(-1792.0, 0.0):
 	set(value):
 		map_origin = value
 		queue_redraw()
+		bounds_changed.emit()
 
-@export var map_size: Vector2 = Vector2(1472.0, 760.0):
+@export var map_size: Vector2 = Vector2(1984.0, 760.0):
 	set(value):
 		map_size = Vector2(maxf(320.0, value.x), maxf(240.0, value.y))
 		queue_redraw()
+		bounds_changed.emit()
 @export_range(8, 64, 8) var grid_size: int = 16:
 	set(value):
 		grid_size = value
