@@ -14,6 +14,7 @@
 [ext_resource type="Texture2D" uid="uid://papjvjxenamb" path="res://sprites/environment/long_cloud.png" id="7_sxw1y"]
 [ext_resource type="Shader" uid="uid://r4rciq67coeg" path="res://shaders/water.gdshader" id="13_le6xu"]
 [ext_resource type="PackedScene" uid="uid://c0d22ylobcr2s" path="res://scenes/townhouse.tscn" id="23_8bx52"]
+[ext_resource type="PackedScene" uid="uid://dwx7fasa1rx1r" path="res://prefabs/rooms/silas_room.tscn" id="24_u7kri"]
 [ext_resource type="PackedScene" uid="uid://86k4q6ioi03u" path="res://prefabs/silas_house.tscn" id="24_xfqyr"]
 [ext_resource type="PackedScene" path="res://prefabs/bed.tscn" id="25_bed"]
 [ext_resource type="PackedScene" path="res://prefabs/beach.tscn" id="26_beach"]
@@ -219,3 +220,6 @@ offset_right = 2800.0
 offset_bottom = 800.0
 
 [node name="Sea" parent="." unique_id=607023889 instance=ExtResource("sea_area")]
+
+[node name="SilasRoom" parent="." unique_id=821441359 instance=ExtResource("24_u7kri")]
+position = Vector2(-1296, 140)

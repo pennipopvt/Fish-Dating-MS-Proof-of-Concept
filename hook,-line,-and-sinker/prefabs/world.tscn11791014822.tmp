@@ -1,0 +1,225 @@
+[gd_scene format=4 uid="uid://bjt7lp2qss3qh"]
+
+[ext_resource type="PackedScene" uid="uid://d0hk7isls5uj3" path="res://prefabs/dock.tscn" id="1_4284n"]
+[ext_resource type="PackedScene" uid="uid://oc43ktitli70" path="res://scenes/recruitment_handler.tscn" id="1_u7kri"]
+[ext_resource type="Shader" uid="uid://c3qwox4urobgx" path="res://shaders/sun_glow.gdshader" id="2_5hu44"]
+[ext_resource type="PackedScene" uid="uid://hstq18vwr026" path="res://prefabs/player.tscn" id="2_m1sej"]
+[ext_resource type="Script" uid="uid://c4y6oxceqx56r" path="res://scripts/available_home_info.gd" id="2_n7i1a"]
+[ext_resource type="PackedScene" uid="uid://dkva15le6ficd" path="res://prefabs/shop.tscn" id="3_07nuu"]
+[ext_resource type="Texture2D" uid="uid://c00uarqfug6h2" path="res://sprites/environment/sun.png" id="3_vbln7"]
+[ext_resource type="Script" uid="uid://cure67x3a0766" path="res://scripts/clouds.gd" id="4_k40i2"]
+[ext_resource type="Texture2D" uid="uid://iyvfqqmpkdkg" path="res://sprites/environment/small_cloud.png" id="5_le6xu"]
+[ext_resource type="Shader" uid="uid://b41ap31uwit61" path="res://shaders/sky_gradient.gdshader" id="6_07nuu"]
+[ext_resource type="Texture2D" uid="uid://culbi4w4j2vi2" path="res://sprites/environment/medium_cloud.png" id="6_q76tg"]
+[ext_resource type="Texture2D" uid="uid://papjvjxenamb" path="res://sprites/environment/long_cloud.png" id="7_sxw1y"]
+[ext_resource type="Shader" uid="uid://r4rciq67coeg" path="res://shaders/water.gdshader" id="13_le6xu"]
+[ext_resource type="PackedScene" uid="uid://c0d22ylobcr2s" path="res://scenes/townhouse.tscn" id="23_8bx52"]
+[ext_resource type="PackedScene" uid="uid://dwx7fasa1rx1r" path="res://prefabs/rooms/silas_room.tscn" id="24_u7kri"]
+[ext_resource type="PackedScene" uid="uid://86k4q6ioi03u" path="res://prefabs/silas_house.tscn" id="24_xfqyr"]
+[ext_resource type="PackedScene" path="res://prefabs/bed.tscn" id="25_bed"]
+[ext_resource type="PackedScene" path="res://prefabs/beach.tscn" id="26_beach"]
+[ext_resource type="Shader" uid="uid://bv2isyw6ln31h" path="res://shaders/moon.gdshader" id="moon_shader"]
+[ext_resource type="Shader" uid="uid://cli6ci0c4km7b" path="res://shaders/night_stars.gdshader" id="night_stars"]
+[ext_resource type="PackedScene" uid="uid://bgrsv5r7v8cff" path="res://scenes/sea_area.tscn" id="sea_area"]
+[ext_resource type="Shader" uid="uid://2layvi8dplvf" path="res://shaders/underwater_tint.gdshader" id="water_tint_shader"]
+[ext_resource type="Script" uid="uid://cba27f3x60a3r" path="res://scripts/world_day_night.gd" id="world_day_night"]
+[ext_resource type="TileSet" uid="uid://chn86lfer37gd" path="res://resources/tilesets/world_tiles.tres" id="world_tiles"]
+
+[sub_resource type="ShaderMaterial" id="UnderwaterTintMaterial"]
+shader = ExtResource("water_tint_shader")
+shader_parameter/tint_color = Color(0.1, 0.36, 0.67, 0.45)
+shader_parameter/submersion = 0.0
+shader_parameter/surface_y_uv = 1.0
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_4284n"]
+shader = ExtResource("6_07nuu")
+shader_parameter/top_color = Color(0.5451954, 0.68931204, 0.9158129, 1)
+shader_parameter/horizon_color = Color(0.78151417, 0.7816994, 0.84403974, 1)
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_night_stars"]
+shader = ExtResource("night_stars")
+shader_parameter/visibility = 0.0
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_yd4fr"]
+shader = ExtResource("2_5hu44")
+shader_parameter/glow_color = Color(1, 0.68, 0.24, 1)
+shader_parameter/intensity = 0.65
+shader_parameter/falloff = 3.0
+
+[sub_resource type="CanvasItemMaterial" id="CanvasItemMaterial_sun"]
+light_mode = 1
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_moon_glow"]
+shader = ExtResource("2_5hu44")
+shader_parameter/glow_color = Color(0.62, 0.75, 1, 1)
+shader_parameter/intensity = 0.0
+shader_parameter/falloff = 4.0
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_moon"]
+shader = ExtResource("moon_shader")
+shader_parameter/visibility = 0.0
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_23sxu"]
+shader = ExtResource("13_le6xu")
+shader_parameter/water_color = Color(0.12, 0.32, 0.48, 1)
+shader_parameter/highlight_color = Color(0.75, 0.9, 1, 1)
+shader_parameter/reflection_strength = 0.4770000226575
+shader_parameter/reflection_squish = 1.348000052155
+shader_parameter/ripple_strength = 0.5750000273125
+shader_parameter/ripple_speed = 0.954000045315
+shader_parameter/highlight_intensity = 0.0
+shader_parameter/highlight_density = 0.25
+shader_parameter/highlight_speed = 0.5
+shader_parameter/waterline_y = 140.0
+shader_parameter/reflection_fade_depth = 64.0
+shader_parameter/deep_water_alpha = 0.58
+
+[node name="World" type="Node2D" unique_id=1151991614]
+script = ExtResource("world_day_night")
+
+[node name="DayNightTint" type="CanvasModulate" parent="." unique_id=590307482]
+
+[node name="Player" parent="." unique_id=462811088 instance=ExtResource("2_m1sej")]
+position = Vector2(160, 112)
+
+[node name="Camera2D" type="Camera2D" parent="Player" unique_id=1135215055]
+position = Vector2(0, -22)
+editor_draw_limits = true
+editor_draw_drag_margin = true
+
+[node name="UnderwaterTint" type="ColorRect" parent="Player/Camera2D" unique_id=1112556197]
+z_index = 80
+z_as_relative = false
+material = SubResource("UnderwaterTintMaterial")
+offset_left = -160.0
+offset_top = -90.0
+offset_right = 160.0
+offset_bottom = 90.0
+mouse_filter = 2
+
+[node name="Sky" type="Control" parent="." unique_id=512056317]
+z_index = -10
+clip_contents = true
+layout_mode = 3
+anchors_preset = 0
+offset_left = -160.0
+offset_top = -40.0
+offset_right = 160.0
+offset_bottom = 140.0
+mouse_filter = 2
+
+[node name="SkyGradient" type="ColorRect" parent="Sky" unique_id=246657653]
+material = SubResource("ShaderMaterial_4284n")
+custom_minimum_size = Vector2(320, 180)
+layout_mode = 0
+offset_right = 320.0
+offset_bottom = 180.0
+
+[node name="NightStars" type="ColorRect" parent="Sky" unique_id=1138354271]
+material = SubResource("ShaderMaterial_night_stars")
+layout_mode = 0
+offset_right = 320.0
+offset_bottom = 180.0
+mouse_filter = 2
+
+[node name="SunGlow" type="ColorRect" parent="Sky" unique_id=1434741238]
+material = SubResource("ShaderMaterial_yd4fr")
+layout_mode = 0
+offset_left = 15.0
+offset_top = -62.0
+offset_right = 175.0
+offset_bottom = 98.0
+mouse_filter = 2
+
+[node name="Sun" type="Sprite2D" parent="Sky" unique_id=1314223609]
+material = SubResource("CanvasItemMaterial_sun")
+position = Vector2(95, 18)
+texture = ExtResource("3_vbln7")
+
+[node name="MoonGlow" type="ColorRect" parent="Sky" unique_id=287659905]
+material = SubResource("ShaderMaterial_moon_glow")
+layout_mode = 0
+offset_right = 96.0
+offset_bottom = 96.0
+mouse_filter = 2
+
+[node name="Moon" type="ColorRect" parent="Sky" unique_id=1664162708]
+material = SubResource("ShaderMaterial_moon")
+layout_mode = 0
+offset_right = 24.0
+offset_bottom = 24.0
+mouse_filter = 2
+
+[node name="Clouds" type="Node2D" parent="Sky" unique_id=1290658735]
+script = ExtResource("4_k40i2")
+cloud_count = 15
+min_height = 0.0
+max_height = 60.0
+
+[node name="SmallCloud" type="Sprite2D" parent="Sky/Clouds" unique_id=2035656304]
+position = Vector2(63, 36)
+texture = ExtResource("5_le6xu")
+
+[node name="MediumCloud" type="Sprite2D" parent="Sky/Clouds" unique_id=1330176559]
+position = Vector2(178, 4)
+texture = ExtResource("6_q76tg")
+
+[node name="LongCloud" type="Sprite2D" parent="Sky/Clouds" unique_id=130679970]
+position = Vector2(89, 8)
+texture = ExtResource("7_sxw1y")
+
+[node name="Townhouse" parent="." unique_id=1759623641 instance=ExtResource("23_8bx52")]
+z_index = -2
+position = Vector2(395, 43)
+
+[node name="AvailableHomeList" parent="." unique_id=1246650794 node_paths=PackedStringArray("available_homes") instance=ExtResource("1_u7kri")]
+script = ExtResource("2_n7i1a")
+available_homes = [NodePath("FreeHouseA"), NodePath("FreeHouseB"), NodePath("FreeHouseC"), NodePath("FreeHouseD")]
+
+[node name="FreeHouseA" parent="AvailableHomeList" unique_id=852988363 instance=ExtResource("24_xfqyr")]
+position = Vector2(333, 96)
+
+[node name="FreeHouseB" parent="AvailableHomeList" unique_id=1681937105 instance=ExtResource("24_xfqyr")]
+position = Vector2(458, 96)
+
+[node name="FreeHouseC" parent="AvailableHomeList" unique_id=516436176 instance=ExtResource("24_xfqyr")]
+position = Vector2(358, 96)
+
+[node name="FreeHouseD" parent="AvailableHomeList" unique_id=1050078061 instance=ExtResource("24_xfqyr")]
+position = Vector2(433, 96)
+
+[node name="Dock" parent="." unique_id=501821169 instance=ExtResource("1_4284n")]
+position = Vector2(46, 101)
+
+[node name="Shop" parent="." unique_id=1156017474 instance=ExtResource("3_07nuu")]
+position = Vector2(195, 96)
+
+[node name="Bed" parent="." unique_id=1873402519 instance=ExtResource("25_bed")]
+position = Vector2(395, 104)
+
+[node name="Beach" parent="." unique_id=1528559192 instance=ExtResource("26_beach")]
+position = Vector2(860, 112)
+
+[node name="Ground" type="TileMapLayer" parent="." unique_id=97856843]
+tile_map_data = PackedByteArray("AAACAAcAAAAAAAYAAAADAAcAAAAGAAYAAAAEAAcAAAACAAYAAAAFAAcAAAAGAAYAAAAGAAcAAAADAAYAAAAHAAcAAAAEAAYAAAAIAAcAAAAFAAYAAAAJAAcAAAAFAAYAAAAKAAcAAAAFAAYAAAALAAcAAAAFAAYAAAAMAAcAAAAFAAYAAAANAAcAAAAFAAYAAAAOAAcAAAAFAAYAAAAPAAcAAAAFAAYAAAAQAAcAAAAFAAYAAAARAAcAAAAFAAYAAAASAAcAAAAFAAYAAAATAAcAAAAFAAYAAAAUAAcAAAAFAAYAAAAVAAcAAAAFAAYAAAAWAAcAAAAFAAYAAAAXAAcAAAAFAAYAAAAYAAcAAAAFAAYAAAAZAAcAAAAFAAYAAAAaAAcAAAAFAAYAAAAbAAcAAAAFAAYAAAAcAAcAAAAFAAYAAAAdAAcAAAAFAAYAAAAeAAcAAAAFAAYAAAAfAAcAAAAFAAYAAAAgAAcAAAAFAAYAAAAhAAcAAAAFAAYAAAAiAAcAAAAFAAYAABAjAAcAAAAFAAYAABAkAAcAAAAFAAYAABAlAAcAAAAFAAYAABAmAAcAAAAFAAYAABAnAAcAAAAAAAIAAAAoAAcAAAABAAIAAAApAAcAAAACAAIAAAAqAAcAAAADAAIAAAABAAgAAAAAAAEAAAACAAgAAAAAAAcAAAADAAgAAAABAAEAAAAEAAgAAAACAAcAAAAFAAgAAAACAAEAAAAGAAgAAAADAAcAAAAHAAgAAAAEAAcAAAAIAAgAAAAFAAcAAAAJAAgAAAAFAAcAAAAKAAgAAAAFAAcAAAALAAgAAAAFAAcAAAAMAAgAAAAFAAcAAAANAAgAAAAFAAcAAAAOAAgAAAAFAAcAAAAPAAgAAAAFAAcAAAAQAAgAAAAFAAcAAAARAAgAAAAFAAcAAAASAAgAAAAFAAcAAAATAAgAAAAFAAcAAAAUAAgAAAAFAAcAAAAVAAgAAAAFAAcAAAAWAAgAAAAFAAcAAAAXAAgAAAAFAAcAAAAYAAgAAAAFAAcAAAAZAAgAAAAFAAcAAAAaAAgAAAAFAAcAAAAbAAgAAAAFAAcAAAAcAAgAAAAFAAcAAAAdAAgAAAAFAAcAAAAeAAgAAAAFAAcAAAAfAAgAAAAFAAcAAAAgAAgAAAAFAAcAAAAhAAgAAAAFAAcAAAAiAAgAAAAFAAcAABAjAAgAAAAFAAcAABAkAAgAAAAFAAcAABAlAAgAAAAFAAcAABAmAAgAAAAFAAcAABAnAAgAAAAAAAMAAAAoAAgAAAABAAMAAAApAAgAAAACAAMAAAAqAAgAAAADAAMAAAArAAgAAAAEAAMAAAAsAAgAAAAFAAMAAAAtAAgAAAAGAAMAAAAuAAgAAAAEAAMAAAAvAAgAAAAFAAMAAAAwAAgAAAAGAAMAAAAxAAgAAAAEAAMAAAAyAAgAAAAFAAMAAAAzAAgAAAAGAAMAAAA0AAgAAAAEAAMAAAA1AAgAAAAFAAMAAAA2AAgAAAAGAAMAAAA3AAgAAAAHAAMAAAA4AAgAAAADAAEAAAA5AAgAAAAEAAEAAAA6AAgAAAAFAAEAAAA7AAgAAAAGAAEAAAA8AAgAAAAHAAEAAAA=")
+tile_set = ExtResource("world_tiles")
+collision_enabled = false
+
+[node name="GroundFront" type="TileMapLayer" parent="." unique_id=593901554]
+z_index = 4
+tile_map_data = PackedByteArray("AAApAAYAAQACAAEAAAApAAcAAQACAAIAAAAqAAcAAQADAAIAAAApAAgAAQACAAMAAAAqAAgAAQADAAMAAAA=")
+tile_set = ExtResource("world_tiles")
+collision_enabled = false
+
+[node name="Water" type="ColorRect" parent="." unique_id=1286032416]
+material = SubResource("ShaderMaterial_23sxu")
+custom_minimum_size = Vector2(320, 180)
+offset_left = -1200.0
+offset_top = 140.0
+offset_right = 2800.0
+offset_bottom = 800.0
+
+[node name="Sea" parent="." unique_id=607023889 instance=ExtResource("sea_area")]
+
+[node name="SilasRoom" parent="." unique_id=821441359 instance=ExtResource("24_u7kri")]
+position = Vector2(-583, -161)

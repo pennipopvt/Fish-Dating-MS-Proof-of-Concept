@@ -14,6 +14,7 @@
 [sub_resource type="Resource" id="Resource_358bt"]
 script = ExtResource("5_10gya")
 door = ExtResource("5_mowwh")
+sceneLoc = Vector2(-1233, 140)
 metadata/_custom_type_script = "uid://cxebrk0uj1pk8"
 
 [sub_resource type="Resource" id="Resource_hvwbg"]

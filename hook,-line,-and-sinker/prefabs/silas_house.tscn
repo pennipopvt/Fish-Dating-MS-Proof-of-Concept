@@ -10,6 +10,7 @@ size = Vector2(20, 31)
 z_index = -1
 position = Vector2(0, -16)
 script = ExtResource("2_cp2wk")
+transfer_loc = Vector2(313, 112)
 
 [node name="Sprite" type="Sprite2D" parent="." unique_id=1129428574]
 texture = ExtResource("1_bvrww")

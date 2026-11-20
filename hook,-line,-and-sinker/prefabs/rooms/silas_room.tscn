@@ -1,0 +1,15 @@
+[gd_scene format=3 uid="uid://dwx7fasa1rx1r"]
+
+[ext_resource type="Texture2D" uid="uid://daku8xn1nfo32" path="res://sprites/placeholders/silasplaceholderroom.png" id="1_1g260"]
+[ext_resource type="PackedScene" uid="uid://86k4q6ioi03u" path="res://prefabs/silas_house.tscn" id="2_55eqe"]
+
+[node name="SilasRoom" type="Sprite2D" unique_id=821441359]
+
+[node name="Silasplaceholderroom" type="Sprite2D" parent="." unique_id=1530402499]
+z_index = -2
+position = Vector2(0, -69)
+texture = ExtResource("1_1g260")
+
+[node name="SilasHouse" parent="." unique_id=1038743476 instance=ExtResource("2_55eqe")]
+position = Vector2(59, -17)
+locked = false
