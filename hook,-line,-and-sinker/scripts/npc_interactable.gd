@@ -27,10 +27,10 @@ func _on_body_exited(body: Node2D) -> void:
 		_update_prompt()
 
 
-# Called directly (not through the player) for the post-catch recruitment
-# talk, so that talk still happens when the catch used night's last action.
+# Talking, gifts and asking someone out never consume world actions.
+# DateManager separately consumes a period after an actual date.
 func spends_time() -> bool:
-	return true
+	return false
 
 
 func interact(_player: Node2D) -> void:

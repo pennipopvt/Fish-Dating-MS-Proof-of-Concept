@@ -85,7 +85,7 @@ func _transition_contract_to_dock(intro: FishCoIntro) -> void:
 
 
 func start_confirmed_dive(dock: Node2D) -> void:
-	if transitioning or underwater:
+	if transitioning or underwater or not GameManager.begin_dive_period():
 		return
 	transitioning = true
 	# Keep the quota-only terminal during the first dive. Main unlocks
@@ -184,11 +184,10 @@ func _surface_from_dive() -> void:
 	_world_player.animator.rotation = 0.0
 	_world_player.animator.play(&"idle_l")
 	underwater = false
-	GameManager.diving_session_active = false
 	_sea.call("_set_camera_bounds", false)
 	_dialogue_ui.set_underwater_mode(false)
-	# A dive costs one ordinary time action on surfacing.
-	GameManager.spend_actions(1)
+	# Every completed dive uses the remaining morning/afternoon/night period.
+	GameManager.finish_dive_period()
 
 	transitioning = false
 	_world_player.busy = false

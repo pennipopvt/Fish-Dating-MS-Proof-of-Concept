@@ -102,9 +102,9 @@ var _scene_after_conversation: String = ""
 # greyed (picked before). Used by AffectionManager / DialogueUI.
 var _current_path: String = ""
 var _choice_greyed: Array[bool] = []
-# The clock reads this before conversation_finished subscribers run.
-# Casual greetings can be free; discussing something or arranging a date isn't.
-var last_conversation_cost: int = 1
+# Compatibility field. Ordinary conversations are free in the world clock.
+# Dates use their own time cost through DateManager.
+var last_conversation_cost: int = 0
 var _conversation_costs_action: bool = true
 
 func start_conversation(npc: NPCData, json_override: String = "") -> void:
@@ -358,7 +358,8 @@ func _check_for_end() -> void:
 func end_conversation() -> void:
 	var finished_npc := current_npc
 	var requested_scene := _scene_after_conversation
-	last_conversation_cost = 1 if _conversation_costs_action else 0
+	# Authored dialogue flags remain compatible but no longer charge time.
+	last_conversation_cost = 0
 	_conversation_costs_action = true
 	current_npc = null
 	current_dialogue = null

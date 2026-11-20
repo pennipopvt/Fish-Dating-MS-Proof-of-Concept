@@ -46,8 +46,8 @@ var _date_choice_count: int = 0
 var _last_reaction: String = ""
 var last_date_outcome: String = ""
 var last_date_score: int = 0
-# The conversation can consume its final action before scene_requested fires.
-# Capture when the NPC was asked, so "next afternoon" keeps its meaning.
+# Capture when the NPC was asked, so "next afternoon" keeps its meaning
+# even when later activities move the clock.
 var _conversation_day: int = 1
 var _conversation_period: int = 0
 # Day/period the date took place in (after any clock jump).
@@ -154,7 +154,7 @@ func can_book_at(date: DateData, day: int, period: int) -> bool:
 	var current_slot := _slot_index(GameManager.get_day(), GameManager.get_period())
 	if chosen_slot < current_slot:
 		return false
-	# If talking used the last action, the next period may already have begun.
+	# Booking in the current period requires time-costing activities unused.
 	if chosen_slot == current_slot and GameManager.get_actions_left() != GameManager.ACTIONS_PER_PERIOD:
 		return false
 	for id in bookings:
@@ -164,7 +164,7 @@ func can_book_at(date: DateData, day: int, period: int) -> bool:
 	return true
 
 # "Next morning/afternoon/night" means the next occurrence measured from when
-# the conversation started, not the time AFTER conversation_finished's action.
+# the conversation started, not the time after a later activity.
 func book_next_period(date: DateData, period: int, from_day: int, from_period: int) -> bool:
 	if period < 0 or period >= PERIOD_COUNT:
 		return false
@@ -411,8 +411,8 @@ func _finish(completed: bool) -> void:
 		date_finished.emit(date)
 
 
-# The date talk already spent 1 action; if that was the period's last, the
-# clock has moved on by itself, so don't skip a second period.
+# Normal dialogue is free; only the date itself consumes the remaining
+# period. Avoid double-spending if the clock already advanced.
 func _use_up_period() -> void:
 	if GameManager.get_day() == _date_day and GameManager.get_period() == _date_period:
 		GameManager.spend_actions(GameManager.get_actions_left())

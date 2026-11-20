@@ -164,7 +164,6 @@ func _run() -> void:
 			obsolete_trade = true
 	_check(not obsolete_trade, "Shop no longer sells bait and obsolete extra casts")
 
-	var actions_before: int = GameManager.get_actions_left()
 	main.call("request_dive", player, dock)
 	_check(DialogueManager.is_active and DialogueManager.current_npc.npc_id == &"dock_dive_prompt",
 		"Dock offers confirmation again after No")
@@ -204,7 +203,9 @@ func _run() -> void:
 	_check(not player.busy and player.visible, "Normal overworld movement restored")
 	_check(not GameManager.diving_session_active, "Diving action state clears on return")
 	_check(not bool(dialogue_ui.get("_underwater_mode")), "Land dialogue portraits and layout are restored")
-	_check(GameManager.get_actions_left() == actions_before - 1, "One completed dive costs one action")
+	_check(GameManager.get_day() == 1 and GameManager.get_period() == GameManager.Times.AFTERNOON
+		and GameManager.get_actions_left() == GameManager.ACTIONS_PER_PERIOD,
+		"Returning from a morning dive advances to afternoon with fresh actions")
 
 	# The same sea is preserved across a second jump.
 	var original_sea_id: int = sea.get_instance_id()

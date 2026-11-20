@@ -1,10 +1,10 @@
 extends Node
 
-# Day/time clock. Time only moves when the player spends actions (a finished
-# cast, a finished NPC conversation) or rests at the bed. Browsing menus never
-# moves it. Each period has ACTIONS_PER_PERIOD actions; spending the last one
-# moves to the next period. Once night's actions are gone, the player can only rest.
-# Listens to FishingManager/DialogueManager; UI should listen to the signals below.
+# Day/time clock. Conversations are free. Each sea dive occupies one whole
+# morning/afternoon/night period when Penni returns to shore. Dates also
+# consume their booked period. The bed can skip ahead, and legacy land fishing
+# retains its original action-based rules until it is redesigned.
+# UI should listen to the signals below.
 # Other systems (shop/delivery, fish, NPCs) read the clock with get_day(),
 # get_period() and is_period(); there is no event scheduler.
 # Clock progression is session-only: every launch starts at day 1 morning.
@@ -12,7 +12,7 @@ extends Node
 signal time_changed(day: int, time: Times)
 signal day_started(day: int)
 signal actions_changed(remaining: int)
-# Night's last action was spent: fishing and talking are blocked until rest().
+# Night's last action was spent: time-costing activities are blocked until rest().
 signal actions_exhausted
 
 enum Times {
@@ -27,9 +27,11 @@ var time_of_day : Times = Times.MORNING
 var player_actions : int = ACTIONS_PER_PERIOD
 # Casts in the current (not yet charged) fishing action.
 var _casts_in_action: int = 0
-# Dive catches are recorded normally, but the full dive uses one world action
-# only when the player returns to the dock.
+# Dive catches are recorded normally. A full period is spent on surfacing.
 var diving_session_active: bool = false
+# The confirmed dive reserves a period; declining the prompt never does.
+var _dive_day: int = -1
+var _dive_period: Times = Times.MORNING
 
 
 func _ready() -> void:
@@ -42,7 +44,7 @@ func _ready() -> void:
 func _connect_sources() -> void:
 	FishingManager.fish_caught.connect(func(_fish: FishData) -> void: record_fishing_cast())
 	FishingManager.fish_lost.connect(func(_fish: FishData) -> void: record_fishing_cast())
-	DialogueManager.conversation_finished.connect(func(_npc: NPCData) -> void: spend_actions(DialogueManager.last_conversation_cost))
+	# Conversations never spend time. DateManager consumes its own date period.
 
 
 # --- Reading the clock (for shop/delivery, fish and NPC rules) ---
@@ -68,10 +70,30 @@ func get_actions_left() -> int:
 	return player_actions
 
 
-# False once night's actions are spent. Time-costing interactions (fishing,
-# talking to an NPC) check this before starting.
+# Only time-costing activities need this. Ordinary NPC dialogue is free.
 func can_act() -> bool:
 	return player_actions > 0
+
+
+# The dock and dive transition share the clock's one-dive-per-period rule.
+func can_start_dive() -> bool:
+	return can_act() and not diving_session_active \
+		and (_dive_day != day or _dive_period != time_of_day)
+
+
+func begin_dive_period() -> bool:
+	if not can_start_dive():
+		return false
+	_dive_day = day
+	_dive_period = time_of_day
+	return true
+
+
+# Completing a dive advances to the next period. Night does not advance
+# to the next day automatically; the bed still controls overnight sleep.
+func finish_dive_period() -> void:
+	diving_session_active = false
+	spend_actions(get_actions_left())
 
 
 # --- Moving the clock ---
@@ -123,6 +145,9 @@ func rest() -> void:
 # Back to day 1 morning (dev reset); nothing is stored across launches.
 func reset_clock() -> void:
 	_casts_in_action = 0
+	diving_session_active = false
+	_dive_day = -1
+	_dive_period = Times.MORNING
 	_set_clock(1, Times.MORNING, ACTIONS_PER_PERIOD)
 
 

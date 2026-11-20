@@ -20,6 +20,7 @@ func _ready() -> void:
 
 	_test_casts_per_action()
 	_test_period_advancement()
+	_test_one_dive_per_period_and_free_talk()
 	_test_night_blocks_actions()
 	_test_rest_and_rollover()
 	await _test_bed()
@@ -66,11 +67,49 @@ func _test_period_advancement() -> void:
 	FishingManager.lose_fish(fish)
 	_expect_clock(1, GameManager.Times.MORNING, 1, "a lost fish spends 1 action")
 	DialogueManager.conversation_finished.emit(null)
-	_expect_clock(1, GameManager.Times.AFTERNOON, 3, "a finished talk spends the last action; afternoon starts")
+	_expect_clock(1, GameManager.Times.MORNING, 1, "a finished talk costs no actions")
+	GameManager.spend_actions(1)
+	_expect_clock(1, GameManager.Times.AFTERNOON, 3, "last time-costing action begins afternoon")
 	GameManager.spend_actions(3)
 	_expect_clock(1, GameManager.Times.NIGHT, 3, "spending all afternoon actions starts night")
 	GameManager.spend_actions(10)
 	_expect_clock(1, GameManager.Times.NIGHT, 0, "night doesn't roll over by itself")
+
+
+func _test_one_dive_per_period_and_free_talk() -> void:
+	GameManager.reset_clock()
+	_expect(GameManager.can_start_dive(), "Fresh morning permits diving")
+	_expect(GameManager.begin_dive_period(), "First confirmed dive reserves the morning")
+	_expect(not GameManager.can_start_dive(), "Cannot start a second dive in same period")
+	GameManager.diving_session_active = true
+	var fish := FishData.new()
+	FishingManager.catch_fish(fish, false)
+	DialogueManager.conversation_finished.emit(null)
+	_expect_clock(1, GameManager.Times.MORNING, 3,
+		"Underwater catches and normal talks never spend extra actions")
+	GameManager.finish_dive_period()
+	_expect_clock(1, GameManager.Times.AFTERNOON, 3,
+		"Surfacing advances to afternoon")
+	_expect(GameManager.can_start_dive(), "Afternoon permits the next dive")
+	_expect(GameManager.begin_dive_period(), "Afternoon dive reserves its period")
+	GameManager.diving_session_active = true
+	GameManager.finish_dive_period()
+	_expect_clock(1, GameManager.Times.NIGHT, 3,
+		"Second return advances to night")
+	_expect(GameManager.begin_dive_period(), "Night permits its one dive")
+	GameManager.diving_session_active = true
+	GameManager.finish_dive_period()
+	_expect_clock(1, GameManager.Times.NIGHT, 0,
+		"Night dive leaves the clock at night until bed")
+	_expect(not GameManager.can_start_dive(), "No second night dive is possible")
+	DialogueManager.conversation_finished.emit(null)
+	_expect_clock(1, GameManager.Times.NIGHT, 0,
+		"Even when night is spent conversations cost no time")
+	GameManager.rest()
+	_expect_clock(2, GameManager.Times.MORNING, 3,
+		"Bed enables next morning")
+	_expect(GameManager.can_start_dive(), "Next morning can dive")
+	GameManager.reset_clock()
 
 
 func _test_night_blocks_actions() -> void:
@@ -79,7 +118,7 @@ func _test_night_blocks_actions() -> void:
 	DialogueManager.conversation_finished.emit(null)
 	_expect_clock(1, GameManager.Times.NIGHT, 0, "more actions at spent night change nothing")
 	_expect(_spends_time("res://prefabs/dock.tscn"), "dock costs time (blocked at spent night)")
-	_expect(_spends_time("res://prefabs/silas.tscn"), "NPC talk costs time (blocked at spent night)")
+	_expect(not _spends_time("res://prefabs/silas.tscn"), "NPC talk is free, even after the night dive")
 	_expect(not _spends_time("res://prefabs/bed.tscn"), "bed is free (usable at spent night)")
 	_expect(not _spends_time("res://prefabs/bait_box.tscn"), "bait menu is free")
 
