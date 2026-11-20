@@ -80,16 +80,16 @@ texture = ExtResource("4_8nafl")
 physics_layer_0/collision_layer = 2
 sources/0 = SubResource("TileSetAtlasSource_xel3b")
 
+[sub_resource type="ShaderMaterial" id="SeaSurfaceClipMaterial"]
+shader = ExtResource("sea_clip_shader")
+shader_parameter/surface_world_y = 140.0
+
 [node name="Sea" type="Node2D" unique_id=907830608]
 script = ExtResource("sea")
 
 [node name="EditorGuide" type="Node2D" parent="." unique_id=803850337]
 z_index = -10
 script = ExtResource("guide")
-
-[sub_resource type="ShaderMaterial" id="SeaSurfaceClipMaterial"]
-shader = ExtResource("sea_clip_shader")
-shader_parameter/surface_world_y = 140.0
 
 [node name="Solids" type="TileMapLayer" parent="." unique_id=871969466]
 material = SubResource("SeaSurfaceClipMaterial")
