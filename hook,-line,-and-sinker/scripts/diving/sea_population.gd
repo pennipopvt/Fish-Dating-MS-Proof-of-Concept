@@ -13,6 +13,8 @@ signal spawn_requested(species: FishData, sea_position: Vector2, seed_value: int
 
 @onready var _regions: Node2D = $"../SpawnRegions"
 var _generated: bool = false
+var _generated_day: int = -1
+var _generated_period: int = -1
 var _rng := RandomNumberGenerator.new()
 
 
@@ -20,12 +22,23 @@ func has_generated() -> bool:
 	return _generated
 
 
+# A time period has exactly one population. Multiple callbacks, or revisiting
+# the sea within that same period, cannot reroll the catch distribution.
+func has_generated_for_current_period() -> bool:
+	return _generated and _generated_day == GameManager.get_day() \
+		and _generated_period == GameManager.get_period()
+
+
 func generate_after_tutorial(camera: Camera2D, sea_bounds: Rect2,
 		water_is_clear: Callable, existing_positions: Array[Vector2]) -> void:
-	if _generated or camera == null or not water_is_clear.is_valid():
+	if has_generated_for_current_period() or camera == null or not water_is_clear.is_valid():
 		return
 	_generated = true
-	_rng.seed = generation_seed
+	_generated_day = GameManager.get_day()
+	_generated_period = GameManager.get_period()
+	# Reproducible within a period, distinct positions and probabilities
+	# between morning, afternoon, night, and subsequent days.
+	_rng.seed = generation_seed + _generated_day * 7919 + _generated_period * 1619
 	var visible_size: Vector2 = camera.get_viewport_rect().size / camera.zoom.abs()
 	var center: Vector2 = camera.get_screen_center_position()
 	var visible: Rect2 = Rect2(center - visible_size * 0.5, visible_size)

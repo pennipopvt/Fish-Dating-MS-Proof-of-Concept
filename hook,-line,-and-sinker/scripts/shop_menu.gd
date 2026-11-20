@@ -17,6 +17,7 @@ enum Page { QUOTA, SHOP, STORAGE, COLLECTION, CHALLENGES, SCHEDULE }
 const SLOT_SIZE := Vector2(168, 168) # 56 x 56 art pixels at 3x
 const MIN_SLOTS := 12                 # Four columns, three visible rows
 const LOCKED_TINT := Color(0.533, 0.57, 0.57, 0.82)
+const FISH_SILHOUETTE_SHADER: Shader = preload("res://shaders/fish_catalog_silhouette.gdshader")
 const UNAFFORD_TINT := Color(0.564, 0.099, 0.107, 0.82)
 const DARK_TEXT := Color("17363b")
 const DIM_TEXT := Color("45646a")
@@ -1075,8 +1076,9 @@ func _collect_trades() -> void:
 
 func _collect_storage() -> void:
 	# A single fish catalog shows both ownership and lifetime discovery.
-	# Catalog art remains visible even at x0; storage remains the same
-	# FishingManager inventory used by quota submissions and shop trades.
+	# Undiscovered species use a silhouetted icon and no identifying details.
+	# Once actually caught, their sprite stays visible even at x0. Storage
+	# still comes from FishingManager for quota submissions and shop trades.
 	var species: Array[FishData] = []
 	for fish in FishingManager.possible_catches:
 		if fish != null and not _contains_fish_id(species, fish.fish_id):
@@ -1088,15 +1090,18 @@ func _collect_storage() -> void:
 	var fish_ids: Dictionary = {}
 	for fish in species:
 		fish_ids[fish.fish_id] = true
+		var discovered: bool = _has_discovered_fish(fish)
 		var amount: int = FishingManager.count_in_storage(fish.fish_id)
 		_entries.append({
 			"kind": "fish",
 			"ref": fish,
-			"name": _human_name(fish.fish_id),
+			"name": _human_name(fish.fish_id) if discovered else "???",
 			"icon": fish.item_data.sprite if fish.item_data != null else null,
-			"quantity": amount,
-			"display_quantity": true,
-			"zero_quantity": amount == 0
+			"locked": not discovered,
+			"silhouette": not discovered,
+			"quantity": amount if discovered else 0,
+			"display_quantity": discovered,
+			"zero_quantity": discovered and amount == 0
 		})
 
 	# Keep non-fish items visible here as well. This must not silently
@@ -1166,7 +1171,23 @@ func _make_tile(entry: Dictionary, index: int) -> Button:
 	tile.clip_text = true
 
 	var icon: Texture2D = entry.get("icon") as Texture2D
-	if icon != null:
+	if bool(entry.get("silhouette", false)) and icon != null:
+		# Shader applies only to the picture, not the button border/text.
+		var shape := TextureRect.new()
+		shape.name = "Silhouette"
+		shape.texture = icon
+		shape.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		shape.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		shape.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		shape.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		shape.material = _new_fish_silhouette_material()
+		tile.add_child(shape)
+		shape.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		shape.offset_left = 12.0
+		shape.offset_top = 12.0
+		shape.offset_right = -12.0
+		shape.offset_bottom = -12.0
+	elif icon != null:
 		tile.icon = icon
 		tile.expand_icon = true
 		tile.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -1206,6 +1227,12 @@ func _make_tile(entry: Dictionary, index: int) -> Button:
 	return tile
 
 
+func _new_fish_silhouette_material() -> ShaderMaterial:
+	var material := ShaderMaterial.new()
+	material.shader = FISH_SILHOUETTE_SHADER
+	return material
+
+
 func _choose_tile(index: int) -> void:
 	_selected_index = index
 	for i in range(_entry_buttons.size()):
@@ -1221,6 +1248,7 @@ func _show_details() -> void:
 	_status.text = ""
 	_order_button.hide()
 	_preview.texture = null
+	_preview.material = null
 
 	if _entries.is_empty():
 		_item_name.text = "NOTHING HERE YET"
@@ -1230,6 +1258,8 @@ func _show_details() -> void:
 	var entry: Dictionary = _entries[_selected_index]
 	_item_name.text = String(entry.get("name", ""))
 	_preview.texture = entry.get("icon") as Texture2D
+	if bool(entry.get("silhouette", false)) and _preview.texture != null:
+		_preview.material = _new_fish_silhouette_material()
 
 	match String(entry.get("kind", "")):
 		"trade":
@@ -1327,6 +1357,10 @@ func _show_storage_details(entry: Dictionary) -> void:
 
 func _show_fish_details(fish: FishData) -> void:
 	if fish == null:
+		return
+	if not _has_discovered_fish(fish):
+		_description.text = "Catch this fish to reveal its entry."
+		_status.text = "UNDISCOVERED"
 		return
 	_description.text = "Caught fish stay recorded here after being delivered or traded."
 	var owned: int = FishingManager.count_in_storage(fish.fish_id)

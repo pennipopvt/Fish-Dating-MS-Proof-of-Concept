@@ -6,8 +6,8 @@ class_name SeaSpawnOption
 @export_range(0.0, 100.0, 0.1) var weight: float = 1.0
 # An authored minimum ensures the first contract cannot be blocked by RNG.
 @export_range(0, 12, 1) var minimum_count: int = 0
-# Probability changes are data, not species hard locks. Step 3 will
-# trigger a new roll when the morning/afternoon/night period changes.
+# Different time periods adjust probability without hard-locking species.
+# SeaPopulation rerolls on the first dive of each new time period.
 @export_range(0.0, 4.0, 0.1) var morning_factor: float = 1.0
 @export_range(0.0, 4.0, 0.1) var afternoon_factor: float = 1.0
 @export_range(0.0, 4.0, 0.1) var night_factor: float = 1.0

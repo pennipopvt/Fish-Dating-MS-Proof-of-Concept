@@ -41,6 +41,9 @@ var _player: Player
 var _camera: Camera2D
 var _cue: SeaTutorialCue
 var _wild_fish: Array[DivingWildFish] = []
+# Only fish spawned by editable habitat regions are replaced each period.
+# Authored tutorial actors and Silas's hidden encounter stay untouched.
+var _habitat_fish: Array[DivingWildFish] = []
 var _fish_data: Dictionary = {}
 var _combat_debug_status: String = "No companion command yet"
 var _perfect_parry_line_flash_left: float = 0.0
@@ -153,7 +156,7 @@ func _queue_habitat_population() -> void:
 
 
 func _populate_habitats() -> void:
-	if _population.has_generated() or _camera == null:
+	if _population.has_generated_for_current_period() or _camera == null:
 		return
 	var positions: Array[Vector2] = []
 	for fish in _wild_fish:
@@ -166,8 +169,28 @@ func _populate_habitats() -> void:
 
 func _on_population_spawn_requested(data: FishData, where: Vector2,
 		seed_value: int, habitat: SeaSpawnRegion) -> void:
-	_spawn_wild_fish(data, where, seed_value, habitat.preferred_player_distance,
-		habitat.alert_distance, habitat.flee_speed)
+	var fish: DivingWildFish = _spawn_wild_fish(data, where, seed_value,
+		habitat.preferred_player_distance, habitat.alert_distance, habitat.flee_speed)
+	_habitat_fish.append(fish)
+
+
+# Only invoked once Penni has reached water on a DIFFERENT period.
+# Never replace hooked fish or an active Silas battle, and never respawn
+# scripted/tutorial entities. Ordinary fish left over from the previous
+# time period are replaced at new random positions.
+func _refresh_habitats_for_new_period() -> void:
+	if _population.has_generated_for_current_period():
+		return
+	if _combat.is_active() or _battle.is_active():
+		return
+	for fish in _habitat_fish:
+		if not is_instance_valid(fish):
+			continue
+		_wild_fish.erase(fish)
+		_fish_data.erase(fish)
+		fish.queue_free()
+	_habitat_fish.clear()
+	_populate_habitats()
 
 
 func _make_silas_trap() -> void:
@@ -199,6 +222,11 @@ func enter_from_dock() -> void:
 		return
 	_set_camera_bounds(true)
 	_player.set_swimming(true, _sea_bounds())
+	# The first dive remains scripted until Silas helps with a catch.
+	# Every subsequent period gets a fresh habitat population only on entry,
+	# once the descent finishes and the camera is already in the sea.
+	if _story.has_event(&"first_companion_catch"):
+		_refresh_habitats_for_new_period()
 	_encounter.on_dive_entered()
 
 
