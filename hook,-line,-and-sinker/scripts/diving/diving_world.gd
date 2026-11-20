@@ -10,6 +10,7 @@ const SEA_TOP: float = 154.0
 const SURFACE_REACH: float = 44.0
 const SILAS_FISH: FishData = preload("res://resources/fish/silas.tres")
 const WILD_FISH_SCRIPT = preload("res://scripts/diving/wild_fish.gd")
+const FISH_COMBAT_VISUAL_SCENE: PackedScene = preload("res://prefabs/sea_fish_combat_visual.tscn")
 
 # Inspector texture slots remain editable even though the small cue is
 # created at runtime. No new PackedScene or imported file is required.
@@ -359,6 +360,13 @@ func _on_fish_hit(fish: DivingWildFish) -> void:
 	_combat.record_lost_fish = fish != _encounter.silas_trap
 	if _combat.begin(fish, data, _player.position.distance_to(fish.position),
 			_net.max_range, fish.health_ratio()):
+		# Presentation belongs to the fish actor; it reads existing combat
+		# phases and doesn't introduce new timers into DivingCombat.
+		var visuals: SeaFishCombatVisual = fish.get_node_or_null("CombatVisual") as SeaFishCombatVisual
+		if visuals == null:
+			visuals = FISH_COMBAT_VISUAL_SCENE.instantiate() as SeaFishCombatVisual
+			fish.add_child(visuals)
+		visuals.bind_combat(_combat)
 		_player.busy = true
 		_last_combat_phase = -1
 		play_sfx(&"hook")
