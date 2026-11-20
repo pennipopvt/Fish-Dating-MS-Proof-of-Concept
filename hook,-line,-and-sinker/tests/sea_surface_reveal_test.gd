@@ -85,9 +85,14 @@ func _run() -> void:
 	if DialogueManager.is_active:
 		DialogueManager.end_conversation()
 	await process_frame
+	await create_timer(0.7).timeout
 	_check(story.has_silas_flag(&"silas_surface_transformed")
 		and story.has_silas_flag(&"silas_waiting_at_dock") and not player.busy,
-		"Silas waits at the dock; player control resumes after reveal")
+		"Silas is added to the school and control resumes after the exit fade")
+	_check(world.get_node_or_null("SilasDockActor") == null,
+		"The one-time Silas dock actor is freed after the cutscene")
+	_check((transition.get_node("DivingParty") as DivingParty).has_companion(story.silas_data.npc_id),
+		"First reveal automatically selects Silas for future dives")
 	_check(not bool(flags.get(&"Recruited", false)),
 		"Dock waiting does not silently recruit him into housing")
 	_check(not story.can_begin_silas_surface_reveal(),

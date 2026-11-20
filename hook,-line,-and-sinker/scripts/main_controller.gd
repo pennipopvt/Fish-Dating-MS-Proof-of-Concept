@@ -71,6 +71,15 @@ func request_dive(fisher: Player, dock: Node2D) -> void:
 	_opening.request_dive(fisher, dock)
 
 
+# Diving-only API; no character needs to exist in the world to be invited.
+func invite_diving_companion(npc: NPCData) -> bool:
+	return ($TransitionLayer/DivingParty as DivingParty).invite(npc)
+
+
+func dismiss_diving_companion(npc_id: StringName) -> bool:
+	return ($TransitionLayer/DivingParty as DivingParty).dismiss(npc_id)
+
+
 # Single input boundary; debug controls and underwater input are delegated.
 func _input(event: InputEvent) -> void:
 	if _debug.is_pointer_over_panel(event):

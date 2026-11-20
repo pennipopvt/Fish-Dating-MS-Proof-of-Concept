@@ -4,6 +4,8 @@
 [ext_resource type="Script" path="res://scripts/main_controller.gd" id="dive_entry"]
 [ext_resource type="Script" path="res://scripts/diving/fish_co_opening_sequence.gd" id="opening_script"]
 [ext_resource type="Script" path="res://scripts/diving/sea_dive_transition.gd" id="transition_script"]
+[ext_resource type="Script" path="res://scripts/diving/diving_party.gd" id="diving_party"]
+[ext_resource type="Script" path="res://scripts/diving/sea_party_entrance.gd" id="party_entrance"]
 [ext_resource type="Script" path="res://scripts/diving/sea_speech_bubble_host.gd" id="bubble_host"]
 [ext_resource type="Script" path="res://scripts/diving/sea_debug_panel.gd" id="sea_debug_panel"]
 [ext_resource type="PackedScene" path="res://scenes/fish_co_intro.tscn" id="fish_co_intro"]
@@ -82,6 +84,12 @@ visible = false
 [node name="TransitionLayer" type="CanvasLayer" parent="."]
 layer = 100
 script = ExtResource("transition_script")
+
+[node name="DivingParty" type="Node" parent="TransitionLayer"]
+script = ExtResource("diving_party")
+
+[node name="PartyEntrance" type="Node" parent="TransitionLayer"]
+script = ExtResource("party_entrance")
 
 [node name="Iris" type="ColorRect" parent="TransitionLayer"]
 visible = false

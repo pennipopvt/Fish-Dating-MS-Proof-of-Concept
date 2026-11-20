@@ -52,6 +52,8 @@ var _wild_fish: Array[DivingWildFish] = []
 var _habitat_fish: Array[DivingWildFish] = []
 var _fish_data: Dictionary = {}
 var _combat_debug_status: String = "No companion command yet"
+var _party_fish: Array[SeaPartyFollower] = []
+var _party_dive_active: bool = false
 var _perfect_parry_line_flash_left: float = 0.0
 # Keeps the hooked fish in open water during the fight (see _is_open_water).
 # Loaded by path (like WILD_FISH_SCRIPT) so it works before the editor has
@@ -272,6 +274,48 @@ func enter_from_dock() -> void:
 	if _story.has_event(&"first_companion_catch"):
 		_refresh_habitats_for_new_period()
 	_encounter.on_dive_entered()
+
+
+# Return Silas's original companion battle actor on subsequent dives.
+# Other school members get fish-form followers without any housing scenes.
+func activate_diving_party(members: Array[NPCData]) -> void:
+	end_diving_party()
+	_party_dive_active = true
+	var silas_in_party: bool = false
+	for i in range(members.size()):
+		var npc: NPCData = members[i]
+		if npc == null:
+			continue
+		if npc.npc_id == _story.silas_data.npc_id:
+			silas_in_party = true
+			_silas.global_position = _player.global_position + Vector2(-24.0 - i * 16.0, 8.0)
+			_silas.show()
+			_silas.following = true
+		elif npc.underwater_sprite != null:
+			var follower := SeaPartyFollower.new()
+			follower.name = "PartyFish_" + String(npc.npc_id)
+			$NPCs.add_child(follower)
+			follower.setup(npc, _player, i)
+			follower.global_position = _player.global_position + Vector2(-24.0 - i * 16.0, 8.0)
+			_party_fish.append(follower)
+	var flags: Dictionary = NPCManager.get_npc_state(_story.silas_data.npc_id)["flags"]
+	flags[&"silas_following"] = silas_in_party
+
+
+func end_diving_party() -> void:
+	if not _party_dive_active:
+		return
+	_party_dive_active = false
+	if _battle.is_active():
+		_battle.stop()
+	_silas.following = false
+	_silas.hide()
+	var flags: Dictionary = NPCManager.get_npc_state(_story.silas_data.npc_id)["flags"]
+	flags[&"silas_following"] = false
+	for follower in _party_fish:
+		if is_instance_valid(follower):
+			follower.queue_free()
+	_party_fish.clear()
 
 
 func _sea_bounds() -> Rect2:

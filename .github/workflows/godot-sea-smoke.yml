@@ -76,6 +76,12 @@ jobs:
           set -o pipefail
           timeout 120s godot --headless --path "hook,-line,-and-sinker" res://tests/sea_oxygen_test.tscn 2>&1 | tee sea-oxygen-test.log
           ! (grep -E 'SCRIPT ERROR:|Parse Error:|Parser Error:|ERROR:|FAIL ' sea-oxygen-test.log | grep -Ev 'resources still in use at exit|RID allocations.*leaked' | grep -q .)
+      - name: Test diving party and dock jump
+        shell: bash
+        run: |
+          set -o pipefail
+          timeout 120s godot --headless --path "hook,-line,-and-sinker" res://tests/diving_party_test.tscn 2>&1 | tee diving-party-test.log
+          ! (grep -E 'SCRIPT ERROR:|Parse Error:|Parser Error:|ERROR:|FAIL ' diving-party-test.log | grep -Ev 'resources still in use at exit|RID allocations.*leaked' | grep -q .)
       - name: Test quota deliveries and deadlines
         shell: bash
         run: |

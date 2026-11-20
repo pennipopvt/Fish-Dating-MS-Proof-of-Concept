@@ -15,6 +15,8 @@ const DIVE_FORWARD: float = 18.0
 const SINK_FORWARD: float = 10.0
 
 @onready var _iris: ColorRect = $Iris
+@onready var _party: DivingParty = $DivingParty
+@onready var _party_entrance: SeaPartyEntrance = $PartyEntrance
 var _iris_material: ShaderMaterial
 var _world: Node2D
 var _world_player: Player
@@ -43,6 +45,8 @@ func configure(world: Node2D, player: Player, sea: DivingWorld,
 	_dialogue_ui = dialogue_ui
 	_shop_menu = shop
 	_opening = opening
+	_party.configure(_sea.get_node("StoryDirector") as SeaStoryDirector)
+	_party_entrance.configure(_world, _world_player)
 	_sea.surface_requested.connect(_on_surface_requested)
 	_sea.oxygen_return_requested.connect(_on_oxygen_return_requested)
 	surface_completed.connect(_sea.on_surface_completed)
@@ -98,6 +102,9 @@ func start_confirmed_dive(dock: Node2D) -> void:
 
 
 func _begin_dive(dock: Node2D) -> void:
+	# Owns the entire party entrance; no NPCs are fetched from the townhouse.
+	var members: Array[NPCData] = _party.members()
+	await _party_entrance.call_party_to_dock(members, dock)
 	var jump_start: Vector2 = _world_player.global_position
 	# Splash a little ahead of where Penni stands (same waterline as before).
 	var landing := Vector2(jump_start.x - DIVE_FORWARD, dock.global_position.y + 46.0)
@@ -110,6 +117,7 @@ func _begin_dive(dock: Node2D) -> void:
 	await jump.finished
 	_spawn_splash(landing)
 	_sea.play_sfx(&"dive")
+	await _party_entrance.jump_party_in(dock, _spawn_splash)
 
 	# No second world, teleport or viewport switch. The camera follows
 	# Penni from the dock through the same surface into the ocean.
@@ -124,9 +132,13 @@ func _begin_dive(dock: Node2D) -> void:
 	descent.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 	descent.tween_property(_world_player, "global_position", entry, 0.85)
 	descent.tween_property(island_camera, "position", Vector2.ZERO, 0.85)
+	_party_entrance.descend_with_player(entry, 0.85)
 	await descent.finished
+	_party_entrance.clear()
 	_world_player.animator.rotation = 0.0
 	_sea.enter_from_dock()
+	if (_sea.get_node("StoryDirector") as SeaStoryDirector).has_silas_flag(&"silas_surface_transformed"):
+		_sea.activate_diving_party(members)
 	_world_player.busy = false
 	transitioning = false
 
@@ -182,6 +194,7 @@ func _surface_from_dive() -> void:
 	ascent.tween_property(island_camera, "position", Vector2(0.0, -22.0), 0.85)
 	await ascent.finished
 	_world_player.set_swimming(false)
+	_sea.end_diving_party()
 	_world_player.animator.rotation = 0.0
 	_world_player.animator.play(&"idle_l")
 	underwater = false
@@ -216,6 +229,7 @@ func _blackout_from_oxygen() -> void:
 	(_sea.get_node("SeaOxygen") as SeaOxygen).end_dive()
 	_world_player.global_position = shore_return_position
 	_world_player.set_swimming(false)
+	_sea.end_diving_party()
 	_world_player.animator.rotation = 0.0
 	_world_player.animator.play(&"idle_l")
 	var island_camera: Camera2D = _world_player.get_node("Camera2D") as Camera2D

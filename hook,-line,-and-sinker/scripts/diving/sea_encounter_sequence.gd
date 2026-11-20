@@ -377,7 +377,7 @@ func play_silas_surface_reveal() -> void:
 	_story.start_silas_surface_warning()
 	await _story.silas_surface_warning_finished
 	# Use the existing poof sprite and existing land NPC scene.
-	var effect: AnimatedSprite2D = _make_silas_poof(world, dock_wait.global_position)
+	var effect: AnimatedSprite2D = SeaPoofEffect.spawn(world, dock_wait.global_position)
 	await get_tree().create_timer(0.17).timeout
 	_silas.hide()
 	var land_actor: NPCInteractable = _spawn_silas_on_dock(world, dock_wait.global_position)
@@ -388,6 +388,14 @@ func play_silas_surface_reveal() -> void:
 		land_actor.show()
 	_story.on_silas_surface_transformed()
 	await _story.silas_surface_reveal_finished
+	# He only exists on land during this cutscene, not between dives.
+	var departure := ScreenFade.new()
+	get_tree().root.add_child(departure)
+	await departure.fade_to(1.0, 0.3)
+	if is_instance_valid(land_actor):
+		land_actor.queue_free()
+	await departure.fade_to(0.0, 0.3)
+	departure.queue_free()
 	_player.busy = false
 	_silas_surface_scene_running = false
 
@@ -435,36 +443,3 @@ func _spawn_silas_on_dock(world: Node2D, at: Vector2) -> NPCInteractable:
 	return actor
 
 
-func _make_silas_poof(world: Node2D, at: Vector2) -> AnimatedSprite2D:
-	var effect: AnimatedSprite2D = AnimatedSprite2D.new()
-	effect.name = "SilasSurfacePoof"
-	effect.z_index = 12
-	effect.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	# Interpret a strip of square frames if the source art is a sprite sheet.
-	# A single square image works as a one-frame effect without assumptions.
-	var frames: SpriteFrames = SpriteFrames.new()
-	frames.add_animation(&"poof")
-	frames.set_animation_loop(&"poof", false)
-	frames.set_animation_speed(&"poof", 12.0)
-	if silas_poof_texture != null:
-		var width: int = silas_poof_texture.get_width()
-		var height: int = silas_poof_texture.get_height()
-		var horizontal: bool = width > height and width % height == 0
-		var vertical: bool = height > width and height % width == 0
-		var count: int = int(width / height) if horizontal else (int(height / width) if vertical else 1)
-		for index in range(count):
-			var frame: AtlasTexture = AtlasTexture.new()
-			frame.atlas = silas_poof_texture
-			var source_rect: Rect2 = Rect2(0.0, 0.0, width, height)
-			if horizontal:
-				source_rect = Rect2(index * height, 0, height, height)
-			elif vertical:
-				source_rect = Rect2(0, index * width, width, width)
-			frame.region = source_rect
-			frames.add_frame(&"poof", frame)
-	effect.sprite_frames = frames
-	world.add_child(effect)
-	effect.global_position = at + Vector2(0.0, -13.0)
-	if frames.get_frame_count(&"poof") > 0:
-		effect.play(&"poof")
-	return effect
