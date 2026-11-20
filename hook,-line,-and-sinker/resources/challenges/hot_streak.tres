@@ -4,9 +4,8 @@
 [ext_resource type="Script" uid="uid://d2iidpvp5wrw7" path="res://resources/fish_data.gd" id="1_khvi2"]
 [ext_resource type="Texture2D" uid="uid://c7xn0dd4rsb12" path="res://sprites/challenges/streak_3.png" id="2_icon"]
 [ext_resource type="Script" uid="uid://co23u2dkxgpsq" path="res://resources/trade_data.gd" id="3_trade"]
-[ext_resource type="Resource" uid="uid://0evhbp2tvs2g" path="res://resources/trades/pearl_necklace_gift.tres" id="4_gift"]
-[ext_resource type="Resource" path="res://resources/trades/reinforced_line.tres" id="5_line"]
-[ext_resource type="Resource" path="res://resources/trades/kuda_scarf.tres" id="6_scarf"]
+[ext_resource type="Resource" uid="uid://c8f8am1ryfnl4" path="res://resources/trades/reinforced_line.tres" id="5_line"]
+[ext_resource type="Resource" uid="uid://b67ty2b2uy3r7" path="res://resources/trades/kuda_scarf.tres" id="6_scarf"]
 
 [resource]
 script = ExtResource("1_chdat")

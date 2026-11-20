@@ -9,7 +9,7 @@ extends Resource
 ## Fish-form portrait for conversations while exploring underwater.
 ## Keep the human portrait untouched for scenes on land.
 @export var underwater_sprite: Texture2D
-@export var house: Texture2D
+@export var door: DoorInfo
 @export var porn_sprite: Texture2D # Optional illustrated adult-scene background.
 
 # Scores for bold / playful / reassuring answers at jealousy tiers 0, 1, 2, 3.

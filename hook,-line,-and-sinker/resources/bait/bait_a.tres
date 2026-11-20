@@ -11,12 +11,12 @@ icon = ExtResource("2_icon")
 description = "Attracts calmer fish like mullet and porgy. Strong or aggressive fish rarely bite."
 catch_weights = Dictionary[StringName, float]({
 &"barracuda": 0.12,
-&"mullet": 8.00,
-&"porgy": 6.00,
-&"needlefish": 0.40,
-&"tuna": 0.08,
-&"goby": 0.80,
 &"flounder": 0.45,
-&"test_silas": 0.30
+&"goby": 0.8,
+&"mullet": 8.0,
+&"needlefish": 0.4,
+&"porgy": 6.0,
+&"test_silas": 0.3,
+&"tuna": 0.08
 })
 default_weight = 0.0

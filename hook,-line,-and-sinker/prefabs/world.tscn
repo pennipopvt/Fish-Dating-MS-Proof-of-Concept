@@ -12,18 +12,24 @@
 [ext_resource type="Shader" uid="uid://b41ap31uwit61" path="res://shaders/sky_gradient.gdshader" id="6_07nuu"]
 [ext_resource type="Texture2D" uid="uid://culbi4w4j2vi2" path="res://sprites/environment/medium_cloud.png" id="6_q76tg"]
 [ext_resource type="Texture2D" uid="uid://papjvjxenamb" path="res://sprites/environment/long_cloud.png" id="7_sxw1y"]
-[ext_resource type="Texture2D" uid="uid://dvyql68s5tvo3" path="res://sprites/environment/tileset.png" id="10_6mti1"]
-[ext_resource type="Texture2D" uid="uid://l4228gvusjlb" path="res://sprites/environment/tilesetOnPlayer.png" id="11_onplayer"]
 [ext_resource type="Shader" uid="uid://r4rciq67coeg" path="res://shaders/water.gdshader" id="13_le6xu"]
+[ext_resource type="PackedScene" uid="uid://c0d22ylobcr2s" path="res://scenes/townhouse.tscn" id="23_8bx52"]
+[ext_resource type="PackedScene" uid="uid://dwx7fasa1rx1r" path="res://prefabs/rooms/silas_room.tscn" id="24_u7kri"]
 [ext_resource type="PackedScene" uid="uid://86k4q6ioi03u" path="res://prefabs/silas_house.tscn" id="24_xfqyr"]
 [ext_resource type="PackedScene" path="res://prefabs/bed.tscn" id="25_bed"]
 [ext_resource type="PackedScene" path="res://prefabs/beach.tscn" id="26_beach"]
 [ext_resource type="Shader" uid="uid://bv2isyw6ln31h" path="res://shaders/moon.gdshader" id="moon_shader"]
 [ext_resource type="Shader" uid="uid://cli6ci0c4km7b" path="res://shaders/night_stars.gdshader" id="night_stars"]
+[ext_resource type="PackedScene" uid="uid://bgrsv5r7v8cff" path="res://scenes/sea_area.tscn" id="sea_area"]
+[ext_resource type="Shader" uid="uid://2layvi8dplvf" path="res://shaders/underwater_tint.gdshader" id="water_tint_shader"]
 [ext_resource type="Script" uid="uid://cba27f3x60a3r" path="res://scripts/world_day_night.gd" id="world_day_night"]
-[ext_resource type="PackedScene" path="res://scenes/sea_area.tscn" id="sea_area"]
-[ext_resource type="TileSet" path="res://resources/tilesets/world_tiles.tres" id="world_tiles"]
-[ext_resource type="Shader" path="res://shaders/underwater_tint.gdshader" id="water_tint_shader"]
+[ext_resource type="TileSet" uid="uid://chn86lfer37gd" path="res://resources/tilesets/world_tiles.tres" id="world_tiles"]
+
+[sub_resource type="ShaderMaterial" id="UnderwaterTintMaterial"]
+shader = ExtResource("water_tint_shader")
+shader_parameter/tint_color = Color(0.1, 0.36, 0.67, 0.45)
+shader_parameter/submersion = 0.0
+shader_parameter/surface_y_uv = 1.0
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_4284n"]
 shader = ExtResource("6_07nuu")
@@ -53,12 +59,6 @@ shader_parameter/falloff = 4.0
 shader = ExtResource("moon_shader")
 shader_parameter/visibility = 0.0
 
-[sub_resource type="ShaderMaterial" id="UnderwaterTintMaterial"]
-shader = ExtResource("water_tint_shader")
-shader_parameter/submersion = 0.0
-shader_parameter/surface_y_uv = 1.0
-shader_parameter/tint_color = Color(0.10, 0.36, 0.67, 0.45)
-
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_23sxu"]
 shader = ExtResource("13_le6xu")
 shader_parameter/water_color = Color(0.12, 0.32, 0.48, 1)
@@ -71,6 +71,8 @@ shader_parameter/highlight_intensity = 0.0
 shader_parameter/highlight_density = 0.25
 shader_parameter/highlight_speed = 0.5
 shader_parameter/waterline_y = 140.0
+shader_parameter/reflection_fade_depth = 64.0
+shader_parameter/deep_water_alpha = 0.58
 
 [node name="World" type="Node2D" unique_id=1151991614]
 script = ExtResource("world_day_night")
@@ -85,39 +87,44 @@ position = Vector2(0, -22)
 editor_draw_limits = true
 editor_draw_drag_margin = true
 
-[node name="UnderwaterTint" type="ColorRect" parent="Player/Camera2D"]
-material = SubResource("UnderwaterTintMaterial")
-z_as_relative = false
+[node name="UnderwaterTint" type="ColorRect" parent="Player/Camera2D" unique_id=1112556197]
 z_index = 80
-mouse_filter = 2
+z_as_relative = false
+material = SubResource("UnderwaterTintMaterial")
 offset_left = -160.0
 offset_top = -90.0
 offset_right = 160.0
 offset_bottom = 90.0
+mouse_filter = 2
 
 [node name="Sky" type="Control" parent="." unique_id=512056317]
 z_index = -10
-mouse_filter = 2
 clip_contents = true
+layout_mode = 3
+anchors_preset = 0
 offset_left = -160.0
 offset_top = -40.0
 offset_right = 160.0
 offset_bottom = 140.0
+mouse_filter = 2
 
 [node name="SkyGradient" type="ColorRect" parent="Sky" unique_id=246657653]
 material = SubResource("ShaderMaterial_4284n")
 custom_minimum_size = Vector2(320, 180)
+layout_mode = 0
 offset_right = 320.0
 offset_bottom = 180.0
 
 [node name="NightStars" type="ColorRect" parent="Sky" unique_id=1138354271]
 material = SubResource("ShaderMaterial_night_stars")
+layout_mode = 0
 offset_right = 320.0
 offset_bottom = 180.0
 mouse_filter = 2
 
 [node name="SunGlow" type="ColorRect" parent="Sky" unique_id=1434741238]
 material = SubResource("ShaderMaterial_yd4fr")
+layout_mode = 0
 offset_left = 15.0
 offset_top = -62.0
 offset_right = 175.0
@@ -131,12 +138,14 @@ texture = ExtResource("3_vbln7")
 
 [node name="MoonGlow" type="ColorRect" parent="Sky" unique_id=287659905]
 material = SubResource("ShaderMaterial_moon_glow")
+layout_mode = 0
 offset_right = 96.0
 offset_bottom = 96.0
 mouse_filter = 2
 
 [node name="Moon" type="ColorRect" parent="Sky" unique_id=1664162708]
 material = SubResource("ShaderMaterial_moon")
+layout_mode = 0
 offset_right = 24.0
 offset_bottom = 24.0
 mouse_filter = 2
@@ -159,17 +168,25 @@ texture = ExtResource("6_q76tg")
 position = Vector2(89, 8)
 texture = ExtResource("7_sxw1y")
 
+[node name="Townhouse" parent="." unique_id=1759623641 instance=ExtResource("23_8bx52")]
+z_index = -2
+position = Vector2(395, 43)
+
 [node name="AvailableHomeList" parent="." unique_id=1246650794 node_paths=PackedStringArray("available_homes") instance=ExtResource("1_u7kri")]
 script = ExtResource("2_n7i1a")
-available_homes = [NodePath("FreeHouseA"), NodePath("FreeHouseB")]
+available_homes = [NodePath("FreeHouseA"), NodePath("FreeHouseB"), NodePath("FreeHouseC"), NodePath("FreeHouseD")]
 
 [node name="FreeHouseA" parent="AvailableHomeList" unique_id=852988363 instance=ExtResource("24_xfqyr")]
 position = Vector2(333, 96)
-offset = Vector2(0, -16)
 
 [node name="FreeHouseB" parent="AvailableHomeList" unique_id=1681937105 instance=ExtResource("24_xfqyr")]
-position = Vector2(445, 96)
-offset = Vector2(0, -16)
+position = Vector2(458, 96)
+
+[node name="FreeHouseC" parent="AvailableHomeList" unique_id=516436176 instance=ExtResource("24_xfqyr")]
+position = Vector2(358, 96)
+
+[node name="FreeHouseD" parent="AvailableHomeList" unique_id=1050078061 instance=ExtResource("24_xfqyr")]
+position = Vector2(433, 96)
 
 [node name="Dock" parent="." unique_id=501821169 instance=ExtResource("1_4284n")]
 position = Vector2(46, 101)
@@ -178,21 +195,21 @@ position = Vector2(46, 101)
 position = Vector2(195, 96)
 
 [node name="Bed" parent="." unique_id=1873402519 instance=ExtResource("25_bed")]
-position = Vector2(505, 104)
+position = Vector2(395, 104)
 
-[node name="Beach" parent="." instance=ExtResource("26_beach")]
+[node name="Beach" parent="." unique_id=1528559192 instance=ExtResource("26_beach")]
 position = Vector2(860, 112)
 
 [node name="Ground" type="TileMapLayer" parent="." unique_id=97856843]
-collision_enabled = false
 tile_map_data = PackedByteArray("AAACAAcAAAAAAAYAAAADAAcAAAAGAAYAAAAEAAcAAAACAAYAAAAFAAcAAAAGAAYAAAAGAAcAAAADAAYAAAAHAAcAAAAEAAYAAAAIAAcAAAAFAAYAAAAJAAcAAAAFAAYAAAAKAAcAAAAFAAYAAAALAAcAAAAFAAYAAAAMAAcAAAAFAAYAAAANAAcAAAAFAAYAAAAOAAcAAAAFAAYAAAAPAAcAAAAFAAYAAAAQAAcAAAAFAAYAAAARAAcAAAAFAAYAAAASAAcAAAAFAAYAAAATAAcAAAAFAAYAAAAUAAcAAAAFAAYAAAAVAAcAAAAFAAYAAAAWAAcAAAAFAAYAAAAXAAcAAAAFAAYAAAAYAAcAAAAFAAYAAAAZAAcAAAAFAAYAAAAaAAcAAAAFAAYAAAAbAAcAAAAFAAYAAAAcAAcAAAAFAAYAAAAdAAcAAAAFAAYAAAAeAAcAAAAFAAYAAAAfAAcAAAAFAAYAAAAgAAcAAAAFAAYAAAAhAAcAAAAFAAYAAAAiAAcAAAAFAAYAABAjAAcAAAAFAAYAABAkAAcAAAAFAAYAABAlAAcAAAAFAAYAABAmAAcAAAAFAAYAABAnAAcAAAAAAAIAAAAoAAcAAAABAAIAAAApAAcAAAACAAIAAAAqAAcAAAADAAIAAAABAAgAAAAAAAEAAAACAAgAAAAAAAcAAAADAAgAAAABAAEAAAAEAAgAAAACAAcAAAAFAAgAAAACAAEAAAAGAAgAAAADAAcAAAAHAAgAAAAEAAcAAAAIAAgAAAAFAAcAAAAJAAgAAAAFAAcAAAAKAAgAAAAFAAcAAAALAAgAAAAFAAcAAAAMAAgAAAAFAAcAAAANAAgAAAAFAAcAAAAOAAgAAAAFAAcAAAAPAAgAAAAFAAcAAAAQAAgAAAAFAAcAAAARAAgAAAAFAAcAAAASAAgAAAAFAAcAAAATAAgAAAAFAAcAAAAUAAgAAAAFAAcAAAAVAAgAAAAFAAcAAAAWAAgAAAAFAAcAAAAXAAgAAAAFAAcAAAAYAAgAAAAFAAcAAAAZAAgAAAAFAAcAAAAaAAgAAAAFAAcAAAAbAAgAAAAFAAcAAAAcAAgAAAAFAAcAAAAdAAgAAAAFAAcAAAAeAAgAAAAFAAcAAAAfAAgAAAAFAAcAAAAgAAgAAAAFAAcAAAAhAAgAAAAFAAcAAAAiAAgAAAAFAAcAABAjAAgAAAAFAAcAABAkAAgAAAAFAAcAABAlAAgAAAAFAAcAABAmAAgAAAAFAAcAABAnAAgAAAAAAAMAAAAoAAgAAAABAAMAAAApAAgAAAACAAMAAAAqAAgAAAADAAMAAAArAAgAAAAEAAMAAAAsAAgAAAAFAAMAAAAtAAgAAAAGAAMAAAAuAAgAAAAEAAMAAAAvAAgAAAAFAAMAAAAwAAgAAAAGAAMAAAAxAAgAAAAEAAMAAAAyAAgAAAAFAAMAAAAzAAgAAAAGAAMAAAA0AAgAAAAEAAMAAAA1AAgAAAAFAAMAAAA2AAgAAAAGAAMAAAA3AAgAAAAHAAMAAAA4AAgAAAADAAEAAAA5AAgAAAAEAAEAAAA6AAgAAAAFAAEAAAA7AAgAAAAGAAEAAAA8AAgAAAAHAAEAAAA=")
 tile_set = ExtResource("world_tiles")
-
-[node name="GroundFront" type="TileMapLayer" parent="."]
-z_index = 4
 collision_enabled = false
+
+[node name="GroundFront" type="TileMapLayer" parent="." unique_id=593901554]
+z_index = 4
 tile_map_data = PackedByteArray("AAApAAYAAQACAAEAAAApAAcAAQACAAIAAAAqAAcAAQADAAIAAAApAAgAAQACAAMAAAAqAAgAAQADAAMAAAA=")
 tile_set = ExtResource("world_tiles")
+collision_enabled = false
 
 [node name="Water" type="ColorRect" parent="." unique_id=1286032416]
 material = SubResource("ShaderMaterial_23sxu")
@@ -202,5 +219,7 @@ offset_top = 140.0
 offset_right = 2800.0
 offset_bottom = 800.0
 
+[node name="Sea" parent="." unique_id=607023889 instance=ExtResource("sea_area")]
 
-[node name="Sea" parent="." instance=ExtResource("sea_area")]
+[node name="SilasRoom" parent="." unique_id=821441359 instance=ExtResource("24_u7kri")]
+position = Vector2(-1296, 140)

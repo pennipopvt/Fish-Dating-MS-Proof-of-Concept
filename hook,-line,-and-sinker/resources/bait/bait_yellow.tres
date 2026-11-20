@@ -10,13 +10,13 @@ display_name = "Yellow Bait"
 icon = ExtResource("2")
 description = "Attracts bottom-dwelling fish like goby and flounder, and curious garden eels like Silas."
 catch_weights = Dictionary[StringName, float]({
-&"barracuda": 0.20,
-&"mullet": 0.70,
-&"porgy": 0.70,
+&"barracuda": 0.2,
+&"flounder": 6.0,
+&"goby": 7.0,
+&"mullet": 0.7,
 &"needlefish": 0.25,
-&"tuna": 0.10,
-&"goby": 7.00,
-&"flounder": 6.00,
-&"test_silas": 5.00
+&"porgy": 0.7,
+&"test_silas": 5.0,
+&"tuna": 0.1
 })
 default_weight = 0.0

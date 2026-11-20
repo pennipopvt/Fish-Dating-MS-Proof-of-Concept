@@ -265,7 +265,7 @@ func _free_home(actor: NPCInteractable) -> void:
 		if fresh != null:
 			home.texture = fresh.texture
 			fresh.free()
-	RecruitmentHandler.register_available_home(home)
+	# RecruitmentHandler.register_available_home(home)
 
 
 func _return_fish(npc_id: StringName, actor: NPCInteractable) -> void:
