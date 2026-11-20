@@ -9,6 +9,10 @@ const RIPPLE: Texture2D = preload("res://sprites/environment/medium_ripple_a.png
 const DIVE_DURATION: float = 0.43
 const IRIS_DURATION: float = 0.52
 const IRIS_OPEN_RADIUS: float = 2.6
+# Penni dives facing left: the leap carries her this far forward before the
+# splash, and she drifts a little further forward while sinking.
+const DIVE_FORWARD: float = 18.0
+const SINK_FORWARD: float = 10.0
 
 @onready var _iris: ColorRect = $Iris
 var _iris_material: ShaderMaterial
@@ -95,8 +99,8 @@ func start_confirmed_dive(dock: Node2D) -> void:
 
 func _begin_dive(dock: Node2D) -> void:
 	var jump_start: Vector2 = _world_player.global_position
-	# Splash straight below where Penni stands (same waterline as before).
-	var landing := Vector2(jump_start.x, dock.global_position.y + 46.0)
+	# Splash a little ahead of where Penni stands (same waterline as before).
+	var landing := Vector2(jump_start.x - DIVE_FORWARD, dock.global_position.y + 46.0)
 	_world_player.animator.play(&"walk_l")
 	var jump: Tween = create_tween()
 	jump.tween_method(
@@ -114,7 +118,7 @@ func _begin_dive(dock: Node2D) -> void:
 	_dialogue_ui.set_underwater_mode(true)
 	var entry_marker: Marker2D = _sea.get_node_or_null("Points/Entry") as Marker2D
 	var entry: Vector2 = entry_marker.global_position if entry_marker != null else _sea.to_global(Vector2(55, 182))
-	entry = _dive_target_below(landing, entry.y)
+	entry = _dive_target_below(landing + Vector2(-SINK_FORWARD, 0.0), entry.y)
 	var island_camera: Camera2D = _world_player.get_node("Camera2D") as Camera2D
 	var descent: Tween = create_tween().set_parallel(true)
 	descent.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
@@ -127,7 +131,7 @@ func _begin_dive(dock: Node2D) -> void:
 	transitioning = false
 
 
-# Where Penni sinks to after the splash: straight down from the splash, as
+# Where Penni sinks to after the splash: down from the given point, as
 # deep as the Entry marker's depth but stopping above any rock under her.
 func _dive_target_below(splash: Vector2, depth: float) -> Vector2:
 	var top: float = DivingWorld.SEA_TOP + DivingWildFish.EDGE_MARGIN
