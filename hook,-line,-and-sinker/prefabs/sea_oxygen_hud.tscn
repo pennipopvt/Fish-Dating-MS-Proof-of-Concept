@@ -2,5 +2,5 @@
 
 [ext_resource type="Script" path="res://scripts/diving/sea_oxygen_hud.gd" id="1_hud"]
 
-[node name="SeaOxygenHud" type="Node2D"]
+[node name="SeaOxygenHud" type="CanvasLayer"]
 script = ExtResource("1_hud")

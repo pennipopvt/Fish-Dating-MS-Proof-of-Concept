@@ -102,14 +102,13 @@ func _ready() -> void:
 	set_process(true)
 
 
-# The visual stays attached to the same camera as the tutorial cue.
+# The tutorial cue stays on the camera, but oxygen is real screen-space UI:
+# a CanvasLayer in the sea's 320x180 SubViewport, never on Penni/Camera2D.
 func _install_oxygen_hud() -> void:
-	if _camera == null:
-		return
-	_oxygen_hud = _camera.get_node_or_null("SeaOxygenHud") as SeaOxygenHud
+	_oxygen_hud = get_node_or_null("SeaOxygenHud") as SeaOxygenHud
 	if _oxygen_hud == null:
 		_oxygen_hud = OXYGEN_HUD_SCENE.instantiate() as SeaOxygenHud
-		_camera.add_child(_oxygen_hud)
+		add_child(_oxygen_hud)
 	_update_oxygen_hud(_oxygen.ratio(), _oxygen.enabled)
 
 

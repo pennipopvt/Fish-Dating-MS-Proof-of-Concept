@@ -79,6 +79,14 @@ func _ready() -> void:
 	(main.get_node("IntroLayer") as FishCoOpeningSequence)._contract_call_finished = true
 	await get_tree().process_frame
 	var sea: DivingWorld = main.get_node("SubViewportContainer/SubViewport/World/Sea") as DivingWorld
+	var real_hud: SeaOxygenHud = sea.get_node("SeaOxygenHud") as SeaOxygenHud
+	var camera: Camera2D = sea.get_parent().get_node("Player/Camera2D") as Camera2D
+	_check(real_hud.get_parent() == sea and not camera.is_ancestor_of(real_hud)
+		and not real_hud.follow_viewport_enabled,
+		"HUD belongs to the sea UI canvas, not the moving player camera")
+	_check(real_hud.get_node("LowOxygenVignette").get_rect().position == Vector2.ZERO
+		and real_hud.get_node("MeterTrack").position == Vector2(10.0, 10.0),
+		"Vignette fills the viewport and meter is anchored inside its top-left corner")
 	var player: Player = sea.get_parent().get_node("Player") as Player
 	var transition: SeaDiveTransition = main.get_node("TransitionLayer") as SeaDiveTransition
 	var sea_bag: SeaDiveInventory = sea.get_node("SeaDiveInventory") as SeaDiveInventory
