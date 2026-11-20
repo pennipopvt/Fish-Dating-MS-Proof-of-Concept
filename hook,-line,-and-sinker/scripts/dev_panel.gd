@@ -8,15 +8,18 @@ extends CanvasLayer
 # runtime state from outside; no gameplay script depends on this panel.
 
 const SILAS_ID: StringName = &"test_npc"
-const SILAS_NPC_PATH := "res://resources/npcs/test_npc.tres"
-const SILAS_FISH_PATH := "res://resources/fish/test_silas.tres"
-const SPYGLASS_PATH := "res://resources/items/spyglass.tres"
+const KUDA_ID: StringName = &"barracuda"
+const SILAS_NPC_PATH := "res://resources/npcs/silas.tres"
+const KUDA_NPC_PATH := "res://resources/npcs/kuda.tres"
+const SILAS_FISH_PATH := "res://resources/fish/silas.tres"
+const KUDA_FISH_PATH := "res://resources/fish/kuda.tres"
 const ITEMS_DIR := "res://resources/items/"
 const FISH_DIR := "res://resources/fish/"
 const DIALOGUE_DIR := "res://dialogue/"
 const FISHING_STATES := ["NOT", "WAITING", "FISHING", "CATCHING"]
 const REFRESH_INTERVAL := 0.25
-const PANEL_WIDTH := 1080.0
+# Share of the screen the panel covers, from the right edge.
+const PANEL_SCREEN_SHARE := 0.8
 
 var _panel: PanelContainer
 var _tabs: TabContainer
@@ -26,9 +29,9 @@ var _info_labels: Dictionary = {}  # subtab name -> RichTextLabel
 var _progress_box: VBoxContainer
 var _flags_box: VBoxContainer
 var _flag_npc: OptionButton
+var _advanced_npc_flags_open: bool = false
 var _fishing_status: Label
 var _force_fish: OptionButton
-var _json_picker: OptionButton
 var _reset_all_button: Button
 
 var _refresh_time: float = 0.0
@@ -163,18 +166,14 @@ func _world() -> Node:
 	return player.get_parent() if player != null else null
 
 
-func _silas_data() -> NPCData:
-	return load(SILAS_NPC_PATH) as NPCData
-
-
-func _find_silas() -> NPCInteractable:
+func _find_npc_actor(npc_id: StringName) -> NPCInteractable:
 	var world := _world()
 	if world == null:
 		return null
-	for node in world.find_children("*", "", true, false):
-		var npc := node as NPCInteractable
-		if npc != null and npc.npc != null and npc.npc.npc_id == SILAS_ID and not npc.is_queued_for_deletion():
-			return npc
+	for child in world.find_children("*", "", true, false):
+		var actor := child as NPCInteractable
+		if actor != null and actor.npc != null and actor.npc.npc_id == npc_id and not actor.is_queued_for_deletion():
+			return actor
 	return null
 
 
@@ -203,118 +202,170 @@ func _say(text: String) -> void:
 	print("[DEV] ", text)
 
 
-# ---- Silas checkpoints ---------------------------------------------------
+# ---- NPC shortcuts: both characters use the SAME recruitment flow ------
 
-func _set_npc_flags(npc_id: StringName, flag_ids: Array[StringName]) -> void:
-	var flags: Dictionary = NPCManager.get_npc_state(npc_id)["flags"]
-	flags.clear()
-	for id in flag_ids:
-		flags[id] = true
+func _fish_for_npc(npc_id: StringName) -> FishData:
+	match npc_id:
+		SILAS_ID:
+			return load(SILAS_FISH_PATH) as FishData
+		KUDA_ID:
+			return load(KUDA_FISH_PATH) as FishData
+	return null
 
 
-func _spawn_silas(in_house: bool) -> NPCInteractable:
+func _spawn_npc_for_debug(npc_id: StringName) -> NPCInteractable:
+	var existing := _find_npc_actor(npc_id)
+	if existing != null:
+		return existing
 	var world := _world()
 	var controller := _controller()
-	if world == null or controller == null:
-		_say("No player in the scene")
+	var fish := _fish_for_npc(npc_id)
+	if world == null or controller == null or fish == null or fish.npc_data == null:
+		_say("Cannot spawn NPC: world, fishing controller or NPC scene missing")
 		return null
-	var silas := _find_silas()
-	if silas == null:
-		var fish := load(SILAS_FISH_PATH) as FishData
-		if fish == null or fish.npc_data == null:
-			_say("Silas fish/NPC scene missing")
-			return null
-		silas = fish.npc_data.instantiate() as NPCInteractable
-		world.add_child(silas)
-		silas.global_position = controller.npc_landing_point.global_position
-		silas.z_index = 12
-		var sprite := silas.get_node_or_null("Sprite") as AnimatedSprite2D
-		if sprite != null:
-			sprite.play(&"default")
-	var on_dock: bool = silas.global_position.distance_to(controller.npc_landing_point.global_position) < 4.0
-	if in_house and on_dock:
-		if RecruitmentHandler.available_homes.is_empty():
-			_say("No free house left; Silas stays on the dock")
-		else:
-			RecruitmentHandler.npc = silas
-			RecruitmentHandler.house_recruit(silas.npc.house)
-			RecruitmentHandler.npc = null
-	return silas
+	var actor := fish.npc_data.instantiate() as NPCInteractable
+	if actor == null or actor.npc == null or actor.npc.npc_id != npc_id:
+		if actor != null:
+			actor.free()
+		_say("NPC scene does not match selected character")
+		return null
+	world.add_child(actor)
+	actor.global_position = controller.npc_landing_point.global_position
+	actor.z_index = 12
+	var sprite := actor.get_node_or_null("Sprite") as AnimatedSprite2D
+	if sprite != null and sprite.sprite_frames != null and sprite.sprite_frames.has_animation(&"default"):
+		sprite.play(&"default")
+	return actor
 
 
-# Close the panel and any conversation, then talk to Silas as the player would.
-func _talk_to(silas: NPCInteractable) -> void:
+func _dev_recruit(npc_id: StringName) -> void:
+	var fish := _fish_for_npc(npc_id)
+	var state: Dictionary = NPCManager.get_npc_state(npc_id)
+	var data := _flag_npc_resource(npc_id)
+	if fish == null or data == null:
+		_say("No recruitable NPC fish found for " + String(npc_id))
+		return
+	if DialogueManager.is_active:
+		_say("Finish the current dialogue before recruiting another NPC")
+		return
+	var existing := _find_npc_actor(npc_id)
+	if state["flags"].get(&"Recruited", false):
+		if existing != null:
+			_say(data.display_name + " is already recruited and in the world")
+			return
+		# Older story shortcuts sometimes left Recruited=true without a
+		# corresponding actor. Recover through the real recruitment path.
+		state["flags"].erase(&"Recruited")
+	var actor := _spawn_npc_for_debug(npc_id)
+	if actor == null:
+		return
+	# The handler removes the fish from the pool, records recruitment day,
+	# and uses the real home/waiting-at-dock queue.
+	if RecruitmentHandler.recruit_actor_for_debug(actor, fish):
+		_say(data.display_name + " recruited (housing queue updated)")
+	else:
+		if existing == null and is_instance_valid(actor):
+			actor.queue_free()
+		_say(data.display_name + " could not be recruited")
+	_rebuild_flags.call_deferred()
+
+
+func _dev_talk(npc_id: StringName) -> void:
+	if not NPCManager.get_npc_state(npc_id)["flags"].get(&"Recruited", false):
+		_say("Recruit this NPC first")
+		return
+	var actor := _find_npc_actor(npc_id)
+	if actor == null or _player() == null:
+		_say("This NPC is not in the world")
+		return
 	hide()
 	if DialogueManager.is_active:
 		DialogueManager.end_conversation()
-	# DialogueUI closes itself on its next frame; wait before reopening it.
+	# The DialogueUI frees its previous dialogue on the next frame.
 	await get_tree().process_frame
 	await get_tree().process_frame
-	if is_instance_valid(silas):
-		silas.interact(_player())
+	if is_instance_valid(actor):
+		actor.interact(_player())
 
 
-func _checkpoint(id: String) -> void:
-	RecruitmentHandler.listening = false
-	match id:
-		"not_caught":
-			if DialogueManager.is_active:
-				DialogueManager.end_conversation()
-			NPCManager.npc_states.erase(SILAS_ID)
-			RecruitmentHandler.npc = null
-			_say("Silas reset to not caught; reloading the world")
-			# A reload restores the houses and removes the spawned Silas.
-			get_tree().reload_current_scene()
-		"just_caught":
-			_set_npc_flags(SILAS_ID, [])
-			var silas := _spawn_silas(false)
-			if silas == null:
-				return
-			RecruitmentHandler.engage_listen(silas)
-			_say("Silas just caught: recruitment dialogue")
-			_talk_to(silas)
-		"recruited":
-			_set_npc_flags(SILAS_ID, [&"Recruited"])
-			var silas := _spawn_silas(true)
-			if silas != null:
-				_say("Silas recruited: casual dialogue")
-				_talk_to(silas)
-		"spyglass":
-			_set_npc_flags(SILAS_ID, [&"Recruited"])
-			var silas := _spawn_silas(true)
-			_give_to_hands(load(SPYGLASS_PATH) as ItemData)
-			if silas != null:
-				_say("Holding the spyglass: gift dialogue")
-				_talk_to(silas)
-		"invitation":
-			_set_npc_flags(SILAS_ID, [&"Recruited", &"spyglass_complete"])
-			var silas := _spawn_silas(true)
-			if silas != null:
-				_say("Spyglass given: invitation dialogue")
-				_talk_to(silas)
-		"house_scene":
-			_set_npc_flags(SILAS_ID, [&"Recruited", &"spyglass_complete", &"house_invitation_accepted"])
-			_spawn_silas(true)
-			hide()
-			if DialogueManager.is_active:
-				DialogueManager.end_conversation()
-			_say("Starting the silas_house scene")
-			DialogueManager.scene_requested.emit(_silas_data(), "silas_house")
-		"route_complete":
-			_set_npc_flags(SILAS_ID, [&"Recruited", &"spyglass_complete", &"house_invitation_accepted", &"silas_route_complete"])
-			_spawn_silas(true)
-			BobberManager.unlock_bobber(&"silas")
-			_say("Silas route complete; Silas bobber unlocked")
-
-
-func _play_json(path: String) -> void:
+func _dev_romance_scene(npc_id: StringName) -> void:
+	if npc_id != SILAS_ID and npc_id != KUDA_ID:
+		_say("No romance scene configured for this NPC")
+		return
+	if not NPCManager.get_npc_state(npc_id)["flags"].get(&"Recruited", false):
+		_say("Recruit this NPC first")
+		return
+	if _find_npc_actor(npc_id) == null:
+		_say("NPC not present in world")
+		return
+	if DialogueManager.is_active or DateManager.is_active():
+		_say("Finish the current dialogue/date first")
+		return
+	var scene_id := "silas_house" if npc_id == SILAS_ID else "barracuda_house"
+	var data := _flag_npc_resource(npc_id)
+	if data == null:
+		return
 	hide()
-	if DialogueManager.is_active:
-		DialogueManager.end_conversation()
+	DialogueManager.scene_requested.emit(data, scene_id)
+	_say("Playing " + scene_id + " through existing scene controller")
+
+
+func _dev_unlock_dating(npc_id: StringName) -> void:
+	if npc_id != SILAS_ID and npc_id != KUDA_ID:
+		_say("No dating route configured for this NPC")
+		return
+	if not NPCManager.get_npc_state(npc_id)["flags"].get(&"Recruited", false):
+		_say("Recruit this NPC first")
+		return
+	var state: Dictionary = NPCManager.get_npc_state(npc_id)
+	var flags: Dictionary = state["flags"]
+	var complete_flag := &"silas_route_complete" if npc_id == SILAS_ID else &"barracuda_route_complete"
+	if flags.get(complete_flag, false):
+		_say("Dating already unlocked")
+		return
+	# Mimics completing the first route, including jealousy on other partners.
+	flags[complete_flag] = true
+	AffectionManager.on_romance_completed(npc_id)
+	# Legacy bobber cosmetics are not awarded in the diving prototype.
+	_say("Dating unlocked for " + _flag_npc_resource(npc_id).display_name)
+	_rebuild_flags.call_deferred()
+
+
+# Debug book/start buttons never secretly recruit a fish or change its flags.
+func _date_action(date: DateData, book: bool) -> void:
+	if date == null or date.npc == null:
+		return
+	var npc_id := date.npc.npc_id
+	if not DateManager.meets_requirements(date):
+		_say("Recruit and unlock dating for " + date.npc.display_name + " first")
+		return
+	if book and not DateManager.can_ask(date):
+		_say("Already booked / not eligible for another date")
+		return
+	if not book and _find_npc_actor(npc_id) == null:
+		_say("NPC must be in the world to start a date")
+		return
+	if DialogueManager.is_active or DateManager.is_active():
+		_say("Finish the current conversation/date first")
+		return
+	hide()
 	await get_tree().process_frame
-	await get_tree().process_frame
-	DialogueManager.request_conversation(_silas_data(), path)
-	_say(("Playing " if DialogueManager.is_active else "Could not start ") + path.get_file())
+	if book:
+		DateManager.accept(date)
+		_say("%s: %s" % [date.display_name, DateManager.describe_booking(date)])
+	else:
+		DateManager.start_date(date)
+		_say("Starting " + date.display_name)
+
+
+func _reset_dates() -> void:
+	for date: DateData in DateManager.dates.values():
+		DateManager.cancel_booking(date)
+		if date.npc != null:
+			var flags: Dictionary = NPCManager.get_npc_state(date.npc.npc_id)["flags"]
+			flags.erase(date.get_completed_flag())
+			flags.erase(date.get_missed_flag())
+	_say("Date bookings and done/missed flags cleared")
 
 
 # ---- Items ---------------------------------------------------------------
@@ -344,7 +395,7 @@ func _storage_changed() -> void:
 
 # ---- Progress / upgrades ---------------------------------------------------
 
-const _UPGRADE_FIELDS := ["max_casts_per_session", "reel_strength_multiplier", "tension_gain_multiplier"]
+const _UPGRADE_FIELDS := ["casts_per_action", "reel_strength_multiplier", "tension_gain_multiplier"]
 const _UPGRADE_LISTS := ["owned_upgrade_ids", "unlocked_bait_ids"]
 
 
@@ -414,6 +465,8 @@ func _reset_all() -> void:
 	FishingManager.catch_lifetime.clear()
 	_reset_upgrades()
 	ChallengeManager.reset_all()
+	QuotaManager.reset_run()
+	ShopManager.gifts_unlocked = false
 	_reset_bobbers()
 	if GameManager.has_method("reset_clock"):
 		GameManager.call("reset_clock")
@@ -527,6 +580,18 @@ func _info_world() -> String:
 	else:
 		t += "No conversation\n"
 
+	t += _h("Dates")
+	if DateManager.is_active():
+		t += "A date is running
+"
+	if DateManager.bookings.is_empty():
+		t += "No bookings
+"
+	for id in DateManager.bookings:
+		var booked := DateManager.get_date(id)
+		t += "%s: %s at %s
+" % [booked.display_name, DateManager.describe_booking(booked), booked.location_id]
+
 	t += _h("Recruitment")
 	t += "Listening: %s   Free houses: %d\n" % [_onoff(RecruitmentHandler.listening), RecruitmentHandler.available_homes.size()]
 	return t
@@ -538,11 +603,18 @@ func _info_npcs() -> String:
 	if not ids.has(SILAS_ID):
 		ids.append(SILAS_ID)
 	for id in ids:
-		var state: Dictionary = NPCManager.npc_states.get(id, {"attraction": 0, "flags": {}})
+		var state: Dictionary = NPCManager.npc_states.get(id, {"attraction": NPCManager.START_ATTRACTION, "flags": {}})
 		var flags: Dictionary = state.get("flags", {})
-		var data: NPCData = _silas_data() if id == SILAS_ID else null
+		var data: NPCData = _flag_npc_resource(id)
 		t += _h(String(id))
-		t += "Attraction %d   In world %s\n" % [int(state.get("attraction", 0)), _onoff(id == SILAS_ID and _find_silas() != null)]
+		t += "Affection %d / %d   Jealousy %d / %d (tier %d)\n" % [
+			AffectionManager.get_affection(id), AffectionManager.MAX_AFFECTION,
+			AffectionManager.get_jealousy(id), AffectionManager.MAX_JEALOUSY,
+			AffectionManager.get_jealousy_tier(id)]
+		t += "Last date day %s   First recruited day %s   In world %s\n" % [
+			str(state.get(AffectionManager.LAST_DATE_KEY, "-")),
+			str(state.get(AffectionManager.RECRUITED_DAY_KEY, "-")),
+			_onoff(_find_npc_actor(id) != null)]
 		if data != null:
 			t += "Next encounter: %s\n" % _peek_encounter(data)
 		if flags.is_empty():
@@ -563,11 +635,6 @@ func _info_fishing() -> String:
 	for fish in FishingManager.catch_dex:
 		dex.append("%s x%d" % [fish.fish_id, FishingManager.catch_lifetime.get(fish, 0)])
 	t += (", ".join(dex) if not dex.is_empty() else "-") + "\n"
-	t += _h("Bobbers")
-	var unlocked: Array[String] = []
-	for id in BobberManager.unlocked_ids:
-		unlocked.append(String(id))
-	t += "Unlocked: %s\nEquipped: %s\n" % [", ".join(unlocked), BobberManager.equipped_id]
 	return t
 
 
@@ -593,14 +660,14 @@ func _fishing_summary() -> String:
 	if controller != null:
 		var state: int = controller.get("current_state")
 		var hooked: FishData = controller.get("hooked_fish")
-		t += "State %s  casts %d/%d  bite in %.1fs  fish %s\n" % [FISHING_STATES[state] if state < FISHING_STATES.size() else str(state), int(controller.get("casts")), FishingManager.max_casts_per_session, float(controller.get("bite_time")), String(hooked.fish_id) if hooked != null else "-"]
-	t += "Bait: %s   Forced species: %s" % [FishingManager.equipped_bait.display_name if FishingManager.equipped_bait != null else "-", String(_forced_fish.fish_id) if _forced_fish != null else "off"]
+		t += "State %s  casts %d/%d  bite in %.1fs  fish %s\n" % [FISHING_STATES[state] if state < FISHING_STATES.size() else str(state), int(controller.get("casts")), FishingManager.casts_per_action, float(controller.get("bite_time")), String(hooked.fish_id) if hooked != null else "-"]
+	t += "Forced legacy rod species: %s" % [String(_forced_fish.fish_id) if _forced_fish != null else "off"]
 	return t
 
 
 # Which encounter would play next, without consuming a random pool pick.
 func _peek_encounter(npc: NPCData) -> String:
-	var state: Dictionary = NPCManager.npc_states.get(npc.npc_id, {"attraction": 0, "flags": {}})
+	var state: Dictionary = NPCManager.npc_states.get(npc.npc_id, {"attraction": NPCManager.START_ATTRACTION, "flags": {}})
 	var flags: Dictionary = state.get("flags", {})
 	for rule in npc.encounter_rules:
 		if rule == null:
@@ -642,10 +709,10 @@ func _other_modal_open() -> bool:
 func _build_ui() -> void:
 	_panel = PanelContainer.new()
 	_panel.theme = _build_theme()
-	_panel.anchor_left = 1.0
+	_panel.anchor_left = 1.0 - PANEL_SCREEN_SHARE
 	_panel.anchor_right = 1.0
 	_panel.anchor_bottom = 1.0
-	_panel.offset_left = -PANEL_WIDTH - 16.0
+	_panel.offset_left = 16.0
 	_panel.offset_right = -16.0
 	_panel.offset_top = 16.0
 	_panel.offset_bottom = -16.0
@@ -666,11 +733,13 @@ func _build_ui() -> void:
 	root.add_child(_tabs)
 
 	_build_info_tab()
-	_build_dialogue_tab()
+	_build_flags_tab()
+	_build_dates_tab()
 	_build_items_tab()
 	_build_progress_tab()
-	_build_flags_tab()
 	_build_fishing_tab()
+	_apply_titles(_tabs, TAB_TITLES)
+	_apply_titles(_info_tabs, INFO_TITLES)
 
 
 # The game's shared pixel theme (PixelUI), extended for the extra controls the
@@ -706,7 +775,7 @@ func _build_theme() -> Theme:
 	t.set_constant("line_separation", "RichTextLabel", 2 * PixelUI.SCALE)
 	t.set_constant("line_spacing", "Label", 2 * PixelUI.SCALE)
 	t.set_stylebox("panel", "TabContainer", PixelUI.box(PixelUI.INSET, PixelUI.ROW_EDGE, 3))
-	# Tighter tabs than the shared theme so all seven fit in one row.
+	# Tighter tabs than the shared theme so all tabs fit in one row.
 	t.set_stylebox("tab_selected", "TabContainer", PixelUI.box(PixelUI.TEAL, PixelUI.CYAN, 1))
 	t.set_stylebox("tab_hovered", "TabContainer", PixelUI.box(PixelUI.TEAL_HOVER, PixelUI.CYAN_DARK, 1))
 	t.set_stylebox("tab_unselected", "TabContainer", PixelUI.box(PixelUI.ROW, PixelUI.ROW_EDGE, 1))
@@ -715,9 +784,35 @@ func _build_theme() -> Theme:
 	t.set_color("font_hovered_color", "TabContainer", PixelUI.TEXT)
 	t.set_color("font_unselected_color", "TabContainer", PixelUI.TEXT_DIM)
 	t.set_constant("side_margin", "TabContainer", 0)
+	# Tab titles at 2x pixel scale (body text is 3x) so the descriptive titles fit in one row.
+	t.set_font_size("font_size", "TabContainer", 8 * 2)
 	t.set_constant("separation", "VBoxContainer", PixelUI.SCALE)
 	t.set_constant("separation", "HBoxContainer", 2 * PixelUI.SCALE)
 	return t
+
+
+# Shown tab titles. Code matches tabs by node name (the keys), so rename here only.
+const TAB_TITLES := {
+	"Info": "Game State",
+	"Dates": "Dates & Clock",
+	"Items": "Give Items",
+	"Progress": "Upgrades & Challenges",
+	"Flags": "NPCs",
+	"Fishing": "Fishing & Diving",
+}
+const INFO_TITLES := {
+	"World": "World & Time",
+	"NPCs": "NPCs",
+	"Fishing": "Fishing",
+	"Progress": "Upgrades & Challenges",
+}
+
+
+func _apply_titles(tabs: TabContainer, titles: Dictionary) -> void:
+	for i in tabs.get_tab_count():
+		var key := String(tabs.get_tab_control(i).name)
+		if titles.has(key):
+			tabs.set_tab_title(i, titles[key])
 
 
 func _on_tab_changed() -> void:
@@ -785,36 +880,16 @@ func _build_info_tab() -> void:
 		_info_labels[section] = label
 
 
-func _build_dialogue_tab() -> void:
-	var box := _add_tab("Talk")
-	_heading(box, "Silas story checkpoints (sets flags, spawns Silas, opens the talk)")
-	var checkpoints := [
-		["Not caught (reset Silas + reload world)", "not_caught"],
-		["Just caught: recruitment talk", "just_caught"],
-		["Recruited: casual talk", "recruited"],
-		["Give spyglass: gift talk", "spyglass"],
-		["Spyglass given: invitation", "invitation"],
-		["Invitation accepted: house scene", "house_scene"],
-		["Route complete (unlocks Silas bobber)", "route_complete"],
-	]
-	for entry in checkpoints:
-		var id: String = entry[1]
-		_button(box, entry[0], func() -> void: _checkpoint(id))
-
-	_heading(box, "Play any dialogue JSON as Silas (flags untouched)")
-	var row := _row(box)
-	_json_picker = OptionButton.new()
-	_json_picker.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	for path in _list_dialogue():
-		_json_picker.add_item(path.get_file())
-		_json_picker.set_item_metadata(_json_picker.item_count - 1, path)
-	row.add_child(_json_picker)
-	_button(row, "Play", func() -> void:
-		if _json_picker.selected >= 0:
-			_play_json(str(_json_picker.get_item_metadata(_json_picker.selected))))
-
-	_heading(box, "Conversation")
-	_button(box, "End current dialogue (F5)", skip_dialogue)
+func _build_dates_tab() -> void:
+	var box := _add_tab("Dates")
+	_heading(box, "Date tests — recruit and unlock dating in NPCs first")
+	for npc_id in [SILAS_ID, KUDA_ID]:
+		for date: DateData in DateManager.get_dates_for(npc_id):
+			var row := _row(box)
+			row.add_child(PixelUI.label(date.display_name, &"DimLabel"))
+			_button(row, "Book", func() -> void: _date_action(date, true))
+			_button(row, "Start", func() -> void: _date_action(date, false))
+	_button(box, "Clear date bookings + done/missed flags", _reset_dates)
 
 	# Day clock. Fields go through call/get so a branch without them still compiles.
 	_heading(box, "Day clock")
@@ -911,28 +986,82 @@ func _build_flags_tab() -> void:
 	_flags_box = _add_tab("Flags")
 
 
-# Every flag named anywhere in the dialogue JSON or NPC data, plus any set at runtime.
+# NPC flags are stored per NPC in NPCManager.npc_states[npc_id]["flags"].
+# Only show the selected NPC's dialogue/encounter/date flags. The old dev UI
+# erroneously discovered every flag in every JSON file for both NPCs.
+func _flag_npc_resource(npc_id: StringName) -> NPCData:
+	match npc_id:
+		SILAS_ID:
+			return load(SILAS_NPC_PATH) as NPCData
+		KUDA_ID:
+			return load(KUDA_NPC_PATH) as NPCData
+	return null
+
+
+func _flag_dialogue_paths(npc_id: StringName) -> Array[String]:
+	var paths: Array[String] = []
+	# Include the character's full route, not just the currently unlocked
+	# encounters. Also include files linked by NPC data and DateData below.
+	var prefixes: Array[String] = []
+	match npc_id:
+		SILAS_ID:
+			prefixes = ["silas"]
+		KUDA_ID:
+			prefixes = ["kuda"]
+	for path in _list_dialogue():
+		for prefix in prefixes:
+			if path.get_file().begins_with(prefix) and not paths.has(path):
+				paths.append(path)
+	return paths
+
+
 func _known_flags(npc_id: StringName) -> Array[StringName]:
 	var found: Array[StringName] = []
-	for path in _list_dialogue():
-		_collect_flags(JSON.parse_string(FileAccess.get_file_as_string(path)), found)
-	if npc_id == SILAS_ID:
-		var data := _silas_data()
+	var paths: Array[String] = _flag_dialogue_paths(npc_id)
+	var data: NPCData = _flag_npc_resource(npc_id)
+	if data != null:
 		for rule in data.encounter_rules:
-			for f in rule.required_flags + rule.forbidden_flags:
-				if not found.has(f):
-					found.append(f)
-		if not found.has(data.gift_completed_flag):
+			if rule == null:
+				continue
+			for flag in rule.required_flags + rule.forbidden_flags:
+				if not found.has(flag):
+					found.append(flag)
+			if not rule.json_path.is_empty() and not paths.has(rule.json_path):
+				paths.append(rule.json_path)
+			for path in rule.json_pool:
+				if not paths.has(path):
+					paths.append(path)
+		if data.gift_completed_flag != &"" and not found.has(data.gift_completed_flag):
 			found.append(data.gift_completed_flag)
-		if not found.has(&"silas_route_complete"):
-			found.append(&"silas_route_complete")
+		if not data.correct_gift_json.is_empty() and not paths.has(data.correct_gift_json):
+			paths.append(data.correct_gift_json)
+		for path in data.incorrect_gift_json_pool:
+			if not paths.has(path):
+				paths.append(path)
+
+	for date in DateManager.get_dates_for(npc_id):
+		for flag in date.required_flags + date.forbidden_flags:
+			if not found.has(flag):
+				found.append(flag)
+		for flag in [date.get_available_flag(), date.get_completed_flag(), date.get_missed_flag()]:
+			if not found.has(flag):
+				found.append(flag)
+		if not date.dialogue_json.is_empty() and not paths.has(date.dialogue_json):
+			paths.append(date.dialogue_json)
+
+	for path in paths:
+		if FileAccess.file_exists(path):
+			_collect_flags(JSON.parse_string(FileAccess.get_file_as_string(path)), found)
+
+	# Runtime-only/manual flags belong to THIS NPC's state only. If an
+	# unrelated flag really was saved on this NPC, keep it visible to clear.
 	var flags: Dictionary = NPCManager.npc_states.get(npc_id, {}).get("flags", {})
-	for f in flags:
-		if not found.has(StringName(f)):
-			found.append(StringName(f))
+	for flag in flags:
+		var id := StringName(str(flag))
+		if not found.has(id):
+			found.append(id)
 	found.sort_custom(func(a: StringName, b: StringName) -> bool: return String(a) < String(b))
 	return found
-
 
 func _collect_flags(value: Variant, found: Array[StringName]) -> void:
 	if value is Dictionary:
@@ -953,68 +1082,135 @@ func _rebuild_flags() -> void:
 	if _flags_box == null:
 		return
 	var selected_id: StringName = SILAS_ID
-	if _flag_npc != null and _flag_npc.selected >= 0:
-		selected_id = StringName(_flag_npc.get_item_text(_flag_npc.selected))
+	if is_instance_valid(_flag_npc) and _flag_npc.selected >= 0:
+		selected_id = StringName(str(_flag_npc.get_item_metadata(_flag_npc.selected)))
 	for child in _flags_box.get_children():
+		_flags_box.remove_child(child)
 		child.queue_free()
 	var box := _flags_box
 
+	_heading(box, "NPC management")
 	var row := _row(box)
-	var label := Label.new()
-	label.text = "NPC"
-	row.add_child(label)
+	row.add_child(PixelUI.label("Character", &"DimLabel"))
 	_flag_npc = OptionButton.new()
-	var ids: Array = NPCManager.npc_states.keys()
-	if not ids.has(SILAS_ID):
-		ids.append(SILAS_ID)
+	_flag_npc.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	# Always expose both NPCs, regardless of whether their state exists yet.
+	var ids: Array[StringName] = [SILAS_ID, KUDA_ID]
+	for id in NPCManager.npc_states.keys():
+		if not ids.has(id):
+			ids.append(id)
 	for id in ids:
-		_flag_npc.add_item(String(id))
-		if StringName(id) == selected_id:
+		var npc_data := _flag_npc_resource(id)
+		var label_text := "%s (%s)" % [npc_data.display_name, id] if npc_data != null else String(id)
+		_flag_npc.add_item(label_text)
+		_flag_npc.set_item_metadata(_flag_npc.item_count - 1, String(id))
+		if id == selected_id:
 			_flag_npc.select(_flag_npc.item_count - 1)
 	_flag_npc.item_selected.connect(func(_i: int) -> void: _rebuild_flags.call_deferred())
 	row.add_child(_flag_npc)
 
 	var state: Dictionary = NPCManager.get_npc_state(selected_id)
+	var flags: Dictionary = state["flags"]
+	var data: NPCData = _flag_npc_resource(selected_id)
+	var actor := _find_npc_actor(selected_id)
+	var label_name := data.display_name if data != null else String(selected_id)
+	var recruited: bool = bool(flags.get(&"Recruited", false))
+	var active_text := "In world" if actor != null else "Not spawned"
+	if actor != null and RecruitmentHandler.waiting_npcs.has(actor):
+		active_text = "Waiting at dock"
+	var status_text := "%s  /  %s  /  %s" % [
+		label_name,
+		"Recruited" if recruited else "Not recruited",
+		active_text
+	]
+	var status_label := PixelUI.label(status_text, &"DimLabel")
+	box.add_child(status_label)
+
+	_heading(box, "Quick actions")
+	var actions := _row(box)
+	var recruit_button := _button(actions, "Recruit", func() -> void: _dev_recruit(selected_id))
+	recruit_button.tooltip_text = "Spawns the NPC, removes their fish from catches, and uses the real housing queue"
+	recruit_button.disabled = (recruited and actor != null) or (data == null)
+	var talk_button := _button(actions, "Talk", func() -> void: _dev_talk(selected_id))
+	talk_button.disabled = not recruited or actor == null
+	var scene_button := _button(actions, "First romance scene", func() -> void: _dev_romance_scene(selected_id))
+	scene_button.disabled = not recruited or actor == null
+	var unlock_button := _button(actions, "Unlock dating (skip scene)", func() -> void: _dev_unlock_dating(selected_id))
+	unlock_button.disabled = not recruited or AffectionManager.has_completed_romance(selected_id)
+
+	_heading(box, "Relationship")
 	var attraction_row := _row(box)
-	var attraction_label := Label.new()
-	attraction_label.text = "Attraction"
-	attraction_row.add_child(attraction_label)
+	attraction_row.add_child(PixelUI.label("Affection", &"DimLabel"))
 	var attraction := SpinBox.new()
-	attraction.min_value = -100
-	attraction.max_value = 100
-	attraction.value = int(state.get("attraction", 0))
+	attraction.min_value = -10
+	attraction.max_value = AffectionManager.MAX_AFFECTION
+	attraction.value = int(state.get("attraction", NPCManager.START_ATTRACTION))
 	attraction.value_changed.connect(func(v: float) -> void:
-		state["attraction"] = int(v)
-		_say("%s attraction = %d" % [selected_id, int(v)]))
+		AffectionManager.set_affection(selected_id, int(v))
+		_say("%s affection = %d" % [selected_id, int(v)]))
 	attraction_row.add_child(attraction)
 
-	_heading(box, "Flags (toggle to set / clear)")
-	var flags: Dictionary = state["flags"]
+	var jealousy_row := _row(box)
+	jealousy_row.add_child(PixelUI.label("Jealousy (tier %d)" % AffectionManager.get_jealousy_tier(selected_id), &"DimLabel"))
+	var jealousy := SpinBox.new()
+	jealousy.min_value = 0
+	jealousy.max_value = AffectionManager.MAX_JEALOUSY
+	jealousy.value = AffectionManager.get_jealousy(selected_id)
+	jealousy.value_changed.connect(func(v: float) -> void:
+		AffectionManager.set_jealousy(selected_id, int(v))
+		_say("%s jealousy = %d (tier %d)" % [
+			selected_id, AffectionManager.get_jealousy(selected_id),
+			AffectionManager.get_jealousy_tier(selected_id)
+		]))
+	jealousy_row.add_child(jealousy)
+
+	# Regular workflows live above. Keep raw flags available for debugging,
+	# collapsed by default, so the NPC page no longer starts with 30 toggles.
+	_button(
+		box, "Hide advanced flags" if _advanced_npc_flags_open else "Show advanced flags",
+		func() -> void:
+			_advanced_npc_flags_open = not _advanced_npc_flags_open
+			_rebuild_flags.call_deferred()
+	)
+	if not _advanced_npc_flags_open:
+		return
+
+	_heading(box, "Story flags — " + label_name)
 	for flag in _known_flags(selected_id):
+		# These date eligibility flags are calculated when dialogue starts,
+		# so exposing editable checkboxes only creates misleading duplicates.
+		if String(flag).begins_with("date_ok_"):
+			continue
 		var check := CheckBox.new()
 		check.text = String(flag)
 		check.focus_mode = Control.FOCUS_NONE
 		check.button_pressed = bool(flags.get(flag, false))
-		var id: StringName = flag
-		check.toggled.connect(func(on: bool) -> void:
-			flags[id] = on
-			_say("%s.%s = %s" % [selected_id, id, on]))
+		# These flags drive gameplay state, not just dialogue. Toggling them
+		# directly would bypass the spawn, pool, housing and jealousy systems.
+		if flag in [&"Recruited", &"silas_route_complete", &"barracuda_route_complete", &"romance_complete"]:
+			check.disabled = true
+			check.tooltip_text = "Use Recruit / Unlock dating above to keep gameplay state in sync"
+		else:
+			var id: StringName = flag
+			check.toggled.connect(func(on: bool) -> void:
+				flags[id] = on
+				_say("%s.%s = %s" % [selected_id, id, on]))
 		box.add_child(check)
 
 	var add_row := _row(box)
 	var field := LineEdit.new()
-	field.placeholder_text = "new flag name"
+	field.placeholder_text = "Custom flag name"
 	field.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	add_row.add_child(field)
-	_button(add_row, "Set true", func() -> void:
-		if field.text.strip_edges().is_empty():
+	_button(add_row, "Set", func() -> void:
+		var flag_name := field.text.strip_edges()
+		if flag_name.is_empty():
 			return
-		flags[StringName(field.text.strip_edges())] = true
-		_say("Set " + field.text.strip_edges())
-		_rebuild_flags.call_deferred())
-	_button(box, "Clear all flags for this NPC", func() -> void:
-		flags.clear()
-		_say("Cleared flags for " + String(selected_id))
+		if flag_name in ["Recruited", "silas_route_complete", "barracuda_route_complete", "romance_complete"] or flag_name.begins_with("date_ok_"):
+			_say("Use the NPC actions above for that gameplay flag")
+			return
+		flags[StringName(flag_name)] = true
+		_say("Set %s on %s" % [flag_name, selected_id])
 		_rebuild_flags.call_deferred())
 
 
@@ -1028,7 +1224,7 @@ func _build_fishing_tab() -> void:
 
 	_heading(box, "Force species on every cast")
 	_force_fish = OptionButton.new()
-	_force_fish.add_item("Off (normal bait odds)")
+	_force_fish.add_item("Off (normal species odds)")
 	_fish_options.clear()
 	for path in _list_resources(FISH_DIR):
 		var fish := load(path) as FishData
@@ -1041,16 +1237,17 @@ func _build_fishing_tab() -> void:
 	box.add_child(_force_fish)
 
 	_heading(box, "Casts")
-	_button(box, "+1 max casts per session", func() -> void:
-		FishingManager.max_casts_per_session += 1
-		_say("Max casts = %d" % FishingManager.max_casts_per_session))
+	_button(box, "+1 cast per action", func() -> void:
+		FishingManager.casts_per_action += 1
+		FishingManager.upgrades_changed.emit()
+		_say("Casts per action = %d" % FishingManager.casts_per_action))
 	_button(box, "Refill casts this session", func() -> void:
 		var controller := _controller()
 		if controller != null:
 			controller.set("casts", 0)
 			_say("Casts refilled"))
 
-	_add_bobber_and_bait(box)
+	# Legacy bait/bobber cheats are hidden in diving mode.
 
 
 func _add_bobber_and_bait(box: VBoxContainer) -> void:

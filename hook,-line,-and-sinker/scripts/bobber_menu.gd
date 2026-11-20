@@ -118,7 +118,7 @@ func _show_details() -> void:
 	_icon.texture = _selected.sprite
 	_name_label.text = _selected.display_name
 	_equipped_label.visible = equipped
-	_description_label.text = "A gift from Silas." if _selected.bobber_id == &"silas" else "Choose this bobber for your fishing line."
+	_description_label.text = _selected.ability_description if not _selected.ability_description.is_empty() else "Choose this bobber for your fishing line."
 	var info := Label.new()
 	info.text = "%d bobbers collected" % BobberManager.get_unlocked_bobbers().size()
 	_info_list.add_child(info)

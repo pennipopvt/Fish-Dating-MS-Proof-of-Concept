@@ -1,0 +1,103 @@
+{
+  "entry": "arrival",
+  "nodes": {
+    "arrival": {
+      "lines": [
+        "Seriously?",
+        "YOU caught me?",
+        "What even are you?"
+      ],
+      "effects": {
+        "set_flags": [
+          "barracuda_met"
+        ]
+      },
+      "next": "human"
+    },
+    "human": {
+      "lines": [
+        {
+          "speaker": "player",
+          "text": "I'm a human! You're a human too now, I think."
+        },
+        "Ugh, what happened to me?",
+        "I'm getting out of here."
+      ],
+      "next": "decision"
+    },
+    "decision": {
+      "lines": [],
+      "choices": [
+        {
+          "text": "Is that how you usually treat pretty girls?",
+          "next": "flirt_reply"
+        },
+        {
+          "text": "Wait! It's actually really nice here!",
+          "next": "island"
+        },
+        {
+          "text": "Okay, bye!",
+          "next": "bye"
+        }
+      ]
+    },
+    "flirt_reply": {
+      "lines": [
+        "Are you supposed to be a pretty girl or something?"
+      ],
+      "next": "retort"
+    },
+    "retort": {
+      "lines": [
+        {
+          "speaker": "player",
+          "text": "You tell me."
+        },
+        "...Tch.",
+        "You're pretty full of yourself, huh?"
+      ],
+      "next": "penni_confident"
+    },
+    "penni_confident": {
+      "lines": [
+        {
+          "speaker": "player",
+          "text": "Well, you're still here, so something must be working."
+        },
+        "Don't flatter yourself.",
+        "I just haven't decided where I'm going yet.",
+        "...",
+        "I'll stick around for a bit, so you better make it worth it."
+      ],
+      "effects": {
+        "set_flags": [
+          "Recruited"
+        ]
+      }
+    },
+    "island": {
+      "lines": [
+        "Nice?",
+        "It's a tiny island in the middle of nowhere."
+      ],
+      "next": "island_answer"
+    },
+    "island_answer": {
+      "lines": [
+        {
+          "speaker": "player",
+          "text": "Well, the views are pretty!"
+        },
+        "Yeah, okay.",
+        "Don't try to catch me again."
+      ]
+    },
+    "bye": {
+      "lines": [
+        "...Seriously?",
+        "Whatever."
+      ]
+    }
+  }
+}

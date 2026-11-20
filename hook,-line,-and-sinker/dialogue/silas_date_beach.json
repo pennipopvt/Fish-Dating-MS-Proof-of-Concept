@@ -1,0 +1,392 @@
+{
+  "entry": "start",
+  "nodes": {
+    "start": {
+      "lines": [
+        "Oh, wow...",
+        "I've seen this beach from the water before, but...",
+        "It's a lot different being up here.",
+        "The sand feels so strange under my feet."
+      ],
+      "next": "choice_1"
+    },
+    "choice_1": {
+      "lines": [],
+      "choices": [
+        {
+          "text": "Well, I think you look pretty cute standing on it.",
+          "date_style": "bold",
+          "grey_when_picked": false,
+          "next": "reaction_1_bold"
+        },
+        {
+          "text": "Aren't you always burying yourself in the sand?",
+          "date_style": "playful",
+          "grey_when_picked": false,
+          "next": "reaction_1_playful"
+        },
+        {
+          "text": "We can stay closer to the water if you want.",
+          "date_style": "reassure",
+          "grey_when_picked": false,
+          "next": "reaction_1_reassure"
+        }
+      ]
+    },
+    "reaction_1_bold": {
+      "lines": [
+        "O-oh! Um... thank you.",
+        "I guess having legs isn't so bad..."
+      ],
+      "next": "choice_2",
+      "jealousy_lines": {
+        "1": [
+          "O-oh, um... thank you.",
+          "You still think so?"
+        ],
+        "2": [
+          "You don't have to say that just to make me feel better...",
+          "Sorry. I know you're trying to be nice."
+        ],
+        "3": [
+          "Penni... are you serious?",
+          "I don't know what to believe right now."
+        ]
+      }
+    },
+    "reaction_1_playful": {
+      "lines": [
+        "Th-that's different!",
+        "I'm usually in the sand, not standing on it!",
+        "And I didn't have feet before..."
+      ],
+      "next": "choice_2",
+      "jealousy_lines": {
+        "1": [
+          "Th-that's different!",
+          "Okay... I guess you got me there."
+        ],
+        "2": [
+          "I know, but...",
+          "I don't really feel like being teased right now."
+        ],
+        "3": [
+          "Could you please not make fun of me today?",
+          "I just wanted us to have a nice time."
+        ]
+      }
+    },
+    "reaction_1_reassure": {
+      "lines": [
+        "No, it's okay!",
+        "I want to see more of it."
+      ],
+      "next": "choice_2",
+      "jealousy_lines": {
+        "1": [
+          "Oh... thanks for asking.",
+          "I think I want to try a little longer."
+        ],
+        "2": [
+          "Would you mind staying close to me?",
+          "I think I'd feel better that way."
+        ],
+        "3": [
+          "You'd really do that for me?",
+          "I... appreciate it, Penni."
+        ]
+      }
+    },
+    "choice_2": {
+      "lines": [
+        "Oh! Look at this!",
+        "I used to see shells like these all the time underwater.",
+        "They look so different in the sunlight...",
+        "Do people just... take these home?"
+      ],
+      "choices": [
+        {
+          "text": "I could keep one to remember our date.",
+          "date_style": "bold",
+          "grey_when_picked": false,
+          "next": "reaction_2_bold"
+        },
+        {
+          "text": "Only the really expensive ones. That one's probably worth a fortune.",
+          "date_style": "playful",
+          "grey_when_picked": false,
+          "next": "reaction_2_playful"
+        },
+        {
+          "text": "Yeah! You should take it home if you like it.",
+          "date_style": "reassure",
+          "grey_when_picked": false,
+          "next": "reaction_2_reassure"
+        }
+      ]
+    },
+    "reaction_2_bold": {
+      "lines": [
+        "Really?",
+        "Then... I think I want one too."
+      ],
+      "next": "choice_3",
+      "jealousy_lines": {
+        "1": [
+          "Oh... for our date?",
+          "I hope it's a good memory."
+        ],
+        "2": [
+          "You mean you'd want to remember today?",
+          "I wasn't sure you would."
+        ],
+        "3": [
+          "I don't know why you'd want to remember this...",
+          "Sorry. That's not fair to you."
+        ]
+      }
+    },
+    "reaction_2_playful": {
+      "lines": [
+        "W-what? Really?",
+        "...You're messing with me, aren't you?"
+      ],
+      "next": "choice_3",
+      "jealousy_lines": {
+        "1": [
+          "W-wait, really?",
+          "Oh. You're teasing me again."
+        ],
+        "2": [
+          "I can't tell when you're being serious lately.",
+          "Sorry, I know it's just a joke."
+        ],
+        "3": [
+          "Please don't trick me right now.",
+          "I wanted to show you something I liked."
+        ]
+      }
+    },
+    "reaction_2_reassure": {
+      "lines": [
+        "I think I will!",
+        "Maybe I'll put it by my window."
+      ],
+      "next": "choice_3",
+      "jealousy_lines": {
+        "1": [
+          "I think I will...",
+          "It'll be nice to have something from today."
+        ],
+        "2": [
+          "Maybe I could keep it on my shelf.",
+          "So I can remember we did this together."
+        ],
+        "3": [
+          "I'd... really like that.",
+          "I'd like something to remind me of today."
+        ]
+      }
+    },
+    "choice_3": {
+      "lines": [
+        "You know...",
+        "When I first came up here, I thought I'd just look around for a little while.",
+        "I didn't really think I'd end up staying.",
+        "And now I've got a house, and all this stuff, and...",
+        "Well, you."
+      ],
+      "choices": [
+        {
+          "text": "I'm pretty glad you stayed. It makes taking you on dates a lot easier.",
+          "date_style": "bold",
+          "grey_when_picked": false,
+          "next": "reaction_3_bold"
+        },
+        {
+          "text": "And here I thought you only stayed for the spyglass.",
+          "date_style": "playful",
+          "grey_when_picked": false,
+          "next": "reaction_3_playful"
+        },
+        {
+          "text": "I'm really happy you're here, Silas.",
+          "date_style": "reassure",
+          "grey_when_picked": false,
+          "next": "reaction_3_reassure"
+        }
+      ]
+    },
+    "reaction_3_bold": {
+      "lines": [
+        "Hehe... yeah.",
+        "I'm glad I stayed too."
+      ],
+      "next": "choice_4",
+      "jealousy_lines": {
+        "1": [
+          "Y-yeah. I guess that's one good reason.",
+          "I hope it's still a good reason for you."
+        ],
+        "2": [
+          "Do you... still want to take me on dates?",
+          "I can't really tell anymore."
+        ],
+        "3": [
+          "I'm not sure it feels easy anymore.",
+          "Sorry... I didn't mean to say that."
+        ]
+      }
+    },
+    "reaction_3_playful": {
+      "lines": [
+        "Well, the spyglass is pretty great...",
+        "But I guess there are some other reasons too."
+      ],
+      "next": "choice_4",
+      "jealousy_lines": {
+        "1": [
+          "Well, it is a pretty great spyglass!",
+          "But... that's not the only reason. You know that, right?"
+        ],
+        "2": [
+          "It's not just the spyglass...",
+          "I wish I knew if you were joking about that."
+        ],
+        "3": [
+          "Do you really think that's why I'm here?",
+          "Penni, I stayed because of you."
+        ]
+      }
+    },
+    "reaction_3_reassure": {
+      "lines": [
+        "Oh...",
+        "That means a lot, Penni.",
+        "I'm really happy too."
+      ],
+      "next": "choice_4",
+      "jealousy_lines": {
+        "1": [
+          "Oh...",
+          "I'm really happy you still feel that way."
+        ],
+        "2": [
+          "You have no idea how much I needed to hear that.",
+          "I was starting to worry."
+        ],
+        "3": [
+          "Really? Even now?",
+          "I... want to believe you."
+        ]
+      }
+    },
+    "choice_4": {
+      "lines": [
+        "Can we sit down for a little bit?",
+        "I used to watch people sitting on the beach all the time.",
+        "I never really understood what they were doing...",
+        "But I think I'm starting to get it."
+      ],
+      "choices": [
+        {
+          "text": "You can lean on me if you want.",
+          "date_style": "bold",
+          "grey_when_picked": false,
+          "next": "reaction_4_bold"
+        },
+        {
+          "text": "Look at you. You're becoming a real beach person.",
+          "date_style": "playful",
+          "grey_when_picked": false,
+          "next": "reaction_4_playful"
+        },
+        {
+          "text": "Sometimes it's nice to just sit and do nothing.",
+          "date_style": "reassure",
+          "grey_when_picked": false,
+          "next": "reaction_4_reassure"
+        }
+      ]
+    },
+    "reaction_4_bold": {
+      "lines": [
+        "O-oh! Really?",
+        "Um... okay.",
+        "This is nice..."
+      ],
+      "next": "ending",
+      "jealousy_lines": {
+        "1": [
+          "O-oh...",
+          "Okay. Just for a little while?"
+        ],
+        "2": [
+          "Are you sure?",
+          "I'm worried I'll make things awkward."
+        ],
+        "3": [
+          "I don't know if I can do that right now.",
+          "But... thank you for asking."
+        ]
+      }
+    },
+    "reaction_4_playful": {
+      "lines": [
+        "A beach person?",
+        "Hehe... I guess I am!",
+        "That's a little weird to think about."
+      ],
+      "next": "ending",
+      "jealousy_lines": {
+        "1": [
+          "A beach person? Hehe...",
+          "Maybe. I'm still getting used to it."
+        ],
+        "2": [
+          "I don't know...",
+          "I don't feel very good at this today."
+        ],
+        "3": [
+          "Can we not joke about me for a minute?",
+          "I just want to sit with you."
+        ]
+      }
+    },
+    "reaction_4_reassure": {
+      "lines": [
+        "Yeah...",
+        "I think I like that.",
+        "Especially when I'm not alone."
+      ],
+      "next": "ending",
+      "jealousy_lines": {
+        "1": [
+          "Yeah...",
+          "It's easier to relax when you're here."
+        ],
+        "2": [
+          "I'd like that.",
+          "Can we sit together for a little longer?"
+        ],
+        "3": [
+          "I really want things to feel like that again.",
+          "Could you stay with me a while?"
+        ]
+      }
+    },
+    "ending": {
+      "lines": [
+        "Hey, Penni?",
+        "Thanks for bringing me here.",
+        "I know it's just the beach, but...",
+        "I had a really nice time with you.",
+        "Maybe we can come back again sometime?",
+        {
+          "speaker": "player",
+          "text": "I'd like that."
+        }
+      ]
+    }
+  }
+}

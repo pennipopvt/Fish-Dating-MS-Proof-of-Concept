@@ -1,0 +1,19 @@
+{
+  "entry": "after",
+  "nodes": {
+    "after": {
+      "lines": [
+        "Hey, I hope you had fun last night.",
+        "It was different for me.",
+        "But it was a good different.",
+        {
+          "speaker": "player",
+          "text": "I had a lot of fun~"
+        },
+        "Maybe getting caught wasn't so bad after all.",
+        "Here, I have something I thought you might like.",
+        "Don't get the wrong idea. I just thought I should pay you back."
+      ]
+    }
+  }
+}

@@ -12,6 +12,8 @@ const PLAYER_NAME_COLOR := Color(0.6, 0.85, 1.0)
 const SPEAKING_MODULATE := Color.WHITE
 const LISTENING_MODULATE := Color(0.5, 0.5, 0.55)
 const ADVANCE_ACTION := &"Interact"
+# Choices picked before (no more affection from them): grey, still pickable.
+const PICKED_CHOICE_COLOR := Color(0.55, 0.55, 0.6)
 
 # Shown when an NPC has no portrait assigned yet.
 @export var placeholder_portrait: Texture2D
@@ -28,6 +30,39 @@ const ADVANCE_ACTION := &"Interact"
 var _npc: NPCData = null
 var _opened_frame := -1
 var _illustration_mode := false
+var _underwater_mode := false
+var _land_layer: int = 10
+var _npc_land_offsets: Vector4
+var _player_land_offsets: Vector4
+
+# The exact same dialogue box, choice buttons, and conversation manager are
+# used on land and underwater. Only the art and portrait framing change.
+func set_underwater_mode(enabled: bool) -> void:
+	_underwater_mode = enabled
+	if not is_node_ready():
+		return
+	# Dialogue UI stays identical above and below water; only the NPC's
+	# portrait texture switches to that character's fish form underwater.
+	layer = 40 if enabled else _land_layer
+	_npc_portrait.texture_filter = (
+		CanvasItem.TEXTURE_FILTER_NEAREST if enabled
+		else CanvasItem.TEXTURE_FILTER_PARENT_NODE
+	)
+	# Underwater fish portraits sit to Penni's right. Flip only their fish
+	# form so they're looking toward her; human portraits stay unchanged.
+	_npc_portrait.flip_h = enabled and _npc != null and _npc.underwater_sprite != null
+	# Keep Penni's real portrait, original placement and filtering everywhere.
+	_restore_portrait_offsets(_player_portrait, _player_land_offsets)
+	_restore_portrait_offsets(_npc_portrait, _npc_land_offsets)
+	if DialogueManager.is_active and visible:
+		_refresh()
+
+func _restore_portrait_offsets(view: TextureRect, values: Vector4) -> void:
+	view.offset_left = values.x
+	view.offset_top = values.y
+	view.offset_right = values.z
+	view.offset_bottom = values.w
+
 
 # Illustration scenes reuse the dialogue box, but suppress both portraits.
 func set_illustration_mode(enabled: bool) -> void:
@@ -38,10 +73,27 @@ func set_illustration_mode(enabled: bool) -> void:
 
 
 func _ready() -> void:
+	_land_layer = layer
+	_player_land_offsets = Vector4(
+		_player_portrait.offset_left, _player_portrait.offset_top,
+		_player_portrait.offset_right, _player_portrait.offset_bottom
+	)
+	_npc_land_offsets = Vector4(
+		_npc_portrait.offset_left, _npc_portrait.offset_top,
+		_npc_portrait.offset_right, _npc_portrait.offset_bottom
+	)
 	hide()
 	add_to_group(&"modal_ui")
 	DialogueManager.dialogue_requested.connect(start)
+	DialogueManager.conversation_finished.connect(_on_manager_conversation_finished)
 	_box.gui_input.connect(_on_box_gui_input)
+
+
+func _on_manager_conversation_finished(npc: NPCData) -> void:
+	# Close synchronously so another conversation can start on the next
+	# interaction, including when the diver talks to Silas repeatedly.
+	if visible and _npc == npc:
+		_close()
 
 
 func _process(_delta: float) -> void:
@@ -129,13 +181,16 @@ func _refresh() -> void:
 func _show_line(line: DialogueLineData) -> void:
 	var is_player := line.speaker == DialogueLineData.Speaker.PLAYER
 
-	_name_label.text = PLAYER_NAME if is_player else _npc.display_name
+	_name_label.text = PLAYER_NAME if is_player else DialogueManager.get_current_speaker_name()
 	_name_label.add_theme_color_override(
 		"font_color",
 		PLAYER_NAME_COLOR if is_player else NPC_NAME_COLOR
 	)
 	_player_portrait.texture = player_portrait
 	_npc_portrait.texture = _get_portrait(line)
+	# A Penni-only reaction has no second speaker or NPC portrait.
+	_npc_portrait.visible = not (_npc != null and _npc.npc_id == &"penni_monologue")
+	_npc_portrait.flip_h = _underwater_mode and _npc != null and _npc.underwater_sprite != null
 
 	# Light up whoever is speaking; dim the listener.
 	_player_portrait.modulate = (
@@ -157,6 +212,9 @@ func _show_choices() -> void:
 		var button := Button.new()
 		button.text = choices[i].text
 		button.alignment = HORIZONTAL_ALIGNMENT_LEFT
+		if DialogueManager.is_choice_greyed(i):
+			for color_name in ["font_color", "font_hover_color", "font_focus_color", "font_pressed_color"]:
+				button.add_theme_color_override(color_name, PICKED_CHOICE_COLOR)
 		button.pressed.connect(_select_choice.bind(i))
 		_choice_list.add_child(button)
 
@@ -167,6 +225,8 @@ func _show_choices() -> void:
 # Expressions are reserved for future portrait sets;
 # every line uses the NPC's base portrait for now.
 func _get_portrait(_line: DialogueLineData) -> Texture2D:
+	if _underwater_mode:
+		return _npc.underwater_sprite if _npc.underwater_sprite != null else placeholder_portrait
 	if _npc.portrait != null:
 		return _npc.portrait
 

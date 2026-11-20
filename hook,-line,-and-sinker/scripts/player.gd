@@ -3,6 +3,7 @@ extends CharacterBody2D
 
 const SPEED = 100.0
 const ACC = 2000.0
+const SWIM_SPEED: float = 78.0
 
 signal held_item_changed(item: ItemData)
 var held_item: ItemData = null
@@ -12,6 +13,9 @@ const PICKUP_SHOW_TIME := 1.0
 
 var current_interactable: Interactable = null
 var busy: bool = false;
+var swimming: bool = false
+var swim_bounds: Rect2 = Rect2(Vector2(16, 154), Vector2(888, 460))
+var _land_collision_mask: int = 1
 var last_direction : float;
 
 var _pickup_visual: Sprite2D
@@ -22,6 +26,7 @@ var _pickup_time_left := 0.0
 @onready var animator : AnimatedSprite2D = $AnimatedSprite2D
 
 func _ready() -> void:
+	_land_collision_mask = collision_mask
 	held_item_visual = Sprite2D.new()
 	held_item_visual.position = Vector2(0, -39)
 	held_item_visual.z_index = 5
@@ -65,6 +70,50 @@ func drop_item() -> void:
 
 
 
+func set_swimming(enabled: bool, bounds: Rect2 = Rect2()) -> void:
+	swimming = enabled
+	velocity = Vector2.ZERO
+	if enabled:
+		swim_bounds = bounds
+		collision_mask = _land_collision_mask | 2
+		$FishingController.process_mode = Node.PROCESS_MODE_DISABLED
+		$FishingRod.hide()
+		held_item_visual.hide()
+	else:
+		collision_mask = _land_collision_mask
+		$FishingController.process_mode = Node.PROCESS_MODE_INHERIT
+		# Surfacing restores land controls, not an active rod cast. The
+		# FishingRod listens for FishingController state changes and draws
+		# itself only when an actual fishing session starts.
+		$FishingRod.hide()
+		_refresh_held_item()
+		animator.position.y = -16.0
+		animator.rotation = 0.0
+
+
+func _swim_physics(delta: float) -> void:
+	var vertical: float = 0.0
+	if Input.is_key_pressed(KEY_S) or Input.is_key_pressed(KEY_DOWN):
+		vertical += 1.0
+	if Input.is_key_pressed(KEY_W) or Input.is_key_pressed(KEY_UP):
+		vertical -= 1.0
+	var direction := Vector2(Input.get_axis("Move Left", "Move Right"), vertical)
+	if direction.length_squared() > 1.0:
+		direction = direction.normalized()
+	velocity = velocity.move_toward(direction * SWIM_SPEED, ACC * delta)
+	move_and_slide()
+	global_position.x = clampf(global_position.x, swim_bounds.position.x + 8.0, swim_bounds.end.x - 8.0)
+	global_position.y = clampf(global_position.y, swim_bounds.position.y + 8.0, swim_bounds.end.y - 8.0)
+	if absf(direction.x) > 0.03:
+		last_direction = direction.x
+	var animation_name: String = "walk_l" if last_direction < 0 else "walk_r"
+	if direction.length_squared() < 0.01:
+		animation_name = "idle_l" if last_direction < 0 else "idle_r"
+	animator.play(animation_name)
+	animator.rotation = lerpf(animator.rotation, direction.x * 0.13, minf(delta * 6.0, 1.0))
+	animator.position.y = -16.0 + sin(Time.get_ticks_msec() * 0.0026) * 0.8
+
+
 func _physics_process(delta: float) -> void:
 	if _pickup_time_left > 0.0:
 		_pickup_time_left -= delta
@@ -72,8 +121,11 @@ func _physics_process(delta: float) -> void:
 			_pickup_visual.visible = false
 
 	if busy or GameManager.is_modal_ui_open():
-		velocity.x = 0;
+		velocity = Vector2.ZERO
 		move_and_slide()
+		return
+	if swimming:
+		_swim_physics(delta)
 		return
 
 	var direction := Input.get_axis("Move Left", "Move Right")
@@ -100,7 +152,7 @@ func _physics_process(delta: float) -> void:
 func _input(event: InputEvent) -> void:
 	if not event is InputEventMouseButton or not event.pressed:
 		return
-	if GameManager.is_modal_ui_open() or busy:
+	if GameManager.is_modal_ui_open() or busy or swimming:
 		return
 	if event.is_action_pressed("Interact"):
 		interact()
@@ -111,7 +163,7 @@ func _input(event: InputEvent) -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton:
 		return
-	if GameManager.is_modal_ui_open() or busy:
+	if GameManager.is_modal_ui_open() or busy or swimming:
 		return
 	if event.is_action_pressed("Interact"):
 		interact()

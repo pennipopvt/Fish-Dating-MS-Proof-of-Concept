@@ -1,11 +1,11 @@
 class_name ShopMenu
 extends CanvasLayer
 
-# FISH CO. terminal: five pages share one scene and one set of controls.
+# FISH CO. terminal: shop, inventory and calendar pages share one scene.
 # Tabs and borders are laid out in shop_menu.tscn and styled by terminal_theme.tres.
 # This script only fills in the grid, item details, and actions.
 
-enum Page { UPGRADES, GIFTS, STORAGE, COLLECTION, CHALLENGES }
+enum Page { QUOTA, SHOP, STORAGE, COLLECTION, CHALLENGES, SCHEDULE }
 
 const SLOT_SIZE := Vector2(168, 168) # 56 x 56 art pixels at 3x
 const MIN_SLOTS := 12                 # Four columns, three visible rows
@@ -17,7 +17,7 @@ const WARNING_TEXT := Color("984b24")
 # Art pixels are scaled x3. The visible part of each tab is 72 screen pixels.
 # A further 24 screen pixels sit under the terminal panel.
 const TAB_VISIBLE_WIDTH := 66.0
-const TAB_CLOSED_HEIGHT := 66.0
+const TAB_CLOSED_HEIGHT := 78.0
 const TAB_TEXT_PADDING := 12.0
 const TAB_TEXT_GAP := 12.0
 
@@ -32,16 +32,26 @@ const TABS_HIDDEN_X_OFFSET := 12.0
 @onready var _opening_frame: NinePatchRect = $TerminalRoot/OpeningFrame
 @onready var _nav_tabs: VBoxContainer = $TerminalRoot/NavTabs
 
-@onready var _upgrades_tab: Button = %UpgradesTab
-@onready var _gifts_tab: Button = %GiftsTab
+@onready var _quota_tab: Button = %QuotaTab
+@onready var _shop_tab: Button = %ShopTab
+@onready var _shop_categories: HBoxContainer = %ShopCategories
+@onready var _shop_upgrades: Button = %ShopUpgrades
+@onready var _shop_gifts: Button = %ShopGifts
 @onready var _storage_tab: Button = %StorageTab
 @onready var _collection_tab: Button = %CollectionTab
 @onready var _challenges_tab: Button = %ChallengesTab
+@onready var _schedule_tab: Button = %ScheduleTab
+@onready var _preview_frame: PanelContainer = $TerminalRoot/Panel/Margin/Layout/Body/Details/PreviewFrame
+@onready var _details_panel: VBoxContainer = $TerminalRoot/Panel/Margin/Layout/Body/Details
 
 @onready var _delivery_status: Label = %DeliveryStatus
 @onready var _page_title: Label = %PageTitle
 @onready var _page_hint: Label = %PageHint
 @onready var _grid: GridContainer = %ItemGrid
+@onready var _grid_scroll: ScrollContainer = $TerminalRoot/Panel/Margin/Layout/Body/Left/GridScroll
+@onready var _schedule_days: HBoxContainer = %ScheduleDays
+@onready var _quota_view: VBoxContainer = %QuotaView
+@onready var _challenge_view: VBoxContainer = %ChallengeView
 @onready var _preview: TextureRect = %PreviewIcon
 @onready var _item_name: Label = %ItemName
 @onready var _description: Label = %DescriptionLabel
@@ -52,16 +62,35 @@ const TABS_HIDDEN_X_OFFSET := 12.0
 @onready var _close_button: Button = %CloseButton
 
 var _nav_buttons: Array[Button] = []
-var _page: int = Page.UPGRADES
+var _page: int = Page.QUOTA
+var _selected_quota_fish: StringName = &""
+# First-minute onboarding: show exactly one terminal tab until the first dive.
+var _quota_only: bool = true
 var _entries: Array[Dictionary] = []
 var _entry_buttons: Array[Button] = []
 var _selected_index: int = 0
+var _shop_section: int = 0  # 0 upgrades, 1 gifts
 var _button_group := ButtonGroup.new()
 var _last_order_message := ""
+var _challenge_notification: PanelContainer
 var _tab_tween: Tween
 var _boot_tween: Tween
 var _tabs_pop_tween: Tween
 var _nav_rest_x: float = 0.0
+const SCHEDULE_DAYS: int = 4
+# Calendar-specific whitespace, using multiples of the game's 3x art-pixel grid.
+const SCHEDULE_COLUMN_GAP: int = 12
+const SCHEDULE_DAY_PADDING: int = 9
+const SCHEDULE_SECTION_GAP: int = 15
+const SCHEDULE_HEADER_GAP: int = 5
+const SCHEDULE_ACTION_HEIGHT: int = 42
+const SCHEDULE_TODAY_STRETCH: float = 1.45
+const SCHEDULE_ACTION_LINE_COLOR := Color(0.11, 0.35, 0.37, 0.24)
+const SCHEDULE_PERIOD_LINE_COLOR := Color(0.11, 0.35, 0.37, 0.48)
+const TERMINAL_FRAME: StyleBoxTexture = preload("res://resources/ui/terminal_border.tres")
+var _schedule_day: int = -1
+var _schedule_period: int = 0
+var _schedule_action: int = 0
 
 
 func _ready() -> void:
@@ -71,10 +100,12 @@ func _ready() -> void:
 	_terminal_panel.hide()
 	_nav_tabs.hide()
 	_opening_frame.hide()
-	_nav_buttons = [_upgrades_tab, _gifts_tab, _storage_tab, _collection_tab, _challenges_tab]
+	_nav_buttons = [_quota_tab, _shop_tab, _storage_tab, _collection_tab, _challenges_tab, _schedule_tab]
 	for i in range(_nav_buttons.size()):
 		_nav_buttons[i].pressed.connect(_select_page.bind(i))
 
+	_shop_upgrades.pressed.connect(_select_shop_section.bind(0))
+	_shop_gifts.pressed.connect(_select_shop_section.bind(1))
 	_order_button.pressed.connect(_on_order_pressed)
 	_close_button.pressed.connect(close)
 	ShopManager.shop_requested.connect(open)
@@ -82,11 +113,50 @@ func _ready() -> void:
 	ShopManager.upgrade_state_changed.connect(_on_upgrade_state_changed)
 	ChallengeManager.challenge_progressed.connect(_on_challenge_changed)
 	ChallengeManager.challenge_completed.connect(_on_challenge_changed)
+	ChallengeManager.challenge_claimed.connect(_on_challenge_changed)
 	ChallengeManager.progress_reset.connect(_on_challenge_reset)
 	FishingManager.storage_changed.connect(_on_inventory_changed)
 	FishingManager.fish_caught.connect(_on_inventory_changed)  # collection/dex, incl. NPC catches
+	DateManager.bookings_changed.connect(_on_schedule_changed)
+	QuotaManager.quota_changed.connect(_on_quota_changed)
+	GameManager.time_changed.connect(func(_day: int, _period: GameManager.Times) -> void: _on_schedule_changed())
+	GameManager.actions_changed.connect(func(_actions: int) -> void: _on_schedule_changed())
+	_setup_challenge_notification()
 	_refresh_page()
 	_update_nav_tabs(false)
+
+
+func _setup_challenge_notification() -> void:
+	_challenge_notification = PanelContainer.new()
+	_challenge_notification.name = "ChallengeNoticeBubble"
+	_challenge_notification.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_challenge_notification.custom_minimum_size = Vector2(30, 30)
+	# Replace, rather than overlap, the Challenges tab's regular picture.
+	# Keep the badge centered in the 48px icon area when it is active.
+	_challenge_notification.position = Vector2(21, 21)
+	_challenge_notification.add_theme_stylebox_override("panel", PixelUI.notification_bubble_style(PixelUI.SCALE))
+	var notice_label := Label.new()
+	notice_label.text = "!"
+	notice_label.add_theme_font_override("font", PixelUI.FONT_SMALL_BOLD)
+	notice_label.add_theme_font_size_override("font_size", 15)
+	notice_label.add_theme_color_override("font_color", PixelUI.CYAN)
+	notice_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	notice_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	notice_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_challenge_notification.add_child(notice_label)
+	_challenges_tab.add_child(_challenge_notification)
+	_update_challenge_notification()
+
+
+func _update_challenge_notification() -> void:
+	if not is_instance_valid(_challenge_notification):
+		return
+	var needs_claim: bool = ChallengeManager.get_claimable_count() > 0
+	_challenge_notification.visible = needs_claim
+	# Never show both the ! bubble and the ordinary Challenges image.
+	var normal_icon := _challenges_tab.get_node_or_null("Icon") as TextureRect
+	if normal_icon != null:
+		normal_icon.visible = not needs_claim
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -95,10 +165,23 @@ func _unhandled_input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 
 
+func set_quota_only(value: bool) -> void:
+	if _quota_only == value:
+		return
+	_quota_only = value
+	if not is_node_ready():
+		return
+	if _quota_only:
+		_page = Page.QUOTA
+	_refresh_page()
+	_update_nav_tabs(false)
+
+
 func open() -> void:
 	if visible:
 		return
-	_page = Page.UPGRADES
+	_page = Page.QUOTA
+	_shop_section = 0
 	_selected_index = 0
 	_last_order_message = ""
 	_delivery_status.text = "NO DELIVERIES"
@@ -174,7 +257,7 @@ func _on_frame_opened() -> void:
 
 func _on_tabs_opened() -> void:
 	if visible:
-		_upgrades_tab.grab_focus()
+		_quota_tab.grab_focus()
 
 
 func _cancel_open_animation() -> void:
@@ -184,10 +267,31 @@ func _cancel_open_animation() -> void:
 		_tabs_pop_tween.kill()
 
 
+func _has_recruited_npc() -> bool:
+	if ShopManager.gifts_unlocked:
+		return true
+	for state in NPCManager.npc_states.values():
+		if state.get("flags", {}).get(&"Recruited", false):
+			return true
+	return false
+
+
+func _select_shop_section(section: int) -> void:
+	if section == 1 and not _has_recruited_npc():
+		return
+	_shop_section = section
+	_selected_index = 0
+	_refresh_page()
+
+
 func _select_page(page: int) -> void:
+	if _quota_only and page != Page.QUOTA:
+		return
 	_page = page
 	_selected_index = 0
 	_last_order_message = ""
+	if page == Page.SCHEDULE:
+		_select_default_schedule_slot()
 	_refresh_page()
 	_update_nav_tabs(true)
 	if not _entry_buttons.is_empty():
@@ -206,6 +310,7 @@ func _update_nav_tabs(animate: bool) -> void:
 
 	for i in range(_nav_buttons.size()):
 		var tab: Button = _nav_buttons[i]
+		tab.visible = not _quota_only or i == Page.QUOTA
 		var caption: Label = tab.get_node("VerticalTitle") as Label
 		var text_width: float = _layout_vertical_caption(caption)
 		var padded_height: float = TAB_CLOSED_HEIGHT + TAB_TEXT_GAP + text_width + TAB_TEXT_PADDING
@@ -244,8 +349,33 @@ func _layout_vertical_caption(caption: Label) -> float:
 
 func _refresh_page() -> void:
 	_entries.clear()
+	if _page == Page.SCHEDULE:
+		_refresh_schedule_page()
+		return
+	if _page == Page.QUOTA:
+		_refresh_quota_page()
+		return
+	if _page == Page.CHALLENGES:
+		_refresh_challenges_page()
+		return
+	_challenge_view.hide()
+	_quota_view.hide()
+	_shop_categories.visible = _page == Page.SHOP
+	_shop_gifts.visible = _has_recruited_npc()
+	if _shop_section == 1 and not _shop_gifts.visible:
+		_shop_section = 0
+	_shop_upgrades.set_pressed_no_signal(_shop_section == 0)
+	_shop_gifts.set_pressed_no_signal(_shop_section == 1)
+	_grid.columns = 4
+	_grid.add_theme_constant_override("h_separation", 18)
+	_grid_scroll.show()
+	_schedule_days.hide()
+	_page_title.show()
+	_page_hint.show()
+	_details_panel.custom_minimum_size.x = 500
+	_preview_frame.show()
 	match _page:
-		Page.UPGRADES, Page.GIFTS:
+		Page.SHOP:
 			_collect_trades()
 		Page.STORAGE:
 			_collect_storage()
@@ -254,10 +384,10 @@ func _refresh_page() -> void:
 		Page.CHALLENGES:
 			_collect_challenges()
 
-	var names := ["UPGRADES", "GIFTS", "STORAGE", "COLLECTION", "CHALLENGES"]
+	var names := ["QUOTA", "SHOP", "STORAGE", "COLLECTION", "CHALLENGES"]
 	var explanations := [
-		"Permanent fishing improvements",
-		"Things to give your new friends",
+		"Mandatory fish deliveries every 3 days",
+		"Fishing improvements and gifts",
 		"Fish and items you currently own",
 		"Fish you have discovered",
 		"Objectives and unlocks"
@@ -293,13 +423,504 @@ func _refresh_page() -> void:
 		_status.text = _last_order_message
 
 
+# ---- Claimable challenge cards: no empty 4 x 3 inventory grid ------------
+
+func _refresh_challenges_page() -> void:
+	_grid_scroll.hide()
+	_schedule_days.hide()
+	_quota_view.hide()
+	_shop_categories.hide()
+	_challenge_view.show()
+	_page_title.show()
+	_page_hint.show()
+	_preview_frame.hide()
+	_details_panel.custom_minimum_size.x = 420
+	_page_title.text = "CHALLENGES"
+	_page_hint.text = "Complete objectives, then claim their rewards here."
+	_entries.clear()
+	_collect_challenges()
+	_selected_index = mini(_selected_index, maxi(_entries.size() - 1, 0))
+	_page_indicator.text = "CHALLENGES / %d TO CLAIM" % ChallengeManager.get_claimable_count()
+	for i in range(_nav_buttons.size()):
+		_nav_buttons[i].button_pressed = i == _page
+		_nav_buttons[i].self_modulate = Color.WHITE if i == _page else Color(0.88, 0.9, 0.9, 0.9)
+	for child in _challenge_view.get_children():
+		_challenge_view.remove_child(child)
+		child.queue_free()
+	_entry_buttons.clear()
+	for i in range(_entries.size()):
+		var challenge := _entries[i]["ref"] as ChallengeData
+		var card := PanelContainer.new()
+		card.custom_minimum_size.y = 165
+		card.add_theme_stylebox_override("panel", TERMINAL_FRAME)
+		_challenge_view.add_child(card)
+		var pad := MarginContainer.new()
+		for side in ["margin_left", "margin_right", "margin_top", "margin_bottom"]:
+			pad.add_theme_constant_override(side, 15)
+		card.add_child(pad)
+		var body := VBoxContainer.new()
+		body.add_theme_constant_override("separation", 12)
+		pad.add_child(body)
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 15)
+		body.add_child(row)
+		var icon := TextureRect.new()
+		icon.custom_minimum_size = Vector2(72, 72)
+		icon.texture = challenge.icon
+		icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		if not challenge.completed:
+			icon.modulate = Color(0.6, 0.68, 0.68)
+		row.add_child(icon)
+		var description := VBoxContainer.new()
+		description.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		description.add_theme_constant_override("separation", 6)
+		row.add_child(description)
+		description.add_child(PixelUI.label(challenge.display_name.to_upper(), &"TitleLabel"))
+		var progress_text := "READY TO CLAIM" if challenge.completed and not challenge.claimed else (
+			"CLAIMED" if challenge.claimed else "%d / %d" % [challenge.progress, challenge.target_amount]
+		)
+		description.add_child(PixelUI.label(progress_text, &"DimLabel"))
+		var actions := VBoxContainer.new()
+		actions.add_theme_constant_override("separation", 9)
+		row.add_child(actions)
+		var view := Button.new()
+		view.text = "DETAILS"
+		view.custom_minimum_size = Vector2(120, 45)
+		view.pressed.connect(_select_challenge.bind(i))
+		actions.add_child(view)
+		if challenge.completed and not challenge.claimed:
+			var claim := Button.new()
+			claim.text = "CLAIM"
+			claim.custom_minimum_size = Vector2(120, 45)
+			claim.pressed.connect(_claim_challenge.bind(challenge))
+			actions.add_child(claim)
+		var bar := ProgressBar.new()
+		bar.max_value = challenge.target_amount
+		bar.value = challenge.progress
+		bar.show_percentage = false
+		bar.custom_minimum_size.y = 15
+		bar.add_theme_stylebox_override("background", PixelUI.box(PixelUI.INSET, PixelUI.ROW_EDGE, 1))
+		bar.add_theme_stylebox_override("fill", PixelUI.box(PixelUI.CYAN_DARK, PixelUI.CYAN, 1))
+		body.add_child(bar)
+	_show_details()
+	if not _last_order_message.is_empty():
+		_status.text = _last_order_message
+
+
+func _select_challenge(index: int) -> void:
+	_selected_index = index
+	_show_details()
+
+
+func _claim_challenge(challenge: ChallengeData) -> void:
+	if ChallengeManager.claim(challenge):
+		_last_order_message = "CLAIMED: %s" % challenge.display_name
+		# challenge_claimed already queues the page refresh; avoid rebuilding twice.
+
+
+# ---- Mandatory 3-day fish quota ---------------------------------------
+
+func _refresh_quota_page() -> void:
+	_grid_scroll.hide()
+	_schedule_days.hide()
+	_shop_categories.hide()
+	_challenge_view.hide()
+	_quota_view.show()
+	_entry_buttons.clear()
+	_preview_frame.show()
+	_page_title.show()
+	_page_hint.show()
+	_details_panel.custom_minimum_size.x = 420
+	_page_title.text = "CONTRACT %d QUOTA" % QuotaManager.week
+	_page_hint.text = "DUE DAY %d / NIGHT" % QuotaManager.deadline_day
+	_page_indicator.text = "FISH CO. / CONTRACT %d" % QuotaManager.week
+	for i in range(_nav_buttons.size()):
+		_nav_buttons[i].button_pressed = i == _page
+		_nav_buttons[i].self_modulate = Color.WHITE if i == _page else Color(0.88, 0.9, 0.9, 0.9)
+
+	for child in _quota_view.get_children():
+		_quota_view.remove_child(child)
+		child.queue_free()
+	for child in _costs.get_children():
+		_costs.remove_child(child)
+		child.queue_free()
+	_order_button.hide()
+
+	# Reuse FishData/ItemData art and the shared details preview, not a new
+	# quota image panel. Clicking a species in the left column previews it.
+	if not QuotaManager.requirements.is_empty():
+		var selection_exists: bool = false
+		for requirement in QuotaManager.requirements:
+			if requirement["item_id"] == _selected_quota_fish:
+				selection_exists = true
+				break
+		if not selection_exists:
+			_selected_quota_fish = QuotaManager.requirements[0]["item_id"]
+	_update_quota_fish_preview()
+
+	var is_done: bool = QuotaManager.is_complete()
+	if is_done:
+		_status.text = "QUOTA COMPLETE"
+		var complete := PixelUI.label("QUOTA COMPLETE", &"TitleLabel")
+		complete.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		_quota_view.add_child(complete)
+	else:
+		_status.text = ""
+
+	for requirement in QuotaManager.requirements:
+		var item_id: StringName = requirement["item_id"]
+		var amount: int = int(requirement["target"])
+		var current: int = QuotaManager.get_delivered(item_id)
+		var available: int = FishingManager.count_in_storage(item_id)
+		var remaining: int = QuotaManager.get_remaining(item_id)
+
+		var frame := PanelContainer.new()
+		frame.add_theme_stylebox_override("panel", TERMINAL_FRAME)
+		_quota_view.add_child(frame)
+		var padding := MarginContainer.new()
+		for side in ["margin_left", "margin_right", "margin_top", "margin_bottom"]:
+			padding.add_theme_constant_override(side, 12)
+		frame.add_child(padding)
+		var body := VBoxContainer.new()
+		body.add_theme_constant_override("separation", 9)
+		padding.add_child(body)
+		var header := HBoxContainer.new()
+		header.add_theme_constant_override("separation", 12)
+		body.add_child(header)
+
+		var fish_texture: Texture2D = _quota_fish_sprite(item_id)
+		if fish_texture != null:
+			var icon := TextureRect.new()
+			icon.texture = fish_texture
+			icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+			icon.custom_minimum_size = Vector2(60, 60)
+			icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+			icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+			icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			header.add_child(icon)
+
+		var select_fish := Button.new()
+		select_fish.text = str(requirement["label"]).to_upper()
+		select_fish.flat = true
+		select_fish.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		select_fish.alignment = HORIZONTAL_ALIGNMENT_LEFT
+		select_fish.tooltip_text = "View fish"
+		select_fish.add_theme_color_override("font_color", DARK_TEXT)
+		select_fish.pressed.connect(_select_quota_fish.bind(item_id))
+		header.add_child(select_fish)
+
+		var progress := PixelUI.label("%d / %d" % [current, amount], &"TitleLabel")
+		progress.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		header.add_child(progress)
+
+		var bar := ProgressBar.new()
+		bar.max_value = amount
+		bar.value = current
+		bar.show_percentage = false
+		bar.custom_minimum_size.y = 15
+		bar.add_theme_stylebox_override("background", PixelUI.box(PixelUI.INSET, PixelUI.ROW_EDGE, 1))
+		bar.add_theme_stylebox_override("fill", PixelUI.box(PixelUI.CYAN_DARK, PixelUI.CYAN, 1))
+		body.add_child(bar)
+
+		var submit_row := HBoxContainer.new()
+		body.add_child(submit_row)
+		var available_label := PixelUI.label("%d IN STORAGE" % available, &"DimLabel")
+		available_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		submit_row.add_child(available_label)
+		var take: int = mini(available, remaining)
+		var send := Button.new()
+		send.text = "DELIVER %d" % take if take > 0 else ("DONE" if remaining == 0 else "NO FISH")
+		send.disabled = take <= 0 or is_done
+		send.custom_minimum_size.x = 168
+		send.pressed.connect(_submit_quota_fish.bind(item_id))
+		submit_row.add_child(send)
+
+
+func _quota_fish_sprite(item_id: StringName) -> Texture2D:
+	# The same fish resource used by the fishing, collection and storage
+	# systems supplies the icon. No duplicate species/icon mapping.
+	for fish in FishingManager.possible_catches:
+		if fish != null and fish.fish_id == item_id and fish.item_data != null:
+			return fish.item_data.sprite
+	return null
+
+
+func _select_quota_fish(item_id: StringName) -> void:
+	_selected_quota_fish = item_id
+	_update_quota_fish_preview()
+
+
+func _update_quota_fish_preview() -> void:
+	_preview.texture = _quota_fish_sprite(_selected_quota_fish)
+	_item_name.text = _human_name(_selected_quota_fish).to_upper()
+	_description.text = "LEGENDARY FISH KING\n$400,000 GRAND PRIZE"
+
+
+func _submit_quota_fish(item_id: StringName) -> void:
+	var sent: int = QuotaManager.submit(item_id)
+	if sent == 0:
+		_status.text = "NO ELIGIBLE FISH TO SUBMIT"
+	else:
+		_last_order_message = "DELIVERED %d FISH TO FISH CO." % sent
+		# Stock removal also signals the shared inventory; rebuild after it.
+		_refresh_quota_page.call_deferred()
+
+
+# ---- Schedule / calendar (view-only; book dates by talking to NPCs) -----
+
+func _on_quota_changed() -> void:
+	if not visible:
+		return
+	if _page == Page.QUOTA:
+		_refresh_quota_page.call_deferred()
+	elif _page == Page.SCHEDULE:
+		_refresh_schedule_page.call_deferred()
+
+
+func _on_schedule_changed() -> void:
+	if visible and _page == Page.SCHEDULE:
+		if _schedule_day < GameManager.get_day() or _schedule_day >= GameManager.get_day() + SCHEDULE_DAYS:
+			_select_default_schedule_slot()
+		_refresh_schedule_page()
+
+
+func _select_default_schedule_slot() -> void:
+	_schedule_day = GameManager.get_day()
+	_schedule_period = GameManager.get_period()
+	_schedule_action = mini(
+		GameManager.ACTIONS_PER_PERIOD - GameManager.get_actions_left(),
+		GameManager.ACTIONS_PER_PERIOD - 1
+	)
+
+
+func _get_schedule_booking(day: int, period: int) -> DateData:
+	for date_id in DateManager.bookings:
+		var slot: Dictionary = DateManager.bookings[date_id]
+		if int(slot["day"]) == day and int(slot["period"]) == period:
+			return DateManager.get_date(date_id)
+	return null
+
+
+func _select_schedule_slot(day: int, period: int, action: int) -> void:
+	_schedule_day = day
+	_schedule_period = period
+	_schedule_action = action
+	_refresh_schedule_page()
+
+
+func _schedule_action_has_passed(day: int, period: int, action: int) -> bool:
+	if day < GameManager.get_day():
+		return true
+	if day > GameManager.get_day():
+		return false
+	if period < GameManager.get_period():
+		return true
+	if period > GameManager.get_period():
+		return false
+	return action < GameManager.ACTIONS_PER_PERIOD - GameManager.get_actions_left()
+
+
+func _schedule_action_is_now(day: int, period: int, action: int) -> bool:
+	return day == GameManager.get_day() \
+		and period == GameManager.get_period() \
+		and action == GameManager.ACTIONS_PER_PERIOD - GameManager.get_actions_left() \
+		and GameManager.can_act()
+
+
+func _schedule_slot_is_quota_deadline(day: int, period: int, action: int) -> bool:
+	return day == QuotaManager.deadline_day \
+		and period == GameManager.Times.NIGHT \
+		and action == GameManager.ACTIONS_PER_PERIOD - 1
+
+
+func _refresh_schedule_page() -> void:
+	_quota_view.hide()
+	_challenge_view.hide()
+	_shop_categories.hide()
+	# Four days in a fixed horizontal layout, NOT inside the shop scroll view.
+	# Today has extra width; strong nine-slice outlines frame each day, while
+	# subtle rules separate actions and periods within the day.
+	_grid_scroll.hide()
+	_schedule_days.show()
+	_schedule_days.add_theme_constant_override("separation", SCHEDULE_COLUMN_GAP)
+	_page_title.hide()
+	_page_hint.hide()
+	_details_panel.custom_minimum_size.x = 420
+	_preview_frame.hide()
+	_page_indicator.text = "SCHEDULE  /  BOOK DATES BY TALKING TO NPCS"
+
+	for i in range(_nav_buttons.size()):
+		_nav_buttons[i].button_pressed = i == _page
+		_nav_buttons[i].self_modulate = Color.WHITE if i == _page else Color(0.88, 0.9, 0.9, 0.9)
+
+	for child in _schedule_days.get_children():
+		_schedule_days.remove_child(child)
+		child.queue_free()
+	_entry_buttons.clear()
+
+	var plain_row := StyleBoxEmpty.new()
+	var row_hover := StyleBoxFlat.new()
+	row_hover.bg_color = Color(0.11, 0.35, 0.37, 0.12)
+	var row_pressed := StyleBoxFlat.new()
+	row_pressed.bg_color = Color(0.11, 0.35, 0.37, 0.20)
+
+	for day_offset in SCHEDULE_DAYS:
+		var day: int = int(GameManager.get_day()) + int(day_offset)
+		var day_panel := PanelContainer.new()
+		day_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		day_panel.size_flags_vertical = Control.SIZE_EXPAND_FILL
+		day_panel.size_flags_stretch_ratio = SCHEDULE_TODAY_STRETCH if day_offset == 0 else 1.0
+		# Stronger outer border, using the same authored terminal 9-slice.
+		day_panel.add_theme_stylebox_override("panel", TERMINAL_FRAME)
+		_schedule_days.add_child(day_panel)
+
+		var margin := MarginContainer.new()
+		margin.add_theme_constant_override("margin_left", SCHEDULE_DAY_PADDING)
+		margin.add_theme_constant_override("margin_right", SCHEDULE_DAY_PADDING)
+		margin.add_theme_constant_override("margin_top", SCHEDULE_DAY_PADDING)
+		margin.add_theme_constant_override("margin_bottom", SCHEDULE_DAY_PADDING)
+		day_panel.add_child(margin)
+
+		var column := VBoxContainer.new()
+		column.add_theme_constant_override("separation", SCHEDULE_SECTION_GAP)
+		margin.add_child(column)
+
+		var day_title := Label.new()
+		day_title.theme_type_variation = &"TitleLabel"
+		day_title.text = "DAY %d%s" % [day, "  /  TODAY" if day_offset == 0 else ""]
+		day_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		if day_offset == 0:
+			day_title.add_theme_color_override("font_color", Color("0e666b"))
+		column.add_child(day_title)
+
+		for period in GameManager.Times.size():
+			var section := VBoxContainer.new()
+			section.add_theme_constant_override("separation", SCHEDULE_HEADER_GAP)
+			column.add_child(section)
+
+			if period > 0:
+				var period_rule := ColorRect.new()
+				period_rule.custom_minimum_size.y = 2
+				period_rule.mouse_filter = Control.MOUSE_FILTER_IGNORE
+				period_rule.color = SCHEDULE_PERIOD_LINE_COLOR
+				section.add_child(period_rule)
+
+			var heading := Label.new()
+			heading.theme_type_variation = &"TitleLabel"
+			heading.text = GameManager.get_period_name(period as GameManager.Times).to_upper()
+			heading.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+			section.add_child(heading)
+
+			var actions := VBoxContainer.new()
+			actions.add_theme_constant_override("separation", 0)
+			section.add_child(actions)
+			var booking := _get_schedule_booking(day, period)
+
+			for action in GameManager.ACTIONS_PER_PERIOD:
+				if action > 0:
+					var action_rule := ColorRect.new()
+					action_rule.custom_minimum_size.y = 1
+					action_rule.mouse_filter = Control.MOUSE_FILTER_IGNORE
+					action_rule.color = SCHEDULE_ACTION_LINE_COLOR
+					actions.add_child(action_rule)
+
+				var action_tile := Button.new()
+				action_tile.custom_minimum_size.y = SCHEDULE_ACTION_HEIGHT
+				action_tile.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+				action_tile.toggle_mode = true
+				action_tile.clip_text = true
+				action_tile.alignment = HORIZONTAL_ALIGNMENT_CENTER
+				action_tile.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+				# No box border on individual actions; their separation is
+				# the thin line above each subsequent row.
+				action_tile.add_theme_stylebox_override("normal", plain_row)
+				action_tile.add_theme_stylebox_override("disabled", plain_row)
+				action_tile.add_theme_stylebox_override("focus", plain_row)
+				action_tile.add_theme_stylebox_override("hover", row_hover)
+				action_tile.add_theme_stylebox_override("pressed", row_pressed)
+				action_tile.add_theme_stylebox_override("hover_pressed", row_pressed)
+
+				var is_now := _schedule_action_is_now(day, period, action)
+				var is_spent := _schedule_action_has_passed(day, period, action)
+				var quota_due := _schedule_slot_is_quota_deadline(day, period, action)
+				var marker := ">" if is_now else ("x" if is_spent else " ")
+				var event_text := " --"
+				if booking != null:
+					if action == 0:
+						var short_name := booking.npc.display_name.to_upper().substr(0, 7) if booking.npc != null else "DATE"
+						event_text = " ♥ " + short_name
+					else:
+						event_text = " · DATE"
+					action_tile.tooltip_text = "%s - Day %d %s (all 3 actions)" % [
+						booking.display_name, day, GameManager.get_period_name(period as GameManager.Times)
+					]
+				if quota_due:
+					event_text = " ✓ QUOTA" if QuotaManager.is_complete() else " ! QUOTA"
+					action_tile.tooltip_text = (
+						"Quota fulfilled" if QuotaManager.is_complete()
+						else "FISH CO. quota deadline — end of Day %d" % day
+					)
+				action_tile.text = "%s %d%s" % [marker, action + 1, event_text]
+				if quota_due:
+					action_tile.self_modulate = (
+						Color(0.78, 1.0, 0.86, 1.0) if QuotaManager.is_complete()
+						else Color(1.0, 0.78, 0.62, 1.0)
+					)
+				elif booking != null:
+					action_tile.self_modulate = Color(0.96, 0.78, 0.83, 1.0)
+				elif is_spent:
+					action_tile.self_modulate = Color(0.65, 0.71, 0.71, 0.82)
+				elif is_now:
+					action_tile.self_modulate = Color(0.72, 0.98, 0.93, 1.0)
+				action_tile.set_pressed_no_signal(
+					day == _schedule_day and period == _schedule_period and action == _schedule_action
+				)
+				action_tile.pressed.connect(_select_schedule_slot.bind(day, period, action))
+				actions.add_child(action_tile)
+
+	_refresh_schedule_details()
+
+func _refresh_schedule_details() -> void:
+	for child in _costs.get_children():
+		_costs.remove_child(child)
+		child.queue_free()
+	_preview.texture = null
+	_order_button.hide()
+	_status.text = ""
+	var day := _schedule_day
+	var period := _schedule_period
+	if day < GameManager.get_day() or day >= GameManager.get_day() + SCHEDULE_DAYS:
+		_select_default_schedule_slot()
+		day = _schedule_day
+		period = _schedule_period
+	_item_name.text = "DAY %d - %s" % [day, GameManager.get_period_name(period as GameManager.Times).to_upper()]
+	var date := _get_schedule_booking(day, period)
+	var quota_deadline := _schedule_slot_is_quota_deadline(day, period, _schedule_action)
+	var quota_note := "FISH CO. quota fulfilled." if QuotaManager.is_complete() else "FISH CO. quota due tonight."
+	if date == null:
+		_description.text = quota_note if quota_deadline else "Nothing scheduled."
+		return
+	var npc_name := date.npc.display_name if date.npc != null else "your date"
+	# Date display names currently include the partner (e.g. "Beach date with
+	# Silas"), so strip the suffix to avoid saying their name twice.
+	var date_type := date.display_name.trim_suffix(" with " + npc_name).to_lower()
+	_description.text = "Scheduled a %s with %s." % [date_type, npc_name]
+	if quota_deadline:
+		_description.text += "\n" + quota_note
+
+
 func _collect_trades() -> void:
 	for trade in ShopManager.trades:
 		if trade == null:
 			continue
-		var is_upgrade := trade.reward_method != &""
-		var is_gift := trade.reward_item != null and not is_upgrade
-		if (_page == Page.UPGRADES and is_upgrade) or (_page == Page.GIFTS and is_gift):
+		# Safety gate: the diving loop has no bait or extra fishing casts.
+		if trade.reward_method in [&"shop_reward_unlock_hard_bait", &"shop_reward_unlock_yellow_bait", &"shop_reward_upgrade_casts", &"shop_reward_add_casts"]:
+			continue
+		var is_upgrade: bool = trade.reward_method != &""
+		var is_gift: bool = trade.reward_item != null and not is_upgrade
+		if _page == Page.SHOP and ((_shop_section == 0 and is_upgrade) or (_shop_section == 1 and is_gift and _has_recruited_npc())):
 			var icon: Texture2D = trade.icon
 			if icon == null and trade.reward_item != null:
 				icon = trade.reward_item.sprite
@@ -376,7 +997,7 @@ func _collect_challenges() -> void:
 	for challenge in ChallengeManager.challenges:
 		if challenge == null:
 			continue
-		var hidden := challenge.hidden and not challenge.completed
+		var hidden: bool = challenge.hidden and not challenge.completed
 		var art: Texture2D = challenge.icon
 		if not challenge.completed and challenge.locked_icon != null:
 			art = challenge.locked_icon
@@ -387,7 +1008,8 @@ func _collect_challenges() -> void:
 			"ref": challenge,
 			"name": "???" if hidden else challenge.display_name,
 			"icon": art,
-			"locked": hidden
+			"locked": hidden,
+			"claimable": challenge.completed and not challenge.claimed
 		})
 
 
@@ -410,6 +1032,13 @@ func _make_tile(entry: Dictionary, index: int) -> Button:
 	if bool(entry.get("locked", false)):
 		tile.self_modulate = LOCKED_TINT
 
+	if bool(entry.get("claimable", false)):
+		var claim_badge := Label.new()
+		claim_badge.text = "!"
+		claim_badge.theme_type_variation = &"TitleLabel"
+		claim_badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		claim_badge.position = Vector2(SLOT_SIZE.x - 33, 9)
+		tile.add_child(claim_badge)
 	var amount: int = int(entry.get("quantity", 0))
 	if amount > 0:
 		var badge := Label.new()
@@ -468,7 +1097,7 @@ func _show_details() -> void:
 
 
 func _show_trade_details(trade: TradeData) -> void:
-	_description.text = trade.description if not trade.description.is_empty() else ("Fishing equipment upgrade." if _page == Page.UPGRADES else "A present for someone in town.")
+	_description.text = trade.description if not trade.description.is_empty() else ("Fishing equipment upgrade." if trade.reward_method != &"" else "A present for someone in town.")
 	_add_detail_line("REQUIRES:", DIM_TEXT)
 	# Sprite + actual owned/required counts, one row per required fish.
 	for requirement in trade.requirements:
@@ -501,11 +1130,13 @@ func _show_trade_details(trade: TradeData) -> void:
 		_status.text = "DELIVERY ORDERED"
 		_order_button.text = "ORDERED"
 	elif locking != null:
-		_status.text = "LOCKED: %s" % ("Complete a hidden challenge" if locking.hidden else locking.display_name)
+		_status.text = ("CLAIM CHALLENGE: " if locking.completed else "LOCKED: ") + (
+			"Hidden challenge" if locking.hidden and not locking.completed else locking.display_name
+		)
 		_order_button.self_modulate = UNAFFORD_TINT
 	elif _order_button.disabled:
 		_status.text = "Not enough items to trade."
-		if ShopManager.upgrades_today >= ShopManager.max_daily_upgrades:
+		if trade.one_time_purchase and ShopManager.upgrades_today >= ShopManager.max_daily_upgrades:
 			_status.text = "Maximum daily upgrades reached."
 		_order_button.self_modulate = UNAFFORD_TINT
 
@@ -562,7 +1193,7 @@ func _show_fish_details(fish: FishData) -> void:
 
 
 func _show_challenge_details(challenge: ChallengeData) -> void:
-	var hidden := challenge.hidden and not challenge.completed
+	var hidden: bool = challenge.hidden and not challenge.completed
 	if hidden:
 		_description.text = "Keep fishing to reveal this challenge."
 		_status.text = "HIDDEN CHALLENGE"
@@ -571,7 +1202,15 @@ func _show_challenge_details(challenge: ChallengeData) -> void:
 	_add_detail_line("PROGRESS: %d / %d" % [challenge.progress, challenge.target_amount], DARK_TEXT)
 	if challenge.reward_text != "":
 		_add_detail_line("UNLOCK: " + challenge.reward_text, DIM_TEXT)
-	_status.text = "COMPLETED" if challenge.completed else "IN PROGRESS"
+	if challenge.completed and not challenge.claimed:
+		_status.text = "READY TO CLAIM"
+		_order_button.show()
+		_order_button.disabled = false
+		_order_button.text = "CLAIM REWARD"
+	elif challenge.claimed:
+		_status.text = "REWARD CLAIMED"
+	else:
+		_status.text = "IN PROGRESS"
 
 
 func _add_detail_line(value: String, color: Color) -> void:
@@ -587,7 +1226,12 @@ func _human_name(id: StringName) -> String:
 
 
 func _on_order_pressed() -> void:
-	if _entries.is_empty() or _entries[_selected_index].get("kind") != "trade":
+	if _entries.is_empty():
+		return
+	if _entries[_selected_index].get("kind") == "challenge":
+		_claim_challenge(_entries[_selected_index].get("ref") as ChallengeData)
+		return
+	if _entries[_selected_index].get("kind") != "trade":
 		return
 	var trade: TradeData = _entries[_selected_index].get("ref") as TradeData
 	if trade == null or not ShopManager.make_trade(trade):
@@ -596,29 +1240,35 @@ func _on_order_pressed() -> void:
 
 
 func _on_upgrade_state_changed(_trade: TradeData) -> void:
-	if visible and _page == Page.UPGRADES:
+	if visible and _page == Page.SHOP:
 		_refresh_page()
 
 
 func _on_trade_completed(trade: TradeData) -> void:
 	if not visible:
 		return
-	var delivered_later := ShopManager.has_delivery_point()
+	var delivered_later: bool = bool(ShopManager.has_delivery_point())
 	_delivery_status.text = "DELIVERY ORDERED" if delivered_later else "ORDER COMPLETE"
 	_last_order_message = "ORDER PLACED: %s" % trade.display_name
 	_refresh_page()
 
 
 func _on_challenge_changed(_challenge: ChallengeData) -> void:
-	if visible and _page == Page.CHALLENGES:
-		_refresh_page()
+	_update_challenge_notification()
+	if visible and (_page == Page.CHALLENGES or _page == Page.SHOP):
+		_refresh_page.call_deferred()
 
 
 func _on_challenge_reset() -> void:
-	if visible and _page == Page.CHALLENGES:
-		_refresh_page()
+	_update_challenge_notification()
+	if visible and (_page == Page.CHALLENGES or _page == Page.SHOP):
+		_refresh_page.call_deferred()
 
 
 func _on_inventory_changed(_fish: Variant = null) -> void:
-	if visible and (_page == Page.STORAGE or _page == Page.COLLECTION):
+	if not visible:
+		return
+	if _page == Page.QUOTA:
+		_refresh_quota_page.call_deferred()
+	elif _page == Page.SHOP or _page == Page.STORAGE or _page == Page.COLLECTION:
 		_refresh_page()

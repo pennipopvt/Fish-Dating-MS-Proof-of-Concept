@@ -1,0 +1,37 @@
+{
+  "entry": "offer",
+  "nodes": {
+    "offer": {
+      "lines": [
+        "What's that?"
+      ],
+      "choices": [
+        {
+          "text": "It's for you.",
+          "next": "accept",
+          "effects": {
+            "give_held_item": true,
+            "set_flags": [
+              "barracuda_gift_attempted"
+            ]
+          }
+        },
+        {
+          "text": "Never mind.",
+          "next": "decline"
+        }
+      ]
+    },
+    "accept": {
+      "lines": [
+        "...Huh.",
+        "Didn't ask for it, but I guess I'll take it."
+      ]
+    },
+    "decline": {
+      "lines": [
+        "Whatever."
+      ]
+    }
+  }
+}

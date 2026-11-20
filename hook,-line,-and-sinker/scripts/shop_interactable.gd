@@ -21,15 +21,76 @@ const TERMINAL_GROUP := &"shop_terminal"
 @export var notice_offset := Vector2(0, -29)
 
 var _player_in_range := false
+var _claim_notice: PanelContainer
+# First-time quota reminder shares the existing challenge-notice bubble.
+var _intro_quota_notice: bool = false
 var _pending: Array[ItemPickup] = []  # bought while the menu is open
 
 
 func _ready() -> void:
 	super()
 	add_to_group(TERMINAL_GROUP)
+	_build_claim_notice()
+	ChallengeManager.challenge_completed.connect(_on_challenge_notice_changed)
+	ChallengeManager.challenge_claimed.connect(_on_challenge_notice_changed)
+	ChallengeManager.progress_reset.connect(_update_claim_notice)
 	ShopManager.shop_opened.connect(_update_prompt)
+	ShopManager.shop_opened.connect(_on_shop_opened)
 	ShopManager.shop_closed.connect(_update_prompt)
 	ShopManager.shop_closed.connect(_launch_drone)
+	# The autoload survives a world reload while the physical drone/packages
+	# do not. Restore outstanding upgrade deliveries without charging again.
+	if ShopManager.is_shop_open:
+		ShopManager.set_shop_open(false)
+	var recovered: Array[ItemPickup] = ShopManager.get_pending_upgrade_pickups()
+	if not recovered.is_empty():
+		deliver(recovered)
+
+
+# A small persistent exclamation badge, shown until all rewards are claimed.
+# The slim pixel frame matches Spyglass without the terminal's heavy border.
+func _build_claim_notice() -> void:
+	_claim_notice = PanelContainer.new()
+	_claim_notice.name = "UnclaimedAchievementNotice"
+	_claim_notice.custom_minimum_size = Vector2(16, 16)
+	_claim_notice.position = notice_offset + Vector2(-8, -20)
+	_claim_notice.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_claim_notice.z_as_relative = false
+	_claim_notice.z_index = 20
+	_claim_notice.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	_claim_notice.add_theme_stylebox_override("panel", PixelUI.notification_bubble_style())
+	var mark := Label.new()
+	mark.text = "!"
+	mark.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	mark.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	mark.add_theme_font_override("font", PixelUI.FONT_SMALL_BOLD)
+	mark.add_theme_font_size_override("font_size", 8)
+	mark.add_theme_color_override("font_color", PixelUI.CYAN)
+	mark.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_claim_notice.add_child(mark)
+	add_child(_claim_notice)
+	_update_claim_notice()
+
+
+func _on_challenge_notice_changed(_challenge: ChallengeData) -> void:
+	_update_claim_notice()
+
+
+func set_intro_quota_notice(enabled: bool) -> void:
+	_intro_quota_notice = enabled
+	_update_claim_notice()
+
+
+func _on_shop_opened() -> void:
+	# The first visit acknowledges the onboarding prompt, even if the
+	# terminal later continues to show ordinary challenge notices.
+	if _intro_quota_notice:
+		set_intro_quota_notice(false)
+
+
+func _update_claim_notice() -> void:
+	if is_instance_valid(_claim_notice):
+		_claim_notice.visible = _intro_quota_notice or ChallengeManager.get_claimable_count() > 0
 
 
 func _on_body_entered(body: Node2D) -> void:

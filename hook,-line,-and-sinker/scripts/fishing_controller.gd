@@ -20,6 +20,8 @@ var current_state: Fish_State = Fish_State.NOT:
 var hooked_fish: FishData = null
 
 var casts: int = 0
+# True between starting a cast and reporting its outcome or abandonment.
+var _cast_unresolved: bool = false
 var progress: float = 0
 var bite_time: float = 0
 
@@ -163,12 +165,18 @@ func begin_fishing() -> void:
 		await _lock_fishing_camera()
 		cast_rod()
 	
+# One fishing session consumes exactly one action. Additional casts happen
+# automatically only when the casts-per-action upgrade leaves casts available.
+func has_casts_left() -> bool:
+	return casts < maxi(FishingManager.casts_per_action, 1) and GameManager.can_act()
+
+
 func cast_rod() -> void:
-	# Out of actions for the night: stop recasting (GameManager day clock).
-	if(casts >= FishingManager.max_casts_per_session or not GameManager.can_act()):
+	if not has_casts_left():
 		exit_fishing()
 		return
 	casts += 1
+	_hide_identity_bubble()
 	current_state = Fish_State.WAITING
 	
 	progress = starting_progress
@@ -183,6 +191,7 @@ func cast_rod() -> void:
 		push_warning("No catchable fish in FishingManager.possible_catches")
 		exit_fishing()
 		return
+	_cast_unresolved = true
 	fishing_line.send(starting_progress)
 	print("Cast #", casts, " will be a ", hooked_fish.fish_id)
 
@@ -230,6 +239,32 @@ func _process(delta: float) -> void:
 		delay_time -= delta
 		delay_time = clamp(delay_time,0,1)
 
+
+# The Spyglass shows a compact 9-slice fish icon above the bobber in-world,
+# rather than pinning a status box to the viewport's top-left corner.
+func _show_identity_bubble(caught: FishData) -> void:
+	fishing_line.show_fish_identity(caught)
+
+
+func _hide_identity_bubble() -> void:
+	fishing_line.hide_fish_identity()
+
+
+# Knife Bobber: an opening reel opportunity, not a perfect parry. Never send
+# parry_resolved here, so streak challenges cannot count the free stun.
+func _start_opening_stun(duration: float) -> void:
+	attack_phase = AttackPhase.STUN
+	phase_time = maxf(duration, 0.05)
+	fish_esc_rate = 0.0
+	counter_locked = true
+	scroll_streak = 0
+	last_scroll_ms = -100000
+	recovery_timer = 0.0
+	fishing_line.set_stunned(true)
+	fishing_line.set_telegraph(4, 0.0)
+	_set_reel_open(true, true)
+
+
 func begin_reeling() -> void:
 	play_fishing_sound(hook_sfx)
 	current_state = Fish_State.FISHING
@@ -241,7 +276,18 @@ func begin_reeling() -> void:
 	#once we actually get it, we will let the fishing manager know what fish we have
 	FishingManager.hook_fish(hooked_fish)
 	fishing_line.update_line_dist(progress)
-	# Let the player see a short warning BEFORE the first windup.
+	var bobber: BobberData = BobberManager.get_equipped_bobber()
+	if bobber != null and bobber.identifies_fish:
+		_show_identity_bubble(hooked_fish)
+	if bobber != null and bobber.opening_stun_fraction > 0.0:
+		# Select the attack first. The free stun uses THIS fish's normal
+		# perfect-parry stun duration, not a fixed one-second timer.
+		active_attack = select_attack()
+		if active_attack != null:
+			_start_opening_stun(active_attack.stun_duration * bobber.opening_stun_fraction)
+			print("Bobber ambush: ", hooked_fish.fish_id, " (", phase_time, " seconds)")
+			return
+	# Without the Knife, bites still start with the original warning.
 	start_pre_windup()
 	print("Found ", hooked_fish.fish_id)
 	print("Fish behavior available: ", hooked_fish.states.size(), " states.")
@@ -252,6 +298,7 @@ func lose_fish() -> void:
 	play_fishing_sound(lose_sfx)
 	#inform the fishing manager
 	print("Lost ", hooked_fish.fish_id)
+	_cast_unresolved = false
 	FishingManager.lose_fish(hooked_fish)
 	finish_cast()
 	
@@ -325,6 +372,7 @@ func _finish_catch_animation() -> void:
 	if hooked_fish.npc_data == null:
 		catch_fish()
 	else:
+		_cast_unresolved = false
 		FishingManager.catch_fish(hooked_fish, false)
 		create_npc(hooked_fish.npc_data)
 
@@ -334,20 +382,31 @@ func catch_fish() -> void:
 	
 	print("Caught ", hooked_fish.fish_id)
 	
+	_cast_unresolved = false
 	FishingManager.catch_fish(hooked_fish)
 	finish_cast()
 	
 func finish_cast() -> void:
+	_cast_unresolved = false
 	reset_values()
-	
-	if(casts >= FishingManager.max_casts_per_session):
-		exit_fishing()
-	else:
+
+	# At the base value (one cast per action), this exits immediately. An
+	# upgrade to two or more casts automatically chains only that many casts.
+	if has_casts_left():
 		cast_rod()
+	else:
+		exit_fishing()
 	
 func exit_fishing() -> void:
-	if(current_state == Fish_State.FISHING && hooked_fish != null):
-		FishingManager.lose_fish(hooked_fish)
+	if _cast_unresolved:
+		_cast_unresolved = false
+		if current_state == Fish_State.FISHING and hooked_fish != null:
+			FishingManager.lose_fish(hooked_fish)
+		else:
+			# Cancelling a cast while waiting for a bite still uses its quota.
+			GameManager.record_fishing_cast()
+	# Any incomplete batch is charged when a fishing session ends.
+	GameManager.finish_fishing_session()
 	#reset everything upon exit
 	reset_values()
 	current_state = Fish_State.NOT
@@ -368,6 +427,7 @@ func reset_values() -> void:
 	progress = 0
 	bite_time = 0
 	fishing_progress.value = 0
+	_hide_identity_bubble()
 	fishing_line.close()
 	state_timer = 0
 	fish_esc_rate = 0
@@ -701,6 +761,11 @@ func create_npc(npc: PackedScene) -> void:
 	scene.global_position = npc_landing_point.global_position
 	scene.z_index = 12
 	var sprite: AnimatedSprite2D = scene.get_node("Sprite")
+	# Barracuda's frames are drawn facing right. Like Silas, he lands
+	# to Penni's right and should turn left toward her. Derive the flip
+	# from their positions so it also works if the spawn side changes.
+	if scene.npc != null and scene.npc.npc_id == &"barracuda":
+		sprite.flip_h = scene.global_position.x > (get_parent() as Node2D).global_position.x
 	sprite.play(&"on_caught")
 	catch_fish_visual.hide()
 	get_parent().animator.play(&"idle_r")

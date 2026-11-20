@@ -32,41 +32,35 @@ const LARGE_SIZE := 16 * SCALE    # PixelOperator: headers
 const FONT_SMALL := preload("res://fonts/pixel_operator(1)/PixelOperator8.ttf")
 const FONT_SMALL_BOLD := preload("res://fonts/pixel_operator(1)/PixelOperator8-Bold.ttf")
 const FONT_LARGE_BOLD := preload("res://fonts/pixel_operator(1)/PixelOperator-Bold.ttf")
+const TERMINAL_BORDER: StyleBoxTexture = preload("res://resources/ui/terminal_border.tres")
 
 static var _theme: Theme
 
 
-# A pixel box: 1-px ink outline with cut corners, 1-px border, optional
-# 1-px top highlight, solid fill. `padding` is in art pixels.
+# The shared UI uses the SAME authored nine-slice as the FISH CO. terminal.
+# Keep the legacy color arguments for existing UI callers, tinting the source
+# texture so light text on darker HUDs remains readable.
 static func box(fill: Color, border: Color, padding: int = 3, highlight := Color(0, 0, 0, 0)) -> StyleBoxTexture:
-	const SIZE := 7
-	var image := Image.create(SIZE, SIZE, false, Image.FORMAT_RGBA8)
-	image.fill(fill)
-
-	for ring in 2:
-		var color := INK if ring == 0 else border
-		var far := SIZE - 1 - ring
-		for i in range(ring, far + 1):
-			image.set_pixel(i, ring, color)
-			image.set_pixel(i, far, color)
-			image.set_pixel(ring, i, color)
-			image.set_pixel(far, i, color)
-
-	if highlight.a > 0.0:
-		for x in range(2, SIZE - 2):
-			image.set_pixel(x, 2, highlight)
-
-	# Cut corners for a rounded pixel look.
-	for corner in [Vector2i(0, 0), Vector2i(SIZE - 1, 0), Vector2i(0, SIZE - 1), Vector2i(SIZE - 1, SIZE - 1)]:
-		image.set_pixelv(corner, Color(0, 0, 0, 0))
-
-	image.resize(SIZE * SCALE, SIZE * SCALE, Image.INTERPOLATE_NEAREST)
-
-	var style := StyleBoxTexture.new()
-	style.texture = ImageTexture.create_from_image(image)
-	style.set_texture_margin_all(3 * SCALE)
+	var style := TERMINAL_BORDER.duplicate() as StyleBoxTexture
 	style.set_content_margin_all((2 + padding) * SCALE)
+	var tint := fill.lerp(border, 0.22)
+	if highlight.a > 0.0:
+		tint = tint.lerp(highlight, 0.08)
+	style.modulate_color = tint
 	return style
+
+
+# Slim, one-art-pixel outline for small world icons and notification bubbles.
+# Set scale=3 for controls drawn in the 3x terminal UI.
+static func notification_bubble_style(scale: int = 1) -> StyleBoxFlat:
+	var pixel_scale := maxi(scale, 1)
+	var frame := StyleBoxFlat.new()
+	frame.bg_color = WINDOW
+	frame.border_color = CYAN_DARK
+	frame.set_border_width_all(pixel_scale)
+	frame.set_content_margin_all(pixel_scale * 2)
+	frame.anti_aliasing = false
+	return frame
 
 
 # A flat bar segment (progress bars), outlined in ink.

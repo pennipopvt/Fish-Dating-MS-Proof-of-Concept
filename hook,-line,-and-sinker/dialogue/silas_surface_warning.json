@@ -1,0 +1,25 @@
+{
+  "entry": "shore_warning",
+  "free_greeting": true,
+  "nodes": {
+    "shore_warning": {
+      "lines": [
+        "Penni! Wait for me!",
+        {
+          "speaker": "player",
+          "text": "Silas?! What are you doing?!"
+        },
+        "I-I thought I could come with you...",
+        {
+          "speaker": "player",
+          "text": "But you can't just come out of the water! You're a fish!"
+        },
+        "Oh... I hadn't really thought about that.",
+        {
+          "speaker": "player",
+          "text": "Silas, get back in the water! You're going to—"
+        }
+      ]
+    }
+  }
+}

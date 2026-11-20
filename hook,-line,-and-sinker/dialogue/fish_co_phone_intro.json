@@ -1,0 +1,82 @@
+{
+  "entry": "call",
+  "free_greeting": true,
+  "nodes": {
+    "call": {
+      "lines": [
+        {
+          "speaker": "player",
+          "text": "$400,000? That's enough to pay off my student loans!"
+        },
+        {
+          "speaker": "player",
+          "text": "Just for catching a fish?"
+        },
+        {
+          "speaker": "player",
+          "text": "I can totally do that!"
+        },
+        {
+          "speaker": "npc",
+          "text": "Wonderful! Would you like me to go over your employment contract?"
+        },
+        {
+          "speaker": "player",
+          "text": "Wait, I thought this was a competition?"
+        },
+        {
+          "speaker": "npc",
+          "text": "By signing up for the competition, you also agreed to become an employee of Fish Co."
+        },
+        {
+          "speaker": "npc",
+          "text": "It was in the fine print."
+        },
+        {
+          "speaker": "player",
+          "text": "Oh. Okay."
+        },
+        {
+          "speaker": "npc",
+          "text": "By catching the prized Legendary Fish King, you'll receive a total of $400,000."
+        },
+        {
+          "speaker": "npc",
+          "text": "During your stay on the island, you'll be expected to fulfill a fishing quota every three days."
+        },
+        {
+          "speaker": "player",
+          "text": "What? A quota?"
+        },
+        {
+          "speaker": "npc",
+          "text": "Failure to meet your quota will result in your removal from the island and the loss of your chance to catch the Legendary Fish King."
+        },
+        {
+          "speaker": "npc",
+          "text": "Your activities on the island will be monitored for our records."
+        },
+        {
+          "speaker": "player",
+          "text": "...okay."
+        },
+        {
+          "speaker": "npc",
+          "text": "That is all for now. Fish Co. reserves the right to add or remove terms from your contract at any time during your stay on the island."
+        },
+        {
+          "speaker": "npc",
+          "text": "Thank you for your time."
+        },
+        {
+          "speaker": "npc",
+          "text": "*click*"
+        },
+        {
+          "speaker": "player",
+          "text": "...bye."
+        }
+      ]
+    }
+  }
+}
