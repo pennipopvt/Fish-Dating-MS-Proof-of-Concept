@@ -7,7 +7,7 @@ signal npc_waiting_for_home(actor: NPCInteractable)
 signal npc_moved_into_home(actor: NPCInteractable, home: Sprite2D)
 
 var listening: bool = false
-var available_homes: Array[Sprite2D] = []
+var available_homes: Array[Area2D] = []
 var waiting_npcs: Array[NPCInteractable] = []
 # Kept for the developer panel's direct house_recruit shortcut.
 var npc: NPCInteractable = null
@@ -18,7 +18,7 @@ var dock_wait_offset: Vector2 = Vector2(24.0, 0.0)
 var dock_wait_spacing: float = 16.0
 
 var _transfer_in_progress: bool = false
-var _reserved_home: Sprite2D = null
+var _reserved_home: Area2D = null
 var _transfer_generation: int = 0
 
 
@@ -115,14 +115,14 @@ func _barracuda_return_to_water(actor: NPCInteractable) -> void:
 func set_available_homes(homes: Array[Area2D]) -> void:
 	available_homes.clear()
 	for home in homes:
-		if _home_valid(home.house) and not available_homes.has(home.house) and home.house != _reserved_home:
-			available_homes.append(home.house)
+		if _home_valid(home) and not available_homes.has(home) and home != _reserved_home:
+			available_homes.append(home)
 	_try_place_waiting_npcs()
 
 
 # Call this when building a new house, or after a previously occupied house
 # has genuinely been vacated. Do not register a still-occupied house.
-func register_available_home(home: Sprite2D) -> void:
+func register_available_home(home: Area2D) -> void:
 	if not _home_valid(home) or home == _reserved_home or available_homes.has(home):
 		return
 	available_homes.append(home)
@@ -169,7 +169,7 @@ func _try_place_waiting_npcs() -> void:
 		if not _actor_valid(actor):
 			waiting_npcs.pop_front()
 			continue
-		var home: Sprite2D = _take_available_home()
+		var home: Area2D = _take_available_home()
 		if home == null:
 			return
 		waiting_npcs.pop_front()
@@ -179,7 +179,7 @@ func _try_place_waiting_npcs() -> void:
 		return
 
 
-func _transfer_actor(actor: NPCInteractable, home: Sprite2D, generation: int) -> void:
+func _transfer_actor(actor: NPCInteractable, home: Area2D, generation: int) -> void:
 	# Reserve the house before the fade so parallel recruitments can't claim it.
 	fade_to.emit()
 	await get_tree().create_timer(maxf(0.0, time_to_transfer)).timeout
@@ -187,7 +187,7 @@ func _transfer_actor(actor: NPCInteractable, home: Sprite2D, generation: int) ->
 		return
 	_reserved_home = null
 	if _actor_valid(actor) and _home_valid(home):
-		_move_actor_into_home(actor, home, actor.npc.door.door if actor.npc != null else null)
+		_move_actor_into_home(actor, home, actor.npc.door if actor.npc != null else null)
 	else:
 		# Preserve the place in line if the house disappears mid-transfer.
 		if _home_valid(home) and not available_homes.has(home):
@@ -206,9 +206,9 @@ func _has_available_home() -> bool:
 	return false
 
 
-func _take_available_home() -> Sprite2D:
+func _take_available_home() -> Area2D:
 	while not available_homes.is_empty():
-		var home: Sprite2D = available_homes.pop_front()
+		var home: Area2D = available_homes.pop_front()
 		if _home_valid(home):
 			return home
 	return null
@@ -223,19 +223,20 @@ func house_recruit(new_house: Texture2D) -> void:
 	if _transfer_in_progress or not waiting_npcs.is_empty():
 		_enqueue_accepted_actor(actor)
 		return
-	var home: Sprite2D = _take_available_home()
+	var home: Area2D = _take_available_home()
 	if home == null:
 		_enqueue_accepted_actor(actor)
 		return
-	_move_actor_into_home(actor, home, new_house)
+	_move_actor_into_home(actor, home, actor.npc.door)
 
 
-func _move_actor_into_home(actor: NPCInteractable, home: Sprite2D, new_house: Texture2D) -> void:
+func _move_actor_into_home(actor: NPCInteractable, home: Area2D, new_house: DoorInfo) -> void:
 	if not _actor_valid(actor) or not _home_valid(home):
 		return
 	actor.global_position = home.global_position
 	if new_house != null:
-		home.texture = new_house
+		home.house.texture = new_house.door
+		home.transfer_loc = new_house.sceneLoc
 	npc_moved_into_home.emit(actor, home)
 
 
@@ -243,5 +244,5 @@ func _actor_valid(actor: NPCInteractable) -> bool:
 	return is_instance_valid(actor) and not actor.is_queued_for_deletion()
 
 
-func _home_valid(home: Sprite2D) -> bool:
+func _home_valid(home: Area2D) -> bool:
 	return is_instance_valid(home) and not home.is_queued_for_deletion()
