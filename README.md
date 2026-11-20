@@ -30,7 +30,8 @@ Debug builds only (not in exports):
 | Action | Input |
 |---|---|
 | Dev panel | F9 |
-| Clock overlay (day, period, actions left; play continues) | F3 |
+| Skip the Fish Co. opening to the dock, ready to dive (during the opening only) | F3 |
+| Clock overlay (day, period, actions left; play continues) | F3 (after the opening) |
 | End current dialogue | F5 |
 | Recruit Silas (skip his first talk) | F6 |
 | Preview challenge popup | F10 |
@@ -48,7 +49,7 @@ Debug builds only (not in exports):
 - **NPC Flags:** edit flags and attraction.
 - **Fishing & Bobbers:** instant bite or catch, force a species, cast counts, unlock or equip bobbers, equip bait.
 
-**F3** toggles a small clock overlay in the top-left (its own CanvasLayer, so it stays up while the panel is closed and doesn't pause play).
+**F3** during the Fish Co. opening (phone call, first terminal visit, first-dive call) skips straight to Penni on the dock with the dive prompt ready. After that, **F3** toggles a small clock overlay in the top-left (its own CanvasLayer, so it stays up while the panel is closed and doesn't pause play).
 
 "Reset ALL" resets this session's progress and reloads the world. The panel uses the shared `PixelUI` theme (`scripts/ui/pixel_ui.gd`).
 
@@ -140,8 +141,21 @@ Debug builds only (not in exports):
   cols 0-6 at cells 39-45), then 3 more copies of sand tiles 4-6 (cells 46-54), sand
   tile 7 (cell 55), then the slope into the water (atlas row 1, cols 3-7, cells
   56-60), so the beach ends at x=976. The stair handle (`tilesetOnPlayer.png`) is on its own
-  layer, `GroundFront` (z_index 4), so it draws in front of the player. The player
-  still walks at grass height across the beach. The water rect reaches x=2800 for the ship.
+  layer, `GroundFront` (z_index 4), so it draws in front of the player. The water
+  rect reaches x=2800 for the ship.
+  **Walking on the ground:** at start, `scripts/ground_profile.gd` reads the `Ground`
+  tiles' pixels to find the surface height at every x. Penni's feet follow it (down the
+  stairs, along the sand and slope), and she can't walk past the drawn ends: the pier
+  tip on the left, and on the right where the sand meets the water. If the ground art
+  changes, both follow automatically. Off the ground (the ship date) nothing is clamped.
+- **Diving extras:** the dive splashes and sinks straight down from where Penni stands
+  on the dock. A hooked fish stays on the line length around Penni but can't go above
+  the waterline or into rock/ground (left and right are open); when it's pinned in a
+  corner it dashes back past her. Free-swimming fish slide along rock and ground.
+  **Sea sounds:** `prefabs/sea_sfx.tscn` has one sound slot per event (dive, surface,
+  swim loop, hook, windup, attack, counter, reel, catch, lose, Silas battle hit). The
+  fight slots reuse `sounds/sfx/`; dive, surface and swim are empty (silent) until
+  someone adds sounds.
 - **Fishing rod (visual only):** `prefabs/fishing_rod.tscn` on the player. When you
   start fishing, the player faces the water and pulls out the rod. Every cast swings
   the rod back and flicks it forward, and the equipped bait's icon flies out on the

@@ -16,6 +16,15 @@ var busy: bool = false;
 var swimming: bool = false
 var swim_bounds: Rect2 = Rect2(Vector2(16, 154), Vector2(888, 460))
 var _land_collision_mask: int = 1
+# Land walking border (global x) and walking height, read at start from the
+# pixels of the sibling Ground tiles, so both follow the map if it changes.
+var walk_limits: Vector2 = Vector2(-INF, INF)
+const WALK_EDGE_MARGIN: float = 6.0  # half the body width
+const FEET_HALF_WIDTH: int = 2
+const WALK_HEIGHT_SPEED: float = 160.0  # px/s when stepping up or down
+const GROUND_PROFILE_SCRIPT = preload("res://scripts/ground_profile.gd")
+var _ground = null  # ground_profile.gd instance (untyped: script has no class_name)
+var _feet_offset: float = 0.0
 var last_direction : float;
 
 var _pickup_visual: Sprite2D
@@ -27,6 +36,7 @@ var _pickup_time_left := 0.0
 
 func _ready() -> void:
 	_land_collision_mask = collision_mask
+	_read_walk_limits.call_deferred()
 	held_item_visual = Sprite2D.new()
 	held_item_visual.position = Vector2(0, -39)
 	held_item_visual.z_index = 5
@@ -144,7 +154,64 @@ func _physics_process(delta: float) -> void:
 		else:
 			animator.play("idle_carry_r" if _is_carrying() else "idle_r")
 
+	var previous_x: float = global_position.x
 	move_and_slide()
+	_keep_inside_walk_limits(previous_x)
+	_follow_ground_height(delta)
+
+
+# Reads the drawn ground (World/Ground tiles) once at start: the walk border
+# is where the ground's pixels start and end (the beach stops where the sand
+# meets the water), and the feet follow the surface height.
+func _read_walk_limits() -> void:
+	var ground := get_parent().get_node_or_null("Ground") as TileMapLayer
+	if ground == null:
+		return
+	_ground = GROUND_PROFILE_SCRIPT.new()
+	_ground.build(ground)
+	if _ground.is_empty():
+		_ground = null
+		return
+	var left: float = float(_ground.left)
+	var right: float = float(_ground.right)
+	var water := get_parent().get_node_or_null("Water") as Control
+	if water != null:
+		var water_top: float = water.global_position.y
+		while right > left and _ground.surface_at(right) >= water_top:
+			right -= 1.0
+	walk_limits = Vector2(left + WALK_EDGE_MARGIN, right - WALK_EDGE_MARGIN)
+	var surface: float = _walk_surface_at(global_position.x)
+	_feet_offset = 0.0 if is_nan(surface) else global_position.y - surface
+
+
+# Highest surface point under the feet, so 1px bumps in the sand don't jitter.
+func _walk_surface_at(x: float) -> float:
+	var best: float = NAN
+	for dx in range(-FEET_HALF_WIDTH, FEET_HALF_WIDTH + 1):
+		var y: float = _ground.surface_at(x + dx)
+		if not is_nan(y) and (is_nan(best) or y < best):
+			best = y
+	return best
+
+
+func _follow_ground_height(delta: float) -> void:
+	if _ground == null:
+		return
+	var surface: float = _walk_surface_at(global_position.x)
+	if is_nan(surface):
+		return  # off the ground (e.g. the ship date venue): leave y alone
+	global_position.y = move_toward(global_position.y, surface + _feet_offset, WALK_HEIGHT_SPEED * delta)
+
+
+# Stops walking past the ends of the ground. Only blocks moving outward, so
+# a scripted move past the edge (like the ship date venue) is left alone.
+func _keep_inside_walk_limits(previous_x: float) -> void:
+	if previous_x >= walk_limits.x and global_position.x < walk_limits.x:
+		global_position.x = walk_limits.x
+		velocity.x = 0.0
+	elif previous_x <= walk_limits.y and global_position.x > walk_limits.y:
+		global_position.x = walk_limits.y
+		velocity.x = 0.0
 
 
 # Mouse input can be consumed by the SubViewportContainer before

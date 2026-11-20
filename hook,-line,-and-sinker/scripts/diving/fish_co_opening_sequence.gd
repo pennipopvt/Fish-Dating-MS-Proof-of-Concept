@@ -136,6 +136,37 @@ func _finish_first_dive_call() -> void:
 	dock.call("set_first_dive_prompt", true)
 
 
+# Debug (DevPanel F3): jump past the phone call, the first terminal visit and
+# the first-dive call, leaving Penni on the dock with the dive prompt ready.
+# Returns false when there is nothing left to skip or a transition is running.
+func debug_skip_to_dive() -> bool:
+	if _first_dive_call_finished or _transition.transitioning or _transition.underwater:
+		return false
+	# Mark every step done first so the conversation_finished handlers ignore
+	# the dialogue we end below.
+	_contract_call_finished = true
+	_first_quota_opened = true
+	_first_dive_call_started = true
+	_first_dive_call_finished = true
+	if DialogueManager.is_active:
+		DialogueManager.end_conversation()
+	if ShopManager.is_shop_open:
+		_shop_menu.close()
+		ShopManager.set_shop_open(false)
+	if is_instance_valid(_intro):
+		_intro.end()
+	hide()
+	var dock: Node2D = _world.get_node("Dock") as Node2D
+	_world_player.global_position = dock.global_position + Vector2(22.0, 11.0)
+	_world_player.animator.play(&"idle_l")
+	var island_camera: Camera2D = _world_player.get_node("Camera2D") as Camera2D
+	island_camera.reset_smoothing()
+	island_camera.force_update_scroll()
+	(_world.get_node("Shop") as ShopInteractable).set_intro_quota_notice(false)
+	_finish_first_dive_call()
+	return true
+
+
 func request_dive(fisher: Player, dock: Node2D) -> void:
 	if not _first_dive_call_finished or _transition.transitioning or _transition.underwater or fisher != _world_player:
 		return

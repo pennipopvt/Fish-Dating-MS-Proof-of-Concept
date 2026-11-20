@@ -42,6 +42,10 @@ var _water_mat: ShaderMaterial
 var _tint_mat: ShaderMaterial
 var _transition: Tween
 var _target_progress: float = -1.0
+# Clock progress the sun and moon are currently drawn at. Transitions tween
+# this value, so the discs travel along their arcs instead of cutting a
+# straight line between two points on them.
+var _shown_progress: float = 0.0
 
 
 func _ready() -> void:
@@ -65,6 +69,7 @@ func _ready() -> void:
 		return
 
 	_target_progress = _clock_progress()
+	_shown_progress = _target_progress
 	_apply_immediately(_visual_state(_target_progress))
 	set_process(true)
 
@@ -145,6 +150,7 @@ func _refresh_target() -> void:
 
 	var state := _visual_state(progress)
 	if transition_seconds <= 0.0:
+		_shown_progress = progress
 		_apply_immediately(state)
 		return
 
@@ -155,6 +161,7 @@ func _refresh_target() -> void:
 	if day_rollover:
 		_sun.position = state["sun_position"]
 		_sun_glow.position = state["sun_glow_position"]
+		_shown_progress = progress
 
 	_transition = create_tween().set_parallel(true).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 	_transition.tween_property(_sky_mat, "shader_parameter/top_color", state["top"], transition_seconds)
@@ -162,8 +169,7 @@ func _refresh_target() -> void:
 	_transition.tween_property(_ambient, "color", state["ambient"], transition_seconds)
 	_transition.tween_property(_water_mat, "shader_parameter/water_color", state["water"], transition_seconds)
 	_transition.tween_property(_water_mat, "shader_parameter/highlight_color", state["water_highlight"], transition_seconds)
-	_transition.tween_property(_sun, "position", state["sun_position"], transition_seconds)
-	_transition.tween_property(_sun_glow, "position", state["sun_glow_position"], transition_seconds)
+	_transition.tween_method(_show_discs_at.bind(not day_rollover), _shown_progress, progress, transition_seconds)
 	_transition.tween_property(_sun_glow_mat, "shader_parameter/intensity", state["sun_glow"], transition_seconds)
 	_transition.tween_property(_stars_mat, "shader_parameter/visibility", state["stars"], transition_seconds)
 	if day_rollover:
@@ -172,13 +178,22 @@ func _refresh_target() -> void:
 		var moon_exit := Vector2(SKY_RIGHT_X, MOON_BELOW_SCREEN_Y)
 		_transition.tween_property(_moon, "position", moon_exit - _moon.size * 0.5, transition_seconds)
 		_transition.tween_property(_moon_glow, "position", moon_exit - _moon_glow.size * 0.5, transition_seconds)
-	else:
-		_transition.tween_property(_moon, "position", state["moon_position"], transition_seconds)
-		_transition.tween_property(_moon_glow, "position", state["moon_glow_position"], transition_seconds)
 	_transition.tween_property(_moon_glow_mat, "shader_parameter/intensity", state["moon_glow"], transition_seconds)
 	if day_rollover:
 		# Once offscreen, quietly reset to the eastern below-screen start.
 		_transition.chain().tween_callback(_reset_moon_to.bind(state))
+
+
+# Places the sun (and, unless the moon is doing its overnight exit, the
+# moon) where they belong at clock `progress`, i.e. on their arcs.
+func _show_discs_at(progress: float, move_moon: bool) -> void:
+	_shown_progress = progress
+	var state := _visual_state(progress)
+	_sun.position = state["sun_position"]
+	_sun_glow.position = state["sun_glow_position"]
+	if move_moon:
+		_moon.position = state["moon_position"]
+		_moon_glow.position = state["moon_glow_position"]
 
 
 func _reset_moon_to(state: Dictionary) -> void:

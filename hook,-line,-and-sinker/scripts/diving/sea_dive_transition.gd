@@ -9,6 +9,10 @@ const RIPPLE: Texture2D = preload("res://sprites/environment/medium_ripple_a.png
 const DIVE_DURATION: float = 0.43
 const IRIS_DURATION: float = 0.52
 const IRIS_OPEN_RADIUS: float = 2.6
+# Penni dives facing left: the leap carries her this far forward before the
+# splash, and she drifts a little further forward while sinking.
+const DIVE_FORWARD: float = 18.0
+const SINK_FORWARD: float = 10.0
 
 @onready var _iris: ColorRect = $Iris
 var _iris_material: ShaderMaterial
@@ -95,7 +99,8 @@ func start_confirmed_dive(dock: Node2D) -> void:
 
 func _begin_dive(dock: Node2D) -> void:
 	var jump_start: Vector2 = _world_player.global_position
-	var landing: Vector2 = dock.global_position + Vector2(-11.0, 46.0)
+	# Splash a little ahead of where Penni stands (same waterline as before).
+	var landing := Vector2(jump_start.x - DIVE_FORWARD, dock.global_position.y + 46.0)
 	_world_player.animator.play(&"walk_l")
 	var jump: Tween = create_tween()
 	jump.tween_method(
@@ -104,6 +109,7 @@ func _begin_dive(dock: Node2D) -> void:
 	).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 	await jump.finished
 	_spawn_splash(landing)
+	_sea.play_sfx(&"dive")
 
 	# No second world, teleport or viewport switch. The camera follows
 	# Penni from the dock through the same surface into the ocean.
@@ -112,6 +118,7 @@ func _begin_dive(dock: Node2D) -> void:
 	_dialogue_ui.set_underwater_mode(true)
 	var entry_marker: Marker2D = _sea.get_node_or_null("Points/Entry") as Marker2D
 	var entry: Vector2 = entry_marker.global_position if entry_marker != null else _sea.to_global(Vector2(55, 182))
+	entry = _dive_target_below(landing + Vector2(-SINK_FORWARD, 0.0), entry.y)
 	var island_camera: Camera2D = _world_player.get_node("Camera2D") as Camera2D
 	var descent: Tween = create_tween().set_parallel(true)
 	descent.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
@@ -122,6 +129,16 @@ func _begin_dive(dock: Node2D) -> void:
 	_sea.enter_from_dock()
 	_world_player.busy = false
 	transitioning = false
+
+
+# Where Penni sinks to after the splash: down from the given point, as
+# deep as the Entry marker's depth but stopping above any rock under her.
+func _dive_target_below(splash: Vector2, depth: float) -> Vector2:
+	var top: float = DivingWorld.SEA_TOP + DivingWildFish.EDGE_MARGIN
+	var y: float = maxf(depth, top)
+	while y > top and not _sea.call("_is_open_water", _sea.to_local(Vector2(splash.x, y))):
+		y -= 2.0
+	return Vector2(splash.x, y)
 
 
 func _update_dive_jump(t: float, start: Vector2, landing: Vector2) -> void:

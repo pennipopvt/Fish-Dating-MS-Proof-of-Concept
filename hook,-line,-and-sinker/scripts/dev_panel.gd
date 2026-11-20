@@ -3,7 +3,8 @@ extends CanvasLayer
 # Debug-only developer panel (autoload "DevPanel"). Removed in release builds.
 #   F9  open / close the panel
 #   F5  end the current conversation immediately (no further effects)
-#   F3  show / hide the clock overlay (day, period, actions left) while playing
+#   F3  during the Fish Co. opening: skip to Penni on the dock, ready to dive;
+#       afterwards: show / hide the clock overlay (day, period, actions left)
 # Everything here goes through the managers' public functions or writes their
 # runtime state from outside; no gameplay script depends on this panel.
 
@@ -70,7 +71,10 @@ func _input(event: InputEvent) -> void:
 		skip_dialogue()
 		get_viewport().set_input_as_handled()
 	elif event.is_action_pressed(&"debug_clock_overlay"):
-		toggle_clock_overlay()
+		# During the Fish Co. opening F3 skips to the dock; afterwards it is
+		# the clock overlay again.
+		if not skip_to_dive():
+			toggle_clock_overlay()
 		get_viewport().set_input_as_handled()
 
 
@@ -98,6 +102,19 @@ func skip_dialogue() -> void:
 	if DialogueManager.is_active:
 		DialogueManager.end_conversation()
 		_say("Dialogue ended (F5)")
+
+
+# Skips the Fish Co. opening (phone call, terminal, first-dive call) to Penni
+# on the dock, ready to dive. False when there is no opening left to skip.
+func skip_to_dive() -> bool:
+	var scene: Node = get_tree().current_scene
+	var opening: Node = scene.get_node_or_null("IntroLayer") if scene != null else null
+	if opening == null or not opening.has_method(&"debug_skip_to_dive"):
+		return false
+	if not opening.call(&"debug_skip_to_dive"):
+		return false
+	_say("Skipped to the dock (F3)")
+	return true
 
 
 func toggle_clock_overlay() -> void:
