@@ -19,25 +19,26 @@ func _ready() -> void:
 
 	_expect(QuotaManager.week == 1 and QuotaManager.deadline_day == 3,
 		"First quota is due at the end of day three")
-	_expect(QuotaManager.get_target(&"mullet") == 5
+	_expect(QuotaManager.get_target(&"mullet") == 2
 		and QuotaManager.get_target(&"porgy") == 1,
-		"First cycle targets start at five mullet and one porgy")
+		"First cycle is a tutorial quota of two mullet and one porgy")
 	FishingManager.add_to_storage(EASY, 8)
 	FishingManager.add_to_storage(HARD, 1)
-	_expect(QuotaManager.submit(&"mullet", 2) == 2,
-		"Partial submission immediately accepts two common fish")
-	_expect(FishingManager.count_in_storage(&"mullet") == 6,
+	_expect(QuotaManager.submit(&"mullet", 1) == 1,
+		"Partial submission immediately accepts one common fish")
+	_expect(FishingManager.count_in_storage(&"mullet") == 7,
 		"Submitted fish are removed from inventory, not just counted")
-	_expect(QuotaManager.submit(&"mullet") == 3,
-		"Send available submits only the remaining three quota fish")
-	_expect(FishingManager.count_in_storage(&"mullet") == 3,
-		"Extra fish remain in storage for upgrades and gifts")
+	_expect(QuotaManager.submit(&"mullet") == 1,
+		"Send available submits only the final mullet")
+	_expect(FishingManager.count_in_storage(&"mullet") == 6,
+		"Extra fish remain in storage for later upgrades")
 	_expect(QuotaManager.submit(&"mullet") == 0,
 		"Cannot submit excess fish after a target is filled")
 	_expect(not QuotaManager.is_complete(), "Mullet alone do not complete the contract")
 	_expect(QuotaManager.submit(&"porgy") == 1,
 		"Porgy submit through the same inventory API")
-	_expect(QuotaManager.is_complete(), "Both deliveries finish the current quota")
+	_expect(QuotaManager.is_complete() and QuotaManager.first_quota_completed,
+		"First quota completion permanently unlocks the upgrade stage")
 	_expect(FishingManager.count_in_storage(&"porgy") == 0,
 		"Porgy cannot be spent twice")
 
@@ -71,8 +72,9 @@ func _ready() -> void:
 	for step in range(9):
 		GameManager.rest()
 	_expect(GameManager.get_day() == 4, "Nine rests advance to day four")
-	_expect(QuotaManager.week == 2 and QuotaManager.deadline_day == 6,
-		"Second quota starts Day 4 and is due Day 6")
+	_expect(QuotaManager.week == 2 and QuotaManager.deadline_day == 6
+		and QuotaManager.first_quota_completed,
+		"First quota upgrade access persists when the second contract begins")
 	_expect(QuotaManager.get_target(&"mullet") == 7
 		and QuotaManager.get_target(&"porgy") == 2,
 		"Second quota targets continue to increase")

@@ -41,6 +41,9 @@ func _run() -> void:
 	flags[&"silas_freed"] = true
 	flags[&"silas_following"] = true
 	actor.following = true
+	_check(not story.can_surface(), "First shore return is gated by catching a fish with Silas")
+	story.get("_events")[&"first_companion_catch"] = true
+	_check(story.can_surface(), "An assisted catch unlocks surfacing")
 
 	var key: InputEventKey = InputEventKey.new()
 	key.keycode = KEY_E
@@ -89,6 +92,14 @@ func _run() -> void:
 		"Dock waiting does not silently recruit him into housing")
 	_check(not story.can_begin_silas_surface_reveal(),
 		"One-time reveal cannot replay on subsequent shore returns")
+	var shop_menu: ShopMenu = main.get_node("CanvasLayer/ShopMenu") as ShopMenu
+	var world_terminal: ShopInteractable = world.get_node("Shop") as ShopInteractable
+	_check(shop_menu.is_page_unlocked(ShopMenu.Page.STORAGE)
+		and not shop_menu.is_page_unlocked(ShopMenu.Page.SHOP),
+		"Finishing Silas's shore reveal unlocks Storage but not Upgrades")
+	_check(world_terminal.get_node("UnclaimedAchievementNotice").visible
+		and bool(world_terminal.get("_progression_notice")),
+		"Storage unlock reuses the existing terminal exclamation notice")
 
 	main.queue_free()
 	await process_frame

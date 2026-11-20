@@ -171,8 +171,8 @@ func _run() -> void:
 	DialogueManager.advance()
 	DialogueManager.select_choice(0)
 	DialogueManager.advance()
-	_check(tabs.get_node("ShopTab").visible and tabs.get_node("StorageTab").visible,
-		"Other terminal tabs unlock only after choosing Yes")
+	_check(not tabs.get_node("ShopTab").visible and not tabs.get_node("StorageTab").visible,
+		"Starting the dive alone does not unlock the terminal economy")
 	_check(player.busy and bool(main.get("_transitioning")),
 		"Accepting the dock prompt starts the dive jump and locks player movement")
 	_check(not bool(dock.get("_first_dive_prompt")), 
@@ -187,7 +187,16 @@ func _run() -> void:
 	_check(bool(dialogue_ui.get("_underwater_mode")),
 		"Existing dialogue UI switches to underwater fish sprite portraits")
 
-	# Surface without Silas and ensure the normal island and its clock return.
+	# First sea exit is intentionally blocked until Penni catches a fish
+	# that Silas damaged. Direct test setup bypasses the story/tutorial only
+	# AFTER asserting the guard; physical transition remains unchanged.
+	var story: SeaStoryDirector = sea.get_node("StoryDirector") as SeaStoryDirector
+	sea.call("_return_to_surface")
+	_check(bool(main.get("_underwater")) and player.swimming and DialogueManager.is_active,
+		"Cannot return to shore without a successful Silas-assisted fish catch")
+	if DialogueManager.is_active:
+		DialogueManager.end_conversation()
+	story.get("_events")[&"first_companion_catch"] = true
 	sea.call("_return_to_surface")
 	await create_timer(1.3).timeout
 	_check(not bool(main.get("_underwater")) and not player.swimming,

@@ -22,9 +22,13 @@ func _ready() -> void:
 	NPCManager.npc_states.clear()
 	ChallengeManager.reset_all()
 	FishingManager.reset_session_upgrades()
+	var prior_first_quota: bool = QuotaManager.first_quota_completed
+	# This test exercises the full shop after its new tutorial unlock.
+	QuotaManager.first_quota_completed = true
 
 	var shop := SHOP_MENU.instantiate() as ShopMenu
 	add_child(shop)
+	shop.unlock_post_dive_storage()
 	_expect(shop.get("_page") == ShopMenu.Page.QUOTA, "Quota is the first page")
 	var quota_icon := shop.get_node("TerminalRoot/NavTabs/QuotaTab/Icon") as TextureRect
 	var schedule_icon := shop.get_node("TerminalRoot/NavTabs/ScheduleTab/Icon") as TextureRect
@@ -113,6 +117,7 @@ func _ready() -> void:
 	ChallengeManager.reset_all()
 	FishingManager.reset_session_upgrades()
 	NPCManager.npc_states = previous_states
+	QuotaManager.first_quota_completed = prior_first_quota
 	shop.queue_free()
 	terminal.queue_free()
 	print("terminal_shop_challenges_test: %s" % ("PASS" if failures == 0 else "%d FAILED" % failures))
