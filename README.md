@@ -30,7 +30,8 @@ Debug builds only (not in exports):
 | Action | Input |
 |---|---|
 | Dev panel | F9 |
-| Clock overlay (day, period, actions left; play continues) | F3 |
+| Skip the Fish Co. opening to the dock, ready to dive (during the opening only) | F3 |
+| Clock overlay (day, period, actions left; play continues) | F3 (after the opening) |
 | End current dialogue | F5 |
 | Recruit Silas (skip his first talk) | F6 |
 | Preview challenge popup | F10 |
@@ -48,7 +49,7 @@ Debug builds only (not in exports):
 - **NPC Flags:** edit flags and attraction.
 - **Fishing & Bobbers:** instant bite or catch, force a species, cast counts, unlock or equip bobbers, equip bait.
 
-**F3** toggles a small clock overlay in the top-left (its own CanvasLayer, so it stays up while the panel is closed and doesn't pause play).
+**F3** during the Fish Co. opening (phone call, first terminal visit, first-dive call) skips straight to Penni on the dock with the dive prompt ready. After that, **F3** toggles a small clock overlay in the top-left (its own CanvasLayer, so it stays up while the panel is closed and doesn't pause play).
 
 "Reset ALL" resets this session's progress and reloads the world. The panel uses the shared `PixelUI` theme (`scripts/ui/pixel_ui.gd`).
 
