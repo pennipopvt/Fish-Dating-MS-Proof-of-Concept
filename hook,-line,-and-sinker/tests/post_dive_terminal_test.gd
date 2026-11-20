@@ -63,8 +63,17 @@ func _ready() -> void:
 	sea.call("_on_combat_finished", true, fish)
 	_check(story.has_event(&"first_companion_catch") and story.can_surface(),
 		"Successful catch of Silas-weakened fish unlocks the first exit")
+	var dive_bag: SeaDiveInventory = sea.get_node("SeaDiveInventory") as SeaDiveInventory
+	_check(dive_bag.count_species(&"mullet") == 1
+		and FishingManager.count_in_storage(&"mullet") == 0,
+		"First fish remains carried until Penni safely reaches shore")
+	_check((sea.get_node("SeaOxygen") as SeaOxygen).enabled,
+		"Oxygen starts only after first assisted catch with Silas")
+	# This tutorial test doesn't run the physical return sequence. Land the
+	# catch through the same handoff used by the real surfacing transition.
+	dive_bag.secure_catch()
 	_check(FishingManager.count_in_storage(&"mullet") == 1,
-		"First legitimate catch reaches normal shared inventory")
+		"Landing the expedition transfers the carried fish to Fish Co. storage")
 	GameManager.diving_session_active = false
 
 	# This signal is emitted by the actual surface cinematic, not by a dive
