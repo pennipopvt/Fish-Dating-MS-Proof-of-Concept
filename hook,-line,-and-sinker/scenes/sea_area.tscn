@@ -17,6 +17,12 @@
 [ext_resource type="Texture2D" uid="uid://b606v6feem3is" path="res://sprites/characters/silas/silas_idle.png" id="silas_human"]
 [ext_resource type="Resource" path="res://resources/companions/silas_battle.tres" id="silas_stats"]
 [ext_resource type="Script" uid="uid://c57ont7cf2c3x" path="res://scripts/diving/fish_spawn.gd" id="spawn"]
+[ext_resource type="Script" path="res://scripts/diving/sea_spawn_option.gd" id="spawn_option"]
+[ext_resource type="Script" path="res://scripts/diving/sea_spawn_region.gd" id="spawn_region"]
+[ext_resource type="Script" path="res://scripts/diving/sea_population.gd" id="sea_population"]
+[ext_resource type="Resource" path="res://resources/fish/porgy.tres" id="porgy"]
+[ext_resource type="Resource" path="res://resources/fish/flounder.tres" id="flounder"]
+[ext_resource type="Resource" path="res://resources/fish/goby.tres" id="goby"]
 [ext_resource type="Script" uid="uid://b11olr4jyp85r" path="res://scripts/diving/sea_story_director.gd" id="story"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_xel3b"]
@@ -84,6 +90,64 @@ sources/0 = SubResource("TileSetAtlasSource_xel3b")
 shader = ExtResource("sea_clip_shader")
 shader_parameter/surface_world_y = 140.0
 
+[sub_resource type="Resource" id="habitat_shallow_mullet"]
+script = ExtResource("spawn_option")
+species = ExtResource("mullet")
+weight = 4.0
+minimum_count = 1
+morning_factor = 1.5
+afternoon_factor = 1.0
+night_factor = 0.8
+
+[sub_resource type="Resource" id="habitat_shallow_porgy"]
+script = ExtResource("spawn_option")
+species = ExtResource("porgy")
+weight = 1.5
+morning_factor = 1.0
+afternoon_factor = 1.3
+night_factor = 0.8
+
+[sub_resource type="Resource" id="habitat_open_mullet"]
+script = ExtResource("spawn_option")
+species = ExtResource("mullet")
+weight = 2.5
+morning_factor = 1.2
+afternoon_factor = 1.0
+night_factor = 0.7
+
+[sub_resource type="Resource" id="habitat_open_porgy"]
+script = ExtResource("spawn_option")
+species = ExtResource("porgy")
+weight = 3.0
+minimum_count = 1
+morning_factor = 1.0
+afternoon_factor = 1.1
+night_factor = 1.3
+
+[sub_resource type="Resource" id="habitat_deep_flounder"]
+script = ExtResource("spawn_option")
+species = ExtResource("flounder")
+weight = 1.0
+morning_factor = 0.7
+afternoon_factor = 0.9
+night_factor = 1.7
+
+[sub_resource type="Resource" id="habitat_deep_goby"]
+script = ExtResource("spawn_option")
+species = ExtResource("goby")
+weight = 3.0
+morning_factor = 1.1
+afternoon_factor = 1.0
+night_factor = 1.5
+
+[sub_resource type="Resource" id="habitat_deep_porgy"]
+script = ExtResource("spawn_option")
+species = ExtResource("porgy")
+weight = 2.0
+morning_factor = 1.0
+afternoon_factor = 1.3
+night_factor = 1.0
+
 [node name="Sea" type="Node2D" unique_id=907830608]
 script = ExtResource("sea")
 
@@ -136,6 +200,32 @@ random_seed = 3102
 preferred_player_distance = 52.0
 alert_distance = 76.0
 flee_speed = 112.0
+
+[node name="SpawnRegions" type="Node2D" parent="."]
+
+[node name="ShallowWater" type="Node2D" parent="SpawnRegions"]
+position = Vector2(-320, 185)
+script = ExtResource("spawn_region")
+region_size = Vector2(230, 105)
+population_count = 4
+species_options = Array[ExtResource("spawn_option")]([SubResource("habitat_shallow_mullet"), SubResource("habitat_shallow_porgy")])
+
+[node name="OpenWater" type="Node2D" parent="SpawnRegions"]
+position = Vector2(-140, 210)
+script = ExtResource("spawn_region")
+region_size = Vector2(220, 165)
+population_count = 4
+species_options = Array[ExtResource("spawn_option")]([SubResource("habitat_open_mullet"), SubResource("habitat_open_porgy")])
+
+[node name="DeepWater" type="Node2D" parent="SpawnRegions"]
+position = Vector2(-790, 310)
+script = ExtResource("spawn_region")
+region_size = Vector2(260, 150)
+population_count = 4
+species_options = Array[ExtResource("spawn_option")]([SubResource("habitat_deep_goby"), SubResource("habitat_deep_flounder"), SubResource("habitat_deep_porgy")])
+
+[node name="SeaPopulation" type="Node" parent="."]
+script = ExtResource("sea_population")
 
 [node name="FishActors" type="Node2D" parent="." unique_id=1103972822]
 

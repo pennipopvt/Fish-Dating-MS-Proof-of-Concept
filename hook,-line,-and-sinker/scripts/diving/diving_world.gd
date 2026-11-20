@@ -26,6 +26,7 @@ const WILD_FISH_SCRIPT = preload("res://scripts/diving/wild_fish.gd")
 @onready var _exit: Marker2D = $Points/SurfaceExit
 @onready var _exit_prompt: InteractPrompt = $Points/SurfaceExit/InteractPrompt
 @onready var _spawns: Node2D = $FishSpawns
+@onready var _population: SeaPopulation = $SeaPopulation
 @onready var _actors: Node2D = $FishActors
 @onready var _story: SeaStoryDirector = $StoryDirector
 @onready var _net: DivingNetProjectile = $NetProjectile
@@ -73,6 +74,8 @@ func _ready() -> void:
 	_combat.finished.connect(_on_combat_finished)
 	_combat.parried.connect(_on_sea_parried)
 	_story.silas_following_started.connect(_on_silas_following_started)
+	_story.first_companion_catch_completed.connect(_queue_habitat_population)
+	_population.spawn_requested.connect(_on_population_spawn_requested)
 	_battle.started.connect(_on_battle_started)
 	_battle.ended.connect(_on_battle_ended)
 	_battle.hit.connect(_on_battle_hit)
@@ -115,21 +118,55 @@ func _spawn_editor_fish() -> void:
 		var data: FishData = spawn.species
 		if data == null or data.item_data == null or data.item_data.sprite == null:
 			continue
-		var fish: DivingWildFish = WILD_FISH_SCRIPT.new() as DivingWildFish
-		_actors.add_child(fish)
-		fish.setup(data.fish_id, data.item_data.sprite, spawn.position, _sea_bounds(), spawn.random_seed)
-		fish.is_open = _is_open_water
-		fish.set_max_health(data.max_health)
-		fish.preferred_player_distance = spawn.preferred_player_distance
-		fish.flee_radius = maxf(spawn.alert_distance, spawn.preferred_player_distance)
-		fish.flee_speed = spawn.flee_speed
-		_wild_fish.append(fish)
-		_fish_data[fish] = data
+		var fish: DivingWildFish = _spawn_wild_fish(data, spawn.position,
+			spawn.random_seed, spawn.preferred_player_distance, spawn.alert_distance,
+			spawn.flee_speed)
 		if spawn.is_first_dive_fish:
 			if _encounter.tutorial_fish != null:
 				push_warning("[SEA STORY] Multiple fish spawns marked as first-dive fish.")
 			else:
 				_encounter.register_tutorial_fish(fish)
+
+
+# Both authored tutorial spawns and procedural habitats use this ONE normal
+# fish setup/registration path. The invisible Silas rescue target stays special.
+func _spawn_wild_fish(data: FishData, where: Vector2, random_seed: int,
+		preferred_distance: float, alert: float, flee: float) -> DivingWildFish:
+	var fish: DivingWildFish = WILD_FISH_SCRIPT.new() as DivingWildFish
+	_actors.add_child(fish)
+	fish.setup(data.fish_id, data.item_data.sprite, where, _sea_bounds(), random_seed)
+	fish.is_open = _is_open_water
+	fish.set_max_health(data.max_health)
+	fish.preferred_player_distance = preferred_distance
+	fish.flee_radius = maxf(alert, preferred_distance)
+	fish.flee_speed = flee
+	_wild_fish.append(fish)
+	_fish_data[fish] = data
+	return fish
+
+
+func _queue_habitat_population() -> void:
+	# Defer until the caught tutorial fish has been removed from the registry.
+	# The next available frame is still the same first dive.
+	_populate_habitats.call_deferred()
+
+
+func _populate_habitats() -> void:
+	if _population.has_generated() or _camera == null:
+		return
+	var positions: Array[Vector2] = []
+	for fish in _wild_fish:
+		if is_instance_valid(fish):
+			positions.append(fish.position)
+	positions.append(_player.position)
+	_population.generate_after_tutorial(_camera, _sea_bounds(),
+		_is_open_water, positions)
+
+
+func _on_population_spawn_requested(data: FishData, where: Vector2,
+		seed_value: int, habitat: SeaSpawnRegion) -> void:
+	_spawn_wild_fish(data, where, seed_value, habitat.preferred_player_distance,
+		habitat.alert_distance, habitat.flee_speed)
 
 
 func _make_silas_trap() -> void:

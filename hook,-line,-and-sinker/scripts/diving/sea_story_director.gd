@@ -3,6 +3,7 @@ class_name SeaStoryDirector
 
 # Only one-time events live here. The fishing, NPC and dialogue systems
 # continue to own their normal behavior and persistent NPC state.
+signal first_companion_catch_completed
 signal silas_following_started
 signal silas_surface_warning_finished
 signal silas_surface_reveal_finished
@@ -326,9 +327,11 @@ func can_surface() -> bool:
 
 
 func on_first_companion_catch(fish: DivingWildFish) -> void:
-	if fish == null or not fish.companion_weakened or not has_silas_flag(&"silas_following"):
+	if fish == null or not fish.companion_weakened or not has_silas_flag(&"silas_following") \
+			or has_event(&"first_companion_catch"):
 		return
 	_events[&"first_companion_catch"] = true
+	first_companion_catch_completed.emit()
 	var cue: SeaTutorialCue = _cue()
 	if cue != null:
 		cue.hide_action()
