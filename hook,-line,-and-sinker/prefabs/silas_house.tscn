@@ -1,8 +1,8 @@
 [gd_scene format=3 uid="uid://86k4q6ioi03u"]
 
-[ext_resource type="Texture2D" uid="uid://dgq5ngslogdof" path="res://sprites/placeholders/placeholderhousebad.png" id="1_f8tau"]
+[ext_resource type="Texture2D" uid="uid://kk5gdwmwejaw" path="res://sprites/rooms/lockeddoor.png" id="1_bvrww"]
 
 [node name="SilasHouse" type="Sprite2D" unique_id=852988363]
 z_index = -1
-position = Vector2(0, -32)
-texture = ExtResource("1_f8tau")
+position = Vector2(0, -16)
+texture = ExtResource("1_bvrww")
