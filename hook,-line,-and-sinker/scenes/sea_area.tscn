@@ -228,8 +228,6 @@ region_size = Vector2(260, 150)
 population_count = 4
 species_options = Array[ExtResource("spawn_option")]([SubResource("habitat_deep_goby"), SubResource("habitat_deep_flounder"), SubResource("habitat_deep_porgy")])
 
-# Two starter habitats in the NEW blockout space. They remain movable and
-# can be repainted or removed when the actual terrain is designed.
 [node name="FarOpenWater" type="Node2D" parent="SpawnRegions"]
 position = Vector2(-1220, 215)
 script = ExtResource("spawn_region")
