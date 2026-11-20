@@ -65,8 +65,8 @@ func _ready() -> void:
 
 	_expect(REEL.one_time_purchase and LINE.one_time_purchase,
 		"Reel and line upgrades cannot be repeatedly bought")
-	_expect(CAST.one_time_purchase and ShopManager.trades.has(CAST),
-		"Extra Cast is offered as a one-time purchase")
+	_expect(CAST.one_time_purchase and not ShopManager.trades.has(CAST),
+		"Obsolete Extra Cast is no longer offered in the diving shop")
 	var original_casts := FishingManager.casts_per_action
 	FishingManager.shop_reward_upgrade_casts(1)
 	FishingManager.shop_reward_upgrade_casts(1)
