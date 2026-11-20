@@ -112,11 +112,11 @@ func _barracuda_return_to_water(actor: NPCInteractable) -> void:
 
 
 # Called by AvailableHomeInfo whenever the world sets up its empty houses.
-func set_available_homes(homes: Array[Sprite2D]) -> void:
+func set_available_homes(homes: Array[Area2D]) -> void:
 	available_homes.clear()
 	for home in homes:
-		if _home_valid(home) and not available_homes.has(home) and home != _reserved_home:
-			available_homes.append(home)
+		if _home_valid(home.house) and not available_homes.has(home.house) and home.house != _reserved_home:
+			available_homes.append(home.house)
 	_try_place_waiting_npcs()
 
 
@@ -187,7 +187,7 @@ func _transfer_actor(actor: NPCInteractable, home: Sprite2D, generation: int) ->
 		return
 	_reserved_home = null
 	if _actor_valid(actor) and _home_valid(home):
-		_move_actor_into_home(actor, home, actor.npc.house if actor.npc != null else null)
+		_move_actor_into_home(actor, home, actor.npc.door.door if actor.npc != null else null)
 	else:
 		# Preserve the place in line if the house disappears mid-transfer.
 		if _home_valid(home) and not available_homes.has(home):
