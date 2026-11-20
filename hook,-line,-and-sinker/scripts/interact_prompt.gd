@@ -61,9 +61,13 @@ static func get_action_key_text(action_name: StringName) -> String:
 		var keycode := key.keycode
 
 		if keycode == KEY_NONE:
-			keycode = DisplayServer.keyboard_get_keycode_from_physical(
-				key.physical_keycode
-			)
+			# Physical-key conversion requires a real display server.
+			# Headless smoke tests still display the bound key correctly.
+			keycode = key.physical_keycode
+			if DisplayServer.get_name() != "headless":
+				keycode = DisplayServer.keyboard_get_keycode_from_physical(
+					key.physical_keycode
+				)
 
 		return OS.get_keycode_string(keycode)
 

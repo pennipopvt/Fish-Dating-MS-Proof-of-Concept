@@ -3,7 +3,8 @@ extends CanvasLayer
 # Debug-only developer panel (autoload "DevPanel"). Removed in release builds.
 #   F9  open / close the panel
 #   F5  end the current conversation immediately (no further effects)
-#   F3  show / hide the clock overlay (day, period, actions left) while playing
+#   F3  during the Fish Co. opening: skip to Penni on the dock, ready to dive;
+#       afterwards: show / hide the clock overlay (day, period, actions left)
 # Everything here goes through the managers' public functions or writes their
 # runtime state from outside; no gameplay script depends on this panel.
 
@@ -70,7 +71,10 @@ func _input(event: InputEvent) -> void:
 		skip_dialogue()
 		get_viewport().set_input_as_handled()
 	elif event.is_action_pressed(&"debug_clock_overlay"):
-		toggle_clock_overlay()
+		# During the Fish Co. opening F3 skips to the dock; afterwards it is
+		# the clock overlay again.
+		if not skip_to_dive():
+			toggle_clock_overlay()
 		get_viewport().set_input_as_handled()
 
 
@@ -98,6 +102,19 @@ func skip_dialogue() -> void:
 	if DialogueManager.is_active:
 		DialogueManager.end_conversation()
 		_say("Dialogue ended (F5)")
+
+
+# Skips the Fish Co. opening (phone call, terminal, first-dive call) to Penni
+# on the dock, ready to dive. False when there is no opening left to skip.
+func skip_to_dive() -> bool:
+	var scene: Node = get_tree().current_scene
+	var opening: Node = scene.get_node_or_null("IntroLayer") if scene != null else null
+	if opening == null or not opening.has_method(&"debug_skip_to_dive"):
+		return false
+	if not opening.call(&"debug_skip_to_dive"):
+		return false
+	_say("Skipped to the dock (F3)")
+	return true
 
 
 func toggle_clock_overlay() -> void:
@@ -240,7 +257,7 @@ func _spawn_npc_for_debug(npc_id: StringName) -> NPCInteractable:
 
 func _dev_recruit(npc_id: StringName) -> void:
 	var fish := _fish_for_npc(npc_id)
-	var state := NPCManager.get_npc_state(npc_id)
+	var state: Dictionary = NPCManager.get_npc_state(npc_id)
 	var data := _flag_npc_resource(npc_id)
 	if fish == null or data == null:
 		_say("No recruitable NPC fish found for " + String(npc_id))
@@ -326,10 +343,7 @@ func _dev_unlock_dating(npc_id: StringName) -> void:
 	# Mimics completing the first route, including jealousy on other partners.
 	flags[complete_flag] = true
 	AffectionManager.on_romance_completed(npc_id)
-	if npc_id == SILAS_ID:
-		BobberManager.unlock_bobber(&"silas")
-	elif npc_id == KUDA_ID:
-		BobberManager.unlock_bobber(&"barracuda")
+	# Legacy bobber cosmetics are not awarded in the diving prototype.
 	_say("Dating unlocked for " + _flag_npc_resource(npc_id).display_name)
 	_rebuild_flags.call_deferred()
 
@@ -638,11 +652,6 @@ func _info_fishing() -> String:
 	for fish in FishingManager.catch_dex:
 		dex.append("%s x%d" % [fish.fish_id, FishingManager.catch_lifetime.get(fish, 0)])
 	t += (", ".join(dex) if not dex.is_empty() else "-") + "\n"
-	t += _h("Bobbers")
-	var unlocked: Array[String] = []
-	for id in BobberManager.unlocked_ids:
-		unlocked.append(String(id))
-	t += "Unlocked: %s\nEquipped: %s\n" % [", ".join(unlocked), BobberManager.equipped_id]
 	return t
 
 
@@ -669,7 +678,7 @@ func _fishing_summary() -> String:
 		var state: int = controller.get("current_state")
 		var hooked: FishData = controller.get("hooked_fish")
 		t += "State %s  casts %d/%d  bite in %.1fs  fish %s\n" % [FISHING_STATES[state] if state < FISHING_STATES.size() else str(state), int(controller.get("casts")), FishingManager.casts_per_action, float(controller.get("bite_time")), String(hooked.fish_id) if hooked != null else "-"]
-	t += "Bait: %s   Forced species: %s" % [FishingManager.equipped_bait.display_name if FishingManager.equipped_bait != null else "-", String(_forced_fish.fish_id) if _forced_fish != null else "off"]
+	t += "Forced legacy rod species: %s" % [String(_forced_fish.fish_id) if _forced_fish != null else "off"]
 	return t
 
 
@@ -806,7 +815,7 @@ const TAB_TITLES := {
 	"Items": "Give Items",
 	"Progress": "Upgrades & Challenges",
 	"Flags": "NPCs",
-	"Fishing": "Fishing & Bobbers",
+	"Fishing": "Fishing & Diving",
 }
 const INFO_TITLES := {
 	"World": "World & Time",
@@ -1232,7 +1241,7 @@ func _build_fishing_tab() -> void:
 
 	_heading(box, "Force species on every cast")
 	_force_fish = OptionButton.new()
-	_force_fish.add_item("Off (normal bait odds)")
+	_force_fish.add_item("Off (normal species odds)")
 	_fish_options.clear()
 	for path in _list_resources(FISH_DIR):
 		var fish := load(path) as FishData
@@ -1255,7 +1264,7 @@ func _build_fishing_tab() -> void:
 			controller.set("casts", 0)
 			_say("Casts refilled"))
 
-	_add_bobber_and_bait(box)
+	# Legacy bait/bobber cheats are hidden in diving mode.
 
 
 func _add_bobber_and_bait(box: VBoxContainer) -> void:

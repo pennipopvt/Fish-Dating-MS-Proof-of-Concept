@@ -27,6 +27,9 @@ var time_of_day : Times = Times.MORNING
 var player_actions : int = ACTIONS_PER_PERIOD
 # Casts in the current (not yet charged) fishing action.
 var _casts_in_action: int = 0
+# Dive catches are recorded normally, but the full dive uses one world action
+# only when the player returns to the dock.
+var diving_session_active: bool = false
 
 
 func _ready() -> void:
@@ -76,7 +79,7 @@ func can_act() -> bool:
 # Each completed (or abandoned) cast counts toward the current fishing action.
 # Upgrades may allow several casts before one clock action is spent.
 func record_fishing_cast() -> void:
-	if not can_act():
+	if diving_session_active or not can_act():
 		return
 	_casts_in_action += 1
 	if _casts_in_action >= maxi(FishingManager.casts_per_action, 1):

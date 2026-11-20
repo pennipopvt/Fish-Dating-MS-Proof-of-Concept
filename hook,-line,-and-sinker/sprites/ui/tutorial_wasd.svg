@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="96" height="64" viewBox="0 0 96 64" shape-rendering="crispEdges">
+<rect x="34" y="1" width="28" height="26" rx="2" stroke="#8ad9eb" stroke-width="2" fill="none"/><text x="48" y="20" text-anchor="middle" font-family="sans-serif" font-weight="bold" font-size="18" fill="#f1fbff">W</text>
+<rect x="2" y="34" width="28" height="26" rx="2" stroke="#8ad9eb" stroke-width="2" fill="none"/><text x="16" y="53" text-anchor="middle" font-family="sans-serif" font-weight="bold" font-size="18" fill="#f1fbff">A</text>
+<rect x="34" y="34" width="28" height="26" rx="2" stroke="#8ad9eb" stroke-width="2" fill="none"/><text x="48" y="53" text-anchor="middle" font-family="sans-serif" font-weight="bold" font-size="18" fill="#f1fbff">S</text>
+<rect x="66" y="34" width="28" height="26" rx="2" stroke="#8ad9eb" stroke-width="2" fill="none"/><text x="80" y="53" text-anchor="middle" font-family="sans-serif" font-weight="bold" font-size="18" fill="#f1fbff">D</text>
+</svg>

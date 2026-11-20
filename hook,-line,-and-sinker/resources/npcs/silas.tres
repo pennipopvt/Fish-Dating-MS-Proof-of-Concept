@@ -4,10 +4,11 @@
 [ext_resource type="Script" uid="uid://vn5y8742mwkg" path="res://resources/npc_flag_data.gd" id="1_hvwbg"]
 [ext_resource type="Script" uid="uid://ejskb8h4mfwk" path="res://resources/npc_dialogue_rule_data.gd" id="2_w20er"]
 [ext_resource type="Script" uid="uid://bh6g5wfjnt8fm" path="res://resources/encounter_rule_data.gd" id="3_w20er"]
-[ext_resource type="Texture2D" uid="uid://raysrsoqufps" path="res://sprites/characters/silas_portrait.png" id="4_a4wu8"]
+[ext_resource type="Texture2D" uid="uid://raysrsoqufps" path="res://sprites/characters/silas/silas_portrait.png" id="4_a4wu8"]
 [ext_resource type="Texture2D" uid="uid://bv41gk34hgl5s" path="res://sprites/placeholders/placeholderhousegood.png" id="5_816r6"]
 [ext_resource type="Resource" uid="uid://dq4sy5yms8tqq" path="res://resources/items/spyglass.tres" id="5_spyglass"]
 [ext_resource type="Texture2D" uid="uid://c4v1axr8aete3" path="res://sprites/porn/silas.png" id="6_porn"]
+[ext_resource type="Texture2D" uid="uid://fur256i6ik5n" path="res://sprites/fish/silas_eel.png" id="underwater_eel"]
 
 [sub_resource type="Resource" id="Resource_hvwbg"]
 script = ExtResource("3_w20er")
@@ -35,6 +36,7 @@ script = ExtResource("1_bmq75")
 npc_id = &"test_npc"
 display_name = "Silas"
 portrait = ExtResource("4_a4wu8")
+underwater_sprite = ExtResource("underwater_eel")
 house = ExtResource("5_816r6")
 porn_sprite = ExtResource("6_porn")
 date_bold_scores = Array[int]([2, 1, -2, -5])

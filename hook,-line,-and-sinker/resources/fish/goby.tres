@@ -1,8 +1,8 @@
-[gd_resource type="Resource" script_class="FishData" format=3]
+[gd_resource type="Resource" script_class="FishData" format=3 uid="uid://bb7avevjoob3x"]
 
-[ext_resource type="Script" path="res://resources/fish_data.gd" id="1_fish"]
+[ext_resource type="Script" uid="uid://d2iidpvp5wrw7" path="res://resources/fish_data.gd" id="1_fish"]
 [ext_resource type="Resource" path="res://resources/items/goby.tres" id="2_item"]
-[ext_resource type="Script" path="res://resources/fish_escape_state.gd" id="3_attack"]
+[ext_resource type="Script" uid="uid://cur8k0lqp6jxh" path="res://resources/fish_escape_state.gd" id="3_attack"]
 
 [sub_resource type="Resource" id="QuickJitter"]
 script = ExtResource("3_attack")
@@ -10,11 +10,11 @@ state_name = "Quick Jitter"
 escape_rate = 0.08
 state_length = 0.26
 state_probability = 0.55
-pre_windup_duration = 0.16
 windup_duration = 0.22
 counter_window = 0.12
+pre_windup_duration = 0.16
 close_early_window = 0.07
-close_late_window = 0.10
+close_late_window = 0.1
 
 [sub_resource type="Resource" id="DelayedJitter"]
 script = ExtResource("3_attack")
@@ -22,11 +22,11 @@ state_name = "Delayed Jitter"
 escape_rate = 0.11
 state_length = 0.29
 state_probability = 0.45
-pre_windup_duration = 0.20
-windup_duration = 0.70
+windup_duration = 0.7
 counter_window = 0.12
+pre_windup_duration = 0.2
 close_early_window = 0.09
-close_late_window = 0.10
+close_late_window = 0.1
 
 [resource]
 script = ExtResource("1_fish")
@@ -35,6 +35,15 @@ item_data = ExtResource("2_item")
 hooked_sprite_width = 30.0
 miss_tension_gain = 0.065
 attack_tension_multiplier = 1.0
-miss_dash_duration = 0.20
+miss_dash_duration = 0.2
 miss_dash_speed_multiplier = 3.25
+stagger_resistance = 65.0
+max_health = 20.0
+attack = 2.0
+defense = 1.0
+speed = 1.4
+min_strength = 0.5
+force_range = 1.6
+dash_range = 1.2
+curve_steepness = 8.0
 states = Array[ExtResource("3_attack")]([SubResource("QuickJitter"), SubResource("DelayedJitter")])

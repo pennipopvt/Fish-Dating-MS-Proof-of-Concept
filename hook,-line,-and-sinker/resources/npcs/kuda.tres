@@ -6,9 +6,9 @@
 [ext_resource type="Script" uid="uid://ejskb8h4mfwk" path="res://resources/npc_dialogue_rule_data.gd" id="3_kuwgt"]
 [ext_resource type="Texture2D" uid="uid://bv41gk34hgl5s" path="res://sprites/placeholders/placeholderhousegood.png" id="4_house"]
 [ext_resource type="Resource" uid="uid://b4fcc4cial7fn" path="res://resources/items/kuda_scarf.tres" id="5_gift"]
-[ext_resource type="Texture2D" uid="uid://j2t1f35vluti" path="res://sprites/characters/kuda_portrait.png" id="6_2m545"]
-
-[ext_resource type="Texture2D" path="res://sprites/porn/kuda.png" id="7_kuda_scene"]
+[ext_resource type="Texture2D" uid="uid://j2t1f35vluti" path="res://sprites/characters/kuda/kuda_portrait.png" id="6_2m545"]
+[ext_resource type="Texture2D" uid="uid://cktxhguj8trd2" path="res://sprites/porn/kuda.png" id="7_kuda_scene"]
+[ext_resource type="Texture2D" uid="uid://bt80yvxeajar3" path="res://sprites/fish/kuda_placeholder.png" id="underwater_kuda"]
 
 [sub_resource type="Resource" id="Rule_invitation"]
 script = ExtResource("2_rule")
@@ -42,11 +42,9 @@ script = ExtResource("1_npc")
 npc_id = &"barracuda"
 display_name = "Kuda"
 portrait = ExtResource("6_2m545")
-porn_sprite = ExtResource("7_kuda_scene")
-date_bold_scores = Array[int]([6, 5, -4, -6])
-date_playful_scores = Array[int]([3, 2, 0, -2])
-date_reassure_scores = Array[int]([1, 1, 1, 1])
+underwater_sprite = ExtResource("underwater_kuda")
 house = ExtResource("4_house")
+porn_sprite = ExtResource("7_kuda_scene")
 encounter_rules = Array[ExtResource("2_rule")]([SubResource("Rule_invitation"), SubResource("Rule_post_romance"), SubResource("Rule_casual"), SubResource("Rule_retry"), SubResource("Rule_first")])
 desired_gift = ExtResource("5_gift")
 correct_gift_json = "res://dialogue/kuda_gift_correct.json"

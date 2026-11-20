@@ -1,0 +1,52 @@
+{
+  "entry": "refusal",
+  "free_greeting": true,
+  "nodes": {
+    "refusal": {
+      "lines": [
+        "Penni? N-no, not that one...",
+        {
+          "speaker": "player",
+          "text": "Silas, can you keep going?"
+        },
+        "It's already hurt. Can't you see how it's struggling?",
+        "I'm scared that if I hit it again, it won't get back up.",
+        "I want to help you... I really do. But I can't do that."
+      ],
+      "choices": [
+        {
+          "text": "You're right. I'll catch it myself.",
+          "next": "understood",
+          "spends_action": false
+        },
+        {
+          "text": "Just one more hit?",
+          "next": "insist",
+          "spends_action": false
+        },
+        {
+          "text": "I didn't realize it was that hurt.",
+          "next": "realize",
+          "spends_action": false
+        }
+      ]
+    },
+    "understood": {
+      "lines": [
+        "Thank you... I'll stay close."
+      ]
+    },
+    "insist": {
+      "lines": [
+        "No, Penni. I'm sorry, but I won't.",
+        "Please don't ask me to."
+      ]
+    },
+    "realize": {
+      "lines": [
+        "I know. That's why I stopped.",
+        "I think you can take it from here."
+      ]
+    }
+  }
+}

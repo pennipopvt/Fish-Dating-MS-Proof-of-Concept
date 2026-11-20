@@ -1,0 +1,9 @@
+[gd_resource type="Resource" script_class="NPCData" format=3]
+
+[ext_resource type="Script" path="res://resources/npc_data.gd" id="npc_script"]
+
+[resource]
+script = ExtResource("npc_script")
+npc_id = &"dock_dive_prompt"
+display_name = "DOCK"
+dialogue_json_path = "res://dialogue/dock_dive_confirmation.json"

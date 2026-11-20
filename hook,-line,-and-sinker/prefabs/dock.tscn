@@ -1,6 +1,7 @@
 [gd_scene format=3 uid="uid://d0hk7isls5uj3"]
 
 [ext_resource type="Script" uid="uid://v1x5fsb5g1gy" path="res://scripts/dock.gd" id="1_43vik"]
+[ext_resource type="PackedScene" path="res://prefabs/interact_prompt.tscn" id="dock_prompt"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_iu4st"]
 size = Vector2(24, 31)
@@ -11,3 +12,6 @@ script = ExtResource("1_43vik")
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1422351369]
 position = Vector2(-2, -5.5)
 shape = SubResource("RectangleShape2D_iu4st")
+
+[node name="InteractPrompt" parent="." instance=ExtResource("dock_prompt")]
+position = Vector2(-2, -33)

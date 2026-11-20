@@ -1,0 +1,77 @@
+extends Control
+
+# The ONE owner of the existing World/SubViewport and its UI.
+# No story state, shader tween, bubble reconstruction, or diagnostic
+# rendering lives here. The Dock still calls request_dive() on Main.
+@onready var _world: Node2D = $SubViewportContainer/SubViewport/World
+@onready var _world_player: Player = $SubViewportContainer/SubViewport/World/Player
+@onready var _sea: DivingWorld = $SubViewportContainer/SubViewport/World/Sea
+@onready var _transition: SeaDiveTransition = $TransitionLayer
+@onready var _bubble_host: SeaSpeechBubbleHost = $SeaSpeechBubbleHost
+@onready var _debug: SeaDebugPanel = $SeaDebugLayer
+var _opening: FishCoOpeningSequence
+
+# Read-only compatibility properties for existing in-engine playtests.
+# Actual state is held by the one owning component, not duplicated here.
+var _underwater: bool:
+	get: return _transition.underwater
+var _transitioning: bool:
+	get: return _transition.transitioning
+var _contract_call_finished: bool:
+	get: return _opening._contract_call_finished
+var _first_dive_call_finished: bool:
+	get: return _opening._first_dive_call_finished
+var _intro_layer: CanvasLayer:
+	get: return _opening
+var _intro: FishCoIntro:
+	get: return _opening.get_node_or_null("FishCoIntro") as FishCoIntro
+var _sea_bubble_source: String:
+	get: return _bubble_host.source
+
+
+func _ready() -> void:
+	_opening = get_node_or_null("IntroLayer") as FishCoOpeningSequence
+	if _opening == null:
+		# Repair a partially missing opening layer without duplicating
+		# FishCoIntro in normal play.
+		var old_layer: Node = get_node_or_null("IntroLayer")
+		if old_layer != null:
+			old_layer.name = "UnusableIntroLayer"
+			old_layer.queue_free()
+		_opening = FishCoOpeningSequence.new()
+		_opening.name = "IntroLayer"
+		_opening.layer = 9
+		add_child(_opening)
+	_transition.configure(_world, _world_player, _sea,
+		$CanvasLayer/DialogueUI, $CanvasLayer/ShopMenu, _opening)
+	_opening.configure(_world, _world_player, $CanvasLayer/ShopMenu, _transition)
+	_opening.dive_confirmed.connect(_transition.start_confirmed_dive)
+	_bubble_host.configure(self, _sea.get_node_or_null("StoryDirector") as SeaStoryDirector)
+	_debug.configure(self, _world_player, _sea, _bubble_host)
+	_opening.start.call_deferred()
+
+
+# A stable island Dock API. All confirmation belongs to the opening flow.
+func request_dive(fisher: Player, dock: Node2D) -> void:
+	_opening.request_dive(fisher, dock)
+
+
+# Single input boundary; debug controls and underwater input are delegated.
+func _input(event: InputEvent) -> void:
+	if _debug.is_pointer_over_panel(event):
+		return
+	if _debug.handle_input(event):
+		get_viewport().set_input_as_handled()
+		return
+	if _world_player.swimming and _transition.underwater and not _transition.transitioning:
+		if _sea.handle_input(event):
+			get_viewport().set_input_as_handled()
+
+
+# Existing debug/regression hooks delegate to their actual owners.
+func _ensure_sea_speech_bubble() -> SeaSpeechBubble:
+	return _bubble_host.ensure_bubble()
+
+
+func _debug_skip_dialogue() -> void:
+	_debug.skip_dialogue()
