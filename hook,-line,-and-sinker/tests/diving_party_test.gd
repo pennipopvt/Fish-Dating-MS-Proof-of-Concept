@@ -65,6 +65,23 @@ func _ready() -> void:
 		"Surfacing removes temporary sea actors")
 	_check(party.members().size() == 2 and party.has_companion(SILAS.npc_id),
 		"School selection remains for the next dive")
+	# Now exercise the real confirmed-dive entrypoint, not just isolated steps.
+	# The original first-dive cinematic is not replayed on this return dive.
+	if DialogueManager.is_active:
+		DialogueManager.end_conversation()
+	player.set_swimming(false)
+	GameManager.reset_clock()
+	transition.start_confirmed_dive(dock)
+	await get_tree().create_timer(4.2).timeout
+	_check(transition.underwater and not transition.transitioning
+		and player.swimming and silas.following
+		and sea.get_node_or_null("NPCs/PartyFish_barracuda") != null,
+		"Confirmed dock dive independently summons the school and resumes swimming")
+	sea.call("_return_to_surface")
+	await get_tree().create_timer(1.15).timeout
+	_check(not transition.underwater and not player.swimming and not silas.following
+		and party.has_companion(SILAS.npc_id),
+		"Normal surfacing cleans up fish actors but remembers the school")
 	main.queue_free()
 	print("diving_party_test: PASS" if failures == 0 else
 		"diving_party_test: %d FAILED" % failures)
