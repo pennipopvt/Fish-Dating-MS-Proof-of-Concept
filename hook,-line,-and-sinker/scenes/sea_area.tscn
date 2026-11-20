@@ -156,6 +156,8 @@ script = ExtResource("sea")
 [node name="EditorGuide" type="Node2D" parent="." unique_id=803850337]
 z_index = -10
 script = ExtResource("guide")
+map_origin = Vector2(-1280, 0)
+map_size = Vector2(1472, 760)
 
 [node name="Solids" type="TileMapLayer" parent="." unique_id=871969466]
 material = SubResource("SeaSurfaceClipMaterial")
@@ -226,6 +228,22 @@ region_size = Vector2(260, 150)
 population_count = 4
 species_options = Array[ExtResource("spawn_option")]([SubResource("habitat_deep_goby"), SubResource("habitat_deep_flounder"), SubResource("habitat_deep_porgy")])
 
+# Two starter habitats in the NEW blockout space. They remain movable and
+# can be repainted or removed when the actual terrain is designed.
+[node name="FarOpenWater" type="Node2D" parent="SpawnRegions"]
+position = Vector2(-1220, 215)
+script = ExtResource("spawn_region")
+region_size = Vector2(210, 145)
+population_count = 3
+species_options = Array[ExtResource("spawn_option")]([SubResource("habitat_open_mullet"), SubResource("habitat_shallow_porgy")])
+
+[node name="LowerShelf" type="Node2D" parent="SpawnRegions"]
+position = Vector2(-875, 540)
+script = ExtResource("spawn_region")
+region_size = Vector2(245, 158)
+population_count = 3
+species_options = Array[ExtResource("spawn_option")]([SubResource("habitat_deep_goby"), SubResource("habitat_deep_flounder"), SubResource("habitat_deep_porgy")])
+
 [node name="SeaPopulation" type="Node" parent="."]
 script = ExtResource("sea_population")
 
@@ -233,6 +251,9 @@ script = ExtResource("sea_population")
 script = ExtResource("sea_oxygen")
 capacity_seconds = 120.0
 warning_fraction = 0.25
+waterline_y = 154.0
+depth_ramp_pixels = 480.0
+deepest_drain_multiplier = 1.8
 
 [node name="SeaDiveInventory" type="Node" parent="."]
 script = ExtResource("sea_dive_inventory")

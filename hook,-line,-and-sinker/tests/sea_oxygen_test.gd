@@ -36,7 +36,12 @@ func _ready() -> void:
 		"Unlock starts with a full visible tank")
 	oxygen.step(16.0)
 	_check(oxygen.ratio() <= 0.21 and oxygen.ratio() >= 0.19,
-		"Oxygen decreases according to adjustable capacity")
+		"Oxygen decreases at normal rate near the surface")
+	_check(is_equal_approx(oxygen.drain_multiplier_at_depth(154.0), 1.0)
+		and is_equal_approx(oxygen.drain_multiplier_at_depth(394.0), 1.4)
+		and is_equal_approx(oxygen.drain_multiplier_at_depth(634.0), 1.8)
+		and is_equal_approx(oxygen.drain_multiplier_at_depth(900.0), 1.8),
+		"Depth drain smoothly grows from 1x to 1.8x and caps at deeper levels")
 	var vignette: ColorRect = hud.get_node("LowOxygenVignette") as ColorRect
 	var intensity: float = (vignette.material as ShaderMaterial).get_shader_parameter(
 		"warning_strength")
@@ -49,6 +54,11 @@ func _ready() -> void:
 	oxygen.end_dive()
 	_check(not oxygen.enabled and not hud.visible and is_equal_approx(oxygen.ratio(), 1.0),
 		"Surface exit hides the meter and refills the next expedition")
+	oxygen.begin_dive(true)
+	oxygen.step(5.0, 634.0)
+	_check(is_equal_approx(oxygen.remaining_seconds, 11.0),
+		"At deep water, 5 real seconds consume 9 seconds worth of oxygen")
+	oxygen.end_dive()
 	hud.queue_free()
 	oxygen.queue_free()
 
@@ -91,6 +101,9 @@ func _ready() -> void:
 	var transition: SeaDiveTransition = main.get_node("TransitionLayer") as SeaDiveTransition
 	var sea_bag: SeaDiveInventory = sea.get_node("SeaDiveInventory") as SeaDiveInventory
 	var sea_o2: SeaOxygen = sea.get_node("SeaOxygen") as SeaOxygen
+	_check(sea_o2.depth_ramp_pixels == 480.0
+		and is_equal_approx(sea_o2.deepest_drain_multiplier, 1.8),
+		"Sea scene exposes depth-drain tuning on the existing oxygen node")
 	var story: SeaStoryDirector = sea.get_node("StoryDirector") as SeaStoryDirector
 	story.get("_events")[&"first_companion_catch"] = true
 	NPCManager.get_npc_state(story.silas_data.npc_id)["flags"][&"silas_surface_transformed"] = true

@@ -9,6 +9,14 @@ signal oxygen_depleted
 @export_range(15.0, 300.0, 1.0) var capacity_seconds: float = 120.0
 @export_range(0.05, 0.5, 0.01) var warning_fraction: float = 0.25
 
+@export_group("Depth Drain")
+# World-space y=154 is the current sea's waterline. Exposed separately
+# from the editor guide so designers can adjust the water level later.
+@export var waterline_y: float = 154.0
+# Smooth linear ramp from surface consumption to the capped deep rate.
+@export_range(100.0, 1200.0, 10.0) var depth_ramp_pixels: float = 480.0
+@export_range(1.0, 3.0, 0.05) var deepest_drain_multiplier: float = 1.8
+
 var enabled: bool = false
 var remaining_seconds: float = 120.0
 var _exhausted: bool = false
@@ -38,10 +46,19 @@ func activate() -> void:
 	oxygen_changed.emit(ratio(), true)
 
 
-func step(delta: float) -> void:
+# One oxygen resource owns the depth formula. World supplies position only;
+# other systems and existing tests can omit it for surface-rate depletion.
+func drain_multiplier_at_depth(world_y: float) -> float:
+	var depth_fraction: float = clampf(
+		(world_y - waterline_y) / maxf(depth_ramp_pixels, 1.0), 0.0, 1.0)
+	return lerpf(1.0, maxf(1.0, deepest_drain_multiplier), depth_fraction)
+
+
+func step(delta: float, world_y: float = 154.0) -> void:
 	if not enabled or _paused or _exhausted or delta <= 0.0:
 		return
-	remaining_seconds = maxf(0.0, remaining_seconds - delta)
+	remaining_seconds = maxf(0.0,
+		remaining_seconds - delta * drain_multiplier_at_depth(world_y))
 	oxygen_changed.emit(ratio(), true)
 	if remaining_seconds <= 0.0:
 		_exhausted = true

@@ -305,7 +305,7 @@ func _process(delta: float) -> void:
 	# Oxygen pauses during dialogue and menus so reading is never punished,
 	# but otherwise continues draining during fishing combat.
 	if not DialogueManager.is_active and not GameManager.is_modal_ui_open():
-		_oxygen.step(delta)
+		_oxygen.step(delta, to_local(_player.global_position).y)
 	_sfx.set_swimming(not _player.busy and _player.velocity.length() > 8.0)
 	_encounter.step(delta)
 	# Reuse the original interaction bubble for the dock return.

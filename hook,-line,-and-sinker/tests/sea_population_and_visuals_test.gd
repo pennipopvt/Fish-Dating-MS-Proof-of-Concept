@@ -20,7 +20,13 @@ func _ready() -> void:
 	var population: SeaPopulation = sea.get_node("SeaPopulation") as SeaPopulation
 	var regions: Node2D = sea.get_node("SpawnRegions") as Node2D
 	var pool: Array = sea.get("_wild_fish")
-	_check(regions.get_child_count() >= 3, "Editable habitat regions are authored in the sea scene")
+	_check(regions.get_child_count() >= 5,
+		"Expanded sea has five editable habitat regions, including the far and deep areas")
+	var guide: SeaEditorGuide = sea.get_node("EditorGuide") as SeaEditorGuide
+	_check(guide.map_origin == Vector2(-1280, 0)
+		and guide.map_size == Vector2(1472, 760)
+		and sea.call("_sea_bounds").has_point(Vector2(-1150, 670)),
+		"Expanded sea extends left and below without moving the original dock")
 	_check(not population.has_generated() and pool.size() == 3,
 		"Tutorial begins with only two authored fish and hidden Silas target")
 	var original_ids: Dictionary = {}
@@ -71,6 +77,16 @@ func _ready() -> void:
 	_check(int(counts.get(&"mullet", 0)) >= 1 and int(counts.get(&"porgy", 0)) >= 1,
 		"First new population contains guaranteed remaining quota species")
 	_check(offscreen and non_colliding, "Spawned fish start outside camera and solid tiles")
+	var far_population: bool = false
+	var deep_population: bool = false
+	for candidate in sea.get("_habitat_fish"):
+		var wild: DivingWildFish = candidate as DivingWildFish
+		if wild == null:
+			continue
+		far_population = far_population or wild.position.x < -1000.0
+		deep_population = deep_population or wild.position.y > 535.0
+	_check(far_population and deep_population,
+		"Expanded offscreen areas generate fish for new horizontal and depth exploration")
 	var count_before: int = (sea.get("_wild_fish") as Array).size()
 	story.on_first_companion_catch(fish)
 	await get_tree().process_frame
