@@ -2,6 +2,7 @@
 
 [ext_resource type="Texture2D" uid="uid://daku8xn1nfo32" path="res://sprites/placeholders/silasplaceholderroom.png" id="1_1g260"]
 [ext_resource type="PackedScene" uid="uid://86k4q6ioi03u" path="res://prefabs/silas_house.tscn" id="2_55eqe"]
+[ext_resource type="PackedScene" uid="uid://bu27c1m43q585" path="res://prefabs/silas.tscn" id="3_55eqe"]
 
 [node name="SilasRoom" type="Sprite2D" unique_id=821441359]
 
@@ -13,3 +14,11 @@ texture = ExtResource("1_1g260")
 [node name="SilasHouse" parent="." unique_id=1038743476 instance=ExtResource("2_55eqe")]
 position = Vector2(59, -17)
 locked = false
+
+[node name="Eel" parent="." unique_id=2033605866 instance=ExtResource("3_55eqe")]
+position = Vector2(-57, -17)
+
+[node name="Sprite" parent="Eel" index="2" unique_id=204925965]
+flip_h = false
+
+[editable path="Eel"]

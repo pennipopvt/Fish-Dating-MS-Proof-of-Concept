@@ -233,8 +233,9 @@ func house_recruit(new_house: Texture2D) -> void:
 func _move_actor_into_home(actor: NPCInteractable, home: Area2D, new_house: DoorInfo) -> void:
 	if not _actor_valid(actor) or not _home_valid(home):
 		return
-	# actor.global_position = home.global_position
-	actor.queue_free()
+	actor.global_position = actor.npc.door.npcStand
+	# idk super convoluted im sure claude will fix it at some point LOL
+	# actor.queue_free()
 	if new_house != null:
 		home.house.texture = new_house.door
 		home.transfer_loc = new_house.sceneLoc
