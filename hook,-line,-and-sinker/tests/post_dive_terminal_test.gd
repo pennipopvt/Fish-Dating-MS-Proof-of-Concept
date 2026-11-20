@@ -73,13 +73,48 @@ func _ready() -> void:
 		and not menu.is_page_unlocked(ShopMenu.Page.SHOP)
 		and tabs.get_node("StorageTab").visible
 		and not tabs.get_node("ShopTab").visible,
-		"Post-reveal terminal unlocks Storage without revealing upgrades")
+		"Post-reveal terminal unlocks Fish without revealing Upgrades")
+	_check(not menu.is_page_unlocked(ShopMenu.Page.COLLECTION)
+		and not menu.is_page_unlocked(ShopMenu.Page.CHALLENGES)
+		and not menu.is_page_unlocked(ShopMenu.Page.SCHEDULE)
+		and not tabs.get_node("CollectionTab").visible,
+		"No duplicate Collection tab, premature Challenges, or empty Schedule")
 	var storage_notice: PanelContainer = tabs.get_node("StorageTab/StorageNoticeBubble") as PanelContainer
 	_check(storage_notice.visible and notice.visible,
 		"New Storage tab and the original world terminal display notices")
 	menu.call("_select_page", ShopMenu.Page.STORAGE)
 	_check(not storage_notice.visible and not notice.visible,
-		"Visiting Storage clears both one-time notices")
+		"Visiting Fish clears both one-time notices")
+	var fish_entries: Array = menu.get("_entries")
+	var mullet: Dictionary = {}
+	var porgy: Dictionary = {}
+	var porgy_index: int = -1
+	for i in range(fish_entries.size()):
+		var entry: Dictionary = fish_entries[i]
+		if entry.get("kind") != "fish":
+			continue
+		var species: FishData = entry.get("ref") as FishData
+		if species.fish_id == &"mullet":
+			mullet = entry
+		elif species.fish_id == &"porgy":
+			porgy = entry
+			porgy_index = i
+	_check(not mullet.is_empty() and int(mullet.get("quantity", 0)) == 1
+		and mullet.get("icon") != null,
+		"Combined Fish catalog shows the earned mullet and its live owned count")
+	_check(not porgy.is_empty() and int(porgy.get("quantity", -1)) == 0
+		and porgy.get("icon") != null and bool(porgy.get("zero_quantity", false))
+		and not bool(porgy.get("locked", false)),
+		"Unowned porgy remains recognizable and selectable with x0")
+	if porgy_index >= 0:
+		var tile: Button = (menu.get("_entry_buttons") as Array)[porgy_index] as Button
+		_check(tile.self_modulate != Color.WHITE
+			and tile.get_child_count() > 0,
+			"Zero-count fish get muted art and an owned-count label")
+		menu.call("_choose_tile", porgy_index)
+		var details: Label = menu.get_node("TerminalRoot/Panel/Margin/Layout/Body/Details/DescriptionLabel") as Label
+		_check(details.text.contains("delivered or traded"),
+			"Fish information stays available even when none are in storage")
 	menu.call("_select_page", ShopMenu.Page.SHOP)
 	_check(int(menu.get("_page")) == ShopMenu.Page.STORAGE,
 		"Before the first quota, player cannot open Upgrades")
@@ -89,8 +124,10 @@ func _ready() -> void:
 	_check(QuotaManager.submit(&"mullet") == 2
 		and QuotaManager.submit(&"porgy") == 1,
 		"First complete quota submits exactly two mullet and one porgy")
-	_check(QuotaManager.first_quota_completed and menu.is_page_unlocked(ShopMenu.Page.SHOP),
-		"Completing the first quota permanently unlocks Upgrades")
+	_check(QuotaManager.first_quota_completed and menu.is_page_unlocked(ShopMenu.Page.SHOP)
+		and not menu.is_page_unlocked(ShopMenu.Page.CHALLENGES)
+		and not menu.is_page_unlocked(ShopMenu.Page.SCHEDULE),
+		"Finishing the quota unlocks ONLY Upgrades; Challenges and Schedule wait")
 	var shop_notice: PanelContainer = tabs.get_node("ShopTab/UpgradeNoticeBubble") as PanelContainer
 	_check(shop_notice.visible and notice.visible,
 		"Upgrades unlock prompts both a tab notice and the physical terminal badge")
@@ -100,6 +137,13 @@ func _ready() -> void:
 	QuotaManager.call("_start_cycle", 2)
 	_check(QuotaManager.first_quota_completed and menu.is_page_unlocked(ShopMenu.Page.SHOP),
 		"Upgrade access persists after the next quota starts")
+	menu.unlock_challenges()
+	_check(menu.is_page_unlocked(ShopMenu.Page.CHALLENGES)
+		and not menu.is_page_unlocked(ShopMenu.Page.SCHEDULE),
+		"Challenges require an explicit later progression event")
+	DateManager.date_booked.emit(null, 3, GameManager.Times.AFTERNOON)
+	_check(menu.is_page_unlocked(ShopMenu.Page.SCHEDULE),
+		"Schedule opens only when the first date is booked")
 	_finish(main)
 
 

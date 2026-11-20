@@ -90,8 +90,13 @@ func _ready() -> void:
 	_expect(not hot.claimed and ShopManager.is_trade_locked(SCARF),
 		"Finishing the challenge alone does not unlock the scarf")
 	var world_notice := terminal.get_node("UnclaimedAchievementNotice") as PanelContainer
-	_expect(world_notice != null and world_notice.visible,
-		"A persistent exclamation bubble appears above the physical terminal")
+	_expect(not shop.is_page_unlocked(ShopMenu.Page.CHALLENGES)
+		and not world_notice.visible,
+		"Hidden Challenges never advertise an unclaimable reward")
+	shop.unlock_challenges()
+	terminal.set_challenge_notice_enabled(shop.is_page_unlocked(ShopMenu.Page.CHALLENGES))
+	_expect(shop.is_page_unlocked(ShopMenu.Page.CHALLENGES) and world_notice.visible,
+		"After the later unlock, claimable challenges show the existing world notice")
 	_expect(world_notice.custom_minimum_size == Vector2(16, 16)
 		and world_notice.get_theme_stylebox("panel") is StyleBoxFlat,
 		"The world exclamation fits in a 16x16 bubble with a slim border")
