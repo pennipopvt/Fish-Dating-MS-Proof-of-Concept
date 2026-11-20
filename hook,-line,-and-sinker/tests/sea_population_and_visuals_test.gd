@@ -117,6 +117,63 @@ func _ready() -> void:
 	visual._process(0.0)
 	_check(not phase_art.visible and not feedback.visible,
 		"Combat art clears when the ordinary combat state ends")
+
+	# First return to shore advances the period. Next confirmed dive
+	# must replace ONLY generated habitat fish, preserving tutorial actors.
+	var previous_batch: Array = (sea.get("_habitat_fish") as Array).duplicate()
+	var old_ids: Dictionary = {}
+	for candidate in previous_batch:
+		var wild: DivingWildFish = candidate as DivingWildFish
+		if is_instance_valid(wild):
+			old_ids[wild.get_instance_id()] = true
+	_check(previous_batch.size() >= 2, "First period registered habitat fish separately")
+	GameManager.rest()
+	_check(not population.has_generated_for_current_period(),
+		"After clock advances, a fresh habitat generation is needed")
+	player.set_swimming(false)
+	sea.enter_from_dock()
+	await get_tree().process_frame
+	_check(population.has_generated_for_current_period(),
+		"Entering sea during afternoon refreshes habitat population")
+	var second_batch: Array = sea.get("_habitat_fish")
+	var second_ids: Dictionary = {}
+	var new_mullet: int = 0
+	var new_porgy: int = 0
+	for candidate in second_batch:
+		var wild: DivingWildFish = candidate as DivingWildFish
+		if not is_instance_valid(wild):
+			continue
+		second_ids[wild.get_instance_id()] = true
+		if wild.fish_name == &"mullet":
+			new_mullet += 1
+		elif wild.fish_name == &"porgy":
+			new_porgy += 1
+	_check(second_ids.size() >= 2 and new_mullet >= 1 and new_porgy >= 1,
+		"Afternoon population has guaranteed quota species as well")
+	var replaced: bool = true
+	for old_id in old_ids:
+		if second_ids.has(old_id):
+			replaced = false
+	_check(replaced, "New period replaces previous habitat actors")
+	var scripted_preserved: bool = true
+	for old_id in original_ids:
+		var found: bool = false
+		for candidate in sea.get("_wild_fish"):
+			var wild: DivingWildFish = candidate as DivingWildFish
+			if is_instance_valid(wild) and wild.get_instance_id() == old_id:
+				found = true
+				break
+		if not found:
+			scripted_preserved = false
+	_check(scripted_preserved, "Scripted tutorial and Silas actors survive refresh")
+	sea.enter_from_dock()
+	var same_ids: Dictionary = {}
+	for candidate in sea.get("_habitat_fish"):
+		var wild: DivingWildFish = candidate as DivingWildFish
+		if is_instance_valid(wild):
+			same_ids[wild.get_instance_id()] = true
+	_check(same_ids == second_ids,
+		"Second entry in the same period never replenishes fish")
 	_finish(main)
 
 

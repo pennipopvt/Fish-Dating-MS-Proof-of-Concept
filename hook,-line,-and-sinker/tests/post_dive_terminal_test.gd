@@ -6,6 +6,7 @@ extends Node
 const MAIN: PackedScene = preload("res://scenes/main.tscn")
 const MULLET: ItemData = preload("res://resources/items/mullet.tres")
 const PORGY: ItemData = preload("res://resources/items/porgy.tres")
+const PORGY_FISH: FishData = preload("res://resources/fish/porgy.tres")
 var failures: int = 0
 
 
@@ -103,24 +104,29 @@ func _ready() -> void:
 		and mullet.get("icon") != null,
 		"Combined Fish catalog shows the earned mullet and its live owned count")
 	_check(not porgy.is_empty() and int(porgy.get("quantity", -1)) == 0
-		and porgy.get("icon") != null and bool(porgy.get("zero_quantity", false))
-		and not bool(porgy.get("locked", false)),
-		"Unowned porgy remains recognizable and selectable with x0")
+		and porgy.get("icon") != null and bool(porgy.get("locked", false))
+		and bool(porgy.get("silhouette", false))
+		and not bool(porgy.get("display_quantity", true))
+		and porgy.get("name") == "???",
+		"Uncaught porgy remains an anonymous silhouette with no owned count")
 	if porgy_index >= 0:
 		var tile: Button = (menu.get("_entry_buttons") as Array)[porgy_index] as Button
-		_check(tile.self_modulate != Color.WHITE
-			and tile.get_child_count() > 0,
-			"Zero-count fish get muted art and an owned-count label")
+		var shadow: TextureRect = tile.get_node_or_null("Silhouette") as TextureRect
+		_check(shadow != null and shadow.material is ShaderMaterial and tile.icon == null,
+			"Unknown fish uses silhouette shader instead of revealing colored sprite")
 		menu.call("_choose_tile", porgy_index)
 		var details: Label = menu.get_node("TerminalRoot/Panel/Margin/Layout/Body/Details/DescriptionLabel") as Label
-		_check(details.text.contains("delivered or traded"),
-			"Fish information stays available even when none are in storage")
+		var preview: TextureRect = menu.get_node("TerminalRoot/Panel/Margin/Layout/Body/Details/PreviewFrame/PreviewIcon") as TextureRect
+		_check(details.text == "Catch this fish to reveal its entry."
+			and preview.material is ShaderMaterial,
+			"Unknown fish details and preview do not reveal its identity")
 	menu.call("_select_page", ShopMenu.Page.SHOP)
 	_check(int(menu.get("_page")) == ShopMenu.Page.STORAGE,
 		"Before the first quota, player cannot open Upgrades")
 
 	FishingManager.add_to_storage(MULLET)
-	FishingManager.add_to_storage(PORGY)
+	# An actual catch, not an inventory grant, reveals a species.
+	FishingManager.catch_fish(PORGY_FISH)
 	_check(QuotaManager.submit(&"mullet") == 2
 		and QuotaManager.submit(&"porgy") == 1,
 		"First complete quota submits exactly two mullet and one porgy")
@@ -128,6 +134,20 @@ func _ready() -> void:
 		and not menu.is_page_unlocked(ShopMenu.Page.CHALLENGES)
 		and not menu.is_page_unlocked(ShopMenu.Page.SCHEDULE),
 		"Finishing the quota unlocks ONLY Upgrades; Challenges and Schedule wait")
+	menu.call("_select_page", ShopMenu.Page.STORAGE)
+	var discovered_porgy: Dictionary = {}
+	for entry in menu.get("_entries"):
+		var fish_data: FishData = entry.get("ref") as FishData
+		if fish_data != null and fish_data.fish_id == &"porgy":
+			discovered_porgy = entry
+			break
+	_check(not discovered_porgy.is_empty() and not bool(discovered_porgy.get("locked", true))
+		and not bool(discovered_porgy.get("silhouette", true))
+		and int(discovered_porgy.get("quantity", -1)) == 0
+		and bool(discovered_porgy.get("display_quantity", false))
+		and bool(discovered_porgy.get("zero_quantity", false))
+		and discovered_porgy.get("name") == "Porgy",
+		"After catching and delivering porgy, its art stays revealed at x0")
 	var shop_notice: PanelContainer = tabs.get_node("ShopTab/UpgradeNoticeBubble") as PanelContainer
 	_check(shop_notice.visible and notice.visible,
 		"Upgrades unlock prompts both a tab notice and the physical terminal badge")
