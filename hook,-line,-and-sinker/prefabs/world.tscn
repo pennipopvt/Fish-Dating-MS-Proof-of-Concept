@@ -71,6 +71,8 @@ shader_parameter/highlight_intensity = 0.0
 shader_parameter/highlight_density = 0.25
 shader_parameter/highlight_speed = 0.5
 shader_parameter/waterline_y = 140.0
+shader_parameter/viewer_submersion = 0.0
+shader_parameter/deep_water_alpha = 0.18
 
 [node name="World" type="Node2D" unique_id=1151991614]
 script = ExtResource("world_day_night")
@@ -195,6 +197,10 @@ tile_map_data = PackedByteArray("AAApAAYAAQACAAEAAAApAAcAAQACAAIAAAAqAAcAAQADAAI
 tile_set = ExtResource("world_tiles")
 
 [node name="Water" type="ColorRect" parent="." unique_id=1286032416]
+# Screen-texture reflections capture what was drawn BEFORE Water.
+# Sea geometry, Penni, land NPCs and the net all render below this.
+# Camera/UnderwaterTint remains above it at z=80.
+z_index = 10
 material = SubResource("ShaderMaterial_23sxu")
 custom_minimum_size = Vector2(320, 180)
 offset_left = -1200.0

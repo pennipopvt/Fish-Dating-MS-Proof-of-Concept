@@ -30,6 +30,7 @@ const REFLECTION_AT_SURFACE: float = 0.477
 @onready var _camera: Camera2D = $Player/Camera2D
 @onready var _ambient: CanvasModulate = $DayNightTint
 @onready var _water: ColorRect = $Water
+@onready var _sea_solids: TileMapLayer = $Sea/Solids
 @onready var _diver: Player = $Player
 @onready var _underwater_tint: ColorRect = get_node_or_null("Player/Camera2D/UnderwaterTint") as ColorRect
 
@@ -39,6 +40,7 @@ var _sun_glow_mat: ShaderMaterial
 var _moon_mat: ShaderMaterial
 var _moon_glow_mat: ShaderMaterial
 var _water_mat: ShaderMaterial
+var _sea_clip_mat: ShaderMaterial
 var _tint_mat: ShaderMaterial
 var _transition: Tween
 var _target_progress: float = -1.0
@@ -57,6 +59,7 @@ func _ready() -> void:
 	_moon_mat = _local_material(_moon)
 	_moon_glow_mat = _local_material(_moon_glow)
 	_water_mat = _local_material(_water)
+	_sea_clip_mat = _local_material(_sea_solids)
 	_tint_mat = _local_material(_underwater_tint)
 
 	# A scene that failed to load used to crash at .material and then on
@@ -107,6 +110,11 @@ func _process(_delta: float) -> void:
 	)
 	var surface_screen_y: float = _water.get_global_transform_with_canvas().origin.y
 	_water_mat.set_shader_parameter("waterline_y", surface_screen_y)
+	_water_mat.set_shader_parameter("viewer_submersion", submerged)
+	# Both the visible water and seabed clipping derive their boundary
+	# from this one World/Water surface; no independent tile Y assumption.
+	if _sea_clip_mat != null:
+		_sea_clip_mat.set_shader_parameter("surface_world_y", surface_y)
 	if _tint_mat != null:
 		_tint_mat.set_shader_parameter("submersion", submerged)
 		_tint_mat.set_shader_parameter("surface_y_uv", surface_screen_y / 180.0)
