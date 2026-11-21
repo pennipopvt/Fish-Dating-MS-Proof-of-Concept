@@ -46,13 +46,22 @@ func _run() -> void:
 		and frames.get_frame_count(&"swim_r") > 0,
 		"Penni's new directional swim sheets use her existing AnimatedSprite2D")
 	player.last_direction = -1.0
+	Input.action_press(&"Move Left")
 	player.call("_swim_physics", 0.016)
 	_check(player.animator.animation == &"swim_l",
-		"Swimming left selects swim_l instead of walking")
-	player.last_direction = 1.0
+		"Actual left input selects swim_l instead of floating")
+	Input.action_release(&"Move Left")
+	player.call("_swim_physics", 0.016)
+	_check(player.animator.animation == &"swim_idle_l",
+		"Without input Penni returns to her masked left idle-swim")
+	Input.action_press(&"Move Right")
 	player.call("_swim_physics", 0.016)
 	_check(player.animator.animation == &"swim_r",
-		"Swimming right selects swim_r instead of walking")
+		"Actual right input selects swim_r instead of floating")
+	Input.action_release(&"Move Right")
+	player.call("_swim_physics", 0.016)
+	_check(player.animator.animation == &"swim_idle_r",
+		"Without input Penni returns to her masked right idle-swim")
 	_check(kuda.activate(), "After Silas's first return, Kuda encounter activates")
 	_check(is_instance_valid(kuda.kuda) and is_instance_valid(kuda.prey)
 		and kuda.controls_fish(kuda.kuda) and kuda.controls_fish(kuda.prey),
