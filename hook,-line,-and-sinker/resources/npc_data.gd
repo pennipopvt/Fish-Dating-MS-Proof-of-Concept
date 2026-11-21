@@ -36,6 +36,9 @@ extends Resource
 ## A short, consent-aware room conversation before the scene warning.
 ## Optional: no JSON retains the original direct-entry behavior.
 @export_file("*.json") var overnight_prelude_json: String = ""
+## Optional story flag meaning a difficult prelude needs a conversation
+## before another intimate evening. Clear it in authored reconciliation JSON.
+@export var overnight_unresolved_flag: StringName = &""
 @export_file("*.json") var intimacy_dialogue_json: String = ""
 ## Played in the shared room UI the following morning, not outside the room.
 @export_file("*.json") var morning_after_json: String = ""

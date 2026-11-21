@@ -23,6 +23,9 @@ var _overnight_active: bool = false
 var _morning_dialogue_active: bool = false
 var _prelude_active: bool = false
 var _prelude_approved: bool = false
+# Recorded at room entry, so a reconciliation doesn't immediately turn
+# into another attempt at intimacy in the same evening.
+var _unresolved_prelude_on_entry: bool = false
 
 
 func _ready() -> void:
@@ -65,6 +68,7 @@ func open_room(npc: NPCData) -> void:
 	_overnight_active = false
 	_morning_dialogue_active = false
 	_gift_offered_this_visit = false
+	_unresolved_prelude_on_entry = _has_unresolved_prelude(npc)
 	_inside = true
 	_player.busy = true
 	await _transition.iris_swap(_show_room)
@@ -83,10 +87,21 @@ func _show_room() -> void:
 
 # Only entering a room at night with a previously accepted invitation starts
 # the one-time romance. Existing invitation JSON remains ordinary conversation.
+func _has_unresolved_prelude(npc: NPCData) -> bool:
+	if npc == null or npc.overnight_unresolved_flag == &"":
+		return false
+	return bool(NPCManager.get_npc_state(npc.npc_id).get("flags", {}).get(
+		npc.overnight_unresolved_flag, false))
+
+
 func _try_start_overnight() -> bool:
 	if _illustration == null or _resident == null or not GameManager.is_period(GameManager.Times.NIGHT):
 		return false
 	if _resident.invitation_accepted_flag == &"" or _resident.romance_complete_flag == &"":
+		return false
+	# Respect unresolved boundaries before even trying the overnight prelude.
+	# The normal NPC encounter graph now owns the apology/reconciliation.
+	if _has_unresolved_prelude(_resident):
 		return false
 	var flags: Dictionary = NPCManager.get_npc_state(_resident.npc_id).get("flags", {})
 	if not flags.get(_resident.invitation_accepted_flag, false) \
@@ -154,6 +169,10 @@ func _on_conversation_finished(npc: NPCData) -> void:
 	if _overnight_active:
 		# The illustration owns its dialogue until it signals scene_finished.
 		return
+	# A resolved argument can unlock a future invitation, never a surprise
+	# same-night retry. Conversation history is still authored in JSON.
+	if _unresolved_prelude_on_entry and not _has_unresolved_prelude(npc):
+		NPCManager.get_npc_state(npc.npc_id)["romance_prelude_attempt_day"] = GameManager.get_day()
 	# Room conversations do not automatically start another greeting.
 	call_deferred("_resume_or_exit")
 
@@ -260,6 +279,7 @@ func close_room() -> void:
 	_prelude_active = false
 	_prelude_approved = false
 	_overnight_active = false
+	_unresolved_prelude_on_entry = false
 
 
 func _hide_room() -> void:

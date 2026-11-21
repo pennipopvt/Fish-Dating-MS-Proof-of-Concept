@@ -7,6 +7,17 @@
       ],
       "choices": [
         {
+          "text": "Can we talk about what happened?",
+          "next": "prelude_argument",
+          "when": {
+            "required_flags": [
+              "barracuda_prelude_hurt"
+            ]
+          },
+          "priority": 30,
+          "grey_when_picked": false
+        },
+        {
           "text": "You seem bothered. Want to talk?",
           "next": "morale_check",
           "when": {
@@ -31,6 +42,17 @@
         }
       ],
       "line_variants": [
+        {
+          "when": {
+            "required_flags": [
+              "barracuda_prelude_hurt"
+            ]
+          },
+          "lines": [
+            "…Oh. You're back.",
+            "I wasn't expecting you to come by after earlier."
+          ]
+        },
         {
           "when": {
             "required_flags": [
@@ -114,6 +136,17 @@
       "lines": [],
       "choices": [
         {
+          "text": "Can we talk about what happened?",
+          "next": "prelude_argument",
+          "when": {
+            "required_flags": [
+              "barracuda_prelude_hurt"
+            ]
+          },
+          "priority": 30,
+          "grey_when_picked": false
+        },
+        {
           "text": "You seem bothered. Want to talk?",
           "next": "morale_check",
           "when": {
@@ -190,6 +223,44 @@
       "lines": [
         "I'm fine. Just been quiet around here.",
         "Could use some company that isn't a job."
+      ],
+      "next": "topics"
+    },
+    "prelude_argument": {
+      "lines": [
+        "Yeah. We should.",
+        "You made it sound like spending time with me was a chore.",
+        "I was actually looking forward to seeing you. So... yeah, that stung."
+      ],
+      "choices": [
+        {
+          "text": "I was being a jerk. I'm sorry.",
+          "next": "prelude_apology"
+        },
+        {
+          "text": "I didn't think you'd take it so seriously.",
+          "next": "prelude_defensive"
+        }
+      ]
+    },
+    "prelude_apology": {
+      "lines": [
+        "…Okay.",
+        "I just didn't want to feel stupid for wanting you here.",
+        "Thanks for saying it. We can take things slow, alright?"
+      ],
+      "effects": {
+        "clear_flags": [
+          "barracuda_prelude_hurt"
+        ]
+      },
+      "next": "topics"
+    },
+    "prelude_defensive": {
+      "lines": [
+        "Well, I did.",
+        "If you're not in the mood, just say so. Don't make me feel like I'm wasting your time.",
+        "That's all I'm asking."
       ],
       "next": "topics"
     }

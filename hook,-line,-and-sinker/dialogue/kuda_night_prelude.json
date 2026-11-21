@@ -79,7 +79,12 @@
       "lines": [
         "Tch. Not if you're gonna act like that.",
         "Let's call it a night."
-      ]
+      ],
+      "effects": {
+        "set_flags": [
+          "barracuda_prelude_hurt"
+        ]
+      }
     }
   }
 }
