@@ -47,6 +47,7 @@ func _ready() -> void:
 	_transition.configure(_world, _world_player, _sea,
 		$CanvasLayer/DialogueUI, $CanvasLayer/ShopMenu, _opening)
 	_opening.configure(_world, _world_player, $CanvasLayer/ShopMenu, _transition)
+	($IslandStoryDirector as IslandStoryDirector).configure(_world_player, _transition, _opening)
 	_opening.dive_confirmed.connect(_transition.start_confirmed_dive)
 	_bubble_host.configure(self, _sea.get_node_or_null("StoryDirector") as SeaStoryDirector)
 	_room_view.configure($CanvasLayer/DialogueUI, _transition, _world_player,
