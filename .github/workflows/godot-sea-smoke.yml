@@ -112,7 +112,7 @@ jobs:
           set -o pipefail
           timeout 90s godot --headless --path "hook,-line,-and-sinker" res://tests/dialogue_state_variants_test.tscn 2>&1 | tee dialogue-state-variants-test.log
           ! (grep -E 'SCRIPT ERROR:|Parse Error:|Parser Error:|ERROR:|FAIL ' dialogue-state-variants-test.log | grep -Ev 'resources still in use at exit|RID allocations.*leaked' | grep -q .)
-      - name: Test five-day morale grace, team slowdown and refusal recovery
+      - name: Test unified affection, five-day grace, diving behavior and refusal recovery
         shell: bash
         run: |
           set -o pipefail

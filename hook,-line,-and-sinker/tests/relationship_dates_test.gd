@@ -216,27 +216,24 @@ func _ready() -> void:
 	DateManager.set("_active", null)
 	DateManager.set("_in_dialogue", false)
 
-	# Morale now drives teamwork and does not consume attraction scores.
-	# A date is a repair bonus, but normal conversations also help.
+	# Neglect, dates and missed plans all change the SAME affection value.
 	AffectionManager.set_jealousy(KUDA.npc_id, 75)
-	AffectionManager.set_morale(KUDA.npc_id, 80)
-	# Earlier dialogue already counted as a check-in today; clear that here
-	# to isolate what happens with no meaningful contact.
+	AffectionManager.set_affection(KUDA.npc_id, 80)
 	kuda_state.erase(AffectionManager.LAST_TALK_KEY)
-	var attraction_before: int = AffectionManager.get_affection(KUDA.npc_id)
+	var affection_before: int = AffectionManager.get_affection(KUDA.npc_id)
 	AffectionManager.call("_on_day_started", 2)
-	_expect(AffectionManager.get_morale(KUDA.npc_id) == 72,
-		"Neglect reduces morale, not romance attraction")
-	_expect(AffectionManager.get_affection(KUDA.npc_id) == attraction_before,
-		"Romance attraction remains stable without repeated dates")
+	_expect(AffectionManager.get_affection(KUDA.npc_id) == affection_before - 8,
+		"Neglect reduces the same affection score used by dialogue and companions")
 	AffectionManager.mark_date_completed(KUDA.npc_id, 2)
-	var morale_before: int = AffectionManager.get_morale(KUDA.npc_id)
+	var after_decay: int = AffectionManager.get_affection(KUDA.npc_id)
 	AffectionManager.call("_on_day_started", 3)
-	_expect(AffectionManager.get_morale(KUDA.npc_id) == morale_before,
-		"A recent date prevents next-day morale decay")
+	_expect(AffectionManager.get_affection(KUDA.npc_id) == after_decay,
+		"A recent date prevents next-day affection decay")
 	AffectionManager.call("_on_date_missed", DateManager.get_date(&"kuda_ship"))
+	_expect(AffectionManager.get_affection(KUDA.npc_id) == after_decay - 18,
+		"Missing a date directly hurts affection, not a separate morale score")
 	_expect(AffectionManager.get_jealousy(KUDA.npc_id) == 90,
-		"Missing Kuda's appointment raises jealousy")
+		"Missing Kuda's appointment also raises jealousy")
 	_expect(NPCManager.get_encounter_json_path(KUDA) == "res://dialogue/kuda_post_romance.json",
 		"Kuda can arrange future dates through his own post-romance conversation")
 

@@ -145,7 +145,7 @@ func _run() -> void:
 		"First return automatically selects Silas for future dives")
 	var morale_state: Dictionary = NPCManager.get_npc_state(story.silas_data.npc_id)
 	_check(morale_state.has(AffectionManager.RECRUITED_DAY_KEY)
-		and not AffectionManager.is_morale_active(story.silas_data.npc_id)
+		and not AffectionManager.is_decay_active(story.silas_data.npc_id)
 		and not morale_state.get("flags", {}).get(&"romance_started", false),
 		"Receiving a room begins a morale grace period, not a romance deadline")
 	_check(not story.can_begin_silas_surface_reveal(),

@@ -62,7 +62,7 @@ func _ready() -> void:
 	var relationship_state: Dictionary = NPCManager.get_npc_state(SILAS.npc_id)
 	_check(relationship_state.has(AffectionManager.RECRUITED_DAY_KEY)
 		and not relationship_state.get("flags", {}).get(&"romance_started", false)
-		and not AffectionManager.is_morale_active(SILAS.npc_id),
+		and not AffectionManager.is_decay_active(SILAS.npc_id),
 		"Silas begins a five-day morale grace period, not a romance deadline")
 	var spot: Vector2 = player.global_position
 	_stage = "Opening room"

@@ -57,7 +57,7 @@ func _run() -> void:
 
 	# A nonconsensual push to hurt a wounded fish should be treated differently
 	# from respecting his refusal. Use the existing sea dialogue, unchanged.
-	var originally: int = AffectionManager.get_morale(SILAS.npc_id)
+	var originally: int = AffectionManager.get_affection(SILAS.npc_id)
 	_check(not NPCManager.has_active_relationship_event(SILAS, &"fish_hurt_pressure"),
 		"Silas starts without an invented combat disagreement")
 	DialogueManager.start_conversation(SILAS, "res://dialogue/silas_refuses_attack.json")
@@ -65,8 +65,8 @@ func _run() -> void:
 	_select_choice("Just one more hit?")
 	_advance_until_finished()
 	_check(NPCManager.has_active_relationship_event(SILAS, &"fish_hurt_pressure")
-		and AffectionManager.get_morale(SILAS.npc_id) == originally - 10,
-		"Pressuring Silas triggers the incident and a modest hidden morale loss")
+		and AffectionManager.get_affection(SILAS.npc_id) == originally - 10,
+		"Pressuring Silas triggers the incident and a modest affection loss")
 	_check(NPCManager.get_relationship_followup_json(SILAS)
 		== "res://dialogue/silas_fish_boundary_followup.json",
 		"His specific unresolved problem takes precedence over ordinary room chat")
@@ -88,8 +88,8 @@ func _run() -> void:
 	_select_choice("You're right. I shouldn't have pushed you.")
 	_advance_until_finished()
 	_check(NPCManager.has_resolved_relationship_event(SILAS, &"fish_hurt_pressure")
-		and AffectionManager.get_morale(SILAS.npc_id) == originally - 2,
-		"An apology records reconciliation and partially repairs morale")
+		and AffectionManager.get_affection(SILAS.npc_id) == originally - 2,
+		"An apology records reconciliation and partially repairs affection")
 	_check(NPCManager.get_relationship_followup_json(SILAS).is_empty()
 		and NPCManager.get_encounter_json_path(SILAS) == "res://dialogue/silas_post_romance.json",
 		"Silas's regular conversation resumes after the actual issue is resolved")
