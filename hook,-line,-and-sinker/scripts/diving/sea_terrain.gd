@@ -23,8 +23,9 @@ class_name SeaTerrain
 		if is_node_ready():
 			_rebuild()
 
-# The uploaded texture has a 4-pixel dark border along its TOP. Inset the
-# centered 16px Line2D by half its width so its top meets the collision edge.
+# The uploaded texture has a darker outer border. A robust polygon inset
+# keeps the 16px textured strip on the solid side of the collision curve.
+# This is a distance, NOT a per-vertex offset (which twists at corners).
 @export_range(-32.0, 32.0, 0.5) var edge_inset: float = 8.0:
 	set(value):
 		edge_inset = value
@@ -82,32 +83,77 @@ func _rebuild() -> void:
 		_collider.polygon = PackedVector2Array()
 		return
 
-	var points: PackedVector2Array = curve.get_baked_points()
-	# Path2D's Close Curve tool makes the final control point coincide with
-	# the first. Polygon2D/CollisionPolygon2D want it only once.
-	if points.size() > 2 and points[0].is_equal_approx(points[points.size() - 1]):
-		points.remove_at(points.size() - 1)
+	var points: PackedVector2Array = _bake_closed_outline()
 	if points.size() < 3:
+		_fill.polygon = PackedVector2Array()
+		_edge.points = PackedVector2Array()
+		_collider.polygon = PackedVector2Array()
 		return
 
-	# Fill UVs are world-local coordinates, so the 16px sand tile repeats
-	# instead of stretching across the whole polygon.
+	# The fill and collision always share ONE source of truth. Never edit the
+	# generated polygons independently in the editor.
 	_fill.polygon = points
 	_fill.uv = points
 	_collider.polygon = points
 
-	# Offset the 16px textured strip into the solid, leaving its darker
-	# top pixels on the collision contour. Works for either winding.
-	var signed_area: float = 0.0
+	# Geometry2D trims intersections at corners, unlike the original
+	# averaged-normal vertex offset which could fold into giant triangles.
+	# Line2D knows how to join a *closed* strip without a duplicate seam point.
+	var outline: PackedVector2Array = points
+	if not is_zero_approx(edge_inset):
+		var inset_shapes: Array[PackedVector2Array] = Geometry2D.offset_polygon(
+			points, -edge_inset, Geometry2D.JOIN_ROUND
+		)
+		if not inset_shapes.is_empty():
+			var largest_area: float = 0.0
+			for candidate in inset_shapes:
+				var area: float = absf(_signed_area(candidate))
+				if area > largest_area:
+					largest_area = area
+					outline = candidate
+	# Keep the texture's dark TOP edge on the outside, regardless of the
+	# direction in which the artist drew their Path2D.
+	if _signed_area(outline) < 0.0:
+		outline.reverse()
+	_edge.points = outline
+	_edge.closed = true
+
+
+# Curve2D is an open Bézier resource, even when used for a solid polygon.
+# For drawing, close the last point back to the first with a smooth cubic
+# made from the endpoint's existing tangent handles. The editable curve
+# needs no extra duplicate first/last control point that can split apart.
+func _bake_closed_outline() -> PackedVector2Array:
+	var source: Curve2D = curve
+	var point_total: int = source.point_count
+	if source.get_point_position(0).is_equal_approx(
+			source.get_point_position(point_total - 1)):
+		var existing: PackedVector2Array = source.get_baked_points()
+		if existing.size() > 2 and existing[0].is_equal_approx(existing[existing.size() - 1]):
+			existing.remove_at(existing.size() - 1)
+		return existing
+
+	var closed := Curve2D.new()
+	closed.bake_interval = source.bake_interval
+	for i in range(point_total):
+		var incoming: Vector2 = source.get_point_in(i)
+		var outgoing: Vector2 = source.get_point_out(i)
+		# Godot exposes only the incoming handle at the last point.
+		if i == point_total - 1 and outgoing.is_zero_approx():
+			outgoing = -incoming
+		closed.add_point(source.get_point_position(i), incoming, outgoing)
+	var first_in: Vector2 = source.get_point_in(0)
+	if first_in.is_zero_approx():
+		first_in = -source.get_point_out(0)
+	closed.add_point(source.get_point_position(0), first_in)
+	var baked: PackedVector2Array = closed.get_baked_points()
+	if baked.size() > 2 and baked[0].is_equal_approx(baked[baked.size() - 1]):
+		baked.remove_at(baked.size() - 1)
+	return baked
+
+
+func _signed_area(points: PackedVector2Array) -> float:
+	var area: float = 0.0
 	for i in range(points.size()):
-		signed_area += points[i].cross(points[(i + 1) % points.size()])
-	var inside_sign: float = 1.0 if signed_area > 0.0 else -1.0
-	var edge_points := PackedVector2Array()
-	for i in range(points.size()):
-		var prev: Vector2 = points[(i - 1 + points.size()) % points.size()]
-		var next: Vector2 = points[(i + 1) % points.size()]
-		var tangent: Vector2 = (next - prev).normalized()
-		var inside: Vector2 = Vector2(-tangent.y, tangent.x) * inside_sign
-		edge_points.append(points[i] + inside * edge_inset)
-	edge_points.append(edge_points[0])
-	_edge.points = edge_points
+		area += points[i].cross(points[(i + 1) % points.size()])
+	return area * 0.5
