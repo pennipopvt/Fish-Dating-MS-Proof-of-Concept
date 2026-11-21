@@ -21,6 +21,12 @@ func _ready() -> void:
 	var main: Control = MAIN.instantiate() as Control
 	add_child(main)
 	var opening: FishCoOpeningSequence = main.get_node("IntroLayer") as FishCoOpeningSequence
+	var director: IslandStoryDirector = main.get_node("IslandStoryDirector") as IslandStoryDirector
+	_check(director != null and director.events.size() == 1 \
+		and director.events[0].event_id == &"fish_co_gifts",
+		"The island-wide director owns the authored Fish Co gifts event")
+	_check(director != null and not director.is_processing(),
+		"The story scheduler stays dormant without an eligible event")
 	opening._contract_call_finished = true
 	opening._first_dive_call_started = true
 	opening._first_dive_call_finished = true
@@ -52,6 +58,8 @@ func _ready() -> void:
 	await get_tree().create_timer(0.15).timeout
 	_check(not DialogueManager.is_active and not ShopManager.gifts_unlocked,
 		"Fish Co waits until Penni is free to answer the phone")
+	_check(director.has_pending(&"fish_co_gifts") and director.is_processing(),
+		"The event is queued by the new day and only polls while waiting for availability")
 	player.busy = false
 	for i in range(20):
 		if DialogueManager.is_active:
@@ -59,6 +67,8 @@ func _ready() -> void:
 		await get_tree().create_timer(0.1).timeout
 	_check(DialogueManager.is_active and DialogueManager.current_npc == OPERATOR,
 		"Fish Co calls once on Day 2 after a resident has moved in")
+	_check(director.get("_active") == director.events[0] and not director.is_processing(),
+		"The director hands active dialogue to DialogueManager and stops polling")
 	_check(not ShopManager.gifts_unlocked and player.busy,
 		"Gifts stay locked until Penni finishes the phone call")
 	# Check the exact authoring file rather than relying on the dialogue line index.
@@ -69,6 +79,8 @@ func _ready() -> void:
 		DialogueManager.end_conversation()
 	_check(ShopManager.gifts_unlocked and not player.busy,
 		"Finishing the phone call enables gifts and restores player movement")
+	_check(director.has_completed(&"fish_co_gifts"),
+		"The director records the one-time story event as completed")
 	var gifts: Button = menu.get_node("TerminalRoot/Panel/Margin/Layout/Body/Left/ShopCategories/ShopGifts") as Button
 	var nested: PanelContainer = gifts.get_node("GiftsNoticeBubble") as PanelContainer
 	var parent: PanelContainer = menu.get_node("TerminalRoot/NavTabs/ShopTab/UpgradeNoticeBubble") as PanelContainer
