@@ -30,6 +30,7 @@ func _ready() -> void:
 	var player: Player = world.get_node("Player") as Player
 	var physical: ShopInteractable = world.get_node("Shop") as ShopInteractable
 	menu.unlock_post_dive_storage()
+	menu.call("_select_page", ShopMenu.Page.STORAGE) # Acknowledge the earlier Fish catalog notice.
 	menu.call("_select_page", ShopMenu.Page.SHOP)
 	_check(not menu._pending_progression_notice(),
 		"Upgrades have been acknowledged and no gift notices are pending")
