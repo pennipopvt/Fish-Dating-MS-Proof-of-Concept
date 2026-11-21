@@ -41,6 +41,7 @@ const FISH_COMBAT_VISUAL_SCENE: PackedScene = preload("res://prefabs/sea_fish_co
 @onready var _silas: SeaNPC = $NPCs/Silas
 @onready var _battle: DivingCompanionBattle = $NPCs/Silas/CompanionBattle
 @onready var _silas_behavior: SilasCombatBehavior = $NPCs/Silas/CombatBehavior
+@onready var _commands: SeaPartyCommands = $PartyCommands
 @onready var _encounter: SeaEncounterSequence = $EncounterSequence
 @onready var _kuda: SeaKudaEncounter = $KudaEncounter
 
@@ -293,6 +294,7 @@ func enter_from_dock() -> void:
 # Other school members get fish-form followers without any housing scenes.
 func activate_diving_party(members: Array[NPCData]) -> void:
 	end_diving_party()
+	_commands.clear()
 	_party_dive_active = true
 	var silas_in_party: bool = false
 	for i in range(members.size()):
@@ -316,6 +318,7 @@ func add_diving_party_member(npc: NPCData, index: int) -> void:
 		_silas.global_position = _player.global_position + Vector2(-24.0 - index * 16.0, 8.0)
 		_silas.show()
 		_silas.following = true
+		_commands.register_member(npc, _silas, _battle, _silas_behavior)
 		return
 	var node_name: String = "PartyFish_" + String(npc.npc_id)
 	if $NPCs.get_node_or_null(node_name) != null:
@@ -326,9 +329,18 @@ func add_diving_party_member(npc: NPCData, index: int) -> void:
 	follower.setup(npc, _player, index)
 	follower.global_position = _player.global_position + Vector2(-24.0 - index * 16.0, 8.0)
 	_party_fish.append(follower)
+	if follower.battle != null and follower.behavior != null:
+		_commands.register_member(npc, follower, follower.battle, follower.behavior)
+		follower.battle.started.connect(_on_extra_battle_started.bind(npc.npc_id))
+		follower.battle.hit.connect(_on_extra_battle_hit.bind(follower, follower.battle))
+		follower.battle.fish_knocked_out.connect(_on_battle_fish_knocked_out)
+		follower.battle.companion_knocked_out.connect(
+			_on_extra_companion_knocked_out.bind(npc.npc_id))
 
 
 func end_diving_party() -> void:
+	# Covers the tutorial's Silas-only party as well as roster-backed dives.
+	_commands.clear()
 	if not _party_dive_active:
 		return
 	_party_dive_active = false
@@ -394,9 +406,10 @@ func _process(delta: float) -> void:
 		_exit_prompt.pop_in()
 	else:
 		_exit_prompt.pop_out()
-	if _battle.is_active() and (DialogueManager.is_active or _combat.is_active()):
-		_battle.stop()
-	_silas_behavior.on_combat_update(delta, _silas.can_strike_target())
+	# Multiple fights stay independent. Pause damage while reading dialogue;
+	# netting/reeling one fish only recalls its own attacker.
+	if not DialogueManager.is_active and not GameManager.is_modal_ui_open():
+		_commands.step(delta)
 	if _combat.is_active():
 		_combat.step(delta)
 		_play_combat_phase_sfx()
@@ -556,8 +569,7 @@ func _begin_fish_combat(fish: DivingWildFish) -> void:
 	if data == null:
 		_net.retract()
 		return
-	if _battle.is_active():
-		_battle.stop()
+	_commands.recall_target(fish)
 	_combat.record_lost_fish = fish != _encounter.silas_trap and fish != _kuda.kuda
 	if _combat.begin(fish, data, _player.position.distance_to(fish.position),
 			_net.max_range, fish.health_ratio()):
@@ -621,6 +633,9 @@ func _on_combat_finished(won: bool, fish: DivingWildFish) -> void:
 
 func _on_silas_following_started() -> void:
 	_silas.following = true
+	# During the tutorial Silas can fight before the first shore scene
+	# formally creates his DivingParty roster.
+	_commands.register_member(_story.silas_data, _silas, _battle, _silas_behavior)
 	print("[SEA COMBAT] Silas is now following Penni")
 
 
@@ -664,10 +679,28 @@ func _on_battle_companion_knocked_out() -> void:
 	print("[SEA COMBAT] " + _combat_debug_status)
 
 
+func _on_extra_battle_started(fish: DivingWildFish, npc_id: StringName) -> void:
+	_combat_debug_status = String(npc_id) + " sent to " + String(fish.fish_name)
+	print("[SEA COMBAT] " + _combat_debug_status)
+
+
+func _on_extra_battle_hit(on_fish: bool, damage: float,
+		actor: SeaPartyFollower, battle: DivingCompanionBattle) -> void:
+	play_sfx(&"battle_hit")
+	actor.on_battle_hit(on_fish)
+	print("[SEA COMBAT] %s hit for %.1f; HP %.1f/%.1f" % [
+		"Companion" if on_fish else "Wild fish", damage, battle.health,
+		battle.stats.max_health])
+
+
+func _on_extra_companion_knocked_out(npc_id: StringName) -> void:
+	_combat_debug_status = String(npc_id) + " exhausted; rest to heal"
+	print("[SEA COMBAT] " + _combat_debug_status)
+
+
 func _try_companion_target(world_mouse: Vector2) -> bool:
-	if not _story.has_silas_flag(&"silas_following"):
-		_combat_debug_status = "Command ignored: Silas not recruited"
-		print("[SEA COMBAT] " + _combat_debug_status)
+	if _commands.party_order().is_empty():
+		_combat_debug_status = "Command ignored: no active companions"
 		return false
 	var chosen: DivingWildFish
 	var nearest: float = 24.0
@@ -680,31 +713,32 @@ func _try_companion_target(world_mouse: Vector2) -> bool:
 		if d < nearest:
 			nearest = d
 			chosen = fish
-	if _kuda.protects_from_silas(chosen):
+	if chosen == null:
+		# No targets: recall everyone and restore the original party order.
+		return _commands.recall_all()
+	if _commands.recall_target(chosen):
+		# Recalling one attacker leaves every other ongoing fight intact.
+		return true
+	var next_id: StringName = _commands.next_available_id()
+	if next_id == &"":
+		_combat_debug_status = "Every available companion is already attacking"
+		return false
+	if next_id == _story.silas_data.npc_id and _kuda.protects_from_silas(chosen):
+		# Silas won't interrupt Kuda's scripted hunt or hurt the hunted prey.
 		_story.on_silas_refuses_kuda_hunt()
 		return true
-	if chosen == _battle.target:
-		_battle.stop()
-		return true
-	if chosen == null:
-		if _battle.is_active():
-			_battle.stop()
-			return true
-		_combat_debug_status = "No fish near right-click; range <=145"
-		print("[SEA COMBAT] " + _combat_debug_status + " at " + str(world_mouse.round()))
-		return false
 	var data: FishData = _fish_data.get(chosen) as FishData
-	if data != null and _silas_behavior.on_command(chosen, data):
-		# A refusal is a handled command but must not count as starting combat.
-		if _battle.is_active() and _battle.target == chosen:
-			_story.on_companion_targeted()
-		else:
-			_combat_debug_status = "Silas refuses to hurt this fish again"
-		return true
-	_combat_debug_status = "FishData missing or companion cannot start battle"
-	print("[SEA COMBAT] " + _combat_debug_status)
-	return false
-
+	if data == null:
+		return false
+	if not _commands.send_next(chosen, data):
+		return false
+	# The combat behavior can refuse a target (e.g. Silas's safety limit)
+	# without consuming his queue slot.
+	if _commands.owner_of_target(chosen) == _story.silas_data.npc_id:
+		_story.on_companion_targeted()
+	elif _commands.owner_of_target(chosen) == &"":
+		_combat_debug_status = "Companion refused to attack"
+	return true
 
 func _return_to_surface() -> void:
 	if _player != null and _player.swimming:

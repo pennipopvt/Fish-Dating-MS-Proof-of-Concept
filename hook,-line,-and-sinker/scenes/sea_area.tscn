@@ -6,6 +6,7 @@
 [ext_resource type="Texture2D" uid="uid://c66alkv40oe70" path="res://sprites/environment/terrain/sand_back_edge.png" id="27_binbi"]
 [ext_resource type="PackedScene" path="res://scenes/sea_terrain.tscn" id="27_qp5f5"]
 [ext_resource type="Script" uid="uid://cuo1eyo7ijqpj" path="res://scripts/diving/companion_battle.gd" id="battle"]
+[ext_resource type="Script" path="res://scripts/diving/sea_party_commands.gd" id="party_commands"]
 [ext_resource type="Script" uid="uid://cctrjxxlon5uu" path="res://scripts/diving/diving_combat.gd" id="combat"]
 [ext_resource type="Script" uid="uid://0oeedp8oe8vl" path="res://scripts/diving/sea_encounter_sequence.gd" id="encounter"]
 [ext_resource type="Resource" uid="uid://c07358p6v641e" path="res://resources/fish/flounder.tres" id="flounder"]
@@ -268,6 +269,9 @@ script = ExtResource("sea_oxygen")
 script = ExtResource("sea_dive_inventory")
 
 [node name="FishActors" type="Node2D" parent="." unique_id=1103972822]
+
+[node name="PartyCommands" type="Node" parent="."]
+script = ExtResource("party_commands")
 
 [node name="NPCs" type="Node2D" parent="." unique_id=1390915783]
 
