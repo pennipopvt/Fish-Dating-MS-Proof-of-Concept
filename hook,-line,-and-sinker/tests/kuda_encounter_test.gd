@@ -216,6 +216,18 @@ func _run() -> void:
 	kuda.end_dive()
 	_check(not kuda.activate(),
 		"Kuda never respawns as prey after being recruited")
+	# The first successful surface is a human-form conversation, not a new
+	# underwater catch scene. A flag keeps it from interrupting later dives.
+	_check(story.can_begin_kuda_surface_reveal(),
+		"Newly recruited Kuda is eligible for exactly one shore reveal")
+	_check(story.start_kuda_surface_reveal() and DialogueManager.is_active
+		and DialogueManager.current_npc == KUDA,
+		"Kuda's shore reveal opens in the shared DialogueUI")
+	if DialogueManager.is_active:
+		DialogueManager.end_conversation()
+	_check(story.has_kuda_flag(&"kuda_surface_introduced")
+		and not story.can_begin_kuda_surface_reveal(),
+		"Finishing the shore dialogue prevents it repeating on later dives")
 	player.set_swimming(false)
 	_check(player.animator.animation == &"idle_r",
 		"Returning to shore switches back to the existing land animations")
