@@ -8,6 +8,7 @@
 [ext_resource type="Script" path="res://scripts/diving/sea_party_entrance.gd" id="party_entrance"]
 [ext_resource type="Script" path="res://scripts/diving/sea_speech_bubble_host.gd" id="bubble_host"]
 [ext_resource type="Script" path="res://scripts/diving/sea_debug_panel.gd" id="sea_debug_panel"]
+[ext_resource type="PackedScene" path="res://scenes/water_render_debug.tscn" id="water_debug"]
 [ext_resource type="PackedScene" path="res://scenes/fish_co_intro.tscn" id="fish_co_intro"]
 [ext_resource type="PackedScene" path="res://scenes/sea_speech_bubble.tscn" id="sea_speech_bubble"]
 [ext_resource type="Shader" path="res://shaders/iris_transition.gdshader" id="iris_shader"]
@@ -112,6 +113,8 @@ autoplay = true
 
 [node name="SeaSpeechBubbleHost" type="Node" parent="."]
 script = ExtResource("bubble_host")
+
+[node name="WaterDebugLayer" parent="." instance=ExtResource("water_debug")]
 
 [node name="SeaDebugLayer" type="CanvasLayer" parent="."]
 visible = false
