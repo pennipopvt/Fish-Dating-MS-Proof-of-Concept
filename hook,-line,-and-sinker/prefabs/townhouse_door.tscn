@@ -10,7 +10,6 @@ size = Vector2(20, 31)
 z_index = -1
 position = Vector2(0, -16)
 script = ExtResource("2_cp2wk")
-# Locked by default. Recruitment assigns this door's room destination.
 
 [node name="Sprite" type="Sprite2D" parent="."]
 texture = ExtResource("1_bvrww")
