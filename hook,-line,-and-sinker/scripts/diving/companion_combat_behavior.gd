@@ -4,18 +4,18 @@ class_name CompanionCombatBehavior
 # Reusable lifecycle for an NPC's OWN combat component. Characters define
 # their decisions in subclasses; the shared battle still owns hit timing,
 # damage, health and attack resolution.
-var actor: SeaNPC
+var actor: Node2D
 var battle: DivingCompanionBattle
 
 
 func _ready() -> void:
-	actor = get_parent() as SeaNPC
+	actor = get_parent() as Node2D
 	if actor == null:
-		push_error("CompanionCombatBehavior must be a child of SeaNPC.")
+		push_error("CompanionCombatBehavior needs a Node2D companion actor.")
 		return
 	battle = actor.get_node_or_null("CompanionBattle") as DivingCompanionBattle
 	if battle == null:
-		push_error("SeaNPC needs its own CompanionBattle child.")
+		push_error("Companion actor needs its own CompanionBattle child.")
 		return
 	battle.behavior = self
 	battle.ended.connect(on_combat_end)

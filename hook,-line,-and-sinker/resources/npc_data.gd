@@ -11,6 +11,16 @@ extends Resource
 @export var underwater_sprite: Texture2D
 ## Fish-form world size and underwater conversation framing. Optional.
 @export var sea_visuals: SeaCharacterVisuals
+
+@export_group("Sea Companion Combat")
+## Optional: a diving follower with stats also fights on its own. NPCs
+## without these settings remain purely visual followers.
+@export var sea_battle_stats: CompanionStats
+## Must extend CompanionCombatBehavior. Defaults to lethal base behavior;
+## Silas continues using his editor-authored specialized actor.
+@export var sea_combat_behavior_script: Script
+
+@export_group("Appearance")
 @export var house: Texture2D
 ## Room doorway data. Does not control the diving party.
 @export var door: DoorInfo
