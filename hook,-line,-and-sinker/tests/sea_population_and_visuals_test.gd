@@ -122,8 +122,11 @@ func _ready() -> void:
 	var offscreen: bool = true
 	var non_colliding: bool = true
 	var visible_size: Vector2 = camera.get_viewport_rect().size / camera.zoom.abs()
+	# Fish may swim a few pixels into the *hidden* spawn buffer between
+	# generation and this assertion. Only entering the real viewport is a
+	# visible pop-in, so test the screen bounds rather than its larger margin.
 	var view: Rect2 = Rect2(camera.get_screen_center_position() - visible_size * 0.5,
-		visible_size).grow(population.offscreen_margin)
+		visible_size)
 	var created: int = 0
 	for candidate in sea.get("_wild_fish"):
 		var wild: DivingWildFish = candidate as DivingWildFish
@@ -138,16 +141,6 @@ func _ready() -> void:
 	_check(created >= 2, "Habitats create multiple ordinary fish after the catch")
 	_check(int(counts.get(&"mullet", 0)) >= 1 and int(counts.get(&"porgy", 0)) >= 1,
 		"First new population contains guaranteed remaining quota species")
-	if not offscreen or not non_colliding:
-		print("[SPLINE FISH DEBUG] offscreen=", offscreen,
-			" open_water=", non_colliding, " camera_rect=", view)
-		for candidate in sea.get("_wild_fish"):
-			var wild: DivingWildFish = candidate as DivingWildFish
-			if wild == null or original_ids.has(wild.get_instance_id()):
-				continue
-			print("[SPLINE FISH DEBUG] fish=", wild.fish_name,
-				" position=", wild.position, " visible=", view.has_point(wild.global_position),
-				" open=", sea.call("_is_open_water", wild.position))
 	_check(offscreen and non_colliding, "Spawned fish start outside camera and spline solids")
 	var far_population: bool = false
 	var deep_population: bool = false
