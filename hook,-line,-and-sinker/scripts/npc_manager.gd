@@ -85,6 +85,10 @@ func get_encounter_json_path(npc: NPCData) -> String:
 			continue
 		if rule.use_min_attraction and int(state.get("attraction", 0)) < rule.min_attraction:
 			continue
+		if rule.min_days_after_gift > 0:
+			if not state.has("gift_received_day") \
+					or GameManager.get_day() - int(state["gift_received_day"]) < rule.min_days_after_gift:
+				continue
 		var matches := true
 		for flag in rule.required_flags:
 			if not flags.get(flag, false):
@@ -132,8 +136,10 @@ func accept_gift(npc: NPCData, player: Player, expected_item_id: StringName) -> 
 	var is_correct := player.held_item.item_id == npc.desired_gift.item_id
 	player.remove_held_item()
 	if is_correct:
-		var flags: Dictionary = get_npc_state(npc.npc_id)["flags"]
+		var state: Dictionary = get_npc_state(npc.npc_id)
+		var flags: Dictionary = state["flags"]
 		flags[npc.gift_completed_flag] = true
+		state["gift_received_day"] = GameManager.get_day()
 	return true
 
 

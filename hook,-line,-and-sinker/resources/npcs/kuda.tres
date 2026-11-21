@@ -24,6 +24,7 @@ script = ExtResource("2_rule")
 json_path = "res://dialogue/kuda_invitation.json"
 required_flags = Array[StringName]([&"Recruited", &"barracuda_scarf_complete"])
 forbidden_flags = Array[StringName]([&"barracuda_invitation_accepted", &"barracuda_route_complete"])
+min_days_after_gift = 1
 
 [sub_resource type="Resource" id="Rule_post_romance"]
 script = ExtResource("2_rule")
@@ -58,6 +59,12 @@ sea_combat_behavior_script = ExtResource("kuda_behavior")
 house = ExtResource("4_house")
 door = SubResource("TownhouseKudaDoor")
 porn_sprite = ExtResource("7_kuda_scene")
+invitation_accepted_flag = &"barracuda_invitation_accepted"
+intimacy_scene_id = &"barracuda_house"
+intimacy_dialogue_json = "res://dialogue/kuda_house_scene.json"
+morning_after_json = "res://dialogue/kuda_after_scene.json"
+romance_complete_flag = &"barracuda_route_complete"
+romance_reward_id = &"barracuda"
 encounter_rules = Array[ExtResource("2_rule")]([SubResource("Rule_invitation"), SubResource("Rule_post_romance"), SubResource("Rule_casual"), SubResource("Rule_retry"), SubResource("Rule_first")])
 desired_gift = ExtResource("5_gift")
 correct_gift_json = "res://dialogue/kuda_gift_correct.json"

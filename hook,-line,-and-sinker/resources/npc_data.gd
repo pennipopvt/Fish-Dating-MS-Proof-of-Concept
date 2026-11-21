@@ -28,6 +28,17 @@ extends Resource
 @export var room_background: Texture2D
 @export var porn_sprite: Texture2D # Optional illustrated adult-scene background.
 
+@export_group("Overnight Romance")
+## The invitation is earned in ordinary dialogue, then acted on by returning at night.
+@export var invitation_accepted_flag: StringName = &""
+## An ID for the same illustrated scene, independent of its dialogue JSON.
+@export var intimacy_scene_id: StringName = &""
+@export_file("*.json") var intimacy_dialogue_json: String = ""
+## Played in the shared room UI the following morning, not outside the room.
+@export_file("*.json") var morning_after_json: String = ""
+@export var romance_complete_flag: StringName = &""
+@export var romance_reward_id: StringName = &""
+
 # Scores for bold / playful / reassuring answers at jealousy tiers 0, 1, 2, 3.
 # Edit these arrays on each NPC resource to express their personality.
 @export_group("Date Personality (Jealousy Tiers 0-3)")

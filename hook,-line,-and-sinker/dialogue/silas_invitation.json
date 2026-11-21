@@ -29,11 +29,8 @@
     "accept": {
       "lines": [
         "Oh! Really?",
-        "Okay! Um. Come on in!"
-      ],
-      "effects": {
-        "request_scene": "silas_house"
-      }
+        "Come by tonight, if you'd like!"
+      ]
     },
     "decline": {
       "lines": [
