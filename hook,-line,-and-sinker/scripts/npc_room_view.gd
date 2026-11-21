@@ -11,6 +11,7 @@ var _resident: NPCData
 var _inside: bool = false
 var _closing: bool = false
 var _dialogue_exit_requested: bool = false
+var _gift_offered_this_visit: bool = false
 
 
 func configure(dialogue: DialogueUI, transition: SeaDiveTransition, player: Player) -> void:
@@ -25,6 +26,7 @@ func open_room(npc: NPCData) -> void:
 	if npc == null or _inside or _closing or _transition.transitioning or DialogueManager.is_active:
 		return
 	_resident = npc
+	_gift_offered_this_visit = false
 	_inside = true
 	_player.busy = true
 	await _transition.iris_swap(_show_room)
@@ -41,9 +43,10 @@ func _start_conversation() -> void:
 	if not _inside or _closing or DialogueManager.is_active:
 		return
 	# Mirror NPCInteractable's existing gift branch without spawning an actor.
-	if _player.held_item != null:
+	if not _gift_offered_this_visit and _player.held_item != null:
 		var gift_path: String = NPCManager.get_gift_encounter_path(_resident, _player.held_item)
 		if not gift_path.is_empty():
+			_gift_offered_this_visit = true
 			DialogueManager.request_conversation(_resident, gift_path, _player)
 			return
 	DialogueManager.request_conversation(_resident)
@@ -86,6 +89,7 @@ func close_room() -> void:
 	_closing = false
 	_dialogue_exit_requested = false
 	_resident = null
+	_gift_offered_this_visit = false
 
 
 func _hide_room() -> void:

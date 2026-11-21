@@ -93,6 +93,9 @@ func _ready() -> void:
 	_check(RecruitmentHandler.assign_home(KUDA)
 		and RecruitmentHandler.get_room_id(KUDA.npc_id) != home.get_room_id(),
 		"A second resident takes a different room without an interior scene")
+	_check(view.get_node_or_null("Backdrop") is ColorRect
+		and (view.get_node("Backdrop") as ColorRect).color.a == 1.0,
+		"Unfinished NPC backgrounds use an opaque fallback instead of showing the world")
 	RecruitmentHandler.vacate_home(SILAS.npc_id)
 	_check(home.locked and home.house.texture == LOCKED_DOOR
 		and RecruitmentHandler.available_homes.has(home)
