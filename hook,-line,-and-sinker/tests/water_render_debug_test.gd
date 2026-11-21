@@ -27,6 +27,7 @@ func _run() -> void:
 	var normal_water: Material = water.material
 	var normal_clip: Material = solids.material if solids != null else null
 	var normal_color: Color = water.color
+	var normal_water_visibility: bool = water.visible
 	_check(not debug.visible, "Backslash debug starts hidden")
 	_check(debug.handle_input(_key(KEY_BACKSLASH)) and debug.visible,
 		"Backslash opens separate diagnostics without modifying the water")
@@ -34,7 +35,8 @@ func _run() -> void:
 		and (solids == null or solids.material == normal_clip),
 		"Mode 1 is unmodified gameplay")
 	debug.handle_input(_key(KEY_2))
-	_check(not sea.visible and water.visible, "Mode 2 hides only the sea visuals")
+	_check(not sea.visible and water.visible == normal_water_visibility,
+		"Mode 2 hides only sea visuals and preserves original water visibility")
 	debug.handle_input(_key(KEY_3))
 	_check(sea.visible and not ground.visible and not ground_front.visible,
 		"Mode 3 isolates land tiles; previous mode is restored")
@@ -48,7 +50,7 @@ func _run() -> void:
 	_check((solids == null or solids.material == null) and water.material == normal_water,
 		"Mode 6 preserves the normal water shader without requiring removed tiles")
 	debug.handle_input(_key(KEY_BACKSLASH))
-	_check(not debug.visible and sea.visible and water.visible
+	_check(not debug.visible and sea.visible and water.visible == normal_water_visibility
 		and ground.visible and ground_front.visible
 		and water.material == normal_water
 		and (solids == null or solids.material == normal_clip)
