@@ -1,0 +1,14 @@
+{
+  "entry": "refusal",
+  "free_greeting": true,
+  "nodes": {
+    "refusal": {
+      "lines": [
+        "No way I'm trying to wear down that guy...",
+        "And I don't want to get in the middle of his hunt, either.",
+        "He seems kind of hurt already, though.",
+        "Maybe you could catch him on your own?"
+      ]
+    }
+  }
+}

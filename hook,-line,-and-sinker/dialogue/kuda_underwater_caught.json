@@ -1,0 +1,25 @@
+{
+  "entry": "caught",
+  "free_greeting": true,
+  "nodes": {
+    "caught": {
+      "lines": [
+        "...You actually got me.",
+        "Tch. Don't look so pleased with yourself.",
+        {
+          "speaker": "player",
+          "text": "You were going pretty fast back there."
+        },
+        "Yeah, well. Doesn't mean I wasn't holding back.",
+        "Whatever. I'll follow you around for a while.",
+        "But don't get used to bossing me around."
+      ],
+      "effects": {
+        "set_flags": [
+          "barracuda_met",
+          "Recruited"
+        ]
+      }
+    }
+  }
+}
