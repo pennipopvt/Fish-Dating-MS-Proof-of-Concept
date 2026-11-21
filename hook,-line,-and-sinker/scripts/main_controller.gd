@@ -9,6 +9,7 @@ extends Control
 @onready var _transition: SeaDiveTransition = $TransitionLayer
 @onready var _bubble_host: SeaSpeechBubbleHost = $SeaSpeechBubbleHost
 @onready var _debug: SeaDebugPanel = $SeaDebugLayer
+@onready var _water_debug: WaterRenderDebug = $WaterDebugLayer
 @onready var _room_view: NPCRoomView = $NPCRoomView
 var _opening: FishCoOpeningSequence
 
@@ -69,6 +70,7 @@ func _ready() -> void:
 		terminal_menu.is_page_unlocked(ShopMenu.Page.CHALLENGES)
 	)
 	_debug.configure(self, _world_player, _sea, _bubble_host)
+	_water_debug.configure(_world, $SubViewportContainer/SubViewport, _world_player)
 	_opening.start.call_deferred()
 
 
@@ -94,6 +96,9 @@ func dismiss_diving_companion(npc_id: StringName) -> bool:
 
 # Single input boundary; debug controls and underwater input are delegated.
 func _input(event: InputEvent) -> void:
+	if _water_debug.handle_input(event):
+		get_viewport().set_input_as_handled()
+		return
 	if _debug.is_pointer_over_panel(event):
 		return
 	if _debug.handle_input(event):
