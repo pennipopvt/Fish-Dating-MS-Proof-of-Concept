@@ -707,7 +707,11 @@ func _try_companion_target(world_mouse: Vector2) -> bool:
 	for fish in _wild_fish:
 		if not is_instance_valid(fish) or fish.trapped:
 			continue
-		if _player.position.distance_to(fish.position) > 145.0:
+		# An already-assigned fish can be recalled from farther away.
+		# Otherwise an out-of-range target looked like empty water and
+		# accidentally recalled the *whole* party.
+		if _commands.owner_of_target(fish) == &"" \
+				and _player.position.distance_to(fish.position) > 145.0:
 			continue
 		var d: float = fish.position.distance_to(world_mouse)
 		if d < nearest:
