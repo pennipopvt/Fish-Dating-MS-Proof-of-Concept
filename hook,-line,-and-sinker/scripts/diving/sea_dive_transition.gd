@@ -50,12 +50,23 @@ func configure(world: Node2D, player: Player, sea: DivingWorld,
 	(_sea.get_node("EncounterSequence") as SeaEncounterSequence).set_surface_presentation(_party_entrance)
 	_sea.surface_requested.connect(_on_surface_requested)
 	_sea.oxygen_return_requested.connect(_on_oxygen_return_requested)
+	_sea.kuda_recruited.connect(_on_kuda_recruited)
 	surface_completed.connect(_sea.on_surface_completed)
 	# Story can request fish/human portraits for a conversation without
 	# teaching this physical transition about any particular character.
 	(_sea.get_node("StoryDirector") as SeaStoryDirector).dialogue_mode_requested.connect(
 		_dialogue_ui.set_underwater_mode
 	)
+
+
+# Recruitment during a dive adds one follower right away. Other party
+# members are untouched, and the roster persists for subsequent dives.
+func _on_kuda_recruited() -> void:
+	if not _party.invite(DivingParty.KUDA):
+		return
+	if underwater and not transitioning:
+		var members: Array[NPCData] = _party.members()
+		_sea.add_diving_party_member(DivingParty.KUDA, members.size() - 1)
 
 
 func begin_intro_to_dock(intro: FishCoIntro) -> void:

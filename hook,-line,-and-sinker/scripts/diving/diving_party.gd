@@ -5,6 +5,7 @@ class_name DivingParty
 signal party_changed
 const MAX_COMPANIONS: int = 3
 const SILAS: NPCData = preload("res://resources/npcs/silas.tres")
+const KUDA: NPCData = preload("res://resources/npcs/kuda.tres")
 const FULL_SCHOOL_THOUGHT: String = "Hmm... I think a larger fishing party might scare the fish away."
 
 var _members: Array[NPCData] = []
@@ -15,6 +16,8 @@ func configure(story: SeaStoryDirector) -> void:
 		story.silas_surface_reveal_finished.connect(_welcome_silas)
 	if story.has_silas_flag(&"silas_surface_transformed"):
 		_welcome_silas()
+	if story.has_kuda_flag(&"Recruited"):
+		invite(KUDA)
 
 
 func _welcome_silas() -> void:

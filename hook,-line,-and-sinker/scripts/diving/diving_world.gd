@@ -6,6 +6,7 @@ class_name DivingWorld
 # StoryDirector. We never create a second Player or Camera2D.
 signal surface_requested
 signal oxygen_return_requested
+signal kuda_recruited
 
 const OXYGEN_HUD_SCENE: PackedScene = preload("res://prefabs/sea_oxygen_hud.tscn")
 
@@ -41,6 +42,7 @@ const FISH_COMBAT_VISUAL_SCENE: PackedScene = preload("res://prefabs/sea_fish_co
 @onready var _battle: DivingCompanionBattle = $NPCs/Silas/CompanionBattle
 @onready var _silas_behavior: SilasCombatBehavior = $NPCs/Silas/CombatBehavior
 @onready var _encounter: SeaEncounterSequence = $EncounterSequence
+@onready var _kuda: SeaKudaEncounter = $KudaEncounter
 
 var _player: Player
 var _camera: Camera2D
@@ -92,6 +94,10 @@ func _ready() -> void:
 	_story.first_companion_catch_completed.connect(_on_first_companion_catch_oxygen)
 	_encounter.configure(_player, _story, _net, _silas, _cue)
 	_encounter.fish_remove_requested.connect(_unregister_encounter_fish)
+	_kuda.configure(_player, _story, _spawn_wild_fish,
+		_unregister_encounter_fish, _is_open_water)
+	_kuda.first_hook_dialogue_finished.connect(_start_kuda_fight)
+	_kuda.recruited.connect(_on_kuda_recruited)
 	_net.fish_hit.connect(_on_fish_hit)
 	_combat.finished.connect(_on_combat_finished)
 	_combat.parried.connect(_on_sea_parried)
@@ -280,6 +286,7 @@ func enter_from_dock() -> void:
 	if _story.has_event(&"first_companion_catch"):
 		_refresh_habitats_for_new_period()
 	_encounter.on_dive_entered()
+	_kuda.activate()
 
 
 # Return Silas's original companion battle actor on subsequent dives.
@@ -292,20 +299,33 @@ func activate_diving_party(members: Array[NPCData]) -> void:
 		var npc: NPCData = members[i]
 		if npc == null:
 			continue
+		add_diving_party_member(npc, i)
 		if npc.npc_id == _story.silas_data.npc_id:
 			silas_in_party = true
-			_silas.global_position = _player.global_position + Vector2(-24.0 - i * 16.0, 8.0)
-			_silas.show()
-			_silas.following = true
-		elif npc.underwater_sprite != null:
-			var follower := SeaPartyFollower.new()
-			follower.name = "PartyFish_" + String(npc.npc_id)
-			$NPCs.add_child(follower)
-			follower.setup(npc, _player, i)
-			follower.global_position = _player.global_position + Vector2(-24.0 - i * 16.0, 8.0)
-			_party_fish.append(follower)
 	var flags: Dictionary = NPCManager.get_npc_state(_story.silas_data.npc_id)["flags"]
 	flags[&"silas_following"] = silas_in_party
+
+
+# Add a newly recruited fish DURING the dive without recreating other
+# companions or resetting their positions/health.
+func add_diving_party_member(npc: NPCData, index: int) -> void:
+	if npc == null or npc.underwater_sprite == null or _player == null:
+		return
+	_party_dive_active = true
+	if npc.npc_id == _story.silas_data.npc_id:
+		_silas.global_position = _player.global_position + Vector2(-24.0 - index * 16.0, 8.0)
+		_silas.show()
+		_silas.following = true
+		return
+	var node_name: String = "PartyFish_" + String(npc.npc_id)
+	if $NPCs.get_node_or_null(node_name) != null:
+		return
+	var follower := SeaPartyFollower.new()
+	follower.name = node_name
+	$NPCs.add_child(follower)
+	follower.setup(npc, _player, index)
+	follower.global_position = _player.global_position + Vector2(-24.0 - index * 16.0, 8.0)
+	_party_fish.append(follower)
 
 
 func end_diving_party() -> void:
@@ -358,6 +378,10 @@ func _process(delta: float) -> void:
 		_oxygen.step(delta, to_local(_player.global_position).y)
 	_sfx.set_swimming(not _player.busy and _player.velocity.length() > 8.0)
 	_encounter.step(delta)
+	# Kuda and his prey are real WildFish actors but use authored chase
+	# steering rather than the generic autonomous swim routine.
+	if _combat.target != _kuda.prey:
+		_kuda.step(delta)
 	# Reuse the original interaction bubble for the dock return.
 	# The marker lives at the waterline; the player cannot swim above
 	# the swim bounds, so its radius must work from BELOW the marker.
@@ -379,7 +403,8 @@ func _process(delta: float) -> void:
 			_net.set_line_state(_combat.tension,
 				_combat.phase == DivingCombat.Phase.STUN or _perfect_parry_line_flash_left > 0.0)
 	for fish in _wild_fish:
-		if not is_instance_valid(fish) or fish == _combat.target:
+		if not is_instance_valid(fish) or fish == _combat.target \
+				or _kuda.controls_fish(fish):
 			continue
 		fish.swim(delta, _player.position, false)
 	if _story.has_silas_flag(&"silas_following"):
@@ -513,13 +538,24 @@ func _on_fish_hit(fish: DivingWildFish) -> void:
 		return
 	if _encounter.handle_fish_hit(fish):
 		return
+	if _kuda.on_net_hit(fish):
+		return
+	_begin_fish_combat(fish)
+
+
+func _start_kuda_fight(fish: DivingWildFish) -> void:
+	if is_instance_valid(fish):
+		_begin_fish_combat(fish)
+
+
+func _begin_fish_combat(fish: DivingWildFish) -> void:
 	var data: FishData = _fish_data.get(fish) as FishData
 	if data == null:
 		_net.retract()
 		return
 	if _battle.is_active():
 		_battle.stop()
-	_combat.record_lost_fish = fish != _encounter.silas_trap
+	_combat.record_lost_fish = fish != _encounter.silas_trap and fish != _kuda.kuda
 	if _combat.begin(fish, data, _player.position.distance_to(fish.position),
 			_net.max_range, fish.health_ratio()):
 		# Presentation belongs to the fish actor; it reads existing combat
@@ -554,6 +590,13 @@ func _on_combat_finished(won: bool, fish: DivingWildFish) -> void:
 	_net.reset_net()
 	if not is_instance_valid(fish):
 		return
+	if fish == _kuda.kuda:
+		if won:
+			_kuda.on_caught()
+		else:
+			fish.catch_cooldown = 1.3
+			_kuda.on_escape()
+		return
 	var data: FishData = _fish_data.get(fish) as FishData
 	if won:
 		if fish == _encounter.silas_trap:
@@ -580,6 +623,10 @@ func _on_silas_following_started() -> void:
 
 # Maintain the battle state in CompanionBattle, visual movement in SeaNPC,
 # and fish health in DivingWildFish. No duplicate combat authority.
+func _on_kuda_recruited() -> void:
+	kuda_recruited.emit()
+
+
 func _on_battle_started(fish: DivingWildFish) -> void:
 	_combat_debug_status = "Sent Silas to " + String(fish.fish_name)
 	print("[SEA COMBAT] " + _combat_debug_status + " at " + str(fish.global_position.round()))
@@ -630,6 +677,9 @@ func _try_companion_target(world_mouse: Vector2) -> bool:
 		if d < nearest:
 			nearest = d
 			chosen = fish
+	if _kuda.protects_from_silas(chosen):
+		_story.on_silas_refuses_kuda_hunt()
+		return true
 	if chosen == _battle.target:
 		_battle.stop()
 		return true

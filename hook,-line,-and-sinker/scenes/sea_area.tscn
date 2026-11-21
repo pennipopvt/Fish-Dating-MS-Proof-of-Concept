@@ -29,6 +29,7 @@
 [ext_resource type="Script" uid="uid://c8tfjwwcdogbg" path="res://scripts/diving/sea_spawn_option.gd" id="spawn_option"]
 [ext_resource type="Script" uid="uid://cicrs5os6sgh8" path="res://scripts/diving/sea_spawn_region.gd" id="spawn_region"]
 [ext_resource type="Script" uid="uid://b11olr4jyp85r" path="res://scripts/diving/sea_story_director.gd" id="story"]
+[ext_resource type="PackedScene" path="res://scenes/sea_kuda_encounter.tscn" id="kuda_encounter"]
 
 [sub_resource type="Resource" id="habitat_shallow_mullet"]
 script = ExtResource("spawn_option")
@@ -305,6 +306,9 @@ script = ExtResource("net")
 
 [node name="Combat" type="Node" parent="." unique_id=447810725]
 script = ExtResource("combat")
+
+[node name="KudaEncounter" parent="." instance=ExtResource("kuda_encounter")]
+position = Vector2(-1055, 294)
 
 [node name="Sea Terrain" type="Node2D" parent="." unique_id=90195750]
 

@@ -10,11 +10,16 @@ signal silas_surface_reveal_finished
 signal silas_townhouse_dialogue_finished
 signal silas_townhouse_arrival_finished
 signal dialogue_mode_requested(underwater_portraits: bool)
+signal kuda_hook_dialogue_finished
+signal kuda_recruited
 
 @export var silas_data: NPCData = preload("res://resources/npcs/silas.tres")
+@export var kuda_data: NPCData = preload("res://resources/npcs/kuda.tres")
 
 var _events: Dictionary = {}
 var _dialogue_stage: StringName = &""
+var _kuda_dialogue_stage: StringName = &""
+var _kuda_bubble_speaker: Node2D
 var _missing_bubble_warned: bool = false
 var _help_trigger_logged: bool = false
 var _speech_bubble: SeaSpeechBubble
@@ -103,6 +108,65 @@ func has_silas_flag(id: StringName) -> bool:
 func _set_silas_flag(id: StringName) -> void:
 	var flags: Dictionary = _npc_flags()
 	flags[id] = true
+
+
+func has_kuda_flag(id: StringName) -> bool:
+	return bool(NPCManager.get_npc_state(kuda_data.npc_id)["flags"].get(id, false))
+
+
+func show_kuda_chase_bubble(speaker: Node2D, message: String) -> bool:
+	var ui: SeaSpeechBubble = _bubble()
+	if ui == null or not ui.is_node_ready() or ui.is_call_active():
+		return false
+	ui.show_attached_call(message, speaker, 2.8)
+	_kuda_bubble_speaker = speaker
+	return ui.is_call_shown()
+
+
+func hide_kuda_chase_bubble() -> void:
+	var ui: SeaSpeechBubble = _bubble()
+	if ui != null and is_instance_valid(_kuda_bubble_speaker) \
+			and ui._speaker == _kuda_bubble_speaker:
+		ui.hide_call()
+	_kuda_bubble_speaker = null
+
+
+func on_silas_refuses_kuda_hunt() -> void:
+	if DialogueManager.is_active:
+		return
+	if not has_event(&"silas_kuda_refusal"):
+		hide_kuda_chase_bubble()
+		DialogueManager.request_conversation(silas_data,
+			"res://dialogue/silas_refuses_kuda.json")
+		if DialogueManager.is_active:
+			_events[&"silas_kuda_refusal"] = true
+	else:
+		_show_silas_bubble("No way! I'm staying out of that.", 2.5)
+
+
+func start_kuda_hook_dialogue() -> bool:
+	if DialogueManager.is_active or has_event(&"kuda_first_net_dialogue"):
+		return false
+	hide_kuda_chase_bubble()
+	_kuda_dialogue_stage = &"hook"
+	DialogueManager.request_conversation(kuda_data, "res://dialogue/kuda_net_hook.json")
+	if DialogueManager.is_active:
+		_events[&"kuda_first_net_dialogue"] = true
+		return true
+	_kuda_dialogue_stage = &""
+	return false
+
+
+func start_kuda_caught_dialogue() -> bool:
+	if DialogueManager.is_active:
+		return false
+	_kuda_dialogue_stage = &"caught"
+	DialogueManager.request_conversation(kuda_data,
+		"res://dialogue/kuda_underwater_caught.json")
+	if DialogueManager.is_active:
+		return true
+	_kuda_dialogue_stage = &""
+	return false
 
 
 func on_dive_entered() -> void:
@@ -262,6 +326,17 @@ func on_silas_rescued() -> void:
 
 
 func _on_conversation_finished(finished_npc: NPCData) -> void:
+	if finished_npc == kuda_data:
+		var stage: StringName = _kuda_dialogue_stage
+		_kuda_dialogue_stage = &""
+		if stage == &"hook":
+			kuda_hook_dialogue_finished.emit()
+		elif stage == &"caught":
+			# The JSON also sets Recruited. Finalize the roster only AFTER
+			# the player has finished reading the conversation.
+			NPCManager.get_npc_state(kuda_data.npc_id)["flags"][&"Recruited"] = true
+			kuda_recruited.emit()
+		return
 	if finished_npc != silas_data:
 		return
 	if _dialogue_stage == &"introduction":
