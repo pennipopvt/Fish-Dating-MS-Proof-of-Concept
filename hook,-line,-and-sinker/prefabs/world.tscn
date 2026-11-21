@@ -13,7 +13,6 @@
 [ext_resource type="Texture2D" uid="uid://culbi4w4j2vi2" path="res://sprites/environment/medium_cloud.png" id="6_q76tg"]
 [ext_resource type="Texture2D" uid="uid://papjvjxenamb" path="res://sprites/environment/long_cloud.png" id="7_sxw1y"]
 [ext_resource type="Shader" uid="uid://r4rciq67coeg" path="res://shaders/water.gdshader" id="13_le6xu"]
-[ext_resource type="Texture2D" uid="uid://bpe0rxa03aagx" path="res://sprites/environment/background_mountain.png" id="13_u7kri"]
 [ext_resource type="PackedScene" uid="uid://c0d22ylobcr2s" path="res://scenes/townhouse.tscn" id="23_townhouse"]
 [ext_resource type="PackedScene" path="res://prefabs/townhouse_door.tscn" id="24_xfqyr"]
 [ext_resource type="PackedScene" path="res://prefabs/bed.tscn" id="25_bed"]
@@ -169,12 +168,6 @@ texture = ExtResource("6_q76tg")
 [node name="LongCloud" type="Sprite2D" parent="Sky/Clouds" unique_id=130679970]
 position = Vector2(89, 8)
 texture = ExtResource("7_sxw1y")
-
-[node name="BackgroundMountain" type="Sprite2D" parent="." unique_id=264333572]
-z_index = -2
-position = Vector2(374.5, 72)
-scale = Vector2(1.6953353, 0.9777778)
-texture = ExtResource("13_u7kri")
 
 [node name="Townhouse" parent="." unique_id=1180413625 instance=ExtResource("23_townhouse")]
 z_index = -2
