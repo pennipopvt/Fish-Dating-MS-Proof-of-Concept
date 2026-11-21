@@ -20,6 +20,52 @@ func _ready() -> void:
 	var population: SeaPopulation = sea.get_node("SeaPopulation") as SeaPopulation
 	var regions: Node2D = sea.get_node("SpawnRegions") as Node2D
 	var pool: Array = sea.get("_wild_fish")
+	# The fish are Node2D actors, so their open-water movement test must
+	# recognize the same polygons that physically stop Penni and the net.
+	var spline_colliders: Array = sea.get("_terrain_colliders")
+	_check(spline_colliders.size() == 9,
+		"All nine user-authored spline colliders are registered for fish movement")
+	var blocked_point: Vector2 = Vector2.INF
+	var actors: Node2D = sea.get_node("FishActors") as Node2D
+	for candidate in spline_colliders:
+		var collider: CollisionPolygon2D = candidate as CollisionPolygon2D
+		if collider == null:
+			continue
+		var triangles: PackedInt32Array = Geometry2D.triangulate_polygon(collider.polygon)
+		for i in range(0, triangles.size(), 3):
+			var local_center: Vector2 = (
+				collider.polygon[triangles[i]] +
+				collider.polygon[triangles[i + 1]] +
+				collider.polygon[triangles[i + 2]]
+			) / 3.0
+			var sea_point: Vector2 = actors.to_local(collider.to_global(local_center))
+			if sea_point.y > 172.0 and sea_point.y < 740.0 \
+					and not bool(sea.call("_is_open_water", sea_point)):
+				blocked_point = sea_point
+				break
+		if blocked_point != Vector2.INF:
+			break
+	_check(blocked_point != Vector2.INF,
+		"Fish treat the interior of a spline collider as solid rock")
+	var clear_point: Vector2 = Vector2.INF
+	for x in range(-1700, -100, 100):
+		for y in range(220, 700, 80):
+			var candidate_point := Vector2(x, y)
+			if bool(sea.call("_is_open_water", candidate_point)):
+				clear_point = candidate_point
+				break
+		if clear_point != Vector2.INF:
+			break
+	_check(clear_point != Vector2.INF,
+		"Fish can still swim in open water between the spline formations")
+	if clear_point != Vector2.INF and blocked_point != Vector2.INF:
+		var test_fish := DivingWildFish.new()
+		test_fish.is_open = Callable(sea, "_is_open_water")
+		var avoided: Vector2 = test_fish._avoid_solids(clear_point, blocked_point)
+		_check(avoided != blocked_point
+			and bool(sea.call("_is_open_water", avoided)),
+			"Existing free-swimming fish slide or turn away from spline rock")
+		test_fish.free()
 	_check(regions.get_child_count() >= 5,
 		"Expanded sea has five editable habitat regions, including the far and deep areas")
 	var guide: SeaEditorGuide = sea.get_node("EditorGuide") as SeaEditorGuide
