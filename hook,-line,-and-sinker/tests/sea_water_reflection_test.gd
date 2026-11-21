@@ -31,10 +31,11 @@ func _run() -> void:
 		and water_mat.shader.code.contains("mix(1.0, deep_water_alpha, viewer_submersion)"),
 		"Shore water is opaque regardless of pixel depth; diver submersion reveals the sea")
 	_check(solids_mat != null and solids_mat.shader != null
-		and solids_mat.shader.code.contains("MODEL_MATRIX")
+		and solids_mat.shader.code.contains("FRAGCOORD.y < surface_screen_y")
 		and solids_mat.shader.code.contains("discard")
+		and solids_mat.get_shader_parameter("surface_screen_y") != null
 		and solids.collision_enabled,
-		"Seabed tiles are clipped visually at the shared waterline without removing physics")
+		"Sea tiles clip at the same screen-space waterline used by the reflection, preserving physics")
 	_check(world.get_node("Sky") is Control
 		and absf(water.position.y - 140.0) < 0.01,
 		"Sky and sea still share the original world-space water surface")
