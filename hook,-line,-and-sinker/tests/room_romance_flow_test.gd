@@ -96,10 +96,13 @@ func _run_route(npc: NPCData, skip_scene: bool) -> void:
 	door.interact(player)
 	# Iris (1.04s) plus warning fade (1.5s): don't click during either.
 	# Wait for the controller's actual transition state, not wall-clock timing.
-	for i in range(300):
+	var ready: bool = false
+	for i in range(60):
 		if illustration._active_npc == npc and not illustration._transitioning:
+			ready = true
 			break
-		await get_tree().process_frame
+		await get_tree().create_timer(0.1).timeout
+	_check(ready, "The warning has fully finished fading before user input")
 	_check(view.visible and illustration._active_npc == npc,
 		"Arriving at night starts the invited character's scene inside the room")
 	_check((illustration.get_node("WarningScreen") as ColorRect).visible,
@@ -109,20 +112,20 @@ func _run_route(npc: NPCData, skip_scene: bool) -> void:
 		illustration._on_skip_pressed()
 	else:
 		illustration._on_show_pressed()
-		for i in range(300):
+		for i in range(60):
 			if DialogueManager.is_active and DialogueManager.current_npc == npc:
 				break
-			await get_tree().process_frame
+			await get_tree().create_timer(0.1).timeout
 		_check(DialogueManager.is_active and DialogueManager.current_npc == npc,
 			"Choosing Show starts the character's authored illustration dialogue")
 		if DialogueManager.is_active:
 			DialogueManager.end_conversation()
 
 	stage = npc.display_name + " morning"
-	for i in range(300):
+	for i in range(60):
 		if GameManager.get_day() == 3 and DialogueManager.is_active:
 			break
-		await get_tree().process_frame
+		await get_tree().create_timer(0.1).timeout
 	_check(GameManager.get_day() == 3 and GameManager.is_period(GameManager.Times.MORNING),
 		"Watching or skipping advances precisely one night to the next morning")
 	_check(view.visible and bool(main.get_node("CanvasLayer/DialogueUI").get("_room_mode")),
