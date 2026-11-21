@@ -22,7 +22,11 @@ func register_member(npc: NPCData, actor: Node2D,
 	_entries[npc.npc_id] = {"actor": actor, "battle": battle, "behavior": behavior}
 	_ordered.append(npc.npc_id)
 	_available.append(npc.npc_id)
-	battle.ended.connect(_on_battle_ended.bind(npc.npc_id))
+	# Silas's permanent battle node survives across dives. The roster can
+	# be rebuilt, but its signal subscription must not be duplicated.
+	var callback: Callable = _on_battle_ended.bind(npc.npc_id)
+	if not battle.ended.is_connected(callback):
+		battle.ended.connect(callback)
 
 
 func unregister_member(npc_id: StringName) -> void:
