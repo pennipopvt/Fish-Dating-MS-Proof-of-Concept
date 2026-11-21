@@ -12,6 +12,7 @@ const MIN_AUTO_HANDLE_LENGTH: float = 3.0
 # Wait for the native Path2D editor to finish a mouse edit before modifying
 # control points, avoiding fights with its active drag/UndoRedo operation.
 const EDITOR_CURVE_SETTLE_MS: int = 110
+@export_group("Appearance")
 @export var fill_texture: Texture2D:
 	set(value):
 		fill_texture = value
@@ -39,6 +40,25 @@ const EDITOR_CURVE_SETTLE_MS: int = 110
 		if is_node_ready():
 			_request_rebuild()
 
+# Both toggles affect only this SeaTerrain instance. The spline, fill
+# texture and author-edited curve stay intact when either is off.
+@export var show_edge_texture: bool = true:
+	set(value):
+		show_edge_texture = value
+		if is_node_ready():
+			_edge.visible = value
+
+
+@export_group("Collision")
+# Keep a disabled polygon available at runtime so turning collision back
+# on does not require rebuilding geometry or recaching fish queries.
+@export var collision_enabled: bool = true:
+	set(value):
+		collision_enabled = value
+		if is_node_ready():
+			_collider.disabled = not value
+
+
 @onready var _fill: Polygon2D = $Fill
 @onready var _edge: Line2D = $Edge
 @onready var _collider: CollisionPolygon2D = $StaticBody2D/CollisionPolygon2D
@@ -55,6 +75,8 @@ func _ready() -> void:
 	_connect_curve()
 	_normalize_closed_curve()
 	_configure_art()
+	_edge.visible = show_edge_texture
+	_collider.disabled = not collision_enabled
 	_rebuild()
 	# Inspector can replace the entire Curve2D; monitor only its identity.
 	set_process(true)
