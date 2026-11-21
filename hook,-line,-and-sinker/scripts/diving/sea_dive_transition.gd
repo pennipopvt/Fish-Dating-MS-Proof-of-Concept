@@ -47,6 +47,7 @@ func configure(world: Node2D, player: Player, sea: DivingWorld,
 	_opening = opening
 	_party.configure(_sea.get_node("StoryDirector") as SeaStoryDirector)
 	_party_entrance.configure(_world, _world_player)
+	(_sea.get_node("EncounterSequence") as SeaEncounterSequence).set_surface_presentation(_party_entrance)
 	_sea.surface_requested.connect(_on_surface_requested)
 	_sea.oxygen_return_requested.connect(_on_oxygen_return_requested)
 	surface_completed.connect(_sea.on_surface_completed)
@@ -194,7 +195,6 @@ func _surface_from_dive() -> void:
 	ascent.tween_property(island_camera, "position", Vector2(0.0, -22.0), 0.85)
 	await ascent.finished
 	_world_player.set_swimming(false)
-	_sea.end_diving_party()
 	_world_player.animator.rotation = 0.0
 	_world_player.animator.play(&"idle_l")
 	underwater = false
@@ -205,6 +205,28 @@ func _surface_from_dive() -> void:
 	(_sea.get_node("SeaOxygen") as SeaOxygen).end_dive()
 	# Every completed dive uses the remaining morning/afternoon/night period.
 	GameManager.finish_dive_period()
+
+	var story := _sea.get_node("StoryDirector") as SeaStoryDirector
+	# The first Silas reveal already has authored dialogue and townhouse
+	# choreography. It uses the shared fish-to-human animation separately.
+	if not story.can_begin_silas_surface_reveal() and not _party.members().is_empty():
+		var approach := _sea.get_node("Points/SilasSurfaceApproach") as Marker2D
+		var dock_wait := _sea.get_node("Points/SilasDockWait") as Marker2D
+		# Keep the live fish actors until their individual poofs finish.
+		var humans: Array[Node2D] = await _party_entrance.surface_party(
+			_party.members(), _sea, approach.global_position, dock_wait.global_position
+		)
+		# A short exit fade covers the companions going back to their rooms.
+		# The party roster, housing and dialogue state stay untouched.
+		var fade := ScreenFade.new()
+		get_tree().root.add_child(fade)
+		await fade.fade_to(1.0, _party_entrance.fade_seconds)
+		_sea.end_diving_party()
+		_party_entrance.clear_surface_actors(humans)
+		await fade.fade_to(0.0, _party_entrance.fade_seconds)
+		fade.queue_free()
+	else:
+		_sea.end_diving_party()
 
 	transitioning = false
 	_world_player.busy = false
