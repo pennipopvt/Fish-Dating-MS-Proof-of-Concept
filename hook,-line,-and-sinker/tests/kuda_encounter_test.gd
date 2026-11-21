@@ -216,18 +216,34 @@ func _run() -> void:
 	kuda.end_dive()
 	_check(not kuda.activate(),
 		"Kuda never respawns as prey after being recruited")
-	# The first successful surface is a human-form conversation, not a new
-	# underwater catch scene. A flag keeps it from interrupting later dives.
+	# KudaEncounter owns the first surface sequence; World just dispatches
+	# presented human actors. Do not trigger a story for an absent companion.
 	_check(story.can_begin_kuda_surface_reveal(),
 		"Newly recruited Kuda is eligible for exactly one shore reveal")
-	_check(story.start_kuda_surface_reveal() and DialogueManager.is_active
-		and DialogueManager.current_npc == KUDA,
-		"Kuda's shore reveal opens in the shared DialogueUI")
+	var entrance: SeaPartyEntrance = transition.get_node("PartyEntrance") as SeaPartyEntrance
+	var silas_actor: Node2D = entrance.stage_surface_actor(SILAS, Vector2(65.0, 112.0))
+	silas_actor.show()
+	sea.on_party_surfaced([silas_actor])
+	_check(not DialogueManager.is_active and not RecruitmentHandler.is_resident(KUDA.npc_id),
+		"No Kuda scene or room assignment when only Silas appears on shore")
+	var kuda_actor: Node2D = entrance.stage_surface_actor(KUDA, Vector2(92.0, 112.0))
+	kuda_actor.show()
+	sea.on_party_surfaced([silas_actor, kuda_actor])
+	_check(DialogueManager.is_active and DialogueManager.current_npc == KUDA,
+		"KudaEncounter opens the shared dialogue after Kuda transforms")
 	if DialogueManager.is_active:
 		DialogueManager.end_conversation()
+	await get_tree().process_frame
 	_check(story.has_kuda_flag(&"kuda_surface_introduced")
 		and not story.can_begin_kuda_surface_reveal(),
 		"Finishing the shore dialogue prevents it repeating on later dives")
+	_check(RecruitmentHandler.is_resident(KUDA.npc_id),
+		"KudaEncounter assigns his townhouse room after the introduction")
+	sea.on_party_surfaced([kuda_actor])
+	_check(not DialogueManager.is_active,
+		"Later surfaces do not replay Kuda's introduction")
+	silas_actor.queue_free()
+	kuda_actor.queue_free()
 	player.set_swimming(false)
 	_check(player.animator.animation == &"idle_r",
 		"Returning to shore switches back to the existing land animations")
