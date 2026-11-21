@@ -41,7 +41,9 @@ var _watched_curve: Curve2D
 func _ready() -> void:
 	_connect_curve()
 	_rebuild()
-	set_process(Engine.is_editor_hint())
+	# Also track Curve2D replacement at runtime (e.g. instanced test scenes).
+	# This only compares a resource pointer; geometry rebuilds on change.
+	set_process(true)
 
 
 func _process(_delta: float) -> void:
