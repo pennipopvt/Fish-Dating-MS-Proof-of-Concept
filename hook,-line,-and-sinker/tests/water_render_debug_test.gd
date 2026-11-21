@@ -1,6 +1,6 @@
 extends Node
 
-# Exercises every F8 diagnostic mode without changing production render state.
+# Exercises every Backslash diagnostic mode without changing production render state.
 # Run: godot --headless --path . res://tests/water_render_debug_test.tscn
 const MAIN: PackedScene = preload("res://scenes/main.tscn")
 var failures: int = 0
@@ -24,9 +24,9 @@ func _run() -> void:
 	var normal_water: Material = water.material
 	var normal_clip: Material = solids.material
 	var normal_color: Color = water.color
-	_check(not debug.visible, "F8 debug starts hidden")
-	_check(debug.handle_input(_key(KEY_F8)) and debug.visible,
-		"F8 opens separate diagnostics without modifying the water")
+	_check(not debug.visible, "Backslash debug starts hidden")
+	_check(debug.handle_input(_key(KEY_BACKSLASH)) and debug.visible,
+		"Backslash opens separate diagnostics without modifying the water")
 	_check(debug.mode == 0 and water.material == normal_water
 		and solids.material == normal_clip, "Mode 1 is unmodified gameplay")
 	debug.handle_input(_key(KEY_2))
@@ -43,14 +43,14 @@ func _run() -> void:
 	debug.handle_input(_key(KEY_6))
 	_check(solids.material == null and water.material == normal_water,
 		"Mode 6 reveals unmasked sea tiles but preserves the normal water shader")
-	debug.handle_input(_key(KEY_F8))
+	debug.handle_input(_key(KEY_BACKSLASH))
 	_check(not debug.visible and sea.visible and water.visible
 		and ground.visible and ground_front.visible
 		and water.material == normal_water and solids.material == normal_clip
-		and water.color == normal_color, "F8 restores every visual material and visibility")
+		and water.color == normal_color, "Backslash restores every visual material and visibility")
 	main.queue_free()
 	await get_tree().process_frame
-	print("FAILED %d" % failures if failures > 0 else "F8 water render diagnostics passed")
+	print("FAILED %d" % failures if failures > 0 else "Backslash water render diagnostics passed")
 	get_tree().quit(1 if failures > 0 else 0)
 
 
