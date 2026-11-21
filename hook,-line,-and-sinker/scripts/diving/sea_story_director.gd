@@ -12,6 +12,7 @@ signal silas_townhouse_arrival_finished
 signal dialogue_mode_requested(underwater_portraits: bool)
 signal kuda_hook_dialogue_finished
 signal kuda_recruited
+signal kuda_surface_reveal_finished
 
 @export var silas_data: NPCData = preload("res://resources/npcs/silas.tres")
 @export var kuda_data: NPCData = preload("res://resources/npcs/kuda.tres")
@@ -167,6 +168,30 @@ func start_kuda_caught_dialogue() -> bool:
 		return true
 	_kuda_dialogue_stage = &""
 	return false
+
+
+func can_begin_kuda_surface_reveal() -> bool:
+	return has_kuda_flag(&"Recruited") \
+		and not has_kuda_flag(&"kuda_surface_introduced") \
+		and not DialogueManager.is_active
+
+
+# Kuda is already in the party. His first human-form surprise happens only
+# after the shared surface poof, and uses the normal dialogue UI/JSON.
+func start_kuda_surface_reveal() -> bool:
+	if not can_begin_kuda_surface_reveal():
+		return false
+	_kuda_dialogue_stage = &"surface_reveal"
+	dialogue_mode_requested.emit(false)
+	DialogueManager.request_conversation(kuda_data,
+		"res://dialogue/kuda_surface_reveal.json")
+	if not DialogueManager.is_active:
+		DialogueManager.request_inline_conversation(kuda_data,
+			["Wait, I have LEGS?!", "What just happened to me?!"], "Kuda")
+	if not DialogueManager.is_active:
+		_kuda_dialogue_stage = &""
+		return false
+	return true
 
 
 func on_dive_entered() -> void:
@@ -336,6 +361,9 @@ func _on_conversation_finished(finished_npc: NPCData) -> void:
 			# the player has finished reading the conversation.
 			NPCManager.get_npc_state(kuda_data.npc_id)["flags"][&"Recruited"] = true
 			kuda_recruited.emit()
+		elif stage == &"surface_reveal":
+			NPCManager.get_npc_state(kuda_data.npc_id)["flags"][&"kuda_surface_introduced"] = true
+			kuda_surface_reveal_finished.emit()
 		return
 	if finished_npc != silas_data:
 		return
