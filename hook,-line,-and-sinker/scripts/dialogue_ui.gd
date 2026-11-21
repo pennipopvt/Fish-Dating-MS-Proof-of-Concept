@@ -74,6 +74,7 @@ func set_room_mode(enabled: bool) -> void:
 		_npc_portrait.anchor_bottom = _npc_land_anchors.w
 		_restore_portrait_offsets(_npc_portrait, _npc_land_offsets)
 		_player_portrait.visible = not _illustration_mode
+	_apply_npc_portrait_presentation()
 	if DialogueManager.is_active:
 		_refresh()
 
@@ -109,8 +110,29 @@ func set_underwater_mode(enabled: bool) -> void:
 	_restore_portrait_offsets(_player_portrait, _player_land_offsets)
 	if not _room_mode:
 		_restore_portrait_offsets(_npc_portrait, _npc_land_offsets)
+	_apply_npc_portrait_presentation()
 	if DialogueManager.is_active and visible:
 		_refresh()
+
+
+# Every NPC uses the SAME dialogue box. A resource optionally changes only
+# the fish-form illustration's scale/tilt/offset, never its dialogue behavior.
+# Restore original offsets each time so shifts cannot accumulate by line.
+func _apply_npc_portrait_presentation() -> void:
+	if not is_node_ready():
+		return
+	_npc_portrait.scale = Vector2.ONE
+	_npc_portrait.rotation_degrees = 0.0
+	if not _room_mode:
+		_restore_portrait_offsets(_npc_portrait, _npc_land_offsets)
+	_npc_portrait.pivot_offset = _npc_portrait.size * 0.5
+	if _room_mode or not _underwater_mode or _npc == null or _npc.sea_visuals == null:
+		return
+	var visuals: SeaCharacterVisuals = _npc.sea_visuals
+	_npc_portrait.scale = Vector2.ONE * visuals.portrait_scale
+	_npc_portrait.rotation_degrees = visuals.portrait_angle_degrees
+	_npc_portrait.position += visuals.portrait_offset
+
 
 func _restore_portrait_offsets(view: TextureRect, values: Vector4) -> void:
 	view.offset_left = values.x
@@ -252,6 +274,7 @@ func _show_line(line: DialogueLineData) -> void:
 	_npc_portrait.visible = not _illustration_mode and not (_npc != null and _npc.npc_id in NO_PORTRAIT_NPCS)
 	_player_portrait.visible = not _illustration_mode and not _room_mode
 	_npc_portrait.flip_h = _underwater_mode and _npc != null and _npc.underwater_sprite != null
+	_apply_npc_portrait_presentation()
 
 	# Light up whoever is speaking; dim the listener.
 	_player_portrait.modulate = (

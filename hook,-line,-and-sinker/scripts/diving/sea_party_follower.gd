@@ -18,7 +18,8 @@ func setup(npc: NPCData, player: Player, index: int) -> void:
 	_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	_sprite.texture = npc.underwater_sprite
 	if _sprite.texture != null:
-		_sprite.scale = Vector2.ONE * (sprite_width / maxf(float(_sprite.texture.get_width()), 1.0))
+		var width: float = npc.sea_visuals.follower_width if npc.sea_visuals != null else sprite_width
+		_sprite.scale = Vector2.ONE * (width / maxf(float(_sprite.texture.get_width()), 1.0))
 	add_child(_sprite)
 
 

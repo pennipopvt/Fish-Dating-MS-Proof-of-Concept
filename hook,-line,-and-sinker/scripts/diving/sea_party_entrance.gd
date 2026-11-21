@@ -123,7 +123,8 @@ func jump_party_in(dock: Node2D, splash: Callable) -> void:
 			fish.texture = npc.underwater_sprite
 			fish.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 			fish.z_index = 6
-			fish.scale = Vector2.ONE * (24.0 / maxf(float(fish.texture.get_width()), 1.0))
+			var width: float = npc.sea_visuals.follower_width if npc.sea_visuals != null else 24.0
+			fish.scale = Vector2.ONE * (width / maxf(float(fish.texture.get_width()), 1.0))
 			_world.add_child(fish)
 			fish.global_position = landing
 			_fish_visuals.append(fish)

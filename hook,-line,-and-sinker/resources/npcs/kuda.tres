@@ -11,6 +11,7 @@
 [ext_resource type="Script" uid="uid://cxebrk0uj1pk8" path="res://resources/door_info.gd" id="townhouse_door_info"]
 [ext_resource type="Texture2D" uid="uid://dri2ogc522nmv" path="res://sprites/rooms/genericopendoor.png" id="townhouse_generic_door"]
 [ext_resource type="Texture2D" uid="uid://bt80yvxeajar3" path="res://sprites/fish/kuda_placeholder.png" id="underwater_kuda"]
+[ext_resource type="Resource" path="res://resources/visuals/kuda_sea_visuals.tres" id="sea_visuals"]
 
 [sub_resource type="Resource" id="TownhouseKudaDoor"]
 script = ExtResource("townhouse_door_info")
@@ -49,6 +50,7 @@ npc_id = &"barracuda"
 display_name = "Kuda"
 portrait = ExtResource("6_2m545")
 underwater_sprite = ExtResource("underwater_kuda")
+sea_visuals = ExtResource("sea_visuals")
 house = ExtResource("4_house")
 door = SubResource("TownhouseKudaDoor")
 porn_sprite = ExtResource("7_kuda_scene")

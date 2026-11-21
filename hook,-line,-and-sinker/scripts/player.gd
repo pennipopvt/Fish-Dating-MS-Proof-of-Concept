@@ -4,6 +4,12 @@ extends CharacterBody2D
 const SPEED = 100.0
 const ACC = 2000.0
 const SWIM_SPEED: float = 78.0
+const SWIM_LEFT_SHEET: Texture2D = preload("res://sprites/characters/penni/penni_swim_L.png")
+const SWIM_RIGHT_SHEET: Texture2D = preload("res://sprites/characters/penni/penni_swim_R.png")
+
+@export_group("Swimming Animation")
+@export var swim_frame_size: Vector2i = Vector2i(32, 32)
+@export_range(1.0, 24.0, 0.5) var swim_frames_per_second: float = 8.0
 
 signal held_item_changed(item: ItemData)
 var held_item: ItemData = null
@@ -35,6 +41,7 @@ var _pickup_time_left := 0.0
 @onready var animator : AnimatedSprite2D = $AnimatedSprite2D
 
 func _ready() -> void:
+	_install_swim_animations()
 	_land_collision_mask = collision_mask
 	_read_walk_limits.call_deferred()
 	held_item_visual = Sprite2D.new()
@@ -47,6 +54,35 @@ func _ready() -> void:
 	_pickup_visual.z_index = 6
 	_pickup_visual.visible = false
 	add_child(_pickup_visual)
+
+# Populate the current AnimatedSprite2D's SpriteFrames from the actual
+# authored sheets. If an animation is added manually in the editor, honor it.
+# Deriving the number of 32px cells supports later art revisions as well.
+func _install_swim_animations() -> void:
+	if animator.sprite_frames == null:
+		return
+	var frames: SpriteFrames = animator.sprite_frames.duplicate() as SpriteFrames
+	animator.sprite_frames = frames
+	var cell: Vector2i = Vector2i(maxi(1, swim_frame_size.x), maxi(1, swim_frame_size.y))
+	for facing in [&"swim_l", &"swim_r"]:
+		if frames.has_animation(facing):
+			continue
+		var sheet: Texture2D = SWIM_LEFT_SHEET if facing == &"swim_l" else SWIM_RIGHT_SHEET
+		var columns: int = int(sheet.get_width() / cell.x)
+		var rows: int = int(sheet.get_height() / cell.y)
+		if columns < 1 or rows < 1:
+			push_warning("Swimming sheet has no complete frames: " + String(facing))
+			continue
+		frames.add_animation(facing)
+		frames.set_animation_loop(facing, true)
+		frames.set_animation_speed(facing, swim_frames_per_second)
+		for row in range(rows):
+			for column in range(columns):
+				var atlas := AtlasTexture.new()
+				atlas.atlas = sheet
+				atlas.region = Rect2(column * cell.x, row * cell.y, cell.x, cell.y)
+				frames.add_frame(facing, atlas)
+
 
 func take_item(item: ItemData) -> bool:
 	if held_item != null or item == null:
@@ -84,6 +120,7 @@ func set_swimming(enabled: bool, bounds: Rect2 = Rect2()) -> void:
 	swimming = enabled
 	velocity = Vector2.ZERO
 	if enabled:
+		animator.play(&"swim_l" if last_direction < 0.0 else &"swim_r")
 		swim_bounds = bounds
 		collision_mask = _land_collision_mask | 2
 		$FishingController.process_mode = Node.PROCESS_MODE_DISABLED
@@ -99,6 +136,7 @@ func set_swimming(enabled: bool, bounds: Rect2 = Rect2()) -> void:
 		_refresh_held_item()
 		animator.position.y = -16.0
 		animator.rotation = 0.0
+		animator.play(&"idle_l" if last_direction < 0.0 else &"idle_r")
 
 
 func _swim_physics(delta: float) -> void:
@@ -116,10 +154,9 @@ func _swim_physics(delta: float) -> void:
 	global_position.y = clampf(global_position.y, swim_bounds.position.y + 8.0, swim_bounds.end.y - 8.0)
 	if absf(direction.x) > 0.03:
 		last_direction = direction.x
-	var animation_name: String = "walk_l" if last_direction < 0 else "walk_r"
-	if direction.length_squared() < 0.01:
-		animation_name = "idle_l" if last_direction < 0 else "idle_r"
-	animator.play(animation_name)
+	# Swimming uses the same animator but its own directional animations,
+	# even while floating without directional input.
+	animator.play(&"swim_l" if last_direction < 0.0 else &"swim_r")
 	animator.rotation = lerpf(animator.rotation, direction.x * 0.13, minf(delta * 6.0, 1.0))
 	animator.position.y = -16.0 + sin(Time.get_ticks_msec() * 0.0026) * 0.8
 

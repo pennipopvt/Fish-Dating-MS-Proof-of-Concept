@@ -9,6 +9,8 @@ extends Resource
 ## Fish-form portrait for conversations while exploring underwater.
 ## Keep the human portrait untouched for scenes on land.
 @export var underwater_sprite: Texture2D
+## Fish-form world size and underwater conversation framing. Optional.
+@export var sea_visuals: SeaCharacterVisuals
 @export var house: Texture2D
 ## Room doorway data. Does not control the diving party.
 @export var door: DoorInfo
