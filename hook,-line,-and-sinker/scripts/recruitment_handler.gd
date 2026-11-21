@@ -164,6 +164,7 @@ func assign_home(resident: NPCData, preferred_room_id: StringName = &"") -> bool
 		return false
 	var state: Dictionary = NPCManager.get_npc_state(resident.npc_id)
 	state["room_id"] = chosen.get_room_id()
+	state["room_assigned_day"] = GameManager.get_day()
 	state["resident_data"] = resident
 	# Existing encounter JSON uses Recruited as its eligibility flag. Keep
 	# that compatibility until content is migrated; do not start romance.
@@ -194,6 +195,7 @@ func vacate_home(npc_id: StringName) -> void:
 		return
 	var state: Dictionary = NPCManager.get_npc_state(npc_id)
 	state.erase("room_id")
+	state.erase("room_assigned_day")
 	state.erase("resident_data")
 	state["flags"][&"Recruited"] = false
 	for door in _all_doors:

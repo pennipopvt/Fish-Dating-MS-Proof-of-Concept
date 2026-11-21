@@ -39,6 +39,8 @@ func _ready() -> void:
 
 	# Silas gains a room on Day 1; this alone must not grant gifts.
 	_check(RecruitmentHandler.assign_home(SILAS), "Silas gets a townhouse room")
+	_check(int(NPCManager.get_npc_state(SILAS.npc_id).get("room_assigned_day", -1)) == 1,
+		"Housing tracks the day of the first resident move-in")
 	await get_tree().create_timer(0.15).timeout
 	_check(not DialogueManager.is_active and not ShopManager.gifts_unlocked,
 		"Fish Co does not call or enable gifts on the recruitment day")

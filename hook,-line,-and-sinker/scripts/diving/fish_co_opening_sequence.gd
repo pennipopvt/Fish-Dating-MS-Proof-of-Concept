@@ -56,14 +56,16 @@ func _process(_delta: float) -> void:
 	var has_resident: bool = false
 	for state in NPCManager.npc_states.values():
 		if state.get("flags", {}).get(&"Recruited", false) \
-				and StringName(str(state.get("room_id", ""))) != &"":
+				and StringName(str(state.get("room_id", ""))) != &"" \
+				and GameManager.get_day() > int(state.get("room_assigned_day", GameManager.get_day())):
 			has_resident = true
 			break
 	if not has_resident or _world_player == null or _world_player.busy:
 		return
 	if _transition.transitioning or _transition.underwater or GameManager.diving_session_active:
 		return
-	if DialogueManager.is_active or ShopManager.is_shop_open or GameManager.is_modal_ui_open():
+	if DialogueManager.is_active or DateManager.is_active() or ShopManager.is_shop_open \
+			or GameManager.is_modal_ui_open():
 		return
 	_start_gifts_call()
 
