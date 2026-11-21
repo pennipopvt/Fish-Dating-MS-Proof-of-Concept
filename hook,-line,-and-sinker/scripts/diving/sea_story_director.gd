@@ -385,19 +385,28 @@ func on_companion_targeted() -> void:
 
 
 
-# Companion behavior emits these events; story owns their presentation.
+# Silas's nonlethal limit is a tutorial beat, not recurring feedback.
+# He always stops at the safety threshold in SilasCombatBehavior, but only
+# explains that behavior once per playthrough. Manual low-health refusals
+# share the same flag as automatic retreat, so they cannot repeat the lesson.
 func on_silas_spared_fish(_fish: DivingWildFish) -> void:
-	_show_silas_bubble("Penni... I'm scared I'll hurt it more.", 4.5)
+	if has_event(&"silas_nonlethal_explained") or DialogueManager.is_active:
+		return
+	if _show_silas_bubble("Penni... I'm scared I'll hurt it more.", 4.5):
+		_events[&"silas_nonlethal_explained"] = true
 
 
 func on_silas_attack_refused(_fish: DivingWildFish) -> void:
-	if DialogueManager.is_active:
+	if has_event(&"silas_nonlethal_explained") or DialogueManager.is_active:
 		return
-	# Dismiss his brief retreat bubble before opening the full conversation.
+	# If the player's very first command is against a weakened fish, teach
+	# the same rule through the existing dialogue instead of the retreat call.
 	var ui: SeaSpeechBubble = _bubble()
 	if ui != null:
 		ui.hide_call()
 	DialogueManager.request_conversation(silas_data, "res://dialogue/silas_refuses_attack.json")
+	if DialogueManager.is_active:
+		_events[&"silas_nonlethal_explained"] = true
 
 
 # Surfacing itself is always allowed. Only Silas's FIRST return adds a scene.
