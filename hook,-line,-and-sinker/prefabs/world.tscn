@@ -12,7 +12,6 @@
 [ext_resource type="Shader" uid="uid://b41ap31uwit61" path="res://shaders/sky_gradient.gdshader" id="6_07nuu"]
 [ext_resource type="Texture2D" uid="uid://culbi4w4j2vi2" path="res://sprites/environment/medium_cloud.png" id="6_q76tg"]
 [ext_resource type="Texture2D" uid="uid://papjvjxenamb" path="res://sprites/environment/long_cloud.png" id="7_sxw1y"]
-[ext_resource type="Texture2D" path="res://sprites/environment/background_mountain.png" id="background_mountain"]
 [ext_resource type="Texture2D" uid="uid://dvyql68s5tvo3" path="res://sprites/environment/tileset.png" id="10_6mti1"]
 [ext_resource type="Texture2D" uid="uid://l4228gvusjlb" path="res://sprites/environment/tilesetOnPlayer.png" id="11_onplayer"]
 [ext_resource type="Shader" uid="uid://r4rciq67coeg" path="res://shaders/water.gdshader" id="13_le6xu"]
@@ -145,12 +144,6 @@ material = SubResource("ShaderMaterial_moon")
 offset_right = 24.0
 offset_bottom = 24.0
 mouse_filter = 2
-
-[node name="BackgroundMountains" type="Sprite2D" parent="Sky" unique_id=1948723012]
-texture_filter = 1
-position = Vector2(160, 135)
-scale = Vector2(0.5, 0.5)
-texture = ExtResource("background_mountain")
 
 [node name="Clouds" type="Node2D" parent="Sky" unique_id=1290658735]
 script = ExtResource("4_k40i2")

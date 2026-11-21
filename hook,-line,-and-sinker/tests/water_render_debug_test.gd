@@ -21,30 +21,6 @@ func _run() -> void:
 	var sea: Node2D = world.get_node("Sea") as Node2D
 	var ground: TileMapLayer = world.get_node("Ground") as TileMapLayer
 	var ground_front: TileMapLayer = world.get_node("GroundFront") as TileMapLayer
-	var mountains: Sprite2D = world.get_node_or_null("Sky/BackgroundMountains") as Sprite2D
-	var clouds: Node2D = world.get_node("Sky/Clouds") as Node2D
-	if mountains == null:
-		var sky: Control = world.get_node("Sky") as Control
-		print("Sky children actually instantiated in Main:")
-		for child in sky.get_children():
-			print("  ", child.name, " / ", child.get_class())
-		var standalone: Node2D = load("res://prefabs/world.tscn").instantiate() as Node2D
-		print("Standalone World has mountains: ", standalone.has_node("Sky/BackgroundMountains"))
-		standalone.free()
-	_check(mountains != null, "Mountain sprite is present in Main's World/Sky")
-	if mountains != null:
-		_check(mountains.texture != null
-			and mountains.texture.get_width() == 686
-			and mountains.texture.get_height() == 180
-			and mountains.texture_filter == CanvasItem.TEXTURE_FILTER_NEAREST,
-			"User's original mountain art renders at nearest-filtered native pixel scale")
-		_check(mountains.get_index() < clouds.get_index()
-			and mountains.get_parent() == world.get_node("Sky")
-			and (world.get_node("Sky") as Control).clip_contents,
-			"Mountains stay in horizon-anchored clipped sky behind clouds")
-		_check(absf(mountains.global_position.y + mountains.texture.get_height()
-			* mountains.scale.y * 0.5 - water.global_position.y) < 1.0,
-			"Mountain base touches the waterline without changing the sea")
 	_check(water.z_index > solids.z_index
 		and water.z_index > ground_front.z_index,
 		"Runtime World/Water draws above Sea/Solids and GroundFront (water=%d sea=%d front=%d)" % [
