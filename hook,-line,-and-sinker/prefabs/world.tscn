@@ -146,11 +146,7 @@ offset_right = 24.0
 offset_bottom = 24.0
 mouse_filter = 2
 
-# Far landscape: sky stays horizon-anchored while the camera moves.
-# The original 686x180 sprite is shown at half size (~343x90 native px)
-# with its bottom edge flush with the waterline. It is behind the clouds
-# and foreground land, but included in the water reflection.
-[node name="BackgroundMountains" type="Sprite2D" parent="Sky"]
+[node name="BackgroundMountains" type="Sprite2D" parent="Sky" unique_id=1948723012]
 texture_filter = 1
 position = Vector2(160, 135)
 scale = Vector2(0.5, 0.5)
