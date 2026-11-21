@@ -4,7 +4,8 @@
   "nodes": {
     "greeting": {
       "lines": [
-        "Hey."
+        "Hey, Penni.",
+        "What's on your mind?"
       ],
       "choices": [
         {
@@ -13,6 +14,10 @@
           "required_flags": [
             "date_ok_kuda_ship"
           ]
+        },
+        {
+          "text": "Something else...",
+          "next": "topics"
         },
         {
           "text": "See you later!",
@@ -66,7 +71,40 @@
     "goodbye": {
       "lines": [
         "Later."
+      ],
+      "effects": {
+        "request_scene": "room_exit"
+      }
+    },
+    "topics": {
+      "lines": [
+        "Alright. What else?"
+      ],
+      "choices": [
+        {
+          "text": "How's living up here?",
+          "next": "check_in"
+        },
+        {
+          "text": "Want to go out on the boat?",
+          "next": "ship_when",
+          "required_flags": [
+            "date_ok_kuda_ship"
+          ]
+        },
+        {
+          "text": "See you later!",
+          "next": "goodbye",
+          "spends_action": false
+        }
       ]
+    },
+    "check_in": {
+      "lines": [
+        "It's different from what I expected.",
+        "...Not bad, though. Having someone around helps."
+      ],
+      "next": "topics"
     }
   }
 }

@@ -51,6 +51,7 @@ room_background = ExtResource("room_background_silas")
 porn_sprite = ExtResource("6_porn")
 invitation_accepted_flag = &"house_invitation_accepted"
 intimacy_scene_id = &"silas_house"
+overnight_prelude_json = "res://dialogue/silas_night_prelude.json"
 intimacy_dialogue_json = "res://dialogue/silas_house_scene.json"
 morning_after_json = "res://dialogue/silas_after_scene.json"
 romance_complete_flag = &"silas_route_complete"

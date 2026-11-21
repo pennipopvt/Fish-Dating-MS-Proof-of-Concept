@@ -33,6 +33,9 @@ extends Resource
 @export var invitation_accepted_flag: StringName = &""
 ## An ID for the same illustrated scene, independent of its dialogue JSON.
 @export var intimacy_scene_id: StringName = &""
+## A short, consent-aware room conversation before the scene warning.
+## Optional: no JSON retains the original direct-entry behavior.
+@export_file("*.json") var overnight_prelude_json: String = ""
 @export_file("*.json") var intimacy_dialogue_json: String = ""
 ## Played in the shared room UI the following morning, not outside the room.
 @export_file("*.json") var morning_after_json: String = ""

@@ -16,6 +16,8 @@ var _dialogue_exit_requested: bool = false
 var _gift_offered_this_visit: bool = false
 var _overnight_active: bool = false
 var _morning_dialogue_active: bool = false
+var _prelude_active: bool = false
+var _prelude_approved: bool = false
 
 
 func configure(dialogue: DialogueUI, transition: SeaDiveTransition, player: Player,
@@ -34,6 +36,11 @@ func open_room(npc: NPCData) -> void:
 	if npc == null or _inside or _closing or _transition.transitioning or DialogueManager.is_active:
 		return
 	_resident = npc
+	_dialogue_exit_requested = false
+	_prelude_active = false
+	_prelude_approved = false
+	_overnight_active = false
+	_morning_dialogue_active = false
 	_gift_offered_this_visit = false
 	_inside = true
 	_player.busy = true
@@ -59,6 +66,23 @@ func _try_start_overnight() -> bool:
 	if not flags.get(_resident.invitation_accepted_flag, false) \
 			or flags.get(_resident.romance_complete_flag, false):
 		return false
+	# A failed or postponed prelude can be retried on a later night, not
+	# repeatedly by exiting/reentering the same room that evening.
+	var state: Dictionary = NPCManager.get_npc_state(_resident.npc_id)
+	if not _resident.overnight_prelude_json.is_empty():
+		if int(state.get("romance_prelude_attempt_day", -1)) == GameManager.get_day():
+			return false
+		state["romance_prelude_attempt_day"] = GameManager.get_day()
+		_overnight_active = true
+		_prelude_active = true
+		_prelude_approved = false
+		DialogueManager.request_conversation(_resident, _resident.overnight_prelude_json)
+		if DialogueManager.is_active:
+			return true
+		_prelude_active = false
+		_overnight_active = false
+		return false
+	# Other characters may choose to use the existing direct-entry behavior.
 	_overnight_active = true
 	if _illustration.start_scene(_resident):
 		return true
@@ -87,21 +111,59 @@ func _start_conversation() -> void:
 func _on_conversation_finished(npc: NPCData) -> void:
 	if not _inside or _closing or npc != _resident:
 		return
+	if _prelude_active:
+		_prelude_active = false
+		# DialogueManager emits scene_requested AFTER conversation_finished;
+		# let the room interpret the prelude's result before leaving.
+		call_deferred("_resolve_prelude")
+		return
 	if _morning_dialogue_active:
 		_morning_dialogue_active = false
 		_complete_romance_route(npc)
 		_overnight_active = false
-	elif _overnight_active:
-		# The illustration's dialogue ended; its own scene_finished signal will
-		# advance the clock. Don't auto-start a casual conversation over the fade.
+		_dialogue_exit_requested = true
+		# Let the illustration fade finish before starting the room iris.
+		call_deferred("_close_after_morning")
 		return
-	# DialogueManager emits scene_requested AFTER conversation_finished.
+	if _overnight_active:
+		# The illustration owns its dialogue until it signals scene_finished.
+		return
+	# Room conversations do not automatically start another greeting.
 	call_deferred("_resume_or_exit")
 
 
 func _on_scene_requested(npc: NPCData, scene_id: String) -> void:
-	if _inside and npc == _resident and scene_id == "room_exit":
+	if not _inside or npc != _resident:
+		return
+	if scene_id == "room_exit":
 		_dialogue_exit_requested = true
+		return
+	if scene_id == "room_overnight_ready" and _overnight_active and not _prelude_active:
+		if _illustration != null and _illustration.start_scene(npc):
+			_prelude_approved = true
+		else:
+			push_warning("Unable to start invited evening for %s" % npc.display_name)
+
+
+func _resolve_prelude() -> void:
+	if not _inside or _closing or _prelude_approved:
+		return
+	# Either the player declined, the mood went wrong or the dialogue failed.
+	# Preserve the accepted invitation so they can try a later night.
+	_overnight_active = false
+	_dialogue_exit_requested = true
+	_resume_or_exit()
+
+
+func _close_after_morning() -> void:
+	if not _inside or _closing:
+		return
+	# The morning dialogue usually lasts longer than the scene's fade.
+	# This also handles a fast-forward / debug skip at full black.
+	while _illustration != null and _illustration._transitioning and is_inside_tree():
+		await get_tree().process_frame
+	if _inside and not _closing:
+		close_room()
 
 
 func _on_illustration_finished(npc: NPCData, scene_id: StringName, completed: bool) -> void:
@@ -119,6 +181,7 @@ func _on_illustration_finished(npc: NPCData, scene_id: StringName, completed: bo
 		_overnight_active = false
 		call_deferred("_resume_or_exit")
 		return
+	AffectionManager.mark_date_completed(npc.npc_id, GameManager.get_day())
 	GameManager.rest()
 	_morning_dialogue_active = true
 	DialogueManager.request_conversation(npc, npc.morning_after_json)
@@ -141,9 +204,7 @@ func _complete_romance_route(npc: NPCData) -> void:
 	flags[npc.romance_complete_flag] = true
 	# The shared affection system updates jealousy for existing partners.
 	AffectionManager.on_romance_completed(npc.npc_id)
-	# The night was spent together, so it satisfies yesterday's relationship
-	# upkeep without inventing a parallel intimacy/dating score.
-	AffectionManager.mark_date_completed(npc.npc_id, GameManager.get_day() - 1)
+	# The completed night was recorded before the new day began.
 	if npc.romance_reward_id != &"":
 		var bobber: BobberData = BobberManager.get_bobber(npc.romance_reward_id)
 		if bobber != null and bobber.source_npc_id == npc.npc_id:
@@ -151,12 +212,11 @@ func _complete_romance_route(npc: NPCData) -> void:
 
 
 func _resume_or_exit() -> void:
-	if not _inside or _closing or _overnight_active:
+	if not _inside or _closing or _overnight_active or DialogueManager.is_active:
 		return
-	if _dialogue_exit_requested:
-		close_room()
-	else:
-		_start_conversation()
+	# A fresh visit starts a fresh greeting. Continuing to talk in the SAME
+	# visit uses authored "Something else..." / topics nodes instead.
+	close_room()
 
 
 func close_room() -> void:
@@ -171,6 +231,9 @@ func close_room() -> void:
 	_resident = null
 	_gift_offered_this_visit = false
 	_morning_dialogue_active = false
+	_prelude_active = false
+	_prelude_approved = false
+	_overnight_active = false
 
 
 func _hide_room() -> void:

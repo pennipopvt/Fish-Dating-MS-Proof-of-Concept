@@ -3,8 +3,8 @@
   "nodes": {
     "greeting": {
       "lines": [
-        "Oh, hello again!",
-        "Did you need something?"
+        "Oh! Penni, hi.",
+        "It's nice to see you again."
       ],
       "choices": [
         {
@@ -13,6 +13,10 @@
           "required_flags": [
             "date_ok_silas_beach"
           ]
+        },
+        {
+          "text": "Something else...",
+          "next": "topics"
         },
         {
           "text": "See you later!",
@@ -66,7 +70,40 @@
     "goodbye": {
       "lines": [
         "Okay! See you soon!"
+      ],
+      "effects": {
+        "request_scene": "room_exit"
+      }
+    },
+    "topics": {
+      "lines": [
+        "Oh! Sure. What did you want to talk about?"
+      ],
+      "choices": [
+        {
+          "text": "How have you been?",
+          "next": "check_in"
+        },
+        {
+          "text": "Want to go on a date?",
+          "next": "beach_when",
+          "required_flags": [
+            "date_ok_silas_beach"
+          ]
+        },
+        {
+          "text": "See you later!",
+          "next": "goodbye",
+          "spends_action": false
+        }
       ]
+    },
+    "check_in": {
+      "lines": [
+        "Honestly, I've been really happy lately.",
+        "I'm still getting used to everything, but... it's nice having you around."
+      ],
+      "next": "topics"
     }
   },
   "free_greeting": true

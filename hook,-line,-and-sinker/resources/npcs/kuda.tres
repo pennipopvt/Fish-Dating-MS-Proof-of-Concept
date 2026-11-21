@@ -61,6 +61,7 @@ door = SubResource("TownhouseKudaDoor")
 porn_sprite = ExtResource("7_kuda_scene")
 invitation_accepted_flag = &"barracuda_invitation_accepted"
 intimacy_scene_id = &"barracuda_house"
+overnight_prelude_json = "res://dialogue/kuda_night_prelude.json"
 intimacy_dialogue_json = "res://dialogue/kuda_house_scene.json"
 morning_after_json = "res://dialogue/kuda_after_scene.json"
 romance_complete_flag = &"barracuda_route_complete"
