@@ -7,6 +7,11 @@ class_name SeaTerrain
 # This prototype remains separate from DivingWorld and the existing tilemap.
 const EDITOR_PREVIEW_INTERVAL_MS: int = 50
 const EDITOR_PREVIEW_BAKE_SPACING: float = 4.0
+const AUTO_HANDLE_RATIO: float = 0.25
+const MIN_AUTO_HANDLE_LENGTH: float = 3.0
+# Wait for the native Path2D editor to finish a mouse edit before modifying
+# control points, avoiding fights with its active drag/UndoRedo operation.
+const EDITOR_CURVE_SETTLE_MS: int = 110
 @export var fill_texture: Texture2D:
 	set(value):
 		fill_texture = value
@@ -40,10 +45,15 @@ const EDITOR_PREVIEW_BAKE_SPACING: float = 4.0
 var _watched_curve: Curve2D
 var _preview_dirty: bool = false
 var _last_preview_ms: int = -100000
+var _last_positions: PackedVector2Array = PackedVector2Array()
+var _normalizing: bool = false
+var _normalization_pending: bool = false
+var _last_curve_edit_ms: int = 0
 
 
 func _ready() -> void:
 	_connect_curve()
+	_normalize_closed_curve()
 	_configure_art()
 	_rebuild()
 	# Inspector can replace the entire Curve2D; monitor only its identity.
@@ -53,7 +63,13 @@ func _ready() -> void:
 func _process(_delta: float) -> void:
 	if curve != _watched_curve:
 		_connect_curve()
+		_queue_normalization()
 		_request_rebuild()
+	if Engine.is_editor_hint() and _normalization_pending:
+		if Time.get_ticks_msec() - _last_curve_edit_ms >= EDITOR_CURVE_SETTLE_MS:
+			_normalization_pending = false
+			_normalize_closed_curve()
+			_request_rebuild()
 	if Engine.is_editor_hint() and _preview_dirty:
 		var now: int = Time.get_ticks_msec()
 		if now - _last_preview_ms >= EDITOR_PREVIEW_INTERVAL_MS:
@@ -71,12 +87,112 @@ func _connect_curve() -> void:
 	if _watched_curve != null and _watched_curve.changed.is_connected(_on_curve_changed):
 		_watched_curve.changed.disconnect(_on_curve_changed)
 	_watched_curve = curve
+	# A newly assigned Curve2D is its own shape, not an insertion into the
+	# previous one. Don't autosmooth all of an artist's existing vertices.
+	_last_positions = PackedVector2Array()
 	if _watched_curve != null and not _watched_curve.changed.is_connected(_on_curve_changed):
 		_watched_curve.changed.connect(_on_curve_changed)
 
 
 func _on_curve_changed() -> void:
+	if _normalizing:
+		return
+	_queue_normalization()
 	_request_rebuild()
+
+
+func _queue_normalization() -> void:
+	if Engine.is_editor_hint():
+		_normalization_pending = true
+		_last_curve_edit_ms = Time.get_ticks_msec()
+	else:
+		_normalize_closed_curve()
+
+
+# Keep the ACTUAL Path2D curve closed, not merely its generated polygon.
+# Godot represents a loop with an extra last point at the first position.
+# This also gives artists the native closed cyan editor line.
+func _normalize_closed_curve() -> void:
+	if _normalizing or curve == null or curve.point_count < 3:
+		return
+	_normalizing = true
+	var previous_count: int = _last_positions.size()
+	var count: int = curve.point_count
+	var inserted_at: int = -1
+
+	if previous_count > 0 and count > previous_count:
+		# Adding a point at the end of a closed path places it AFTER Godot's
+		# closing duplicate. Move it before the seam to preserve the loop.
+		if count == previous_count + 1 and curve.get_point_position(count - 2).is_equal_approx(
+				curve.get_point_position(0)):
+			var new_position: Vector2 = curve.get_point_position(count - 1)
+			var new_in: Vector2 = curve.get_point_in(count - 1)
+			var new_out: Vector2 = curve.get_point_out(count - 1)
+			curve.remove_point(count - 1)
+			curve.add_point(new_position, new_in, new_out, count - 2)
+			inserted_at = count - 2
+		else:
+			# Covers the native Insert Point command on an existing segment.
+			for i in range(mini(count - 1, previous_count)):
+				if not curve.get_point_position(i).is_equal_approx(_last_positions[i]):
+					inserted_at = i
+					break
+
+	count = curve.point_count
+	var first: Vector2 = curve.get_point_position(0)
+	var last: Vector2 = curve.get_point_position(count - 1)
+	if not first.is_equal_approx(last):
+		if previous_count == count and previous_count > 2:
+			var first_was_moved: bool = not first.is_equal_approx(_last_positions[0])
+			var last_was_moved: bool = not last.is_equal_approx(_last_positions[previous_count - 1])
+			if last_was_moved and not first_was_moved:
+				# Dragging the seam's final point moves the first point too.
+				curve.set_point_position(0, last)
+			else:
+				curve.set_point_position(count - 1, first)
+		else:
+			# New/legacy open curves get a real closing segment. This is
+			# a single, native Path2D control point, not a second terrain.
+			var seam_in: Vector2 = curve.get_point_in(0)
+			if seam_in.is_zero_approx():
+				seam_in = -curve.get_point_out(0)
+			curve.add_point(first, seam_in)
+			count += 1
+
+	# Existing handles are artist-authored; only NEW, handle-less points
+	# receive automatic smooth tangents by default.
+	if inserted_at >= 0 and inserted_at < count - 1:
+		_autosmooth_new_point(inserted_at)
+	elif previous_count > 0 and count > previous_count and inserted_at < 0:
+		# Appending before the seam can preserve every preceding index.
+		_autosmooth_new_point(count - 2)
+
+	_snapshot_curve_positions()
+	_normalizing = false
+
+
+func _autosmooth_new_point(index: int) -> void:
+	var count: int = curve.point_count
+	if index <= 0 or index >= count - 1:
+		return
+	if not curve.get_point_in(index).is_zero_approx() or not curve.get_point_out(index).is_zero_approx():
+		return
+	var point: Vector2 = curve.get_point_position(index)
+	var before: Vector2 = curve.get_point_position(index - 1)
+	var after: Vector2 = curve.get_point_position(index + 1)
+	var forward: Vector2 = (after - before).normalized()
+	if forward.is_zero_approx():
+		return
+	var in_length: float = maxf(MIN_AUTO_HANDLE_LENGTH, before.distance_to(point) * AUTO_HANDLE_RATIO)
+	var out_length: float = maxf(MIN_AUTO_HANDLE_LENGTH, point.distance_to(after) * AUTO_HANDLE_RATIO)
+	curve.set_point_in(index, -forward * in_length)
+	curve.set_point_out(index, forward * out_length)
+
+
+func _snapshot_curve_positions() -> void:
+	_last_positions = PackedVector2Array()
+	for i in range(curve.point_count):
+		_last_positions.append(curve.get_point_position(i))
 
 
 func _request_rebuild() -> void:
