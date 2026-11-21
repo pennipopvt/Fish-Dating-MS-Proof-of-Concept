@@ -4,9 +4,7 @@ class_name WaterRenderDebug
 # F8 is a visual-only diagnostic. None of these views change the sea's
 # collisions, gameplay, scene hierarchy, or the production water shaders.
 # Every temporary change is restored when F8 closes.
-const MODE_NAMES: PackedStringArray = PackedStringArray([
-	"NORMAL", "NO SEA", "NO LAND", "NO WATER", "SOLID WATER", "NO SEA CLIP"
-])
+const MODE_NAMES = ["NORMAL", "NO SEA", "NO LAND", "NO WATER", "SOLID WATER", "NO SEA CLIP"]
 
 @onready var _readout: Label = $Panel/Readout
 
