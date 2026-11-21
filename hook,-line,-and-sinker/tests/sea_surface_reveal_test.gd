@@ -73,9 +73,22 @@ func _run() -> void:
 	# The fish ends exactly at the staged human sprite's center, not at
 	# the human's feet (the original visible transform position jump).
 	var staged: NPCInteractable = world.get_node_or_null("SilasDockActor") as NPCInteractable
+	# The first-return actor uses exactly the same shared temporary actor
+	# factory as regular party returns; the custom Silas art is registered.
+	var presentation := transition.get_node("PartyEntrance") as SeaPartyEntrance
+	var encounter := sea.get_node("EncounterSequence") as SeaEncounterSequence
+	var registered_scenes: Dictionary = presentation.get("_land_scenes")
+	_check(registered_scenes.get(story.silas_data.npc_id) == encounter.silas_land_scene,
+		"Artist-configured Silas human scene is retained in the shared actor factory")
 	var staged_center: Vector2 = Vector2.INF
 	if staged != null:
 		staged_center = (staged.get_node("Sprite") as AnimatedSprite2D).global_position
+		var collision := staged.get_node("CollisionShape2D") as CollisionShape2D
+		var interaction_prompt := staged.get_node("InteractPrompt") as InteractPrompt
+		_check(not staged.monitoring and not staged.monitorable
+			and staged.collision_layer == 0 and staged.collision_mask == 0
+			and collision.disabled and not interaction_prompt.visible,
+			"Silas shares party staging safety: no collisions or dialogue prompts")
 	_check(staged != null and not staged.visible
 		and actor.global_position.distance_to(staged_center) < 1.0,
 		"Silas fish occupies the exact center of his hidden human sprite before poof")
