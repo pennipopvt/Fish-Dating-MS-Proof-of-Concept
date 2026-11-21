@@ -15,7 +15,6 @@
 [sub_resource type="Resource" id="TownhouseKudaDoor"]
 script = ExtResource("townhouse_door_info")
 door = ExtResource("townhouse_generic_door")
-# Kuda's room is unfinished in Ethan's branch; no world-origin teleport.
 
 [sub_resource type="Resource" id="Rule_invitation"]
 script = ExtResource("2_rule")
