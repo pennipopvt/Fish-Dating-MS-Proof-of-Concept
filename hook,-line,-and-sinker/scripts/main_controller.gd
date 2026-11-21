@@ -96,14 +96,8 @@ func dismiss_diving_companion(npc_id: StringName) -> bool:
 
 # Single input boundary; debug controls and underwater input are delegated.
 func _input(event: InputEvent) -> void:
-	if _water_debug.handle_input(event):
-		get_viewport().set_input_as_handled()
-		return
-	if _debug.is_pointer_over_panel(event):
-		return
-	if _debug.handle_input(event):
-		get_viewport().set_input_as_handled()
-		return
+	# The F3 DevPanel autoload owns every developer shortcut and menu.
+	# SeaDebugPanel and WaterRenderDebug are read-only/visual diagnostic providers.
 	if _world_player.swimming and _transition.underwater and not _transition.transitioning:
 		if _sea.handle_input(event):
 			get_viewport().set_input_as_handled()
