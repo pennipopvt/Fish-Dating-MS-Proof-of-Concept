@@ -1,0 +1,38 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/diving/sea_terrain.gd" id="1_terrain"]
+[ext_resource type="Texture2D" path="res://sprites/environment/terrain/sand_edge.png" id="2_edge"]
+[ext_resource type="Texture2D" path="res://sprites/environment/terrain/sand_inside.png" id="3_fill"]
+
+[sub_resource type="Curve2D" id="Curve2D_terrain"]
+resource_local_to_scene = true
+bake_interval = 2.0
+_data = {
+"points": PackedVector2Array(-5, 29, 5, -24, -128, -10, -30, 0, 24, -10, -71, -49, -33, -3, 23, 10, 18, -39, -22, -18, 11, 23, 121, -17, 27, -10, -30, 15, 91, 42, 32, 11, -24, -5, -90, 40, 0, 24, 5, -24, -128, -10)
+}
+point_count = 7
+
+[node name="SeaTerrain" type="Path2D"]
+script = ExtResource("1_terrain")
+curve = SubResource("Curve2D_terrain")
+fill_texture = ExtResource("3_fill")
+edge_texture = ExtResource("2_edge")
+
+[node name="Fill" type="Polygon2D" parent="."]
+texture_filter = 1
+texture_repeat = 2
+texture = ExtResource("3_fill")
+
+[node name="Edge" type="Line2D" parent="."]
+texture_filter = 1
+texture_repeat = 2
+width = 16.0
+texture = ExtResource("2_edge")
+texture_mode = 1
+joint_mode = 2
+
+[node name="StaticBody2D" type="StaticBody2D" parent="."]
+collision_layer = 2
+collision_mask = 0
+
+[node name="CollisionPolygon2D" type="CollisionPolygon2D" parent="StaticBody2D"]
