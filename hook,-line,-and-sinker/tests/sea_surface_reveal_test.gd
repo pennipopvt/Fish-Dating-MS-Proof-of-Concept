@@ -70,8 +70,21 @@ func _run() -> void:
 		"Silas follows onto the dock and the warning conversation opens")
 	_check(bool(main.get_node("CanvasLayer/DialogueUI").get("_underwater_mode")),
 		"Silas shows his fish portrait before transforming")
+	# The fish ends exactly at the staged human sprite's center, not at
+	# the human's feet (the original visible transform position jump).
+	var staged: NPCInteractable = world.get_node_or_null("SilasDockActor") as NPCInteractable
+	var staged_center: Vector2 = Vector2.INF
+	if staged != null:
+		staged_center = (staged.get_node("Sprite") as AnimatedSprite2D).global_position
+	_check(staged != null and not staged.visible
+		and actor.global_position.distance_to(staged_center) < 1.0,
+		"Silas fish occupies the exact center of his hidden human sprite before poof")
 	if DialogueManager.is_active:
 		DialogueManager.end_conversation()
+	await get_tree().create_timer(0.08).timeout
+	var poof: AnimatedSprite2D = world.get_node_or_null("CompanionPoof") as AnimatedSprite2D
+	_check(poof != null and poof.global_position.distance_to(staged_center) < 1.0,
+		"Poof appears at the same position as fish and human art")
 	await get_tree().create_timer(0.72).timeout
 	var land: NPCInteractable = world.get_node_or_null("SilasDockActor") as NPCInteractable
 	_check(land != null and land.visible and not land.monitoring,
