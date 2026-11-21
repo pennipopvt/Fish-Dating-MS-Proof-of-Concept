@@ -26,6 +26,10 @@ const OTHER_ROMANCE_MORALE_LOSS := 12
 const MORALE_NEGLECTED_AT := 75
 const MORALE_HURT_AT := 40
 const MORALE_REFUSING_AT := 15
+# Once trust breaks badly enough, a quick greeting cannot restore it.
+# Ordinary check-ins rebuild it over days; a good date is a faster bonus.
+const MORALE_REJOIN_AT := 36
+const REFUSAL_FLAG := &"refuses_diving"
 const ATTACK_SPEED_BY_STAGE := [1.0, 0.82, 0.60, 0.0]
 const OTHER_ROMANCE_JEALOUSY := 45
 const MISSED_DATE_JEALOUSY := 15
@@ -102,8 +106,11 @@ func change_morale(npc_id: StringName, delta: int) -> void:
 	if updated == previous:
 		return
 	state["morale"] = updated
-	# If a companion is willing again, a later decline should be noticeable.
-	if updated > MORALE_REFUSING_AT:
+	var flags: Dictionary = state.get("flags", {})
+	if updated <= MORALE_REFUSING_AT:
+		flags[REFUSAL_FLAG] = true
+	elif updated >= MORALE_REJOIN_AT:
+		flags.erase(REFUSAL_FLAG)
 		state.erase("morale_refusal_noticed")
 	morale_changed.emit(npc_id, updated, updated - previous)
 
@@ -124,7 +131,8 @@ func get_morale_stage(npc_id: StringName) -> MoraleStage:
 	if not is_morale_active(npc_id):
 		return MoraleStage.HAPPY
 	var morale: int = get_morale(npc_id)
-	if morale <= MORALE_REFUSING_AT:
+	if NPCManager.get_npc_state(npc_id).get("flags", {}).get(REFUSAL_FLAG, false) \
+			or morale <= MORALE_REFUSING_AT:
 		return MoraleStage.REFUSING
 	if morale <= MORALE_HURT_AT:
 		return MoraleStage.HURT
@@ -310,6 +318,7 @@ func leave(npc_id: StringName) -> void:
 	state["attraction"] = NPCManager.START_ATTRACTION
 	state["morale"] = MAX_MORALE
 	state.erase("morale_refusal_noticed")
+	state["flags"].erase(REFUSAL_FLAG)
 	state.erase(LAST_TALK_KEY)
 	state.erase(LAST_DATE_KEY)
 	state.erase(RECRUITED_DAY_KEY)

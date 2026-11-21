@@ -33,7 +33,9 @@
       "line_variants": [
         {
           "when": {
-            "max_morale": 15
+            "required_flags": [
+              "refuses_diving"
+            ]
           },
           "lines": [
             "Penni.",
@@ -142,7 +144,9 @@
         {
           "next": "morale_refusing",
           "when": {
-            "max_morale": 15
+            "required_flags": [
+              "refuses_diving"
+            ]
           }
         },
         {

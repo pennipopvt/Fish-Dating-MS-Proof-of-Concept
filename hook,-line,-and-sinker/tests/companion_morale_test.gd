@@ -73,11 +73,25 @@ func _ready() -> void:
 		"Refusal never removes Silas from the island")
 	AffectionManager.call("_on_conversation_finished", SILAS)
 	_check(AffectionManager.get_morale(SILAS.npc_id) == 22
-		and AffectionManager.can_join_dive(SILAS.npc_id),
-		"Ordinary quality time can restore a companion's willingness")
+		and not AffectionManager.can_join_dive(SILAS.npc_id),
+		"One quick visit cannot instantly undo a serious refusal")
 	AffectionManager.call("_on_conversation_finished", SILAS)
 	_check(AffectionManager.get_morale(SILAS.npc_id) == 22,
 		"Repeating conversations the same day cannot farm morale")
+	# Recovery can take several days of ordinary contact; a great date can
+	# repair it faster, but is not mandatory.
+	for i in range(3):
+		GameManager.rest()
+	AffectionManager.call("_on_conversation_finished", SILAS)
+	_check(AffectionManager.get_morale(SILAS.npc_id) == 34
+		and not AffectionManager.can_join_dive(SILAS.npc_id),
+		"Repair takes more than one check-in")
+	for i in range(3):
+		GameManager.rest()
+	AffectionManager.call("_on_conversation_finished", SILAS)
+	_check(AffectionManager.get_morale(SILAS.npc_id) == 46
+		and AffectionManager.can_join_dive(SILAS.npc_id),
+		"Repeated ordinary quality time can restore a companion's willingness")
 	_check(party.members().size() == 1, "A reconciled companion rejoins dives automatically")
 
 	# Romance turns the system on immediately, without needing to wait five days.

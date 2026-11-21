@@ -47,7 +47,9 @@
       "line_variants": [
         {
           "when": {
-            "max_morale": 15
+            "required_flags": [
+              "refuses_diving"
+            ]
           },
           "lines": [
             "Oh. Penni.",
@@ -172,7 +174,9 @@
         {
           "next": "check_in_refusing",
           "when": {
-            "max_morale": 15
+            "required_flags": [
+              "refuses_diving"
+            ]
           }
         },
         {
