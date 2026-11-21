@@ -40,6 +40,12 @@ jobs:
           # Start the REAL main scene instead to validate its wiring.
           timeout 60s godot --headless --path "hook,-line,-and-sinker" --quit-after 120 2>&1 | tee godot-play.log
           ! (grep -E 'SCRIPT ERROR:|Parse Error:|Parser Error:|ERROR:' godot-play.log | grep -Ev 'resources still in use at exit|RID allocations.*leaked' | grep -q .)
+      - name: Test F8 water diagnostics restore the game visuals
+        shell: bash
+        run: |
+          set -o pipefail
+          timeout 120s godot --headless --path "hook,-line,-and-sinker" res://tests/water_render_debug_test.tscn 2>&1 | tee water-debug-test.log
+          ! (grep -E 'SCRIPT ERROR:|Parse Error:|Parser Error:|ERROR:|FAIL ' water-debug-test.log | grep -Ev 'resources still in use at exit|RID allocations.*leaked' | grep -q .)
       - name: Test first catch and terminal progression
         shell: bash
         run: |
