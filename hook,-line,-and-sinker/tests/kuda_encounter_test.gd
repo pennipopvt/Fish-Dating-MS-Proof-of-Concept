@@ -37,6 +37,9 @@ func _run() -> void:
 		"Silas is the first member of the actual dive roster")
 	transition.underwater = true
 	player.set_swimming(true, sea.call("_sea_bounds"))
+	# The confirmed second dive explicitly activates the party before
+	# interpreting right-click commands. Mirror that production lifecycle.
+	sea.activate_diving_party(party.members())
 	var frames: SpriteFrames = player.animator.sprite_frames
 	_check(frames.has_animation(&"swim_l") and frames.has_animation(&"swim_r")
 		and frames.get_frame_count(&"swim_l") > 0
