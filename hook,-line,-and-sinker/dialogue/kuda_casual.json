@@ -21,7 +21,7 @@
           "text": "You seem bothered. Want to talk?",
           "next": "morale_check",
           "when": {
-            "max_morale": 75
+            "max_affection": 45
           },
           "priority": 15,
           "grey_when_picked": false
@@ -74,7 +74,7 @@
         },
         {
           "when": {
-            "max_morale": 40
+            "max_affection": 25
           },
           "lines": [
             "Hey.",
@@ -83,7 +83,7 @@
         },
         {
           "when": {
-            "max_morale": 75
+            "max_affection": 45
           },
           "lines": [
             "Oh, there you are.",
@@ -158,7 +158,7 @@
           "text": "You seem bothered. Want to talk?",
           "next": "morale_check",
           "when": {
-            "max_morale": 75
+            "max_affection": 45
           },
           "priority": 15,
           "grey_when_picked": false
@@ -201,13 +201,13 @@
         {
           "next": "morale_hurt",
           "when": {
-            "max_morale": 40
+            "max_affection": 25
           }
         },
         {
           "next": "morale_neglected",
           "when": {
-            "max_morale": 75
+            "max_affection": 45
           }
         }
       ],

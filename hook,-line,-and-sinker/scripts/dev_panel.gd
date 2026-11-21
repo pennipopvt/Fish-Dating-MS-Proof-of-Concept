@@ -616,19 +616,18 @@ func _info_npcs() -> String:
 	if not ids.has(SILAS_ID):
 		ids.append(SILAS_ID)
 	for id in ids:
-		var state: Dictionary = NPCManager.npc_states.get(id, {"attraction": NPCManager.START_ATTRACTION, "flags": {}})
+		var state: Dictionary = NPCManager.npc_states.get(id, {"affection": NPCManager.START_AFFECTION, "flags": {}})
 		var flags: Dictionary = state.get("flags", {})
 		var data: NPCData = _flag_npc_resource(id)
 		t += _h(String(id))
-		t += "Attraction %d / %d   Jealousy %d / %d (tier %d)\n" % [
+		var affection_stage: int = int(AffectionManager.get_affection_stage(id))
+		t += "Affection %d / %d (%s)   Jealousy %d / %d (tier %d)\n" % [
 			AffectionManager.get_affection(id), AffectionManager.MAX_AFFECTION,
+			["Happy", "Neglected", "Hurt", "Refusing"][affection_stage],
 			AffectionManager.get_jealousy(id), AffectionManager.MAX_JEALOUSY,
 			AffectionManager.get_jealousy_tier(id)]
-		var morale_stage: int = int(AffectionManager.get_morale_stage(id))
-		t += "Team morale %d / %d (%s)   Active %s   Attack speed x%.2f\n" % [
-			AffectionManager.get_morale(id), AffectionManager.MAX_MORALE,
-			["Happy", "Neglected", "Hurt", "Refusing"][morale_stage],
-			_onoff(AffectionManager.is_morale_active(id)),
+		t += "Passive decay %s   Attack speed x%.2f\n" % [
+			_onoff(AffectionManager.is_decay_active(id)),
 			AffectionManager.attack_speed_multiplier(id)]
 		t += "Last date day %s   First recruited day %s   In world %s\n" % [
 			str(state.get(AffectionManager.LAST_DATE_KEY, "-")),
@@ -686,12 +685,12 @@ func _fishing_summary() -> String:
 
 # Which encounter would play next, without consuming a random pool pick.
 func _peek_encounter(npc: NPCData) -> String:
-	var state: Dictionary = NPCManager.npc_states.get(npc.npc_id, {"attraction": NPCManager.START_ATTRACTION, "flags": {}})
+	var state: Dictionary = NPCManager.npc_states.get(npc.npc_id, {"affection": NPCManager.START_AFFECTION, "flags": {}})
 	var flags: Dictionary = state.get("flags", {})
 	for rule in npc.encounter_rules:
 		if rule == null:
 			continue
-		if rule.use_min_attraction and int(state.get("attraction", 0)) < rule.min_attraction:
+		if rule.use_min_attraction and AffectionManager.get_affection(npc.npc_id) < rule.min_attraction:
 			continue
 		var ok := true
 		for f in rule.required_flags:
@@ -1345,47 +1344,37 @@ func _rebuild_flags() -> void:
 	unlock_button.disabled = not recruited or AffectionManager.has_completed_romance(selected_id)
 
 	_heading(box, "Relationship")
-	var attraction_row := _row(box)
-	attraction_row.add_child(PixelUI.label("Attraction (romance)", &"DimLabel"))
-	var attraction := SpinBox.new()
-	attraction.min_value = -10
-	attraction.max_value = AffectionManager.MAX_AFFECTION
-	attraction.value = int(state.get("attraction", NPCManager.START_ATTRACTION))
-	attraction.value_changed.connect(func(v: float) -> void:
+	var affection_row := _row(box)
+	affection_row.add_child(PixelUI.label("Affection", &"DimLabel"))
+	var affection := SpinBox.new()
+	affection.min_value = 0
+	affection.max_value = AffectionManager.MAX_AFFECTION
+	affection.value = AffectionManager.get_affection(selected_id)
+	affection.value_changed.connect(func(v: float) -> void:
 		AffectionManager.set_affection(selected_id, int(v))
-		_say("%s affection = %d" % [selected_id, int(v)]))
-	attraction_row.add_child(attraction)
-
-	# Debug-only morale controls let us test the whole behavior spectrum
-	# without advancing the game through weeks of in-world time.
-	var stage: int = int(AffectionManager.get_morale_stage(selected_id))
-	var morale_status := PixelUI.label(
-		"Team morale: %s / %s" % [
-			["Happy", "Neglected", "Hurt", "Refusing"][stage],
-			"active" if AffectionManager.is_morale_active(selected_id) else "grace period"
-		], &"DimLabel")
-	box.add_child(morale_status)
-	var morale_row := _row(box)
-	morale_row.add_child(PixelUI.label("Morale", &"DimLabel"))
-	var morale := SpinBox.new()
-	morale.min_value = 0
-	morale.max_value = AffectionManager.MAX_MORALE
-	morale.value = AffectionManager.get_morale(selected_id)
-	morale.value_changed.connect(func(v: float) -> void:
-		AffectionManager.set_morale(selected_id, int(v))
-		_say("%s morale = %d" % [selected_id, int(v)]))
-	morale_row.add_child(morale)
-	var morale_tools := _row(box)
-	var start_morale := _button(morale_tools, "Start morale now", func() -> void:
-		state[AffectionManager.RECRUITED_DAY_KEY] = (
-			GameManager.get_day() - AffectionManager.MORALE_GRACE_DAYS)
-		_say("%s team morale is active" % selected_id)
+		_say("%s affection = %d" % [selected_id, int(v)])
 		_rebuild_flags.call_deferred())
-	start_morale.disabled = not recruited or AffectionManager.is_morale_active(selected_id)
-	start_morale.tooltip_text = "Debug only: simulate five days after recruiting this fish"
-	_button(morale_tools, "Reset morale to 100", func() -> void:
-		AffectionManager.set_morale(selected_id, AffectionManager.MAX_MORALE)
-		_say("%s morale restored" % selected_id)
+	affection_row.add_child(affection)
+
+	# One number controls dialogue and combat; only PASSIVE decay has a
+	# five-day grace period after recruitment.
+	var stage: int = int(AffectionManager.get_affection_stage(selected_id))
+	box.add_child(PixelUI.label(
+		"Relationship: %s  |  Daily decay: %s" % [
+			["Happy", "Neglected", "Hurt", "Refusing"][stage],
+			"active" if AffectionManager.is_decay_active(selected_id) else "grace period"
+		], &"DimLabel"))
+	var affection_tools := _row(box)
+	var start_decay := _button(affection_tools, "Start decay now", func() -> void:
+		state[AffectionManager.RECRUITED_DAY_KEY] = (
+			GameManager.get_day() - AffectionManager.AFFECTION_GRACE_DAYS)
+		_say("%s affection decay is active" % selected_id)
+		_rebuild_flags.call_deferred())
+	start_decay.disabled = not recruited or AffectionManager.is_decay_active(selected_id)
+	start_decay.tooltip_text = "Debug only: simulate five days after recruiting this fish"
+	_button(affection_tools, "Reset affection to start", func() -> void:
+		AffectionManager.set_affection(selected_id, NPCManager.START_AFFECTION)
+		_say("%s affection reset" % selected_id)
 		_rebuild_flags.call_deferred())
 
 	var jealousy_row := _row(box)

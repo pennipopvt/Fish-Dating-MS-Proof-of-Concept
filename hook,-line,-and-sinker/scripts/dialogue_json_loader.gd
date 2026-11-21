@@ -120,8 +120,7 @@ static func _valid_conditions(value: Variant) -> bool:
 			if not _string_array(value[key]):
 				return false
 		elif key in ["min_affection", "max_affection", "min_jealousy", "max_jealousy",
-				"min_jealousy_tier", "max_jealousy_tier", "min_days_since_talk", "max_days_since_talk",
-				"min_morale", "max_morale"]:
+				"min_jealousy_tier", "max_jealousy_tier", "min_days_since_talk", "max_days_since_talk"]:
 			if not _json_number(value[key]):
 				return false
 		else:
@@ -160,7 +159,7 @@ static func _valid_effects(value: Variant) -> bool:
 	for field in ["start_relationship_events", "resolve_relationship_events"]:
 		if not _string_array(value.get(field, [])):
 			return false
-	if value.has("morale_delta") and not _json_number(value["morale_delta"]):
+	if value.has("affection_delta") and not _json_number(value["affection_delta"]):
 		return false
 	if value.has("give_held_item") and not value["give_held_item"] is bool:
 		return false

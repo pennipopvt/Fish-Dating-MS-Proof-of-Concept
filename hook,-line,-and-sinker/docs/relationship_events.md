@@ -60,6 +60,6 @@ room, but cannot surprise the player with a same-night intimacy retry.
 
 Kuda and Silas both define `prelude_boundary`, with different dialogue on
 return. The event mechanics and flags are identical; their reactions are
-individually authored. The event architecture does not automatically change
-affection or morale; those remain separate systems and can be combined in
-authored content when desired.
+individually authored. The event architecture does not automatically change affection. Add an
+authored `affection_delta` effect when an incident should affect the single
+relationship score. Jealousy remains independent for context-specific reactions.

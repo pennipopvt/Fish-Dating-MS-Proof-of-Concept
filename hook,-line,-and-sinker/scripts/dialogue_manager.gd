@@ -256,7 +256,7 @@ func _apply_json_effects(effects: Variant, include_attraction: bool = true) -> v
 	if effects.has("request_scene"):
 		_scene_after_conversation = str(effects["request_scene"])
 	if include_attraction:
-		AffectionManager.change(current_npc.npc_id, int(effects.get("attraction", 0)))
+		AffectionManager.change(current_npc.npc_id, int(effects.get("affection", effects.get("attraction", 0))))
 	var state: Dictionary = NPCManager.get_npc_state(current_npc.npc_id)
 	var flags: Dictionary = state.get("flags", {})
 	state["flags"] = flags
@@ -268,8 +268,8 @@ func _apply_json_effects(effects: Variant, include_attraction: bool = true) -> v
 		NPCManager.start_relationship_event(current_npc, StringName(str(event)))
 	for event in effects.get("resolve_relationship_events", []):
 		NPCManager.resolve_relationship_event(current_npc, StringName(str(event)))
-	if effects.has("morale_delta"):
-		AffectionManager.change_morale(current_npc.npc_id, int(effects["morale_delta"]))
+	if effects.has("affection_delta"):
+		AffectionManager.change_affection(current_npc.npc_id, int(effects["affection_delta"]))
 
 
 # Conditions are evaluated when the menu becomes visible, using the NPC's current flags.

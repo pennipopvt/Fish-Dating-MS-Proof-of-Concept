@@ -12,7 +12,7 @@
           "text": "Can we talk about how things have been?",
           "next": "check_in",
           "when": {
-            "max_morale": 75
+            "max_affection": 45
           },
           "priority": 15,
           "grey_when_picked": false
@@ -67,7 +67,7 @@
         },
         {
           "when": {
-            "max_morale": 40
+            "max_affection": 25
           },
           "lines": [
             "Hey.",
@@ -76,7 +76,7 @@
         },
         {
           "when": {
-            "max_morale": 75
+            "max_affection": 45
           },
           "lines": [
             "Oh. Hey.",
@@ -199,13 +199,13 @@
         {
           "next": "check_in_hurt",
           "when": {
-            "max_morale": 40
+            "max_affection": 25
           }
         },
         {
           "next": "check_in_neglected",
           "when": {
-            "max_morale": 75
+            "max_affection": 45
           }
         },
         {

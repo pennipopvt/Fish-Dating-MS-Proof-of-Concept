@@ -28,7 +28,7 @@ func invite(npc: NPCData) -> bool:
 	if npc == null or npc.npc_id == &"":
 		return false
 	# Refusal is temporary. Leave the existing roster membership intact so
-	# the companion automatically rejoins when their morale recovers.
+	# the companion automatically rejoins when their affection recovers.
 	if not AffectionManager.can_join_dive(npc.npc_id):
 		return false
 	for member in _members:

@@ -12,7 +12,7 @@ preludes, morning-after scenes and post-romance check-ins.
 | Correct gift, wrong gift, Silas's spyglass hints and Kuda's scarf | Quest progression | **Keep** `spyglass_complete`, `barracuda_scarf_complete`, `gift_attempted`, and hint flags. Add optional dialogue callbacks to acknowledge received gifts. |
 | Ordinary curiosity, teasing, observations, first-meeting replies | Personality and attraction | **Keep** as dialogue/attraction choices. Do not make incidental speech a persistent conflict. |
 | Silas's offer to explore together | Open personal commitment | **New `explore_together` event** when he accepts Penni's offer. Recall it in casual and post-romance conversations. Leave active because no exploration outing has been implemented; do not falsely mark it fulfilled. |
-| Silas refuses to injure a weakened fish and Penni asks for another hit | Boundary and repair | **New `fish_hurt_pressure` event**, minor morale loss, and a prioritized follow-up in his room. Acknowledging his boundary repairs it; dismissing him does not. His existing nonlethal combat behavior stays unchanged. |
+| Silas refuses to injure a weakened fish and Penni asks for another hit | Boundary and repair | **New `fish_hurt_pressure` event**, minor affection loss, and a prioritized follow-up in his room. Acknowledging his boundary repairs it; dismissing him does not. His existing nonlethal combat behavior stays unchanged. |
 | Silas or Kuda is rushed during a romantic night | Boundary and repair | **Keep** shared `prelude_boundary` event and character-authored reconciliation. |
 | Silas beach date and Kuda boat date | Repeatable date scenes | **Keep** date styles, per-character scores and jealousy-tier variants. Jokes and affectionate remarks aren't automatically promises. |
 | Kuda mentions a possible future swim together on the boat | Potential future date activity | **Defer** as an event until there is a swim outing to actually deliver. Keep the existing reaction and date scoring unchanged. |
@@ -37,5 +37,5 @@ is implemented, its conclusion can use:
 `"resolve_relationship_events": ["explore_together"]`.
 
 `fish_hurt_pressure` does not block diving or change how Silas's safe
-combat retreat works. The new morale_delta effect is optional and can be
-used by any NPC's authored dialogue.
+combat retreat works. The new affection_delta effect is optional and changes the same affection
+score used by dialogue, dates and companions.

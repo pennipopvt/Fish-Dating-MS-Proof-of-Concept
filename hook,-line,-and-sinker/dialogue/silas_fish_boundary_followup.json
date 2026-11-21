@@ -36,7 +36,7 @@
         "resolve_relationship_events": [
           "fish_hurt_pressure"
         ],
-        "morale_delta": 8
+        "affection_delta": 8
       }
     },
     "defensive": {

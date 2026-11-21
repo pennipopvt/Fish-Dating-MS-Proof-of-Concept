@@ -75,7 +75,7 @@ func _finalize_recruitment(actor: NPCInteractable, fish: FishData) -> void:
 	NPCManager.get_npc_state(data.npc_id)["flags"][&"Recruited"] = true
 	FishingManager.remove_recruited_catch(fish)
 	# Fish Co unlocks gifts later. Housing starts a non-romantic five-day
-	# morale grace period in assign_home, never a romance deadline.
+	# affection-decay grace period in assign_home, never a romance deadline.
 	assign_home(data)
 	actor.queue_free()
 

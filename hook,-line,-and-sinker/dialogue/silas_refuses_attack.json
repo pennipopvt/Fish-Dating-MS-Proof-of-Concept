@@ -45,7 +45,7 @@
         "start_relationship_events": [
           "fish_hurt_pressure"
         ],
-        "morale_delta": -10
+        "affection_delta": -10
       }
     },
     "realize": {
