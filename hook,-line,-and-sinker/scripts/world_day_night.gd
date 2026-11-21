@@ -30,7 +30,8 @@ const REFLECTION_AT_SURFACE: float = 0.477
 @onready var _camera: Camera2D = $Player/Camera2D
 @onready var _ambient: CanvasModulate = $DayNightTint
 @onready var _water: ColorRect = $Water
-@onready var _sea_solids: TileMapLayer = $Sea/Solids
+# Sea/Solids is optional now that the sea uses SeaTerrain colliders.
+@onready var _sea_solids: TileMapLayer = get_node_or_null("Sea/Solids") as TileMapLayer
 @onready var _diver: Player = $Player
 @onready var _underwater_tint: ColorRect = get_node_or_null("Player/Camera2D/UnderwaterTint") as ColorRect
 

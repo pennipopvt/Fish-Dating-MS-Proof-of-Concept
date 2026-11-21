@@ -44,11 +44,11 @@ func configure(world: Node2D, game_viewport: SubViewport, player: Player) -> voi
 	_ground_front = world.get_node_or_null("GroundFront") as CanvasItem
 	_camera = player.get_node_or_null("Camera2D") as Camera2D
 	_solids = world.get_node_or_null("Sea/Solids") as TileMapLayer
-	if _water == null or _solids == null or _sea == null or _camera == null:
-		push_warning("[WATER DEBUG] Missing expected nodes; Backslash diagnostics unavailable")
+	if _water == null or _sea == null or _camera == null:
+		push_warning("[WATER DEBUG] Missing water, sea, or camera reference")
 		return
 	_original_water_material = _water.material
-	_original_solids_material = _solids.material
+	_original_solids_material = _solids.material if _solids != null else null
 	_original_water_color = _water.color
 	_initial_visibility = {
 		"water": _water.visible,
@@ -56,10 +56,13 @@ func configure(world: Node2D, game_viewport: SubViewport, player: Player) -> voi
 		"ground": _ground.visible if _ground != null else false,
 		"ground_front": _ground_front.visible if _ground_front != null else false
 	}
-	_tile_count = _solids.get_used_cells().size()
-	for cell: Vector2i in _solids.get_used_cells():
-		if _solids.to_global(_solids.map_to_local(cell)).y < _water.global_position.y:
-			_tiles_above_surface += 1
+	_tile_count = 0
+	_tiles_above_surface = 0
+	if _solids != null:
+		_tile_count = _solids.get_used_cells().size()
+		for cell: Vector2i in _solids.get_used_cells():
+			if _solids.to_global(_solids.map_to_local(cell)).y < _water.global_position.y:
+				_tiles_above_surface += 1
 	_line = Line2D.new()
 	_line.name = "WaterDebugSurfaceLine"
 	_line.width = 1.0
@@ -169,8 +172,10 @@ func _set_mode(next_mode: int) -> void:
 			_water.material = null
 			_water.color = Color(1.0, 0.0, 1.0, 1.0)
 		5:
-			# Reveal whether the tile clip itself is responsible for leakage.
-			_solids.material = null
+			# Only applicable to legacy Solids tiles; spline terrain has no
+			# matching tile shader to disable.
+			if _solids != null:
+				_solids.material = null
 	_update_line()
 	_update_readout()
 	print("[WATER DEBUG] Mode %d %s" % [mode + 1, MODE_NAMES[mode]])
@@ -179,7 +184,8 @@ func _set_mode(next_mode: int) -> void:
 func _restore() -> void:
 	_water.material = _original_water_material
 	_water.color = _original_water_color
-	_solids.material = _original_solids_material
+	if _solids != null:
+		_solids.material = _original_solids_material
 	_water.visible = bool(_initial_visibility.get("water", true))
 	_sea.visible = bool(_initial_visibility.get("sea", true))
 	if _ground != null:
@@ -222,7 +228,8 @@ func _report() -> String:
 		return "Water debug is missing scene references"
 	var water_screen: Vector2 = _water.get_global_transform_with_canvas().origin
 	var water_end: Vector2 = _water.get_global_transform_with_canvas() * _water.size
-	var sea_clip: String = "ON" if _solids.material != null else "OFF"
+	var sea_clip: String = "N/A (spline terrain)" if _solids == null else (
+		"ON" if _solids.material != null else "OFF")
 	var lines: PackedStringArray = PackedStringArray()
 	lines.append("WATER RENDER DEBUG | \\ toggle | 1-6 views | P save PNG | C copy")
 	lines.append("1 Normal  2 No Sea  3 No Land  4 No Water  5 Solid Magenta Water  6 No Sea Clip")
@@ -237,7 +244,8 @@ func _report() -> String:
 		_shader_parameter(_original_water_material, "viewer_submersion"),
 		_shader_parameter(_original_water_material, "reflection_strength")])
 	lines.append("Sea: visible=%s  Solids visible=%s  z=%d  clip=%s" % [
-		str(_sea.visible), str(_solids.visible), _solids.z_index, sea_clip])
+		str(_sea.visible), str(_solids.visible) if _solids != null else "not used",
+		_solids.z_index if _solids != null else -1, sea_clip])
 	lines.append("Sea clip screen Y=%s  tiles=%d  tile centers ABOVE water=%d" % [
 		_shader_parameter(_original_solids_material, "surface_screen_y"), _tile_count, _tiles_above_surface])
 	lines.append("Land: Ground=%s (z=%d)  GroundFront=%s (z=%d)" % [

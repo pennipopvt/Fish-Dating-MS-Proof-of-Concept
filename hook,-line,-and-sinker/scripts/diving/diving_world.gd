@@ -66,7 +66,12 @@ const SEA_SFX_SCENE = preload("res://prefabs/sea_sfx.tscn")
 var _sfx: Node
 var _last_combat_phase: int = -1
 @onready var _solids: TileMapLayer = get_node_or_null("Solids") as TileMapLayer
-# Points around a hooked fish's center that must be clear of Solids tiles.
+# The sea now uses editable SeaTerrain polygons instead of Solids tiles.
+# These are the same baked collision polygons that block the player and net.
+# Cache their bounds once: fish query open water many times per frame.
+var _terrain_colliders: Array[CollisionPolygon2D] = []
+var _terrain_bounds: Array[Rect2] = []
+# Samples around each fish's center, not only its center pixel.
 const HOOKED_FISH_PROBES: Array[Vector2] = [
 	Vector2.ZERO, Vector2(-6.0, 0.0), Vector2(6.0, 0.0), Vector2(0.0, -4.0), Vector2(0.0, 4.0)
 ]
@@ -76,6 +81,7 @@ func _ready() -> void:
 	_player = get_parent().get_node_or_null("Player") as Player
 	if _player != null:
 		_camera = _player.get_node_or_null("Camera2D") as Camera2D
+	_cache_terrain_colliders()
 	_hooked_mover.is_open = _is_open_water
 	_sfx = SEA_SFX_SCENE.instantiate()
 	add_child(_sfx)
@@ -392,22 +398,55 @@ func _sync_hooked_fish(delta: float) -> void:
 		_silas.position = fish.position
 
 
-# Open water for a hooked fish: below the waterline, above the sea floor, and
-# clear of the Solids tiles (rock and ground). Left and right stay open.
+# All SeaTerrain instances are direct children of Sea. Their collision
+# polygons are authored by SeaTerrain at runtime, before Sea._ready() runs.
+# Keep the polygons themselves authoritative, not the inset decorative edge.
+func _cache_terrain_colliders() -> void:
+	_terrain_colliders.clear()
+	_terrain_bounds.clear()
+	for child in get_children():
+		if not child is SeaTerrain:
+			continue
+		var collider: CollisionPolygon2D = child.get_node_or_null(
+			"StaticBody2D/CollisionPolygon2D") as CollisionPolygon2D
+		if collider == null or collider.polygon.size() < 3:
+			continue
+		var body: StaticBody2D = collider.get_parent() as StaticBody2D
+		if body == null or body.collision_layer & 2 == 0:
+			continue
+		var polygon: PackedVector2Array = collider.polygon
+		var bounds := Rect2(polygon[0], Vector2.ZERO)
+		for vertex in polygon:
+			bounds = bounds.expand(vertex)
+		_terrain_colliders.append(collider)
+		_terrain_bounds.append(bounds)
+
+
+# Wild swimmers, hooked fish and habitat spawning all share this query.
+# Their actors are Node2D fish, not CharacterBody2D, so the engine cannot
+# push them out of a StaticBody2D automatically.
 func _is_open_water(point: Vector2) -> bool:
 	if point.y < SEA_TOP + DivingWildFish.EDGE_MARGIN:
 		return false
 	if point.y > _sea_bounds().end.y - DivingWildFish.EDGE_MARGIN:
 		return false
-	if _solids == null:
-		return true
 	for probe in HOOKED_FISH_PROBES:
-		# Fish positions are in FishActors space; the tiles have their own.
-		var cell: Vector2i = _solids.local_to_map(_solids.to_local(_actors.to_global(point + probe)))
-		# Only tiles the player also collides with (decor tiles have no shape).
-		var tile: TileData = _solids.get_cell_tile_data(cell)
-		if tile != null and tile.get_collision_polygons_count(0) > 0:
-			return false
+		# Fish positions are in FishActors space. Both old tiles and new
+		# terrain polygons have independent local transforms.
+		var world_point: Vector2 = _actors.to_global(point + probe)
+		if _solids != null:
+			var cell: Vector2i = _solids.local_to_map(_solids.to_local(world_point))
+			var tile: TileData = _solids.get_cell_tile_data(cell)
+			if tile != null and tile.get_collision_polygons_count(0) > 0:
+				return false
+		for i in range(_terrain_colliders.size()):
+			var collider: CollisionPolygon2D = _terrain_colliders[i]
+			if not is_instance_valid(collider) or collider.disabled:
+				continue
+			var local_point: Vector2 = collider.to_local(world_point)
+			if _terrain_bounds[i].has_point(local_point) and Geometry2D.is_point_in_polygon(
+					local_point, collider.polygon):
+				return false
 	return true
 
 
