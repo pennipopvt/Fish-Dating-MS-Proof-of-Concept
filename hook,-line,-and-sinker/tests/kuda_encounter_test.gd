@@ -94,8 +94,11 @@ func _run() -> void:
 		"After underwater dialogue Kuda joins the real two-fish roster")
 	_check(sea.get_node_or_null("NPCs/PartyFish_barracuda") != null,
 		"Kuda immediately follows Penni in fish form for the swim to shore")
-	_check(kuda.phase == SeaKudaEncounter.Phase.RECRUITED
-		and not (sea.get("_wild_fish") as Array).has(hunter),
+	var still_registered: bool = false
+	for wild in sea.get("_wild_fish"):
+		if is_instance_valid(wild) and wild == hunter:
+			still_registered = true
+	_check(kuda.phase == SeaKudaEncounter.Phase.RECRUITED and not still_registered,
 		"Recruited Kuda is removed from wild catches, not added to inventory")
 	kuda.end_dive()
 	_check(not kuda.activate(),
