@@ -4,6 +4,7 @@ extends Node
 const MAIN: PackedScene = preload("res://scenes/main.tscn")
 const SILAS: NPCData = preload("res://resources/npcs/silas.tres")
 const KUDA: NPCData = preload("res://resources/npcs/kuda.tres")
+const LOCKED_DOOR: Texture2D = preload("res://sprites/rooms/lockeddoor.png")
 var failures: int = 0
 var _stage: String = "startup"
 
@@ -43,6 +44,14 @@ func _ready() -> void:
 	var home: TransferDoor = homes.get_node("FreeHouseA") as TransferDoor
 	_check(home != null and home.locked and RecruitmentHandler.available_homes.size() == 4,
 		"Four available townhouse room doors start locked")
+	var door_visuals_correct: bool = true
+	for node in homes.get_children():
+		var door: TransferDoor = node as TransferDoor
+		var art: Sprite2D = door.get_node_or_null("Sprite") as Sprite2D if door != null else null
+		if art == null or art.texture != LOCKED_DOOR or not door.locked:
+			door_visuals_correct = false
+	_check(door_visuals_correct,
+		"Every exterior slot displays Ethan's locked-door sprite, not a house placeholder")
 	_check(SILAS.door != null and SILAS.door.sceneLoc == Vector2(-1233, -520)
 		and KUDA.door != null and KUDA.door.sceneLoc == Vector2.ZERO,
 		"Silas has an isolated room; unfinished Kuda room stays locked")
@@ -54,6 +63,8 @@ func _ready() -> void:
 	_check(not home.locked and home.transfer_loc == SILAS.door.sceneLoc
 		and actor.is_queued_for_deletion(),
 		"NPC recruitment updates room without leaving a stray world actor")
+	_check(home.house.texture == SILAS.door.door,
+		"Recruited Silas switches to Ethan's Silas-specific door artwork")
 	var player: Player = world.get_node("Player") as Player
 	var exit_door: TransferDoor = room.get_node("SilasHouse") as TransferDoor
 	_check(not exit_door.locked and exit_door.transfer_loc == Vector2(313, 112),

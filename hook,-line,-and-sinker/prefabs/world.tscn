@@ -17,7 +17,7 @@
 [ext_resource type="Shader" uid="uid://r4rciq67coeg" path="res://shaders/water.gdshader" id="13_le6xu"]
 [ext_resource type="PackedScene" path="res://scenes/townhouse.tscn" id="23_townhouse"]
 [ext_resource type="PackedScene" path="res://prefabs/rooms/silas_room.tscn" id="24_silas_room"]
-[ext_resource type="PackedScene" uid="uid://86k4q6ioi03u" path="res://prefabs/silas_house.tscn" id="24_xfqyr"]
+[ext_resource type="PackedScene" path="res://prefabs/townhouse_door.tscn" id="24_xfqyr"]
 [ext_resource type="PackedScene" path="res://prefabs/bed.tscn" id="25_bed"]
 [ext_resource type="PackedScene" path="res://prefabs/beach.tscn" id="26_beach"]
 [ext_resource type="Shader" uid="uid://bv2isyw6ln31h" path="res://shaders/moon.gdshader" id="moon_shader"]
