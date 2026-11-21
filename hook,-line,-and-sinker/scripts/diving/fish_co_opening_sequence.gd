@@ -19,6 +19,8 @@ var _contract_call_finished: bool = false
 var _first_quota_opened: bool = false
 var _first_dive_call_started: bool = false
 var _first_dive_call_finished: bool = false
+var _gifts_call_started: bool = false
+var _gifts_call_finished: bool = false
 var _dock_confirmation_target: Node2D
 var _dock_confirmation_yes: bool = false
 
@@ -35,12 +37,57 @@ func configure(world: Node2D, player: Player, shop: ShopMenu, transition: SeaDiv
 	DialogueManager.conversation_finished.connect(_on_first_dive_conversation_finished)
 	DialogueManager.choice_resolved.connect(_on_dock_choice_resolved)
 	DialogueManager.conversation_finished.connect(_on_dock_confirmation_finished)
+	DialogueManager.conversation_finished.connect(_on_gifts_conversation_finished)
 	ShopManager.shop_opened.connect(_on_first_quota_opened)
 	ShopManager.shop_closed.connect(_on_first_quota_closed)
 
 
 func start() -> void:
 	_start_contract_call()
+
+
+# Delayed Fish Co call: Day 2+, and only once an NPC actually has a room.
+# Try when the world is available, never over a dive, room or other dialogue.
+func _process(_delta: float) -> void:
+	if _gifts_call_started or _gifts_call_finished or ShopManager.gifts_unlocked:
+		return
+	if GameManager.get_day() < 2 or not _first_dive_call_finished:
+		return
+	var has_resident: bool = false
+	for state in NPCManager.npc_states.values():
+		if state.get("flags", {}).get(&"Recruited", false) \
+				and StringName(str(state.get("room_id", ""))) != &"":
+			has_resident = true
+			break
+	if not has_resident or _world_player == null or _world_player.busy:
+		return
+	if _transition.transitioning or _transition.underwater or GameManager.diving_session_active:
+		return
+	if DialogueManager.is_active or ShopManager.is_shop_open or GameManager.is_modal_ui_open():
+		return
+	_start_gifts_call()
+
+
+func _start_gifts_call() -> void:
+	_gifts_call_started = true
+	_world_player.busy = true
+	DialogueManager.request_conversation(
+		FISH_CO_OPERATOR, "res://dialogue/fish_co_gifts_unlocked.json"
+	)
+	if not DialogueManager.is_active:
+		push_warning("Fish Co gift introduction failed; enabling gifts to avoid a softlock.")
+		_finish_gifts_call()
+
+
+func _on_gifts_conversation_finished(npc: NPCData) -> void:
+	if npc == FISH_CO_OPERATOR and _gifts_call_started and not _gifts_call_finished:
+		_finish_gifts_call()
+
+
+func _finish_gifts_call() -> void:
+	_gifts_call_finished = true
+	_world_player.busy = false
+	ShopManager.unlock_gifts()
 
 
 # Existing authored FishCoIntro takes priority; restore that same PackedScene

@@ -10,6 +10,7 @@ signal upgrade_state_changed(trade: TradeData)
 signal shop_requested
 signal shop_opened
 signal shop_closed
+signal gifts_unlocked_changed(unlocked: bool)
 # A trade's rewards should be delivered into the world (drone at the terminal).
 # With no listener, rewards apply immediately instead.
 signal delivery_requested(pickups: Array[ItemPickup])
@@ -19,8 +20,14 @@ var upgrades_today: int = 0
 @export var max_daily_upgrades: int = 1
 
 var is_shop_open: bool = false
-# Once the first NPC has joined, keep Gifts visible for this run.
+# Gifts are introduced by the Day 2+ Fish Co housing phone call.
 var gifts_unlocked: bool = false
+
+func unlock_gifts() -> void:
+	if gifts_unlocked:
+		return
+	gifts_unlocked = true
+	gifts_unlocked_changed.emit(true)
 
 func _ready() -> void:
 	GameManager.day_started.connect(on_day_start)
@@ -94,16 +101,9 @@ func get_pending_upgrade_pickups() -> Array[ItemPickup]:
 func can_trade(trade: TradeData) -> bool:
 	if trade == null or not trades.has(trade):
 		return false
-	# Gifts do not exist as a purchase option until the player has brought
-	# somebody to the island. Gate the API too, not just the terminal UI.
+	# Protect gift purchases at the API boundary, not just in the terminal.
 	if trade.reward_item != null and not gifts_unlocked:
-		var has_ever_recruited := false
-		for state in NPCManager.npc_states.values():
-			if state.get("flags", {}).get(&"Recruited", false):
-				has_ever_recruited = true
-				break
-		if not has_ever_recruited:
-			return false
+		return false
 	if is_upgrade_owned(trade) or is_upgrade_ordered(trade):
 		return false
 	

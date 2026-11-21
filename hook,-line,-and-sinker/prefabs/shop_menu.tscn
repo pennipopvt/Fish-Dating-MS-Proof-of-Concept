@@ -88,7 +88,7 @@ unique_name_in_owner = true
 custom_minimum_size = Vector2(90, 78)
 clip_contents = true
 layout_mode = 2
-tooltip_text = "Fishing upgrades"
+tooltip_text = "Shop: Upgrades and gifts"
 toggle_mode = true
 
 [node name="Icon" type="TextureRect" parent="TerminalRoot/NavTabs/ShopTab" unique_id=2143776163]
@@ -99,7 +99,7 @@ offset_top = 12.0
 offset_right = 60.0
 offset_bottom = 60.0
 mouse_filter = 2
-texture = ExtResource("4_upgrade_icon")
+texture = ExtResource("5_gift_icon")
 expand_mode = 1
 stretch_mode = 5
 
@@ -112,7 +112,7 @@ offset_bottom = 232.0
 rotation = -1.5707964
 theme_type_variation = &"TitleLabel"
 theme_override_font_sizes/font_size = 27
-text = "UPGRADES"
+text = "SHOP"
 horizontal_alignment = 1
 vertical_alignment = 1
 

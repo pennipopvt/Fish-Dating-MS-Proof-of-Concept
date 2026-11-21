@@ -82,10 +82,12 @@ var _quota_only: bool = true
 var _post_dive_storage_unlocked: bool = false
 var _storage_seen: bool = false
 var _upgrades_seen: bool = false
+var _gifts_seen: bool = false
 var _challenges_unlocked: bool = false
 var _schedule_unlocked: bool = false
 var _storage_notification: PanelContainer
 var _shop_notification: PanelContainer
+var _gifts_notification: PanelContainer
 var _entries: Array[Dictionary] = []
 var _entry_buttons: Array[Button] = []
 var _selected_index: int = 0
@@ -131,6 +133,7 @@ func _ready() -> void:
 	ShopManager.shop_requested.connect(open)
 	ShopManager.trade_completed.connect(_on_trade_completed)
 	ShopManager.upgrade_state_changed.connect(_on_upgrade_state_changed)
+	ShopManager.gifts_unlocked_changed.connect(_on_gifts_unlocked_changed)
 	ChallengeManager.challenge_progressed.connect(_on_challenge_changed)
 	ChallengeManager.challenge_completed.connect(_on_challenge_changed)
 	ChallengeManager.challenge_claimed.connect(_on_challenge_changed)
@@ -147,6 +150,9 @@ func _ready() -> void:
 	_setup_challenge_notification()
 	_storage_notification = _make_progression_tab_notice(_storage_tab, "StorageNoticeBubble")
 	_shop_notification = _make_progression_tab_notice(_shop_tab, "UpgradeNoticeBubble")
+	_gifts_notification = _make_progression_tab_notice(_shop_gifts, "GiftsNoticeBubble")
+	# Nest the same small exclamation badge to the right of the GIFTS label.
+	_gifts_notification.position = Vector2(189, 18)
 	_refresh_page()
 	_update_nav_tabs(false)
 	_update_progression_notifications()
@@ -217,17 +223,33 @@ func _show_tab_notice(tab: Button, notice: PanelContainer, pending: bool) -> voi
 		icon.visible = not pending
 
 
+func _new_gifts_pending() -> bool:
+	return ShopManager.gifts_unlocked and not _gifts_seen and is_page_unlocked(Page.SHOP)
+
+
 func _pending_progression_notice() -> bool:
 	return (_post_dive_storage_unlocked and not _storage_seen) \
-		or (QuotaManager.first_quota_completed and not _upgrades_seen)
+		or (QuotaManager.first_quota_completed and not _upgrades_seen) \
+		or _new_gifts_pending()
 
 
 func _update_progression_notifications() -> void:
 	_show_tab_notice(_storage_tab, _storage_notification,
 		_post_dive_storage_unlocked and not _storage_seen)
 	_show_tab_notice(_shop_tab, _shop_notification,
-		QuotaManager.first_quota_completed and not _upgrades_seen)
+		(QuotaManager.first_quota_completed and not _upgrades_seen) or _new_gifts_pending())
+	if is_instance_valid(_gifts_notification):
+		_gifts_notification.visible = _new_gifts_pending()
 	progression_notice_changed.emit(_pending_progression_notice())
+
+
+func _on_gifts_unlocked_changed(unlocked: bool) -> void:
+	if not is_node_ready():
+		return
+	_shop_gifts.visible = unlocked
+	if visible and _page == Page.SHOP:
+		_refresh_page()
+	_update_progression_notifications()
 
 
 # Connected by Main to the EXISTING Silas reveal completion signal.
@@ -404,18 +426,17 @@ func _cancel_open_animation() -> void:
 
 
 func _has_recruited_npc() -> bool:
-	if ShopManager.gifts_unlocked:
-		return true
-	for state in NPCManager.npc_states.values():
-		if state.get("flags", {}).get(&"Recruited", false):
-			return true
-	return false
+	# Compatibility: an NPC moving in does not automatically enable gifts.
+	return ShopManager.gifts_unlocked
 
 
 func _select_shop_section(section: int) -> void:
 	if section == 1 and not _has_recruited_npc():
 		return
 	_shop_section = section
+	if section == 1:
+		_gifts_seen = true
+		_update_progression_notifications()
 	_selected_index = 0
 	_refresh_page()
 
@@ -503,6 +524,7 @@ func _refresh_page() -> void:
 	_quota_view.hide()
 	_shop_categories.visible = _page == Page.SHOP
 	_shop_gifts.visible = _has_recruited_npc()
+	_update_progression_notifications()
 	if _shop_section == 1 and not _shop_gifts.visible:
 		_shop_section = 0
 	_shop_upgrades.set_pressed_no_signal(_shop_section == 0)
@@ -525,7 +547,7 @@ func _refresh_page() -> void:
 		Page.CHALLENGES:
 			_collect_challenges()
 
-	var names := ["QUOTA", "UPGRADES", "FISH", "FISH", "CHALLENGES"]
+	var names := ["QUOTA", "SHOP", "FISH", "FISH", "CHALLENGES"]
 	var explanations := [
 		"Mandatory fish deliveries every 3 days",
 		"Fishing improvements and gifts",

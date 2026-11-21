@@ -74,7 +74,7 @@ func _finalize_recruitment(actor: NPCInteractable, fish: FishData) -> void:
 	var data: NPCData = actor.npc
 	NPCManager.get_npc_state(data.npc_id)["flags"][&"Recruited"] = true
 	FishingManager.remove_recruited_catch(fish)
-	ShopManager.gifts_unlocked = true
+	# The Fish Co housing call unlocks gifts later, not recruitment.
 	# Deliberately do not call AffectionManager.on_recruited here:
 	# housing isn't a romantic commitment or a romance deadline.
 	assign_home(data)
