@@ -620,10 +620,16 @@ func _info_npcs() -> String:
 		var flags: Dictionary = state.get("flags", {})
 		var data: NPCData = _flag_npc_resource(id)
 		t += _h(String(id))
-		t += "Affection %d / %d   Jealousy %d / %d (tier %d)\n" % [
+		t += "Attraction %d / %d   Jealousy %d / %d (tier %d)\n" % [
 			AffectionManager.get_affection(id), AffectionManager.MAX_AFFECTION,
 			AffectionManager.get_jealousy(id), AffectionManager.MAX_JEALOUSY,
 			AffectionManager.get_jealousy_tier(id)]
+		var morale_stage: int = int(AffectionManager.get_morale_stage(id))
+		t += "Team morale %d / %d (%s)   Active %s   Attack speed x%.2f\n" % [
+			AffectionManager.get_morale(id), AffectionManager.MAX_MORALE,
+			["Happy", "Neglected", "Hurt", "Refusing"][morale_stage],
+			_onoff(AffectionManager.is_morale_active(id)),
+			AffectionManager.attack_speed_multiplier(id)]
 		t += "Last date day %s   First recruited day %s   In world %s\n" % [
 			str(state.get(AffectionManager.LAST_DATE_KEY, "-")),
 			str(state.get(AffectionManager.RECRUITED_DAY_KEY, "-")),
@@ -1340,7 +1346,7 @@ func _rebuild_flags() -> void:
 
 	_heading(box, "Relationship")
 	var attraction_row := _row(box)
-	attraction_row.add_child(PixelUI.label("Affection", &"DimLabel"))
+	attraction_row.add_child(PixelUI.label("Attraction (romance)", &"DimLabel"))
 	var attraction := SpinBox.new()
 	attraction.min_value = -10
 	attraction.max_value = AffectionManager.MAX_AFFECTION
@@ -1349,6 +1355,38 @@ func _rebuild_flags() -> void:
 		AffectionManager.set_affection(selected_id, int(v))
 		_say("%s affection = %d" % [selected_id, int(v)]))
 	attraction_row.add_child(attraction)
+
+	# Debug-only morale controls let us test the whole behavior spectrum
+	# without advancing the game through weeks of in-world time.
+	var stage: int = int(AffectionManager.get_morale_stage(selected_id))
+	var morale_status := PixelUI.label(
+		"Team morale: %s / %s" % [
+			["Happy", "Neglected", "Hurt", "Refusing"][stage],
+			"active" if AffectionManager.is_morale_active(selected_id) else "grace period"
+		], &"DimLabel")
+	box.add_child(morale_status)
+	var morale_row := _row(box)
+	morale_row.add_child(PixelUI.label("Morale", &"DimLabel"))
+	var morale := SpinBox.new()
+	morale.min_value = 0
+	morale.max_value = AffectionManager.MAX_MORALE
+	morale.value = AffectionManager.get_morale(selected_id)
+	morale.value_changed.connect(func(v: float) -> void:
+		AffectionManager.set_morale(selected_id, int(v))
+		_say("%s morale = %d" % [selected_id, int(v)]))
+	morale_row.add_child(morale)
+	var morale_tools := _row(box)
+	var start_morale := _button(morale_tools, "Start morale now", func() -> void:
+		state[AffectionManager.RECRUITED_DAY_KEY] = (
+			GameManager.get_day() - AffectionManager.MORALE_GRACE_DAYS)
+		_say("%s team morale is active" % selected_id)
+		_rebuild_flags.call_deferred())
+	start_morale.disabled = not recruited or AffectionManager.is_morale_active(selected_id)
+	start_morale.tooltip_text = "Debug only: simulate five days after recruiting this fish"
+	_button(morale_tools, "Reset morale to 100", func() -> void:
+		AffectionManager.set_morale(selected_id, AffectionManager.MAX_MORALE)
+		_say("%s morale restored" % selected_id)
+		_rebuild_flags.call_deferred())
 
 	var jealousy_row := _row(box)
 	jealousy_row.add_child(PixelUI.label("Jealousy (tier %d)" % AffectionManager.get_jealousy_tier(selected_id), &"DimLabel"))
