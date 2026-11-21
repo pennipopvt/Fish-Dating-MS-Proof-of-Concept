@@ -51,6 +51,19 @@ func refresh() -> void:
 	_update_sea_debug()
 
 
+# Read by DevPanel's Sea diagnostics tab; the old F7 overlay stays hidden.
+func diagnostics_text() -> String:
+	if _main == null:
+		return "Sea diagnostics are not configured"
+	_update_sea_debug()
+	return _sea_debug_label.text
+
+
+func test_bubble_from_menu() -> void:
+	_force_test_bubble()
+	hide()
+
+
 func skip_dialogue() -> void:
 	if not DialogueManager.is_active:
 		print("[SEA DEBUG] Skip Dialogue: no active conversation")
