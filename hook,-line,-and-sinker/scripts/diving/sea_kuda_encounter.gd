@@ -18,6 +18,11 @@ enum Phase { DORMANT, CHASING, HOOK_DIALOGUE, REELING, CAUGHT_DIALOGUE, RECRUITE
 @export var prey_species: FishData = preload("res://resources/fish/mullet.tres")
 @export_range(0.1, 1.0, 0.05) var initial_health_ratio: float = 0.5
 
+@export_group("Sprites")
+# Individual encounter art sizes, independent of the shared species data.
+@export_range(20.0, 72.0, 1.0, "suffix:px") var kuda_sprite_width: float = 44.0
+@export_range(12.0, 56.0, 1.0, "suffix:px") var prey_sprite_width: float = 26.0
+
 @export_group("Chase Speeds")
 @export_range(35.0, 220.0, 1.0) var prey_speed: float = 90.0
 @export_range(50.0, 280.0, 1.0) var kuda_speed: float = 126.0
@@ -91,13 +96,26 @@ func activate() -> bool:
 		end_dive()
 		return false
 	kuda.health = kuda.max_health * initial_health_ratio
+	# Bigger art must also give the net a matching clickable/hittable radius.
+	_set_sprite_width(kuda, kuda_sprite_width)
+	_set_sprite_width(prey, prey_sprite_width)
 	kuda.queue_redraw()
 	_reset_chase()
 	phase = Phase.CHASING
 	return true
 
 
-func _find_open_position(at: Vector2) -> Vector2:
+func _set_sprite_width(fish: DivingWildFish, width: float) -> void:
+	if not is_instance_valid(fish):
+		return
+	var art: Sprite2D = fish.get_node_or_null("FishSprite") as Sprite2D
+	if art == null or art.texture == null:
+		return
+	art.scale = Vector2.ONE * (width / maxf(float(art.texture.get_width()), 1.0))
+	fish.capture_radius = maxf(fish.capture_radius, width * 0.42)
+
+
+func _find_open_position(at: Vector2, distance_from_kuda: float = 0.0) -> Vector2:
 	var offsets := [Vector2.ZERO, Vector2(0.0, -0.2), Vector2(-0.2, 0.0),
 		Vector2(0.2, 0.2), Vector2(0.0, 0.2)]
 	for offset in offsets:
@@ -105,14 +123,18 @@ func _find_open_position(at: Vector2) -> Vector2:
 		var in_area: Vector2 = Vector2(clampf(uv.x, 0.08, 0.92),
 			clampf(uv.y, 0.08, 0.92)) * area_size
 		var sea_point: Vector2 = (get_parent() as Node2D).to_local(to_global(in_area))
-		if bool(_is_open.call(sea_point)):
+		if bool(_is_open.call(sea_point)) and (
+				not is_instance_valid(kuda) or
+				sea_point.distance_to(kuda.position) >= distance_from_kuda):
 			return sea_point
 	for y in range(1, 9):
 		for x in range(1, 11):
 			var candidate: Vector2 = (get_parent() as Node2D).to_local(
 				to_global(Vector2(float(x) / 11.0 * area_size.x,
 					float(y) / 9.0 * area_size.y)))
-			if bool(_is_open.call(candidate)):
+			if bool(_is_open.call(candidate)) and (
+					not is_instance_valid(kuda) or
+					candidate.distance_to(kuda.position) >= distance_from_kuda):
 				return candidate
 	return Vector2.INF
 
@@ -206,6 +228,11 @@ func step(delta: float) -> void:
 		return
 	if _player == null or not _player.swimming or DialogueManager.is_active:
 		return
+	# These two fish are excluded from DivingWorld's generic swim() loop.
+	# Their net cooldowns must still advance, especially after Kuda escapes.
+	kuda.catch_cooldown = maxf(0.0, kuda.catch_cooldown - delta)
+	if is_instance_valid(prey):
+		prey.catch_cooldown = maxf(0.0, prey.catch_cooldown - delta)
 	if not is_instance_valid(prey):
 		_prey_respawn_timer -= delta
 		if _prey_respawn_timer <= 0.0:
@@ -266,11 +293,16 @@ func _face(fish: DivingWildFish, heading: Vector2) -> void:
 
 
 func _respawn_prey() -> void:
-	var at: Vector2 = _find_open_position(Vector2(0.7, 0.5))
+	# Prefer a fresh prey well ahead of Kuda, so he must actually pursue it
+	# instead of killing a replacement on the same frame it appears.
+	var at: Vector2 = _find_open_position(Vector2(0.7, 0.5), 65.0)
+	if not at.is_finite():
+		at = _find_open_position(Vector2(0.7, 0.5))
 	if not at.is_finite():
 		_prey_respawn_timer = 1.0
 		return
 	prey = _spawn.call(prey_species, at, randi(), 0.0, 0.0, 0.0) as DivingWildFish
+	_set_sprite_width(prey, prey_sprite_width)
 
 
 func _reset_chase() -> void:

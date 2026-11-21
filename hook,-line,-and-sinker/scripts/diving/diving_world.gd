@@ -380,7 +380,10 @@ func _process(delta: float) -> void:
 	_encounter.step(delta)
 	# Kuda and his prey are real WildFish actors but use authored chase
 	# steering rather than the generic autonomous swim routine.
-	if _combat.target != _kuda.prey:
+	# Do not drive a hooked prey, but ALWAYS update the encounter when
+	# no prey exists. The old null == null comparison stopped the entire
+	# chase after Kuda killed his prey, preventing all replacements.
+	if not _combat.is_active() or _combat.target != _kuda.prey:
 		_kuda.step(delta)
 	# Reuse the original interaction bubble for the dock return.
 	# The marker lives at the waterline; the player cannot swim above

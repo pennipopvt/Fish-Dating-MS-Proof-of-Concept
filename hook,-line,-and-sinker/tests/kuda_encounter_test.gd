@@ -49,12 +49,46 @@ func _run() -> void:
 	_check(is_equal_approx(hunter.health_ratio(), 0.5)
 		and hunter.health < hunter.max_health,
 		"Kuda starts the encounter already weakened to half health")
+	var kuda_art: Sprite2D = hunter.get_node("FishSprite") as Sprite2D
+	var prey_art: Sprite2D = prey.get_node("FishSprite") as Sprite2D
+	_check(kuda_art != null and prey_art != null and
+		is_equal_approx(kuda_art.scale.x * float(kuda_art.texture.get_width()),
+			kuda.kuda_sprite_width) and
+		is_equal_approx(prey_art.scale.x * float(prey_art.texture.get_width()),
+			kuda.prey_sprite_width) and hunter.capture_radius > 13.0,
+		"Kuda and prey use independent Inspector sprite sizes with aligned net hitboxes")
+
 	_check(kuda.protects_from_silas(hunter) and kuda.protects_from_silas(prey),
 		"Silas refuses both Kuda and the fish he is hunting")
 	var initial: Vector2 = hunter.position
 	kuda.step(0.20)
 	_check(hunter.position != initial and kuda.phase == SeaKudaEncounter.Phase.CHASING,
 		"Kuda visibly pursues prey within an editor-configured area")
+	# Make Kuda actually kill the first prey, then advance the WORLD update.
+	# The old World skipped kuda.step() when both combat.target and prey
+	# were null, permanently freezing him with no replacement prey.
+	kuda.bite_range = 40.0
+	kuda.prey_speed = 0.0
+	kuda.kuda_speed = 0.0
+	kuda.burst_speed = 0.0
+	kuda._bite_timer = 0.0
+	prey.position = hunter.position + Vector2(3.0, 0.0)
+	prey.health = 1.0
+	kuda.step(0.02)
+	_check(kuda.prey == null and kuda.phase == SeaKudaEncounter.Phase.CHASING,
+		"Kuda can kill his prey during the chase without ending the encounter")
+	sea.call("_process", 1.4)
+	_check(is_instance_valid(kuda.prey) and kuda.prey != prey
+		and kuda.prey.health > 0.0,
+		"World continues ticking a prey-less encounter and respawns replacement prey")
+	prey = kuda.prey
+	if not is_instance_valid(prey):
+		_finish(main)
+		return
+	kuda.bite_range = 12.0
+	kuda.prey_speed = 90.0
+	kuda.kuda_speed = 126.0
+	kuda.burst_speed = 185.0
 	player.position = prey.position + Vector2(18.0, 0.0)
 	sea.call("_try_companion_target", prey.position)
 	_check(DialogueManager.is_active and DialogueManager.current_npc == SILAS
@@ -79,6 +113,17 @@ func _run() -> void:
 	combat.release()
 	_check(kuda.phase == SeaKudaEncounter.Phase.CHASING and not hunter.trapped,
 		"If Kuda escapes he resumes hunting")
+	_check(hunter.catch_cooldown > 0.0, "Escaped Kuda briefly cannot be recaught")
+	sea.call("_process", 1.4)
+	_check(hunter.catch_cooldown <= 0.0,
+		"Kuda's special chase ticks the cooldown so the net can catch him again")
+	var net: DivingNetProjectile = sea.get_node("NetProjectile") as DivingNetProjectile
+	var candidates: Array[DivingWildFish] = [hunter]
+	_check(net.cast_net(player, hunter.position, candidates) and
+		net.call("_first_fish_on_segment", hunter.position + Vector2(-30, 0),
+			hunter.position + Vector2(30, 0)) == hunter,
+		"An ordinary net cast recognizes Kuda again after escape")
+	net.reset_net()
 	sea.call("_on_fish_hit", hunter)
 	_check(combat.is_active() and not DialogueManager.is_active,
 		"Second net hit skips the introduction and starts combat immediately")
