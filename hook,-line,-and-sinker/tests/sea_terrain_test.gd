@@ -19,10 +19,13 @@ func _run() -> void:
 	var collider: CollisionPolygon2D = terrain.get_node(
 		"StaticBody2D/CollisionPolygon2D") as CollisionPolygon2D
 	_check(terrain.curve != null and terrain.curve.point_count >= 3,
-		"Editable closed Bezier curve exists in the preview scene")
+		"Editable Bezier curve exists in the preview scene")
+	_check(not terrain.curve.get_point_position(0).is_equal_approx(
+		terrain.curve.get_point_position(terrain.curve.point_count - 1)),
+		"Closed terrain has no duplicate first/last control point to split when dragging")
 	_check(fill.polygon.size() > terrain.curve.point_count
-		and fill.polygon.size() == edge.points.size() - 1,
-		"Curved polygon and continuous tiled edge are generated")
+		and edge.points.size() >= 3 and edge.closed,
+		"Smooth filled polygon and truly closed native Line2D strip are generated")
 	_check(collider.polygon == fill.polygon and fill.uv == fill.polygon,
 		"Exact same baked outline drives both UV-mapped art and collisions")
 	_check(edge.texture != null and edge.texture.get_width() == 16
@@ -35,6 +38,33 @@ func _run() -> void:
 		"Textures repeat along the curve and across the fill")
 	_check((collider.get_parent() as StaticBody2D).collision_layer == 2,
 		"Collision uses the same layer as the existing solid sea tiles")
+	_check(terrain._signed_area(edge.points) > 0.0,
+		"Edge always winds with its darker texture side facing outside")
+	var inside_edges: bool = true
+	for point in edge.points:
+		if not Geometry2D.is_point_in_polygon(point, fill.polygon):
+			inside_edges = false
+	_check(inside_edges,
+		"Rounded polygon inset keeps edge vertices inside the solid at corners")
+	# A right-angled concave notch used to create a huge offset-line spike.
+	var shape := Curve2D.new()
+	shape.add_point(Vector2(-90, 70))
+	shape.add_point(Vector2(-90, -10))
+	shape.add_point(Vector2(-10, -10))
+	shape.add_point(Vector2(-10, 25))
+	shape.add_point(Vector2(10, 25))
+	shape.add_point(Vector2(10, -10))
+	shape.add_point(Vector2(90, -10))
+	shape.add_point(Vector2(90, 70))
+	terrain.curve = shape
+	await get_tree().process_frame
+	inside_edges = not edge.points.is_empty()
+	for point in edge.points:
+		if not Geometry2D.is_point_in_polygon(point, fill.polygon):
+			inside_edges = false
+	_check(edge.closed and inside_edges
+		and collider.polygon == fill.polygon,
+		"Sharp concave corners retain an inset edge and identical fill/collision")
 	var old_polygon: PackedVector2Array = fill.polygon.duplicate()
 	var original: Vector2 = terrain.curve.get_point_position(1)
 	terrain.curve.set_point_position(1, original + Vector2(0.0, -18.0))
