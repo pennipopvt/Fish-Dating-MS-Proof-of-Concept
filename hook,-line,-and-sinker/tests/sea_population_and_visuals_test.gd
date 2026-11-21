@@ -23,8 +23,9 @@ func _ready() -> void:
 	# The fish are Node2D actors, so their open-water movement test must
 	# recognize the same polygons that physically stop Penni and the net.
 	var spline_colliders: Array = sea.get("_terrain_colliders")
-	_check(spline_colliders.size() == 9,
-		"All nine user-authored spline colliders are registered for fish movement")
+	var expected_terrains: int = _count_sea_terrains(sea)
+	_check(expected_terrains >= 9 and spline_colliders.size() == expected_terrains,
+		"All solid and decorative splines are discovered even inside nested editor groups")
 	var blocked_point: Vector2 = Vector2.INF
 	var actors: Node2D = sea.get_node("FishActors") as Node2D
 	for candidate in spline_colliders:
@@ -277,6 +278,16 @@ func _finish(main: Node) -> void:
 	print("sea_population_and_visuals_test: PASS" if failures == 0 else
 		"sea_population_and_visuals_test: %d FAILED" % failures)
 	get_tree().quit(0 if failures == 0 else 1)
+
+
+# New art can be grouped arbitrarily; verify every nested spline is read.
+func _count_sea_terrains(parent: Node) -> int:
+	var result: int = 0
+	for child in parent.get_children():
+		if child is SeaTerrain:
+			result += 1
+		result += _count_sea_terrains(child)
+	return result
 
 
 func _check(ok: bool, note: String) -> void:
