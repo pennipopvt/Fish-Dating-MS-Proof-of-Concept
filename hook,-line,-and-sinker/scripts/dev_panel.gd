@@ -690,7 +690,7 @@ func _peek_encounter(npc: NPCData) -> String:
 	for rule in npc.encounter_rules:
 		if rule == null:
 			continue
-		if rule.use_min_attraction and AffectionManager.get_affection(npc.npc_id) < rule.min_attraction:
+		if rule.use_min_affection and AffectionManager.get_affection(npc.npc_id) < rule.min_affection:
 			continue
 		var ok := true
 		for f in rule.required_flags:

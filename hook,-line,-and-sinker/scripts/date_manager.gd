@@ -117,7 +117,7 @@ func meets_requirements(date: DateData) -> bool:
 	var flags: Dictionary = state.get("flags", {})
 	if not date.repeatable and flags.get(date.get_completed_flag(), false):
 		return false
-	if date.use_min_attraction and AffectionManager.get_affection(date.npc.npc_id) < date.min_attraction:
+	if date.use_min_affection and AffectionManager.get_affection(date.npc.npc_id) < date.min_affection:
 		return false
 	for flag in date.required_flags:
 		if not flags.get(flag, false):
@@ -403,7 +403,7 @@ func _finish(completed: bool) -> void:
 		# Repeating a date always scores again, but never farms individual
 		# dialogue-choice affection. Successful completion prevents daily decay.
 		AffectionManager.mark_date_completed(date.npc.npc_id, _date_day)
-		var gain: int = int(OUTCOME_AFFECTION[outcome]) if not outcome.is_empty() else date.attraction_change
+		var gain: int = int(OUTCOME_AFFECTION[outcome]) if not outcome.is_empty() else date.affection_change
 		AffectionManager.change(date.npc.npc_id, gain)
 		_use_up_period()
 	_active = null

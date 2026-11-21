@@ -67,7 +67,7 @@ func apply_choice(
 	var state := get_npc_state(npc.npc_id)
 	var flags: Dictionary = state["flags"]
 
-	AffectionManager.change_affection(npc.npc_id, choice.attraction_change)
+	AffectionManager.change_affection(npc.npc_id, choice.affection_change)
 
 	for flag in choice.flags_to_set:
 		if flag != null:
@@ -223,7 +223,7 @@ func get_encounter_json_path(npc: NPCData) -> String:
 	for rule in npc.encounter_rules:
 		if rule == null or (rule.json_path.is_empty() and rule.json_pool.is_empty()):
 			continue
-		if rule.use_min_attraction and AffectionManager.get_affection(npc.npc_id) < rule.min_attraction:
+		if rule.use_min_affection and AffectionManager.get_affection(npc.npc_id) < rule.min_affection:
 			continue
 		if rule.min_days_after_gift > 0:
 			if not state.has("gift_received_day") \

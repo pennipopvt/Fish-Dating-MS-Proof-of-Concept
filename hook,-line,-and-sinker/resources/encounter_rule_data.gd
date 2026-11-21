@@ -7,8 +7,8 @@ extends Resource
 @export var json_pool: Array[String] = []
 @export var required_flags: Array[StringName] = []
 @export var forbidden_flags: Array[StringName] = []
-@export var use_min_attraction: bool = false
-@export var min_attraction: int = 0
+@export var use_min_affection: bool = false
+@export var min_affection: int = 0
 ## Minimum number of calendar day changes since receiving the correct gift.
 ## Zero preserves all existing encounter behavior.
 @export_range(0, 30, 1) var min_days_after_gift: int = 0

@@ -38,8 +38,8 @@ enum When {
 @export_group("Requirements (NPC flags)")
 @export var required_flags: Array[StringName] = []
 @export var forbidden_flags: Array[StringName] = []
-@export var use_min_attraction: bool = false
-@export var min_attraction: int = 0
+@export var use_min_affection: bool = false
+@export var min_affection: int = 0
 # Off: the date disappears from the ask-out choices once done.
 @export var repeatable: bool = false
 
@@ -48,7 +48,7 @@ enum When {
 @export var completed_flag: StringName
 @export var flags_to_set: Array[StringName] = []
 # Affection gained when the date ends (dates are positive by default).
-@export var attraction_change: int = 5
+@export var affection_change: int = 5
 
 
 func get_completed_flag() -> StringName:
