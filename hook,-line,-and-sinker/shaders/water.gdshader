@@ -44,10 +44,21 @@ void fragment() {
 	float depth = max(screen_pixel.y - waterline_y, 0.0);
 	float reflection_falloff = smoothstep(0.0, max(reflection_fade_depth, 1.0), depth);
 
-	// Preserve the order of reflected rows: never add independent vertical
-	// waves that can make foreground/sky stripes cross over each other.
-	// Positive squish keeps the mirrored image monotonically ordered.
-	float reflected_y = waterline_y - depth * max(reflection_squish, 0.01);
+	// Fit the visible sky above the waterline into the water area actually
+	// on-screen. Otherwise a shallow 40px band of water can only reflect the
+	// bottom of the sky, leaving the sun/clouds entirely outside the viewport.
+	// Keep reflection_squish as a minimum so existing Inspector tuning still
+	// works whenever there is enough screen space.
+	// The mapping remains monotonic: horizontal ripples never reorder rows.
+	float screen_height = 1.0 / pixel_size.y;
+	float visible_water_height = max(screen_height - waterline_y, 1.0);
+	float visible_sky_height = max(waterline_y, 0.0);
+	float fitted_squish = visible_sky_height / visible_water_height;
+	float reflected_y = waterline_y - depth * max(reflection_squish, fitted_squish);
+
+	// Fade samples near/past the viewport top instead of smearing its top
+	// row across deeper water when the camera or surface position changes.
+	float reflection_source_fade = smoothstep(0.0, 8.0, reflected_y);
 
 	// Ripples travel perpendicular to the shore (along depth), both inward
 	// and outward. They shift the reflection sideways without folding its Y.
@@ -78,7 +89,7 @@ void fragment() {
 	vec3 final_color = mix(
 		water_color.rgb,
 		reflection,
-		reflection_strength * (1.0 - reflection_falloff)
+		reflection_strength * (1.0 - reflection_falloff) * reflection_source_fade
 	);
 
 	// Small horizontal glints, grouped into 8x3-pixel cells.
