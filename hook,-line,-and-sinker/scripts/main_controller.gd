@@ -77,9 +77,18 @@ func _ready() -> void:
 
 
 func _on_townhouse_room_requested(door: TransferDoor) -> void:
+	if _transition.transitioning or DateManager.is_active():
+		return
 	var resident: NPCData = RecruitmentHandler.get_resident(door.get_room_id())
-	if resident != null and not _transition.transitioning:
-		_room_view.open_room(resident)
+	if resident == null:
+		return
+	# Recruited NPCs live in their rooms, not as outdoor NPCInteractables.
+	# Their door is therefore the primary way to meet them for a booked date.
+	var due_date: DateData = DateManager.get_ready_booking_for_npc(resident.npc_id)
+	if due_date != null:
+		DateManager.start_date(due_date)
+		return
+	_room_view.open_room(resident)
 
 
 # A stable island Dock API. All confirmation belongs to the opening flow.

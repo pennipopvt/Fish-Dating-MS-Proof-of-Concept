@@ -59,6 +59,7 @@ var _venue: Node2D = null
 # [[Node2D, Vector2 global position], ...] to put back after the date.
 var _restore: Array = []
 var _fade: ScreenFade
+var _date_player: Player = null
 
 
 func _ready() -> void:
@@ -292,9 +293,12 @@ func start_date(date: DateData) -> void:
 	if date.venue_scene == null and location == null:
 		push_warning("No DateLocation '%s' in the world for date %s" % [date.location_id, date.date_id])
 		return
-	var player := get_tree().get_first_node_in_group(&"player") as Node2D
-	if player == null:
+	var player := get_tree().get_first_node_in_group(&"player") as Player
+	if player == null or player.busy:
 		return
+	# Lock land movement and other interactions during the date transition.
+	_date_player = player
+	player.busy = true
 	_active = date
 	_date_score = 0
 	_date_choice_count = 0
@@ -391,6 +395,9 @@ func _finish(completed: bool) -> void:
 	if is_instance_valid(_venue):
 		_venue.queue_free()
 	_venue = null
+	if is_instance_valid(_date_player):
+		_date_player.busy = false
+	_date_player = null
 	if completed and date != null:
 		var state: Dictionary = NPCManager.get_npc_state(date.npc.npc_id)
 		var flags: Dictionary = state["flags"]
