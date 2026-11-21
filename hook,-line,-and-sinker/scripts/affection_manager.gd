@@ -24,6 +24,7 @@ const AFFECTION_HURT_AT := 25
 const AFFECTION_REFUSING_AT := 10
 const AFFECTION_REJOIN_AT := 35
 const REFUSAL_FLAG := &"refuses_diving"
+const REFUSAL_NOTICE_KEY := "affection_refusal_noticed"
 const ATTACK_SPEED_BY_STAGE := [1.0, 0.82, 0.60, 0.0]
 const OTHER_ROMANCE_JEALOUSY := 45
 const MISSED_DATE_JEALOUSY := 15
@@ -92,7 +93,7 @@ func change_affection(npc_id: StringName, delta: int) -> void:
 		flags[REFUSAL_FLAG] = true
 	elif updated >= AFFECTION_REJOIN_AT:
 		flags.erase(REFUSAL_FLAG)
-		state.erase("affection_refusal_noticed")
+		state.erase(REFUSAL_NOTICE_KEY)
 	affection_changed.emit(npc_id, updated, updated - previous)
 
 
@@ -288,7 +289,7 @@ func leave(npc_id: StringName) -> void:
 	var state: Dictionary = NPCManager.get_npc_state(npc_id)
 	state["flags"][RECRUITED_FLAG] = false
 	state["affection"] = NPCManager.START_AFFECTION
-	state.erase("affection_refusal_noticed")
+	state.erase(REFUSAL_NOTICE_KEY)
 	state["flags"].erase(REFUSAL_FLAG)
 	state.erase(LAST_TALK_KEY)
 	state.erase(LAST_DATE_KEY)

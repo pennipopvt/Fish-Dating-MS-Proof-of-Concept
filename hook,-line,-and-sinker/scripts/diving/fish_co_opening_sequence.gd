@@ -182,9 +182,9 @@ func request_dive(fisher: Player, dock: Node2D) -> void:
 	if party != null:
 		for member in party.unwilling_members():
 			var state: Dictionary = NPCManager.get_npc_state(member.npc_id)
-			if bool(state.get("morale_refusal_noticed", false)):
+			if bool(state.get(AffectionManager.REFUSAL_NOTICE_KEY, false)):
 				continue
-			state["morale_refusal_noticed"] = true
+			state[AffectionManager.REFUSAL_NOTICE_KEY] = true
 			DialogueManager.request_player_monologue([
 				"%s doesn't want to come diving today. Maybe I should talk to him." % member.display_name
 			])
