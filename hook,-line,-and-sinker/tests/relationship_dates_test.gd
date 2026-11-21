@@ -187,6 +187,9 @@ func _ready() -> void:
 
 	silas_state["flags"][&"Recruited"] = true
 	kuda_state["flags"][&"Recruited"] = true
+	# The previous in-date reassurance intentionally leaves some jealousy
+	# behind. Reset it so this test isolates the new-romance jealousy spike.
+	AffectionManager.set_jealousy(SILAS.npc_id, 0)
 	silas_state["flags"][&"silas_route_complete"] = true
 	AffectionManager.on_romance_completed(SILAS.npc_id)
 	kuda_state["flags"][&"barracuda_route_complete"] = true
@@ -203,7 +206,8 @@ func _ready() -> void:
 	DateManager.set("_date_score", 0)
 	DateManager.set("_date_choice_count", 0)
 	DateManager.call("_on_date_choice", SILAS, {"date_style": "reassure"})
-	_expect(AffectionManager.get_jealousy(SILAS.npc_id) == 64,
+	_expect(AffectionManager.get_jealousy(SILAS.npc_id) ==
+		70 + DateManager.jealousy_for_choice("reassure", 2),
 		"Reassurance repairs jealousy during a date")
 	_expect(int(DateManager.get("_date_score")) == 5,
 		"Jealousy tier two uses Silas\u0027s reassuring score")
@@ -216,6 +220,9 @@ func _ready() -> void:
 	# A date is a repair bonus, but normal conversations also help.
 	AffectionManager.set_jealousy(KUDA.npc_id, 75)
 	AffectionManager.set_morale(KUDA.npc_id, 80)
+	# Earlier dialogue already counted as a check-in today; clear that here
+	# to isolate what happens with no meaningful contact.
+	kuda_state.erase(AffectionManager.LAST_TALK_KEY)
 	var attraction_before: int = AffectionManager.get_affection(KUDA.npc_id)
 	AffectionManager.call("_on_day_started", 2)
 	_expect(AffectionManager.get_morale(KUDA.npc_id) == 72,
