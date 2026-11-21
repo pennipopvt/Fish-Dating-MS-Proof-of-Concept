@@ -121,6 +121,9 @@ func _run() -> void:
 	commands.recall_all()
 
 	# Netting one target should not disrupt the other fish's party fight.
+	# Restore this fish after the earlier test intentionally weakened it
+	# below Silas's safety threshold.
+	f1.health = MULLET.max_health
 	commands.send_next(f1, MULLET)
 	commands.send_next(f3, MULLET)
 	_check(silas_battle.target == f1 and kuda_battle.target == f3,
