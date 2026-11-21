@@ -83,6 +83,27 @@ func _run() -> void:
 		and not silas_battle.is_active()
 		and commands.next_available_id() == SILAS.npc_id,
 		"Silas refuses low-health prey without consuming his queue slot")
+	_check(story.has_event(&"silas_nonlethal_explained")
+		and DialogueManager.is_active and DialogueManager.current_npc == SILAS,
+		"Silas explains his nonlethal limit only on the first manual refusal")
+	if DialogueManager.is_active:
+		DialogueManager.end_conversation()
+	# Verify the first automatic retreat teaches the same rule just once.
+	# This resets ONLY the lesson flag inside this isolated smoke test.
+	story.get("_events").erase(&"silas_nonlethal_explained")
+	var speech: SeaSpeechBubble = story.call("_bubble") as SeaSpeechBubble
+	story.on_silas_spared_fish(f1)
+	_check(speech != null and speech.is_call_shown()
+		and story.has_event(&"silas_nonlethal_explained"),
+		"First automatic retreat explains why Silas spares a fish")
+	if speech != null:
+		speech.hide_call()
+	story.on_silas_spared_fish(f1)
+	_check(speech != null and not speech.is_call_shown(),
+		"Later automatic retreats are silent")
+	_check(bool(sea.call("_try_companion_target", f1.position))
+		and not DialogueManager.is_active and commands.next_available_id() == SILAS.npc_id,
+		"Later manual refusals are silent and preserve the available queue")
 	f1.health = MULLET.max_health
 	_check(bool(sea.call("_try_companion_target", f1.position)), "Silas can resume issuing orders")
 
