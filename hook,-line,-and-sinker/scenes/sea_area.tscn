@@ -29,7 +29,7 @@
 
 [sub_resource type="ShaderMaterial" id="SeaSurfaceClipMaterial"]
 shader = ExtResource("sea_clip_shader")
-shader_parameter/surface_world_y = 140.0
+shader_parameter/surface_screen_y = 140.0
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_xel3b"]
 texture = ExtResource("4_8nafl")
