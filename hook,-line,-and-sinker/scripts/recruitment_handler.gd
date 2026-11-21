@@ -169,6 +169,17 @@ func assign_home(resident: NPCData, preferred_room_id: StringName = &"") -> bool
 	# that compatibility until content is migrated; do not start romance.
 	state["flags"][&"Recruited"] = true
 	_waiting_residents.erase(resident)
+	# A resident NPC can no longer appear as a wild catch. Other fish stay.
+	for fish in FishingManager.possible_catches.duplicate():
+		if fish == null or fish.npc_data == null:
+			continue
+		var preview: NPCInteractable = fish.npc_data.instantiate() as NPCInteractable
+		var match_id: bool = preview != null and preview.npc != null and preview.npc.npc_id == resident.npc_id
+		if preview != null:
+			preview.free()
+		if match_id:
+			FishingManager.remove_recruited_catch(fish)
+			break
 	_sync_door(chosen)
 	resident_assigned.emit(resident.npc_id, chosen.get_room_id())
 	return true

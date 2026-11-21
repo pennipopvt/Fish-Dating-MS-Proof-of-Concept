@@ -40,6 +40,12 @@ func _show_room() -> void:
 func _start_conversation() -> void:
 	if not _inside or _closing or DialogueManager.is_active:
 		return
+	# Mirror NPCInteractable's existing gift branch without spawning an actor.
+	if _player.held_item != null:
+		var gift_path: String = NPCManager.get_gift_encounter_path(_resident, _player.held_item)
+		if not gift_path.is_empty():
+			DialogueManager.request_conversation(_resident, gift_path, _player)
+			return
 	DialogueManager.request_conversation(_resident)
 	if not DialogueManager.is_active:
 		# No eligible JSON yet: still allow leaving without trapping Penni.

@@ -82,6 +82,12 @@ jobs:
           set -o pipefail
           timeout 120s godot --headless --path "hook,-line,-and-sinker" res://tests/diving_party_test.tscn 2>&1 | tee diving-party-test.log
           ! (grep -E 'SCRIPT ERROR:|Parse Error:|Parser Error:|ERROR:|FAIL ' diving-party-test.log | grep -Ev 'resources still in use at exit|RID allocations.*leaked' | grep -q .)
+      - name: Test first-return Silas townhouse arrival
+        shell: bash
+        run: |
+          set -o pipefail
+          timeout 120s godot --headless --path "hook,-line,-and-sinker" res://tests/sea_surface_reveal_test.tscn 2>&1 | tee silas-return-test.log
+          ! (grep -E 'SCRIPT ERROR:|Parse Error:|Parser Error:|ERROR:|FAIL ' silas-return-test.log | grep -Ev 'resources still in use at exit|RID allocations.*leaked' | grep -q .)
       - name: Test townhouse scene integration
         shell: bash
         run: |
