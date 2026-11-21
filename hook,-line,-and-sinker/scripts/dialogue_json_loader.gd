@@ -99,7 +99,7 @@ static func read_graph(path: String) -> Dictionary:
 			if not _valid_conditions(choice.get("when", {})):
 				push_error("Invalid state condition on choice in: " + str(id))
 				return {}
-			if choice.has("priority") and not choice["priority"] is int:
+			if choice.has("priority") and not _json_number(choice["priority"]):
 				push_error("Invalid choice priority in: " + str(id))
 				return {}
 			for condition in ["required_flags", "forbidden_flags"]:
@@ -121,11 +121,17 @@ static func _valid_conditions(value: Variant) -> bool:
 				return false
 		elif key in ["min_affection", "max_affection", "min_jealousy", "max_jealousy",
 				"min_jealousy_tier", "max_jealousy_tier", "min_days_since_talk", "max_days_since_talk"]:
-			if not value[key] is int:
+			if not _json_number(value[key]):
 				return false
 		else:
 			return false
 	return true
+
+
+# JSON numeric literals are floats in Godot's parser (even 10), while
+# in-memory graphs may contain true ints.
+static func _json_number(value: Variant) -> bool:
+	return value is int or value is float
 
 
 static func _valid_lines(value: Variant) -> bool:
