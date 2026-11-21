@@ -196,8 +196,8 @@ func _check(ok: bool, note: String) -> void:
 		failures += 1
 
 
-// Select successive prelude choices, advancing each spoken line before the
-// next choice. This exercises the authored graph, not a shortcut scene flag.
+# Select successive prelude choices, advancing each spoken line before the
+# next choice. This exercises the authored graph, not a shortcut scene flag.
 func _finish_graph_choices(indices: Array[int]) -> void:
 	var choice_step: int = 0
 	for i in range(120):
