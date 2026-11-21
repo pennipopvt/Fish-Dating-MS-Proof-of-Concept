@@ -223,12 +223,14 @@ func _run() -> void:
 	var entrance: SeaPartyEntrance = transition.get_node("PartyEntrance") as SeaPartyEntrance
 	var silas_actor: Node2D = entrance.stage_surface_actor(SILAS, Vector2(65.0, 112.0))
 	silas_actor.show()
-	sea.on_party_surfaced([silas_actor])
+	var only_silas: Array[Node2D] = [silas_actor]
+	sea.on_party_surfaced(only_silas)
 	_check(not DialogueManager.is_active and not RecruitmentHandler.is_resident(KUDA.npc_id),
 		"No Kuda scene or room assignment when only Silas appears on shore")
 	var kuda_actor: Node2D = entrance.stage_surface_actor(KUDA, Vector2(92.0, 112.0))
 	kuda_actor.show()
-	sea.on_party_surfaced([silas_actor, kuda_actor])
+	var transformed_party: Array[Node2D] = [silas_actor, kuda_actor]
+	sea.on_party_surfaced(transformed_party)
 	_check(DialogueManager.is_active and DialogueManager.current_npc == KUDA,
 		"KudaEncounter opens the shared dialogue after Kuda transforms")
 	if DialogueManager.is_active:
@@ -239,7 +241,8 @@ func _run() -> void:
 		"Finishing the shore dialogue prevents it repeating on later dives")
 	_check(RecruitmentHandler.is_resident(KUDA.npc_id),
 		"KudaEncounter assigns his townhouse room after the introduction")
-	sea.on_party_surfaced([kuda_actor])
+	var kuda_only: Array[Node2D] = [kuda_actor]
+	sea.on_party_surfaced(kuda_only)
 	_check(not DialogueManager.is_active,
 		"Later surfaces do not replay Kuda's introduction")
 	silas_actor.queue_free()
