@@ -25,6 +25,15 @@ func _ready() -> void:
 	_check(int(state.get("recruited_day", 0)) == 1
 		and not AffectionManager.is_decay_active(SILAS.npc_id),
 		"Recruitment starts a five-day grace period for passive neglect")
+	# Legacy resource-backed dialogue also uses affection (not an obsolete attraction property).
+	var resource_choice := DialogueChoiceData.new()
+	resource_choice.affection_change = 7
+	NPCManager.apply_choice(SILAS, resource_choice)
+	_check(AffectionManager.get_affection(SILAS.npc_id) == NPCManager.START_AFFECTION + 7,
+		"Resource-backed dialogue choices update unified affection")
+	_check(AffectionManager.choice_amount({"effects": {"affection": 9}}) == 9,
+		"New JSON choice effects read the affection key")
+	AffectionManager.set_affection(SILAS.npc_id, NPCManager.START_AFFECTION)
 	var party := DivingParty.new()
 	add_child(party)
 	_check(party.invite(SILAS), "New companion can join dives at normal attack speed")

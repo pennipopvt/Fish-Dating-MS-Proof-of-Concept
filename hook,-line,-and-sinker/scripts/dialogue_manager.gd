@@ -246,7 +246,7 @@ func _complete_pending_choice() -> void:
 	choice_resolved.emit(current_npc, choice)
 	_enter_node(str(choice["next"]), reaction_tier)
 
-func _apply_json_effects(effects: Variant, include_attraction: bool = true) -> void:
+func _apply_json_effects(effects: Variant, include_affection: bool = true) -> void:
 	if not effects is Dictionary or current_npc == null:
 		return
 	if not effects.is_empty():
@@ -255,7 +255,8 @@ func _apply_json_effects(effects: Variant, include_attraction: bool = true) -> v
 		NPCManager.accept_gift(current_npc, _gift_player, _expected_gift_item_id)
 	if effects.has("request_scene"):
 		_scene_after_conversation = str(effects["request_scene"])
-	if include_attraction:
+	if include_affection:
+		# The attraction key is accepted for older JSON; both affect the one affection score.
 		AffectionManager.change(current_npc.npc_id, int(effects.get("affection", effects.get("attraction", 0))))
 	var state: Dictionary = NPCManager.get_npc_state(current_npc.npc_id)
 	var flags: Dictionary = state.get("flags", {})
