@@ -17,7 +17,8 @@
         {
           "text": "See you later!",
           "next": "goodbye",
-          "spends_action": false
+          "spends_action": false,
+          "grey_when_picked": false
         }
       ]
     },
@@ -83,7 +84,8 @@
         {
           "text": "See you later!",
           "next": "goodbye",
-          "spends_action": false
+          "spends_action": false,
+          "grey_when_picked": false
         }
       ]
     }
