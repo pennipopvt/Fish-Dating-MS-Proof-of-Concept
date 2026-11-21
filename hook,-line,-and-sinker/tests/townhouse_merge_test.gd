@@ -5,9 +5,24 @@ const MAIN: PackedScene = preload("res://scenes/main.tscn")
 const SILAS: NPCData = preload("res://resources/npcs/silas.tres")
 const KUDA: NPCData = preload("res://resources/npcs/kuda.tres")
 var failures: int = 0
+var _stage: String = "startup"
+
+
+func _watchdog() -> void:
+	await get_tree().create_timer(12.0).timeout
+	push_error("Townhouse integration timeout at: " + _stage)
+	get_tree().quit(1)
+
+
+func _checkpoint(at: String) -> void:
+	_stage = at
+	print("[TOWNHOUSE TEST] " + at)
+
 
 
 func _ready() -> void:
+	_watchdog()
+	_checkpoint("Constructing game")
 	var main: Control = MAIN.instantiate() as Control
 	add_child(main)
 	(main.get_node("IntroLayer") as FishCoOpeningSequence)._contract_call_finished = true
@@ -31,6 +46,7 @@ func _ready() -> void:
 	_check(SILAS.door != null and SILAS.door.sceneLoc == Vector2(-1233, -520)
 		and KUDA.door != null and KUDA.door.sceneLoc == Vector2.ZERO,
 		"Silas has an isolated room; unfinished Kuda room stays locked")
+	_checkpoint("Recruiting Silas")
 	var actor: NPCInteractable = (load("res://prefabs/silas.tscn") as PackedScene).instantiate() as NPCInteractable
 	world.add_child(actor)
 	actor.npc = SILAS
@@ -42,17 +58,21 @@ func _ready() -> void:
 	var exit_door: TransferDoor = room.get_node("SilasHouse") as TransferDoor
 	_check(not exit_door.locked and exit_door.transfer_loc == Vector2(313, 112),
 		"Interior doorway leads back to town")
+	_checkpoint("Entering townhouse door")
 	home.interact(player)
 	await get_tree().create_timer(0.85).timeout
 	_check(player.global_position.distance_to(SILAS.door.sceneLoc) < 1.0 and not player.busy,
 		"Townhouse door fades directly into Silas room")
+	_checkpoint("Leaving townhouse room")
 	exit_door.interact(player)
 	await get_tree().create_timer(0.85).timeout
 	_check(player.global_position == Vector2(313, 112) and not player.busy,
 		"Room exit fades back to town")
+	_checkpoint("Freeing room")
 	AffectionManager.call("_free_home", SILAS.npc_id)
 	_check(home.locked and RecruitmentHandler.available_homes.has(home),
 		"Vacated room relocks and returns to available rooms")
+	_checkpoint("Finished test")
 	main.queue_free()
 	print("townhouse_merge_test: PASS" if failures == 0 else
 		"townhouse_merge_test: %d FAILED" % failures)
