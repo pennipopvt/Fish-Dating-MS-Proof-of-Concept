@@ -1,6 +1,8 @@
 [gd_scene format=3 uid="uid://bgrsv5r7v8cff"]
 
+[ext_resource type="PackedScene" path="res://scenes/sea_decoration.tscn" id="26_binbi"]
 [ext_resource type="Texture2D" uid="uid://cknshfjaha6i5" path="res://sprites/environment/terrain/sand_back_fill.png" id="26_qp5f5"]
+[ext_resource type="PackedScene" path="res://scenes/sea_sunbeam.tscn" id="27_7yqkl"]
 [ext_resource type="Texture2D" uid="uid://c66alkv40oe70" path="res://sprites/environment/terrain/sand_back_edge.png" id="27_binbi"]
 [ext_resource type="PackedScene" path="res://scenes/sea_terrain.tscn" id="27_qp5f5"]
 [ext_resource type="Script" uid="uid://cuo1eyo7ijqpj" path="res://scripts/diving/companion_battle.gd" id="battle"]
@@ -342,25 +344,125 @@ curve = SubResource("Curve2D_likg1")
 position = Vector2(-768, 240)
 curve = SubResource("Curve2D_6u2ss")
 
-[node name="SeaTerrain10" parent="." unique_id=1751636914 instance=ExtResource("27_qp5f5")]
+[node name="Decoration" type="Node2D" parent="." unique_id=58592729]
+
+[node name="SeaDecoration" parent="Decoration" unique_id=741281606 instance=ExtResource("26_binbi")]
 z_index = -1
+position = Vector2(-213, 248)
+frame_progress = 0.23900555
+
+[node name="SeaDecoration2" parent="Decoration" unique_id=534969801 instance=ExtResource("26_binbi")]
+z_index = -1
+position = Vector2(-224, 261)
+frame_progress = 0.23900555
+
+[node name="SeaDecoration3" parent="Decoration" unique_id=512251259 instance=ExtResource("26_binbi")]
+z_index = -1
+position = Vector2(-206, 245)
+frame_progress = 0.23900555
+
+[node name="SeaDecoration4" parent="Decoration" unique_id=1315933029 instance=ExtResource("26_binbi")]
+z_index = -1
+position = Vector2(-471, 171)
+frame_progress = 0.23900555
+
+[node name="SeaDecoration5" parent="Decoration" unique_id=1627492546 instance=ExtResource("26_binbi")]
+z_index = -1
+position = Vector2(-477, 190)
+frame_progress = 0.23900555
+
+[node name="SeaDecoration6" parent="Decoration" unique_id=1590693950 instance=ExtResource("26_binbi")]
+z_index = -1
+position = Vector2(-463, 184)
+frame_progress = 0.23900555
+
+[node name="SeaDecoration7" parent="Decoration" unique_id=1553108910 instance=ExtResource("26_binbi")]
+z_index = -1
+position = Vector2(-694, 410)
+frame_progress = 0.23900555
+
+[node name="SeaDecoration8" parent="Decoration" unique_id=1880796303 instance=ExtResource("26_binbi")]
+z_index = -1
+position = Vector2(-701, 426)
+frame_progress = 0.23900555
+
+[node name="SeaDecoration9" parent="Decoration" unique_id=1916777453 instance=ExtResource("26_binbi")]
+z_index = -1
+position = Vector2(-680, 399)
+frame_progress = 0.23900555
+
+[node name="SeaSunbeam2" parent="Decoration" unique_id=1350797347 instance=ExtResource("27_7yqkl")]
+position = Vector2(-868, 59)
+rotation = -0.26347113
+
+[node name="SeaSunbeam3" parent="Decoration" unique_id=514058146 instance=ExtResource("27_7yqkl")]
+position = Vector2(-715, 95.00001)
+rotation = -0.26347113
+beam_width = 112.0
+beam_length = 407.0
+
+[node name="SeaSunbeam4" parent="Decoration" unique_id=259303181 instance=ExtResource("27_7yqkl")]
+position = Vector2(-447.99994, -83.00002)
+rotation = -0.26347113
+beam_width = 112.0
+beam_length = 407.0
+
+[node name="SeaSunbeam5" parent="Decoration" unique_id=366152365 instance=ExtResource("27_7yqkl")]
+position = Vector2(-323.99997, -22.999992)
+rotation = -0.26347113
+beam_width = 25.0
+beam_length = 342.0
+strength = 0.17
+
+[node name="SeaSunbeam6" parent="Decoration" unique_id=25738874 instance=ExtResource("27_7yqkl")]
+position = Vector2(-1080.9999, 41.999985)
+rotation = -0.26347113
+beam_width = 122.0
+beam_length = 546.0
+strength = 0.39
+
+[node name="SeaSunbeam7" parent="Decoration" unique_id=1315338482 instance=ExtResource("27_7yqkl")]
+position = Vector2(-1188.9999, 92.999985)
+rotation = -0.26347113
+beam_width = 73.0
+beam_length = 258.0
+strength = 0.17
+
+[node name="SeaSunbeam8" parent="Decoration" unique_id=386148813 instance=ExtResource("27_7yqkl")]
+position = Vector2(-1458.9999, 61)
+rotation = -0.26347113
+beam_width = 73.0
+beam_length = 258.0
+strength = 0.17
+
+[node name="SeaSunbeam9" parent="Decoration" unique_id=146580201 instance=ExtResource("27_7yqkl")]
+position = Vector2(-1663.9999, 92)
+rotation = -0.26347113
+beam_width = 73.0
+beam_length = 258.0
+strength = 0.17
+
+[node name="Background Terrain" type="Node2D" parent="." unique_id=792906684]
+
+[node name="SeaTerrain10" parent="Background Terrain" unique_id=1751636914 instance=ExtResource("27_qp5f5")]
+z_index = -2
 position = Vector2(-349, 633)
 curve = SubResource("Curve2D_p5res")
 fill_texture = ExtResource("26_qp5f5")
 edge_texture = ExtResource("27_binbi")
 collision_enabled = false
 
-[node name="SeaTerrain11" parent="." unique_id=2080305478 instance=ExtResource("27_qp5f5")]
-z_index = -1
+[node name="SeaTerrain11" parent="Background Terrain" unique_id=2080305478 instance=ExtResource("27_qp5f5")]
+z_index = -2
 position = Vector2(-676, 375)
 curve = SubResource("Curve2D_lk0jx")
 fill_texture = ExtResource("26_qp5f5")
 edge_texture = ExtResource("27_binbi")
 collision_enabled = false
 
-[node name="SeaTerrain11" parent="SeaTerrain11" unique_id=1291018217 instance=ExtResource("27_qp5f5")]
-z_index = -1
-position = Vector2(-660, 257)
+[node name="SeaTerrain12" parent="Background Terrain" unique_id=1291018217 instance=ExtResource("27_qp5f5")]
+z_index = -2
+position = Vector2(-1336, 632)
 curve = SubResource("Curve2D_u5xdw")
 fill_texture = ExtResource("26_qp5f5")
 edge_texture = ExtResource("27_binbi")

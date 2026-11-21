@@ -1,14 +1,39 @@
-[gd_resource type="SpriteFrames" load_steps=2 format=3]
+[gd_resource type="SpriteFrames" format=3 uid="uid://cnuplgpujtld6"]
 
-[ext_resource type="Texture2D" path="res://sprites/environment/terrain/sand_inside.png" id="1_placeholder"]
+[ext_resource type="Texture2D" uid="uid://btnocdpm5jgv4" path="res://sprites/environment/decor/decor_seaweed.png" id="1_d2h7r"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_7rysg"]
+atlas = ExtResource("1_d2h7r")
+region = Rect2(0, 0, 16, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_u1wxh"]
+atlas = ExtResource("1_d2h7r")
+region = Rect2(16, 0, 16, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_dh6x2"]
+atlas = ExtResource("1_d2h7r")
+region = Rect2(32, 0, 16, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_clhn1"]
+atlas = ExtResource("1_d2h7r")
+region = Rect2(48, 0, 16, 64)
 
 [resource]
 animations = [{
 "frames": [{
 "duration": 1.0,
-"texture": ExtResource("1_placeholder")
+"texture": SubResource("AtlasTexture_7rysg")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_u1wxh")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_dh6x2")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_clhn1")
 }],
-"loop": true,
+"loop": 1,
 "name": &"placeholder",
 "speed": 5.0
 }]
