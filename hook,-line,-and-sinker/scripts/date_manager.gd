@@ -32,7 +32,8 @@ const JEALOUSY_BY_STYLE := {
 	"playful": [-3, -5, -6, -8],
 	"reassure": [-8, -10, -12, -15],
 }
-const OUTCOME_AFFECTION := {"bad": -6, "okay": 1, "good": 5, "great": 10}
+# Apply each completed date once to the same affection score as dialogue/diving.
+const OUTCOME_AFFECTION := {"bad": -8, "okay": 8, "good": 20, "great": 28}
 
 # date_id -> DateData
 var dates: Dictionary = {}
@@ -108,7 +109,7 @@ func is_booked(date: DateData) -> bool:
 	return date != null and bookings.has(date.date_id)
 
 
-# Flags/attraction/repeat rules only (no timing).
+# Flags/affection/repeat rules only (no timing).
 func meets_requirements(date: DateData) -> bool:
 	if date == null or date.npc == null:
 		return false
@@ -116,7 +117,7 @@ func meets_requirements(date: DateData) -> bool:
 	var flags: Dictionary = state.get("flags", {})
 	if not date.repeatable and flags.get(date.get_completed_flag(), false):
 		return false
-	if date.use_min_attraction and int(state.get("attraction", 0)) < date.min_attraction:
+	if date.use_min_attraction and AffectionManager.get_affection(date.npc.npc_id) < date.min_attraction:
 		return false
 	for flag in date.required_flags:
 		if not flags.get(flag, false):

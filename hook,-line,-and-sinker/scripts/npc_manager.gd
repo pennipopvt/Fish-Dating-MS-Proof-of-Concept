@@ -1,8 +1,8 @@
 
 extends Node
 
-# Affection ("attraction") every NPC starts with; AffectionManager caps it at 100.
-const START_ATTRACTION := 10
+# One score for romance, conversations and teamwork.
+const START_AFFECTION := 65
 
 var npc_states: Dictionary = {}
 
@@ -14,7 +14,7 @@ signal relationship_event_resolved(npc_id: StringName, event_id: StringName)
 func get_npc_state(npc_id: StringName) -> Dictionary:
 	if not npc_states.has(npc_id):
 		npc_states[npc_id] = {
-			"attraction": START_ATTRACTION,
+			"affection": START_AFFECTION,
 			"jealousy": 0,
 			"flags": {},
 			"relationship_events": {}
@@ -67,7 +67,7 @@ func apply_choice(
 	var state := get_npc_state(npc.npc_id)
 	var flags: Dictionary = state["flags"]
 
-	state["attraction"] += choice.attraction_change
+	AffectionManager.change_affection(npc.npc_id, choice.attraction_change)
 
 	for flag in choice.flags_to_set:
 		if flag != null:
@@ -182,14 +182,9 @@ func dialogue_conditions_match(npc_id: StringName, conditions: Dictionary, jealo
 		var record: Dictionary = event_states.get(StringName(str(event)), {})
 		if record.get("active", false) or not record.has("resolved_day"):
 			return false
-	var affection: int = int(state.get("attraction", START_ATTRACTION))
+	var affection: int = AffectionManager.get_affection(npc_id)
 	var jealousy: int = int(state.get("jealousy", 0))
 	var tier: int = jealousy_tier if jealousy_tier >= 0 else mini(floori(float(jealousy) / 25.0), 3)
-	var morale: int = AffectionManager.get_morale(npc_id)
-	if conditions.has("min_morale") and morale < int(conditions["min_morale"]):
-		return false
-	if conditions.has("max_morale") and morale > int(conditions["max_morale"]):
-		return false
 	if conditions.has("min_affection") and affection < int(conditions["min_affection"]):
 		return false
 	if conditions.has("max_affection") and affection > int(conditions["max_affection"]):
@@ -228,7 +223,7 @@ func get_encounter_json_path(npc: NPCData) -> String:
 	for rule in npc.encounter_rules:
 		if rule == null or (rule.json_path.is_empty() and rule.json_pool.is_empty()):
 			continue
-		if rule.use_min_attraction and int(state.get("attraction", 0)) < rule.min_attraction:
+		if rule.use_min_attraction and AffectionManager.get_affection(npc.npc_id) < rule.min_attraction:
 			continue
 		if rule.min_days_after_gift > 0:
 			if not state.has("gift_received_day") \
