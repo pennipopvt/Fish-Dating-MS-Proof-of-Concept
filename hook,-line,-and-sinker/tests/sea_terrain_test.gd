@@ -71,6 +71,12 @@ func _run() -> void:
 	await get_tree().process_frame
 	_check(old_polygon != fill.polygon and collider.polygon == fill.polygon,
 		"Changing a Bezier control point updates art and collision together")
+	# Physics must remain precise in the running game even though editor
+	# drags intentionally omit collision-generation work.
+	for i in range(12):
+		terrain.curve.set_point_position(1, original + Vector2(i, -18.0 - i))
+	_check(collider.polygon == fill.polygon and collider.polygon.size() > 3,
+		"Runtime curve changes still update collider on every edit")
 	preview.queue_free()
 	await get_tree().process_frame
 	print("sea_terrain_test: PASS" if failures == 0 else
