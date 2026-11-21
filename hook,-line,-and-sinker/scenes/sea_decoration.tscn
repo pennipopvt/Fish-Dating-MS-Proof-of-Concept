@@ -1,0 +1,10 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/diving/sea_decoration.gd" id="1_deco"]
+[ext_resource type="SpriteFrames" path="res://resources/animations/sea_decorations.tres" id="2_library"]
+
+[node name="SeaDecoration" type="AnimatedSprite2D"]
+texture_filter = 1
+script = ExtResource("1_deco")
+sprite_frames = ExtResource("2_library")
+animation = &"placeholder"

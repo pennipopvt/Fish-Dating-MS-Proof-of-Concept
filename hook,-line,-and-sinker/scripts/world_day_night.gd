@@ -119,6 +119,23 @@ func _process(_delta: float) -> void:
 	if _tint_mat != null:
 		_tint_mat.set_shader_parameter("submersion", submerged)
 		_tint_mat.set_shader_parameter("surface_y_uv", surface_screen_y / 180.0)
+	_update_sunbeams()
+
+
+# Uses the same shown clock progress that already animates water and sky.
+# Each authored ray registers itself; none are required in the main scene.
+func _update_sunbeams() -> void:
+	var sunlight: float = 1.0 - smoothstep(SUNSET_START, NIGHT_START, _shown_progress)
+	var morning_tint := Color("#ffe8bd")
+	var afternoon_tint := Color("#d7f4ff")
+	var sunset_tint := Color("#ffdab0")
+	var light_color: Color = morning_tint.lerp(
+		afternoon_tint, smoothstep(0.0, AFTERNOON_START, _shown_progress))
+	light_color = light_color.lerp(
+		sunset_tint, smoothstep(SUNSET_START, NIGHT_START, _shown_progress))
+	for instance in get_tree().get_nodes_in_group(&"sea_sunbeams"):
+		if instance.has_method("set_environment_light"):
+			instance.set_environment_light(sunlight, light_color, _water.global_position.y)
 
 
 func _local_material(item: CanvasItem) -> ShaderMaterial:
@@ -241,8 +258,8 @@ func _visual_state(progress: float) -> Dictionary:
 		Color("#ffe0bd"), Color("#fff0dd"), Color("#f2f8ff"),
 		Color("#f1f6ff"), Color("#ffd0ab"), Color("#394f75"))
 	var water := _day_color(progress,
-		Color("#315879"), Color("#28638b"), Color("#206089"),
-		Color("#245b81"), Color("#414b6a"), Color("#0b203e"))
+		Color("#3c6985"), Color("#33769e"), Color("#317ca0"),
+		Color("#2d7194"), Color("#485f7d"), Color("#102643"))
 	var water_highlight := _day_color(progress,
 		Color("#f1b98b"), Color("#d9e4e5"), Color("#b9e6fb"),
 		Color("#b2dbf1"), Color("#ffd0a2"), Color("#6489b7"))
