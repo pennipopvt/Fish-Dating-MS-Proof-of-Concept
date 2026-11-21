@@ -20,9 +20,9 @@ func _run() -> void:
 		"StaticBody2D/CollisionPolygon2D") as CollisionPolygon2D
 	_check(terrain.curve != null and terrain.curve.point_count >= 3,
 		"Editable Bezier curve exists in the preview scene")
-	_check(not terrain.curve.get_point_position(0).is_equal_approx(
+	_check(terrain.curve.get_point_position(0).is_equal_approx(
 		terrain.curve.get_point_position(terrain.curve.point_count - 1)),
-		"Closed terrain has no duplicate first/last control point to split when dragging")
+		"Editable Path2D has a real closing control point and visible closed curve")
 	_check(fill.polygon.size() > terrain.curve.point_count
 		and edge.points.size() >= 3 and edge.closed,
 		"Smooth filled polygon and truly closed native Line2D strip are generated")
@@ -38,6 +38,36 @@ func _run() -> void:
 		"Textures repeat along the curve and across the fill")
 	_check((collider.get_parent() as StaticBody2D).collision_layer == 2,
 		"Collision uses the same layer as the existing solid sea tiles")
+	# Godot appends new points after its closing duplicate. The terrain
+	# component must move the new point before that duplicate and add handles.
+	var before_append: int = terrain.curve.point_count
+	var first_anchor: Vector2 = terrain.curve.get_point_position(0)
+	terrain.curve.add_point(Vector2(40, -25))
+	await get_tree().process_frame
+	var last_index: int = terrain.curve.point_count - 1
+	_check(terrain.curve.point_count == before_append + 1
+		and terrain.curve.get_point_position(last_index).is_equal_approx(first_anchor)
+		and terrain.curve.get_point_position(last_index - 1) == Vector2(40, -25),
+		"Adding a control point keeps the actual Path2D loop closed")
+	_check(not terrain.curve.get_point_in(last_index - 1).is_zero_approx()
+		and not terrain.curve.get_point_out(last_index - 1).is_zero_approx(),
+		"Newly placed control points automatically receive both Bezier handles")
+	var inserted_at: int = 2
+	var old_count: int = terrain.curve.point_count
+	terrain.curve.add_point(Vector2(-92, -33), Vector2.ZERO, Vector2.ZERO, inserted_at)
+	await get_tree().process_frame
+	_check(terrain.curve.point_count == old_count + 1
+		and not terrain.curve.get_point_in(inserted_at).is_zero_approx()
+		and not terrain.curve.get_point_out(inserted_at).is_zero_approx(),
+		"Inserting a point along an existing segment also defaults to smooth handles")
+	var shifted_first: Vector2 = terrain.curve.get_point_position(0) + Vector2(-8, 6)
+	terrain.curve.set_point_position(0, shifted_first)
+	await get_tree().process_frame
+	_check(terrain.curve.get_point_position(terrain.curve.point_count - 1)
+		.is_equal_approx(shifted_first),
+		"Dragging the first seam point keeps the editor curve closed")
+	_check(collider.polygon == fill.polygon,
+		"Collision and fill stay synchronized after adding/moving control points")
 	_check(terrain._signed_area(edge.points) > 0.0,
 		"Edge always winds with its darker texture side facing outside")
 	var inside_edges: bool = true
