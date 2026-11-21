@@ -29,6 +29,14 @@ func _ready() -> void:
 	var player: Player = world.get_node("Player") as Player
 	var view: NPCRoomView = main.get_node("NPCRoomView") as NPCRoomView
 	var dialogue: DialogueUI = main.get_node("CanvasLayer/DialogueUI") as DialogueUI
+	# Tune the new Inspector controls to verify their runtime geometry.
+	# The original outdoor portrait layout must return on room exit.
+	var npc_portrait: TextureRect = dialogue.get_node("NPCPortrait") as TextureRect
+	var land_rect: Vector4 = Vector4(
+		npc_portrait.offset_left, npc_portrait.offset_top,
+		npc_portrait.offset_right, npc_portrait.offset_bottom)
+	dialogue.room_portrait_position = Vector2(64.0, -510.0)
+	dialogue.room_portrait_scale = 1.25
 	_check(world.has_node("Townhouse") and homes.get_child_count() == 4
 		and not world.has_node("SilasRoom"),
 		"Townhouse has four doors, no physical rooms or permanent interior NPCs")
@@ -63,10 +71,15 @@ func _ready() -> void:
 	_check(player.global_position == spot,
 		"Entering a room doesn't move or teleport the player")
 	var penni_portrait: TextureRect = dialogue.get_node("PlayerPortrait") as TextureRect
-	var npc_portrait: TextureRect = dialogue.get_node("NPCPortrait") as TextureRect
 	_check(not penni_portrait.visible and npc_portrait.visible
 		and absf(npc_portrait.anchor_left - 0.5) < 0.001,
 		"Room mode hides Penni's portrait and centers the enlarged NPC portrait")
+	_check(is_equal_approx(npc_portrait.offset_left, -586.0)
+		and is_equal_approx(npc_portrait.offset_top, -1510.0)
+		and is_equal_approx(npc_portrait.offset_right, 714.0)
+		and is_equal_approx(npc_portrait.offset_bottom, 490.0)
+		and npc_portrait.stretch_mode == TextureRect.STRETCH_KEEP_ASPECT_CENTERED,
+		"Editor position and uniform scale reframe the NPC without stretching its art")
 	_check(DialogueManager.is_active and DialogueManager.current_npc == SILAS,
 		"The resident's normal JSON dialogue starts in room mode")
 	_stage = "Saying goodbye"
@@ -88,6 +101,12 @@ func _ready() -> void:
 	_check(not view.visible and not dialogue.visible and not player.busy
 		and not bool(dialogue.get("_room_mode")),
 		"Goodbye closes the same iris and restores the outdoor UI")
+	_check(is_equal_approx(npc_portrait.anchor_left, 1.0)
+		and is_equal_approx(npc_portrait.offset_left, land_rect.x)
+		and is_equal_approx(npc_portrait.offset_top, land_rect.y)
+		and is_equal_approx(npc_portrait.offset_right, land_rect.z)
+		and is_equal_approx(npc_portrait.offset_bottom, land_rect.w),
+		"Leaving the room restores the outdoor NPC portrait geometry")
 	_check(player.global_position == spot,
 		"Leaving returns Penni to the same exact outdoor world position")
 	_check(RecruitmentHandler.assign_home(KUDA)
