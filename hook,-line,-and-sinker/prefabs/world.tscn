@@ -221,7 +221,6 @@ tile_set = ExtResource("world_tiles")
 collision_enabled = false
 
 [node name="Water" type="ColorRect" parent="." unique_id=1286032416]
-visible = false
 z_index = 10
 material = SubResource("ShaderMaterial_23sxu")
 custom_minimum_size = Vector2(320, 180)

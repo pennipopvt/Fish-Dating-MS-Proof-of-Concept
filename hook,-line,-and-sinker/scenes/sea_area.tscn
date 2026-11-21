@@ -1,5 +1,7 @@
 [gd_scene format=3 uid="uid://bgrsv5r7v8cff"]
 
+[ext_resource type="Texture2D" uid="uid://cknshfjaha6i5" path="res://sprites/environment/terrain/sand_back_fill.png" id="26_qp5f5"]
+[ext_resource type="Texture2D" uid="uid://c66alkv40oe70" path="res://sprites/environment/terrain/sand_back_edge.png" id="27_binbi"]
 [ext_resource type="PackedScene" path="res://scenes/sea_terrain.tscn" id="27_qp5f5"]
 [ext_resource type="Script" uid="uid://cuo1eyo7ijqpj" path="res://scripts/diving/companion_battle.gd" id="battle"]
 [ext_resource type="Script" uid="uid://cctrjxxlon5uu" path="res://scripts/diving/diving_combat.gd" id="combat"]
@@ -76,7 +78,7 @@ species = ExtResource("porgy")
 weight = 2.0
 afternoon_factor = 1.3
 
-[sub_resource type="Curve2D" id="Curve2D_n4xlb"]
+[sub_resource type="Curve2D" id="Curve2D_7yqkl"]
 resource_local_to_scene = true
 bake_interval = 2.0
 _data = {
@@ -84,7 +86,7 @@ _data = {
 }
 point_count = 35
 
-[sub_resource type="Curve2D" id="Curve2D_8ar7h"]
+[sub_resource type="Curve2D" id="Curve2D_nhxvi"]
 resource_local_to_scene = true
 bake_interval = 2.0
 _data = {
@@ -92,7 +94,7 @@ _data = {
 }
 point_count = 6
 
-[sub_resource type="Curve2D" id="Curve2D_qp5f5"]
+[sub_resource type="Curve2D" id="Curve2D_5po06"]
 resource_local_to_scene = true
 bake_interval = 2.0
 _data = {
@@ -100,7 +102,7 @@ _data = {
 }
 point_count = 10
 
-[sub_resource type="Curve2D" id="Curve2D_binbi"]
+[sub_resource type="Curve2D" id="Curve2D_sol7m"]
 resource_local_to_scene = true
 bake_interval = 2.0
 _data = {
@@ -108,7 +110,7 @@ _data = {
 }
 point_count = 8
 
-[sub_resource type="Curve2D" id="Curve2D_7yqkl"]
+[sub_resource type="Curve2D" id="Curve2D_t40yv"]
 resource_local_to_scene = true
 bake_interval = 2.0
 _data = {
@@ -116,7 +118,7 @@ _data = {
 }
 point_count = 8
 
-[sub_resource type="Curve2D" id="Curve2D_nhxvi"]
+[sub_resource type="Curve2D" id="Curve2D_vychp"]
 resource_local_to_scene = true
 bake_interval = 2.0
 _data = {
@@ -124,7 +126,7 @@ _data = {
 }
 point_count = 7
 
-[sub_resource type="Curve2D" id="Curve2D_5po06"]
+[sub_resource type="Curve2D" id="Curve2D_e16em"]
 resource_local_to_scene = true
 bake_interval = 2.0
 _data = {
@@ -132,7 +134,7 @@ _data = {
 }
 point_count = 8
 
-[sub_resource type="Curve2D" id="Curve2D_sol7m"]
+[sub_resource type="Curve2D" id="Curve2D_likg1"]
 resource_local_to_scene = true
 bake_interval = 2.0
 _data = {
@@ -140,13 +142,37 @@ _data = {
 }
 point_count = 7
 
-[sub_resource type="Curve2D" id="Curve2D_t40yv"]
+[sub_resource type="Curve2D" id="Curve2D_6u2ss"]
 resource_local_to_scene = true
 bake_interval = 2.0
 _data = {
 "points": PackedVector2Array(5.533248, 21.366688, -5.533248, -21.366688, -30, 17, -20.669853, -6.0645947, 20.669853, 6.0645947, 29, 3, -2.552831, -14.043149, 2.552831, 14.043149, 100, 23, 11.138752, 0.2631607, -11.138752, -0.2631607, 77, 45, 6.808607, 7.2679415, -6.808607, -7.2679415, 14, 31, 0.71388435, 17.618675, -0.71388435, -17.618675, -30, 17)
 }
 point_count = 6
+
+[sub_resource type="Curve2D" id="Curve2D_p5res"]
+resource_local_to_scene = true
+bake_interval = 2.0
+_data = {
+"points": PackedVector2Array(-5, 29, 5, -24, -306, -104, -30, 0, 24, -10, -61, -137, -33, -3, 23, 10, 322, -175, -18.640703, -114.21773, 18.640703, 114.21773, 286, -7, -22, -18, 11, 23, 375, 114, 27, -10, -30, 15, 235, 119, -17.586773, 15.958677, 17.586773, -15.958677, -332, 101, -6.4494514, 84.86732, 6.4494514, -84.86732, -266, -36, 0, 24, 5, -24, -306, -104)
+}
+point_count = 9
+
+[sub_resource type="Curve2D" id="Curve2D_lk0jx"]
+resource_local_to_scene = true
+bake_interval = 2.0
+_data = {
+"points": PackedVector2Array(21.078693, 10.960653, -21.078693, -10.960653, -114, -122, -11.721482, 4.456101, 23.601988, -8.972657, -8, -117, -6.165718, 8.1850815, 6.165718, -8.1850815, 34, -174, -43.35668, -9.151805, 43.35668, 9.151805, 217, -157, -8.466246, -48.579872, 8.466246, 48.579872, 221, -109, -6.8431997, -14.249405, 6.8431997, 14.249405, 287, -78, -57.569096, -3.1305199, 57.569096, 3.1305199, 337, 17, 27, -10, -30, 15, 301, 75, 32, 11, -24, -5, -35, 115, -6.755025, 25.44799, 6.755025, -25.44799, 34, 17, 10.553706, 9.84222, -14.573911, -13.5914, 49, -68, 21.413757, 1.4869194, -21.413757, -1.4869194, -26, -95, 10.263161, 7.672245, -10.263161, -7.672245, -114, -122)
+}
+point_count = 13
+
+[sub_resource type="Curve2D" id="Curve2D_u5xdw"]
+resource_local_to_scene = true
+bake_interval = 2.0
+_data = {
+"points": PackedVector2Array(21.078693, 10.960653, -21.078693, -10.960653, -140, -163, 26.105177, 47.484417, -26.179806, -47.620167, -383, -215, -11.871184, 16.511738, 15.820468, -22.004833, -288, -288, -11.721482, 4.456101, 23.601988, -8.972657, -234, -382, -25.345633, -12.486451, 16.311146, 8.035638, -120, -384, -35.50686, -3.2902107, 30.981977, 2.8709168, -85, -315, -6.165718, 8.1850815, 6.165718, -8.1850815, 25, -358, -23.634043, -20.322266, 16.461035, 14.154392, 130, -282, -14.282678, -2.224906, 14.282678, 2.224906, 182, -223, -43.35668, -9.151805, 43.35668, 9.151805, 274, -199, -8.466246, -48.579872, 8.466246, 48.579872, 245, -113, -6.8431997, -14.249405, 6.8431997, 14.249405, 332, -86, -64.84182, -52.221428, 64.84182, 52.221428, 378, 47, 27, -10, -30, 15, 331, 121, 32, 11, -24, -5, -198, 113, -57.84443, -11.366432, 57.84443, 11.366432, -287, 54, -17.24427, 19.955036, 17.24427, -19.955036, -105, -61, 10.263161, 7.672245, -10.263161, -7.672245, -140, -163)
+}
+point_count = 18
 
 [node name="Sea" type="Node2D" unique_id=907830608]
 script = ExtResource("sea")
@@ -278,38 +304,64 @@ script = ExtResource("net")
 [node name="Combat" type="Node" parent="." unique_id=447810725]
 script = ExtResource("combat")
 
-[node name="SeaTerrain" parent="." unique_id=1054208482 instance=ExtResource("27_qp5f5")]
+[node name="Sea Terrain" type="Node2D" parent="." unique_id=90195750]
+
+[node name="SeaTerrain" parent="Sea Terrain" unique_id=1054208482 instance=ExtResource("27_qp5f5")]
 position = Vector2(-60, 150)
-curve = SubResource("Curve2D_n4xlb")
-
-[node name="SeaTerrain2" parent="." unique_id=1727663235 instance=ExtResource("27_qp5f5")]
-position = Vector2(-1165, 659)
-curve = SubResource("Curve2D_8ar7h")
-
-[node name="SeaTerrain3" parent="." unique_id=1020171375 instance=ExtResource("27_qp5f5")]
-position = Vector2(-1205, 569)
-curve = SubResource("Curve2D_qp5f5")
-
-[node name="SeaTerrain4" parent="." unique_id=1332715503 instance=ExtResource("27_qp5f5")]
-position = Vector2(-1376, 455)
-curve = SubResource("Curve2D_binbi")
-
-[node name="SeaTerrain5" parent="." unique_id=866530282 instance=ExtResource("27_qp5f5")]
-position = Vector2(-1318, 312)
 curve = SubResource("Curve2D_7yqkl")
 
-[node name="SeaTerrain6" parent="." unique_id=328690975 instance=ExtResource("27_qp5f5")]
-position = Vector2(-1516, 222)
+[node name="SeaTerrain2" parent="Sea Terrain" unique_id=1727663235 instance=ExtResource("27_qp5f5")]
+position = Vector2(-1165, 659)
 curve = SubResource("Curve2D_nhxvi")
 
-[node name="SeaTerrain7" parent="." unique_id=1832567115 instance=ExtResource("27_qp5f5")]
-position = Vector2(-540, 197)
+[node name="SeaTerrain3" parent="Sea Terrain" unique_id=1020171375 instance=ExtResource("27_qp5f5")]
+position = Vector2(-1205, 569)
 curve = SubResource("Curve2D_5po06")
 
-[node name="SeaTerrain8" parent="." unique_id=410987106 instance=ExtResource("27_qp5f5")]
-position = Vector2(-511, 315)
+[node name="SeaTerrain4" parent="Sea Terrain" unique_id=1332715503 instance=ExtResource("27_qp5f5")]
+position = Vector2(-1376, 455)
 curve = SubResource("Curve2D_sol7m")
 
-[node name="SeaTerrain9" parent="." unique_id=1330212167 instance=ExtResource("27_qp5f5")]
-position = Vector2(-768, 240)
+[node name="SeaTerrain5" parent="Sea Terrain" unique_id=866530282 instance=ExtResource("27_qp5f5")]
+position = Vector2(-1318, 312)
 curve = SubResource("Curve2D_t40yv")
+
+[node name="SeaTerrain6" parent="Sea Terrain" unique_id=328690975 instance=ExtResource("27_qp5f5")]
+position = Vector2(-1516, 222)
+curve = SubResource("Curve2D_vychp")
+
+[node name="SeaTerrain7" parent="Sea Terrain" unique_id=1832567115 instance=ExtResource("27_qp5f5")]
+position = Vector2(-540, 197)
+curve = SubResource("Curve2D_e16em")
+
+[node name="SeaTerrain8" parent="Sea Terrain" unique_id=410987106 instance=ExtResource("27_qp5f5")]
+position = Vector2(-511, 315)
+curve = SubResource("Curve2D_likg1")
+
+[node name="SeaTerrain9" parent="Sea Terrain" unique_id=1330212167 instance=ExtResource("27_qp5f5")]
+position = Vector2(-768, 240)
+curve = SubResource("Curve2D_6u2ss")
+
+[node name="SeaTerrain10" parent="." unique_id=1751636914 instance=ExtResource("27_qp5f5")]
+z_index = -1
+position = Vector2(-349, 633)
+curve = SubResource("Curve2D_p5res")
+fill_texture = ExtResource("26_qp5f5")
+edge_texture = ExtResource("27_binbi")
+collision_enabled = false
+
+[node name="SeaTerrain11" parent="." unique_id=2080305478 instance=ExtResource("27_qp5f5")]
+z_index = -1
+position = Vector2(-676, 375)
+curve = SubResource("Curve2D_lk0jx")
+fill_texture = ExtResource("26_qp5f5")
+edge_texture = ExtResource("27_binbi")
+collision_enabled = false
+
+[node name="SeaTerrain11" parent="SeaTerrain11" unique_id=1291018217 instance=ExtResource("27_qp5f5")]
+z_index = -1
+position = Vector2(-660, 257)
+curve = SubResource("Curve2D_u5xdw")
+fill_texture = ExtResource("26_qp5f5")
+edge_texture = ExtResource("27_binbi")
+collision_enabled = false
