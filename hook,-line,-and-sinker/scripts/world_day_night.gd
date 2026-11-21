@@ -111,10 +111,10 @@ func _process(_delta: float) -> void:
 	var surface_screen_y: float = _water.get_global_transform_with_canvas().origin.y
 	_water_mat.set_shader_parameter("waterline_y", surface_screen_y)
 	_water_mat.set_shader_parameter("viewer_submersion", submerged)
-	# Both the visible water and seabed clipping derive their boundary
-	# from this one World/Water surface; no independent tile Y assumption.
+	# The sea's above-surface visual clip and the reflection must use
+	# the identical viewport-space waterline. Sea collision is unaffected.
 	if _sea_clip_mat != null:
-		_sea_clip_mat.set_shader_parameter("surface_world_y", surface_y)
+		_sea_clip_mat.set_shader_parameter("surface_screen_y", surface_screen_y)
 	if _tint_mat != null:
 		_tint_mat.set_shader_parameter("submersion", submerged)
 		_tint_mat.set_shader_parameter("surface_y_uv", surface_screen_y / 180.0)
