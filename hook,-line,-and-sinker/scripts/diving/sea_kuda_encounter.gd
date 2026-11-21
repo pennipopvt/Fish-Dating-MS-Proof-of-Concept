@@ -2,8 +2,8 @@
 extends Node2D
 class_name SeaKudaEncounter
 
-# Second-NPC spatial encounter. StoryDirector owns flags/dialogue, World owns
-# fish registration/combat, and this node owns only Kuda's hunting movement.
+# Kuda's encounter owns his hunting, recruitment and first shore introduction.
+# StoryDirector owns flags/dialogue; World owns fish registration/combat.
 signal first_hook_dialogue_finished(fish: DivingWildFish)
 signal recruited
 
@@ -219,6 +219,31 @@ func _on_recruited() -> void:
 	# Leave the prey as a normal wild fish after the encounter ends.
 	prey = null
 	recruited.emit()
+
+
+# Called only after the shared surface presentation has transformed the school.
+# The surface animator supplies temporary human actors; this encounter checks
+# that Kuda ACTUALLY reached shore before starting his one-time conversation.
+func play_first_surface_reveal(surface_actors: Array[Node2D]) -> void:
+	if _story == null or not _story.can_begin_kuda_surface_reveal():
+		return
+	var kuda_actor: NPCInteractable = null
+	for actor in surface_actors:
+		var guest: NPCInteractable = actor as NPCInteractable
+		if is_instance_valid(guest) and guest.visible and guest.npc != null \
+				and guest.npc.npc_id == _story.kuda_data.npc_id:
+			kuda_actor = guest
+			break
+	if kuda_actor == null:
+		return
+	# Keep the visible human actor on the dock until the dialogue ends.
+	if not _story.start_kuda_surface_reveal():
+		return
+	await _story.kuda_surface_reveal_finished
+	# RecruitmentHandler assigns a room by NPC identity, never by moving
+	# the temporary dock actor or creating another interior scene.
+	if not RecruitmentHandler.assign_home(_story.kuda_data):
+		push_warning("Kuda reached shore, but no townhouse room was available yet.")
 
 
 func end_dive() -> void:
