@@ -723,6 +723,9 @@ func _return_to_surface() -> void:
 # do we ask the story whether this return needs a one-time character scene.
 func on_surface_completed() -> void:
 	_exit_prompt.pop_out()
+	# Encounters are recreated at each subsequent dive; never leave the
+	# Kuda chase running ashore or respawn him once he has joined the party.
+	_kuda.end_dive()
 	if _story.can_begin_silas_surface_reveal():
 		_encounter.play_silas_surface_reveal()
 

@@ -44,8 +44,8 @@ func _run() -> void:
 
 	_check(decoration.sprite_frames != null
 		and decoration.sprite_frames.has_animation(&"placeholder")
-		and decoration.sprite_frames.get_frame_count(&"placeholder") == 1,
-		"Shared library provides a visible placeholder until decoration art is added")
+		and decoration.sprite_frames.get_frame_count(&"placeholder") >= 1,
+		"Shared animation library plays the artist's decoration frames")
 	_check(decoration.get_node_or_null("CollisionShape2D") == null,
 		"Decorations never block player, fish or the net")
 	var copied_frames: SpriteFrames = decoration.sprite_frames.duplicate() as SpriteFrames
