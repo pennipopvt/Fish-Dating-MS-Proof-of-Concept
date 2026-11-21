@@ -1,17 +1,16 @@
 shader_type canvas_item;
 
-// Visual-only mask on the underwater Solids TileMapLayer. Do NOT remove or
-// move painted tiles: their collision geometry remains intact. WorldDayNight
-// sets this from World/Water's actual world-space top edge.
-uniform float surface_world_y = 140.0;
-varying float pixel_world_y;
-
-void vertex() {
-	pixel_world_y = (MODEL_MATRIX * vec4(VERTEX, 0.0, 1.0)).y;
-}
+// Only underwater visuals use this material. Clip their fragments before
+// the World/Water screen-texture pass so they cannot appear in the sky or
+// contaminate its reflected image. Physics remains unaffected.
+//
+// FRAGCOORD is in the same 320x180 viewport pixel space as Water's
+// waterline_y. Unlike tile-vertex world positions, it remains accurate
+// when the TileMapLayer is batched, repainted, or the camera moves.
+uniform float surface_screen_y = 140.0;
 
 void fragment() {
-	if (pixel_world_y < surface_world_y) {
+	if (FRAGCOORD.y < surface_screen_y) {
 		discard;
 	}
 }
