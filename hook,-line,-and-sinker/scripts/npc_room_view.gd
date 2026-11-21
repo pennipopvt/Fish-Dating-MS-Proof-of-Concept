@@ -25,7 +25,7 @@ var _prelude_active: bool = false
 var _prelude_approved: bool = false
 # Recorded at room entry, so a reconciliation doesn't immediately turn
 # into another attempt at intimacy in the same evening.
-var _unresolved_prelude_on_entry: bool = false
+var _overnight_blocked_on_entry: bool = false
 
 
 func _ready() -> void:
@@ -68,7 +68,7 @@ func open_room(npc: NPCData) -> void:
 	_overnight_active = false
 	_morning_dialogue_active = false
 	_gift_offered_this_visit = false
-	_unresolved_prelude_on_entry = _has_unresolved_prelude(npc)
+	_overnight_blocked_on_entry = NPCManager.has_blocking_relationship_event(npc, &"overnight")
 	_inside = true
 	_player.busy = true
 	await _transition.iris_swap(_show_room)
@@ -87,13 +87,6 @@ func _show_room() -> void:
 
 # Only entering a room at night with a previously accepted invitation starts
 # the one-time romance. Existing invitation JSON remains ordinary conversation.
-func _has_unresolved_prelude(npc: NPCData) -> bool:
-	if npc == null or npc.overnight_unresolved_flag == &"":
-		return false
-	return bool(NPCManager.get_npc_state(npc.npc_id).get("flags", {}).get(
-		npc.overnight_unresolved_flag, false))
-
-
 func _try_start_overnight() -> bool:
 	if _illustration == null or _resident == null or not GameManager.is_period(GameManager.Times.NIGHT):
 		return false
@@ -101,7 +94,7 @@ func _try_start_overnight() -> bool:
 		return false
 	# Respect unresolved boundaries before even trying the overnight prelude.
 	# The normal NPC encounter graph now owns the apology/reconciliation.
-	if _has_unresolved_prelude(_resident):
+	if NPCManager.has_blocking_relationship_event(_resident, &"overnight"):
 		return false
 	var flags: Dictionary = NPCManager.get_npc_state(_resident.npc_id).get("flags", {})
 	if not flags.get(_resident.invitation_accepted_flag, false) \
@@ -134,8 +127,12 @@ func _try_start_overnight() -> bool:
 func _start_conversation() -> void:
 	if not _inside or _closing or _overnight_active or DialogueManager.is_active:
 		return
-	# Preserve the existing gift-then-casual conversation behavior. Only the
-	# timing of invitation eligibility changes in NPCManager's encounter rules.
+	# A highest-priority unresolved event may have its own complete follow-up
+	# graph; otherwise let the usual JSON handle active_events conditions.
+	var event_json: String = NPCManager.get_relationship_followup_json(_resident)
+	if not event_json.is_empty():
+		DialogueManager.request_conversation(_resident, event_json)
+		return
 	if not _gift_offered_this_visit and _player.held_item != null:
 		var gift_path: String = NPCManager.get_gift_encounter_path(_resident, _player.held_item)
 		if not gift_path.is_empty():
@@ -171,7 +168,8 @@ func _on_conversation_finished(npc: NPCData) -> void:
 		return
 	# A resolved argument can unlock a future invitation, never a surprise
 	# same-night retry. Conversation history is still authored in JSON.
-	if _unresolved_prelude_on_entry and not _has_unresolved_prelude(npc):
+	if _overnight_blocked_on_entry \
+			and not NPCManager.has_blocking_relationship_event(npc, &"overnight"):
 		NPCManager.get_npc_state(npc.npc_id)["romance_prelude_attempt_day"] = GameManager.get_day()
 	# Room conversations do not automatically start another greeting.
 	call_deferred("_resume_or_exit")
@@ -279,7 +277,7 @@ func close_room() -> void:
 	_prelude_active = false
 	_prelude_approved = false
 	_overnight_active = false
-	_unresolved_prelude_on_entry = false
+	_overnight_blocked_on_entry = false
 
 
 func _hide_room() -> void:

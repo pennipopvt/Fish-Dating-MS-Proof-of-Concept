@@ -116,7 +116,7 @@ static func _valid_conditions(value: Variant) -> bool:
 	if not value is Dictionary:
 		return false
 	for key in value:
-		if key in ["required_flags", "forbidden_flags"]:
+		if key in ["required_flags", "forbidden_flags", "active_events", "resolved_events"]:
 			if not _string_array(value[key]):
 				return false
 		elif key in ["min_affection", "max_affection", "min_jealousy", "max_jealousy",
@@ -157,6 +157,9 @@ static func _valid_effects(value: Variant) -> bool:
 		return false
 	if not _string_array(value.get("set_flags", [])) or not _string_array(value.get("clear_flags", [])):
 		return false
+	for field in ["start_relationship_events", "resolve_relationship_events"]:
+		if not _string_array(value.get(field, [])):
+			return false
 	if value.has("give_held_item") and not value["give_held_item"] is bool:
 		return false
 	if value.has("request_scene") and (not value["request_scene"] is String or value["request_scene"].is_empty()):

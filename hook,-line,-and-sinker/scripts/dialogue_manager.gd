@@ -264,6 +264,10 @@ func _apply_json_effects(effects: Variant, include_attraction: bool = true) -> v
 		flags[StringName(str(flag))] = true
 	for flag in effects.get("clear_flags", []):
 		flags[StringName(str(flag))] = false
+	for event in effects.get("start_relationship_events", []):
+		NPCManager.start_relationship_event(current_npc, StringName(str(event)))
+	for event in effects.get("resolve_relationship_events", []):
+		NPCManager.resolve_relationship_event(current_npc, StringName(str(event)))
 
 
 # Conditions are evaluated when the menu becomes visible, using the NPC's current flags.

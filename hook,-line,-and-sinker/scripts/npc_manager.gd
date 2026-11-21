@@ -6,6 +6,9 @@ const START_ATTRACTION := 10
 
 var npc_states: Dictionary = {}
 
+signal relationship_event_started(npc_id: StringName, event_id: StringName)
+signal relationship_event_resolved(npc_id: StringName, event_id: StringName)
+
 
 # Get an NPC's state, or create it if it doesn't exist.
 func get_npc_state(npc_id: StringName) -> Dictionary:
@@ -13,7 +16,8 @@ func get_npc_state(npc_id: StringName) -> Dictionary:
 		npc_states[npc_id] = {
 			"attraction": START_ATTRACTION,
 			"jealousy": 0,
-			"flags": {}
+			"flags": {},
+			"relationship_events": {}
 		}
 
 	return npc_states[npc_id]
@@ -73,6 +77,89 @@ func apply_choice(
 		if flag != null:
 			flags[flag.flag_id] = false
 
+# --- NPC-specific relationship incidents using one shared architecture ---
+
+func get_relationship_event_definition(npc: NPCData, event_id: StringName) -> RelationshipEventData:
+	if npc == null or event_id == &"":
+		return null
+	for event in npc.relationship_events:
+		if event != null and event.event_id == event_id:
+			return event
+	return null
+
+
+func get_relationship_event_state(npc: NPCData, event_id: StringName) -> Dictionary:
+	if npc == null:
+		return {}
+	return get_npc_state(npc.npc_id).get("relationship_events", {}).get(event_id, {})
+
+
+func has_active_relationship_event(npc: NPCData, event_id: StringName) -> bool:
+	return bool(get_relationship_event_state(npc, event_id).get("active", false))
+
+
+func has_resolved_relationship_event(npc: NPCData, event_id: StringName) -> bool:
+	var record: Dictionary = get_relationship_event_state(npc, event_id)
+	return not record.get("active", false) and record.has("resolved_day")
+
+
+func start_relationship_event(npc: NPCData, event_id: StringName) -> bool:
+	if get_relationship_event_definition(npc, event_id) == null:
+		push_warning("Unknown relationship event '%s'" % String(event_id))
+		return false
+	if has_active_relationship_event(npc, event_id):
+		return true
+	var state: Dictionary = get_npc_state(npc.npc_id)
+	var events: Dictionary = state.get("relationship_events", {})
+	state["relationship_events"] = events
+	events[event_id] = {"active": true, "started_day": GameManager.get_day()}
+	var flags: Dictionary = state.get("flags", {})
+	flags[StringName("relationship_event_%s_active" % String(event_id))] = true
+	flags[StringName("relationship_event_%s_resolved" % String(event_id))] = false
+	relationship_event_started.emit(npc.npc_id, event_id)
+	return true
+
+
+func resolve_relationship_event(npc: NPCData, event_id: StringName) -> bool:
+	if not has_active_relationship_event(npc, event_id):
+		return false
+	var state: Dictionary = get_npc_state(npc.npc_id)
+	var events: Dictionary = state.get("relationship_events", {})
+	var record: Dictionary = events[event_id]
+	record["active"] = false
+	record["resolved_day"] = GameManager.get_day()
+	var flags: Dictionary = state.get("flags", {})
+	flags[StringName("relationship_event_%s_active" % String(event_id))] = false
+	flags[StringName("relationship_event_%s_resolved" % String(event_id))] = true
+	relationship_event_resolved.emit(npc.npc_id, event_id)
+	return true
+
+
+func has_blocking_relationship_event(npc: NPCData, action_id: StringName) -> bool:
+	if npc == null or action_id == &"":
+		return false
+	for event in npc.relationship_events:
+		if event != null and event.blocks_actions.has(action_id) \
+				and has_active_relationship_event(npc, event.event_id):
+			return true
+	return false
+
+
+func get_relationship_followup_json(npc: NPCData) -> String:
+	if npc == null:
+		return ""
+	var best_priority: int = -1000000
+	var best_json: String = ""
+	for event in npc.relationship_events:
+		if event == null or event.followup_dialogue_json.is_empty() \
+				or not has_active_relationship_event(npc, event.event_id):
+			continue
+		if best_json.is_empty() or event.priority > best_priority:
+			best_priority = event.priority
+			best_json = event.followup_dialogue_json
+	return best_json
+
+
 # Read-only predicates shared by choice visibility, optional line variants,
 # and conditional topic routing. Keep relationship state in NPCManager; neither
 # DialogueManager nor JSON files should mutate it while choosing a line.
@@ -86,6 +173,14 @@ func dialogue_conditions_match(npc_id: StringName, conditions: Dictionary, jealo
 			return false
 	for flag in conditions.get("forbidden_flags", []):
 		if flags.get(StringName(str(flag)), false):
+			return false
+	var event_states: Dictionary = state.get("relationship_events", {})
+	for event in conditions.get("active_events", []):
+		if not bool(event_states.get(StringName(str(event)), {}).get("active", false)):
+			return false
+	for event in conditions.get("resolved_events", []):
+		var record: Dictionary = event_states.get(StringName(str(event)), {})
+		if record.get("active", false) or not record.has("resolved_day"):
 			return false
 	var affection: int = int(state.get("attraction", START_ATTRACTION))
 	var jealousy: int = int(state.get("jealousy", 0))
@@ -125,6 +220,9 @@ func dialogue_conditions_match(npc_id: StringName, conditions: Dictionary, jealo
 func get_encounter_json_path(npc: NPCData) -> String:
 	if npc == null:
 		return ""
+	var followup: String = get_relationship_followup_json(npc)
+	if not followup.is_empty():
+		return followup
 	var state: Dictionary = get_npc_state(npc.npc_id)
 	var flags: Dictionary = state.get("flags", {})
 	for rule in npc.encounter_rules:
