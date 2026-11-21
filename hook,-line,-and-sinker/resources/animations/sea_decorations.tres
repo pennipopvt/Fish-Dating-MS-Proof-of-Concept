@@ -1,6 +1,7 @@
 [gd_resource type="SpriteFrames" format=3 uid="uid://cnuplgpujtld6"]
 
 [ext_resource type="Texture2D" uid="uid://btnocdpm5jgv4" path="res://sprites/environment/decor/decor_seaweed.png" id="1_d2h7r"]
+[ext_resource type="Texture2D" uid="uid://3qt3fwtnpil" path="res://sprites/environment/decor/decor_seaweed_tall.png" id="2_7rysg"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_7rysg"]
 atlas = ExtResource("1_d2h7r")
@@ -18,6 +19,22 @@ region = Rect2(32, 0, 16, 64)
 atlas = ExtResource("1_d2h7r")
 region = Rect2(48, 0, 16, 64)
 
+[sub_resource type="AtlasTexture" id="AtlasTexture_1tb87"]
+atlas = ExtResource("2_7rysg")
+region = Rect2(0, 0, 16, 128)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_rrupd"]
+atlas = ExtResource("2_7rysg")
+region = Rect2(16, 0, 16, 128)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_fpr8a"]
+atlas = ExtResource("2_7rysg")
+region = Rect2(32, 0, 16, 128)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_3j2gm"]
+atlas = ExtResource("2_7rysg")
+region = Rect2(48, 0, 16, 128)
+
 [resource]
 animations = [{
 "frames": [{
@@ -34,6 +51,23 @@ animations = [{
 "texture": SubResource("AtlasTexture_clhn1")
 }],
 "loop": 1,
-"name": &"placeholder",
+"name": &"seaweed",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_1tb87")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_rrupd")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_fpr8a")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_3j2gm")
+}],
+"loop": 1,
+"name": &"seaweed_tall",
 "speed": 5.0
 }]
