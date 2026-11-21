@@ -21,6 +21,10 @@ const PICKED_CHOICE_COLOR := Color(0.55, 0.55, 0.6)
 @export var placeholder_portrait: Texture2D
 @export var player_portrait: Texture2D
 
+@export_group("Room Portrait Layout")
+## Relative to the screen's bottom-center at the regular DialogueUI scale.
+@export var room_portrait_offsets: Vector4 = Vector4(-520.0, -1360.0, 520.0, 240.0)
+
 @onready var _box: PanelContainer = %Box
 @onready var _player_portrait: TextureRect = %PlayerPortrait
 @onready var _npc_portrait: TextureRect = %NPCPortrait
@@ -32,13 +36,40 @@ const PICKED_CHOICE_COLOR := Color(0.55, 0.55, 0.6)
 var _npc: NPCData = null
 var _opened_frame := -1
 var _illustration_mode := false
+var _room_mode := false
 var _underwater_mode := false
 var _land_layer: int = 10
 var _npc_land_offsets: Vector4
+var _npc_land_anchors: Vector4
 var _player_land_offsets: Vector4
 
 # The exact same dialogue box, choice buttons, and conversation manager are
 # used on land and underwater. Only the art and portrait framing change.
+# Keep DialogueManager, text, choices and speaker styling unchanged.
+# Room view only hides Penni's portrait and reframes the existing NPC portrait.
+func set_room_mode(enabled: bool) -> void:
+	_room_mode = enabled
+	if not is_node_ready():
+		return
+	if enabled:
+		_player_portrait.hide()
+		_npc_portrait.anchor_left = 0.5
+		_npc_portrait.anchor_right = 0.5
+		_npc_portrait.anchor_top = 1.0
+		_npc_portrait.anchor_bottom = 1.0
+		_restore_portrait_offsets(_npc_portrait, room_portrait_offsets)
+		_npc_portrait.flip_h = false
+	else:
+		_npc_portrait.anchor_left = _npc_land_anchors.x
+		_npc_portrait.anchor_top = _npc_land_anchors.y
+		_npc_portrait.anchor_right = _npc_land_anchors.z
+		_npc_portrait.anchor_bottom = _npc_land_anchors.w
+		_restore_portrait_offsets(_npc_portrait, _npc_land_offsets)
+		_player_portrait.visible = not _illustration_mode
+	if DialogueManager.is_active:
+		_refresh()
+
+
 func set_underwater_mode(enabled: bool) -> void:
 	_underwater_mode = enabled
 	if not is_node_ready():
@@ -55,7 +86,8 @@ func set_underwater_mode(enabled: bool) -> void:
 	_npc_portrait.flip_h = enabled and _npc != null and _npc.underwater_sprite != null
 	# Keep Penni's real portrait, original placement and filtering everywhere.
 	_restore_portrait_offsets(_player_portrait, _player_land_offsets)
-	_restore_portrait_offsets(_npc_portrait, _npc_land_offsets)
+	if not _room_mode:
+		_restore_portrait_offsets(_npc_portrait, _npc_land_offsets)
 	if DialogueManager.is_active and visible:
 		_refresh()
 
@@ -70,7 +102,7 @@ func _restore_portrait_offsets(view: TextureRect, values: Vector4) -> void:
 func set_illustration_mode(enabled: bool) -> void:
 	_illustration_mode = enabled
 	if is_node_ready():
-		_player_portrait.visible = not enabled
+		_player_portrait.visible = not enabled and not _room_mode
 		_npc_portrait.visible = not enabled
 
 
@@ -83,6 +115,10 @@ func _ready() -> void:
 	_npc_land_offsets = Vector4(
 		_npc_portrait.offset_left, _npc_portrait.offset_top,
 		_npc_portrait.offset_right, _npc_portrait.offset_bottom
+	)
+	_npc_land_anchors = Vector4(
+		_npc_portrait.anchor_left, _npc_portrait.anchor_top,
+		_npc_portrait.anchor_right, _npc_portrait.anchor_bottom
 	)
 	hide()
 	add_to_group(&"modal_ui")
@@ -192,7 +228,8 @@ func _show_line(line: DialogueLineData) -> void:
 	_npc_portrait.texture = _get_portrait(line)
 	# A Penni-only reaction, or a prompt from an object (the dock), has no
 	# second character, so no NPC portrait (not even the placeholder one).
-	_npc_portrait.visible = not (_npc != null and _npc.npc_id in NO_PORTRAIT_NPCS)
+	_npc_portrait.visible = not _illustration_mode and not (_npc != null and _npc.npc_id in NO_PORTRAIT_NPCS)
+	_player_portrait.visible = not _illustration_mode and not _room_mode
 	_npc_portrait.flip_h = _underwater_mode and _npc != null and _npc.underwater_sprite != null
 
 	# Light up whoever is speaking; dim the listener.

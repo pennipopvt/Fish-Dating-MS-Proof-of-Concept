@@ -16,6 +16,7 @@
 [ext_resource type="PackedScene" path="res://prefabs/shop_menu.tscn" id="5_choun"]
 [ext_resource type="PackedScene" uid="uid://dgsl8ux5hh1tt" path="res://prefabs/dialogue_ui.tscn" id="8_trceg"]
 [ext_resource type="PackedScene" path="res://prefabs/illustration_scene.tscn" id="10_illustration"]
+[ext_resource type="PackedScene" path="res://scenes/npc_room_view.tscn" id="npc_room_view"]
 
 [sub_resource type="ShaderMaterial" id="IrisMaterial"]
 shader = ExtResource("iris_shader")
@@ -59,6 +60,8 @@ size = Vector2i(320, 180)
 render_target_update_mode = 4
 
 [node name="World" parent="SubViewportContainer/SubViewport" unique_id=1151991614 instance=ExtResource("1_sugp2")]
+
+[node name="NPCRoomView" parent="." instance=ExtResource("npc_room_view")]
 
 [node name="CanvasLayer" type="CanvasLayer" parent="." unique_id=1326123139]
 

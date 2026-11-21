@@ -247,6 +247,18 @@ func _blackout_from_oxygen() -> void:
 	surface_completed.emit()
 
 
+# Reuse the same iris for non-diving cutscenes and room overlays.
+# The caller changes what is visible only while the screen is closed.
+func iris_swap(content_swap: Callable, screen_center: Vector2 = Vector2(0.5, 0.5)) -> void:
+	if transitioning:
+		return
+	transitioning = true
+	await _close_iris(screen_center)
+	content_swap.call()
+	await _open_iris(screen_center)
+	transitioning = false
+
+
 func _normalized_screen_position(actor: Node2D) -> Vector2:
 	# The boat/intro iris still uses the single island-world viewport.
 	var point: Vector2 = actor.get_global_transform_with_canvas().origin
