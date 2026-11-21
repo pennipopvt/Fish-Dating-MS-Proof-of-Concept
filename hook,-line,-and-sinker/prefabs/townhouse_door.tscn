@@ -1,0 +1,19 @@
+[gd_scene format=3]
+
+[ext_resource type="Texture2D" uid="uid://kk5gdwmwejaw" path="res://sprites/rooms/lockeddoor.png" id="1_bvrww"]
+[ext_resource type="Script" uid="uid://cdpiige5hjear" path="res://scripts/transfer_door.gd" id="2_cp2wk"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_iu4st"]
+size = Vector2(20, 31)
+
+[node name="TownhouseDoor" type="Area2D"]
+z_index = -1
+position = Vector2(0, -16)
+script = ExtResource("2_cp2wk")
+
+[node name="Sprite" type="Sprite2D" parent="."]
+texture = ExtResource("1_bvrww")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(0, 0.5)
+shape = SubResource("RectangleShape2D_iu4st")

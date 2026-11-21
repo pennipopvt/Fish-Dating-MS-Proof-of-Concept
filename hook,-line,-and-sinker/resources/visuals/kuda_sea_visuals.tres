@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="SeaCharacterVisuals" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/sea_character_visuals.gd" id="1_visuals"]
+
+[resource]
+script = ExtResource("1_visuals")
+follower_width = 44.0
+portrait_scale = 1.55
+portrait_angle_degrees = -12.0
+portrait_offset = Vector2(-38, -22)

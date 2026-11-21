@@ -40,3 +40,99 @@ jobs:
           # Start the REAL main scene instead to validate its wiring.
           timeout 60s godot --headless --path "hook,-line,-and-sinker" --quit-after 120 2>&1 | tee godot-play.log
           ! (grep -E 'SCRIPT ERROR:|Parse Error:|Parser Error:|ERROR:' godot-play.log | grep -Ev 'resources still in use at exit|RID allocations.*leaked' | grep -q .)
+      - name: Test isolated spline terrain preview, textures and collision
+        shell: bash
+        run: |
+          set -o pipefail
+          timeout 120s godot --headless --path "hook,-line,-and-sinker" res://tests/sea_terrain_test.tscn 2>&1 | tee sea-terrain-test.log
+          ! (grep -E 'SCRIPT ERROR:|Parse Error:|Parser Error:|ERROR:|FAIL ' sea-terrain-test.log | grep -Ev 'resources still in use at exit|RID allocations.*leaked' | grep -q .)
+      - name: Test reusable sea decorations, sunbeams and underwater palette
+        shell: bash
+        run: |
+          set -o pipefail
+          timeout 120s godot --headless --path "hook,-line,-and-sinker" res://tests/sea_visual_systems_test.tscn 2>&1 | tee sea-visuals-test.log
+          ! (grep -E 'SCRIPT ERROR:|Parse Error:|Parser Error:|ERROR:|FAIL ' sea-visuals-test.log | grep -Ev 'resources still in use at exit|RID allocations.*leaked' | grep -q .)
+      - name: Test water diagnostic modes restore the game visuals
+        shell: bash
+        run: |
+          set -o pipefail
+          timeout 120s godot --headless --path "hook,-line,-and-sinker" res://tests/water_render_debug_test.tscn 2>&1 | tee water-debug-test.log
+          ! (grep -E 'SCRIPT ERROR:|Parse Error:|Parser Error:|ERROR:|FAIL ' water-debug-test.log | grep -Ev 'resources still in use at exit|RID allocations.*leaked' | grep -q .)
+      - name: Test unified F3 debug panel and room preview
+        shell: bash
+        run: |
+          set -o pipefail
+          timeout 120s godot --headless --path "hook,-line,-and-sinker" res://tests/unified_debug_test.tscn 2>&1 | tee unified-debug-test.log
+          ! (grep -E 'SCRIPT ERROR:|Parse Error:|Parser Error:|ERROR:|FAIL ' unified-debug-test.log | grep -Ev 'resources still in use at exit|RID allocations.*leaked' | grep -q .)
+      - name: Test first catch and terminal progression
+        shell: bash
+        run: |
+          set -o pipefail
+          timeout 120s godot --headless --path "hook,-line,-and-sinker" res://tests/post_dive_terminal_test.tscn 2>&1 | tee post-dive-test.log
+          ! (grep -E 'SCRIPT ERROR:|Parse Error:|Parser Error:|ERROR:|FAIL ' post-dive-test.log | grep -Ev 'resources still in use at exit|RID allocations.*leaked' | grep -q .)
+      - name: Test Kuda chase, dialogue, escape and underwater recruitment
+        shell: bash
+        run: |
+          set -o pipefail
+          timeout 120s godot --headless --path "hook,-line,-and-sinker" res://tests/kuda_encounter_test.tscn 2>&1 | tee kuda-encounter-test.log
+          ! (grep -E 'SCRIPT ERROR:|Parse Error:|Parser Error:|ERROR:|FAIL ' kuda-encounter-test.log | grep -Ev 'resources still in use at exit|RID allocations.*leaked' | grep -q .)
+      - name: Test habitat fish and sea attack animations
+        shell: bash
+        run: |
+          set -o pipefail
+          timeout 120s godot --headless --path "hook,-line,-and-sinker" res://tests/sea_population_and_visuals_test.tscn 2>&1 | tee sea-population-test.log
+          ! (grep -E 'SCRIPT ERROR:|Parse Error:|Parser Error:|ERROR:|FAIL ' sea-population-test.log | grep -Ev 'resources still in use at exit|RID allocations.*leaked' | grep -q .)
+      - name: Test unlocked challenge rewards and terminal notifications
+        shell: bash
+        run: |
+          set -o pipefail
+          timeout 120s godot --headless --path "hook,-line,-and-sinker" res://tests/terminal_shop_challenges_test.tscn 2>&1 | tee terminal-challenge-test.log
+          ! (grep -E 'SCRIPT ERROR:|Parse Error:|Parser Error:|ERROR:|FAIL ' terminal-challenge-test.log | grep -Ev 'resources still in use at exit|RID allocations.*leaked' | grep -q .)
+      - name: Test dive clock and free conversations
+        shell: bash
+        run: |
+          set -o pipefail
+          timeout 120s godot --headless --path "hook,-line,-and-sinker" res://tests/day_clock_test.tscn 2>&1 | tee day-clock-test.log
+          ! (grep -E 'SCRIPT ERROR:|Parse Error:|Parser Error:|ERROR:|FAIL ' day-clock-test.log | grep -Ev 'resources still in use at exit|RID allocations.*leaked' | grep -q .)
+      - name: Test date bookings and period costs
+        shell: bash
+        run: |
+          set -o pipefail
+          timeout 120s godot --headless --path "hook,-line,-and-sinker" res://tests/date_schedule_test.tscn 2>&1 | tee date-schedule-test.log
+          ! (grep -E 'SCRIPT ERROR:|Parse Error:|Parser Error:|ERROR:|FAIL ' date-schedule-test.log | grep -Ev 'resources still in use at exit|RID allocations.*leaked' | grep -q .)
+      - name: Test oxygen exhaustion, blackout and carried inventory
+        shell: bash
+        run: |
+          set -o pipefail
+          timeout 120s godot --headless --path "hook,-line,-and-sinker" res://tests/sea_oxygen_test.tscn 2>&1 | tee sea-oxygen-test.log
+          ! (grep -E 'SCRIPT ERROR:|Parse Error:|Parser Error:|ERROR:|FAIL ' sea-oxygen-test.log | grep -Ev 'resources still in use at exit|RID allocations.*leaked' | grep -q .)
+      - name: Test simultaneous party battles, FIFO commands and lethal Kuda behavior
+        shell: bash
+        run: |
+          set -o pipefail
+          timeout 120s godot --headless --path "hook,-line,-and-sinker" res://tests/sea_party_commands_test.tscn 2>&1 | tee party-commands-test.log
+          ! (grep -E 'SCRIPT ERROR:|Parse Error:|Parser Error:|ERROR:|FAIL ' party-commands-test.log | grep -Ev 'resources still in use at exit|RID allocations.*leaked' | grep -q .)
+      - name: Test diving party and dock jump
+        shell: bash
+        run: |
+          set -o pipefail
+          timeout 120s godot --headless --path "hook,-line,-and-sinker" res://tests/diving_party_test.tscn 2>&1 | tee diving-party-test.log
+          ! (grep -E 'SCRIPT ERROR:|Parse Error:|Parser Error:|ERROR:|FAIL ' diving-party-test.log | grep -Ev 'resources still in use at exit|RID allocations.*leaked' | grep -q .)
+      - name: Test first-return Silas townhouse arrival
+        shell: bash
+        run: |
+          set -o pipefail
+          timeout 120s godot --headless --path "hook,-line,-and-sinker" res://tests/sea_surface_reveal_test.tscn 2>&1 | tee silas-return-test.log
+          ! (grep -E 'SCRIPT ERROR:|Parse Error:|Parser Error:|ERROR:|FAIL ' silas-return-test.log | grep -Ev 'resources still in use at exit|RID allocations.*leaked' | grep -q .)
+      - name: Test townhouse scene integration
+        shell: bash
+        run: |
+          set -o pipefail
+          timeout 120s godot --headless --path "hook,-line,-and-sinker" res://tests/townhouse_merge_test.tscn 2>&1 | tee townhouse-merge-test.log
+          ! (grep -E 'SCRIPT ERROR:|Parse Error:|Parser Error:|ERROR:|FAIL ' townhouse-merge-test.log | grep -Ev 'resources still in use at exit|RID allocations.*leaked' | grep -q .)
+      - name: Test quota deliveries and deadlines
+        shell: bash
+        run: |
+          set -o pipefail
+          timeout 120s godot --headless --path "hook,-line,-and-sinker" res://tests/quota_test.tscn 2>&1 | tee quota-test.log
+          ! (grep -E 'SCRIPT ERROR:|Parse Error:|Parser Error:|ERROR:|FAIL ' quota-test.log | grep -Ev 'resources still in use at exit|RID allocations.*leaked' | grep -q .)

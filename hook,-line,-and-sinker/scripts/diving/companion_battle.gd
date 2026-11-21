@@ -103,6 +103,7 @@ func step(delta: float, in_attack_range: bool = true) -> void:
 			dealt = maxf(0.0, behavior.modify_damage(struck, dealt))
 		if dealt > 0.0:
 			struck.take_damage(dealt)
+			struck.companion_weakened = true
 			hit.emit(true, dealt)
 		if behavior != null:
 			behavior.on_hit(struck)

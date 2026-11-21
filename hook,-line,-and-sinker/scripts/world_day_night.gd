@@ -30,6 +30,8 @@ const REFLECTION_AT_SURFACE: float = 0.477
 @onready var _camera: Camera2D = $Player/Camera2D
 @onready var _ambient: CanvasModulate = $DayNightTint
 @onready var _water: ColorRect = $Water
+# Sea/Solids is optional now that the sea uses SeaTerrain colliders.
+@onready var _sea_solids: TileMapLayer = get_node_or_null("Sea/Solids") as TileMapLayer
 @onready var _diver: Player = $Player
 @onready var _underwater_tint: ColorRect = get_node_or_null("Player/Camera2D/UnderwaterTint") as ColorRect
 
@@ -39,6 +41,7 @@ var _sun_glow_mat: ShaderMaterial
 var _moon_mat: ShaderMaterial
 var _moon_glow_mat: ShaderMaterial
 var _water_mat: ShaderMaterial
+var _sea_clip_mat: ShaderMaterial
 var _tint_mat: ShaderMaterial
 var _transition: Tween
 var _target_progress: float = -1.0
@@ -57,6 +60,7 @@ func _ready() -> void:
 	_moon_mat = _local_material(_moon)
 	_moon_glow_mat = _local_material(_moon_glow)
 	_water_mat = _local_material(_water)
+	_sea_clip_mat = _local_material(_sea_solids)
 	_tint_mat = _local_material(_underwater_tint)
 
 	# A scene that failed to load used to crash at .material and then on
@@ -107,9 +111,31 @@ func _process(_delta: float) -> void:
 	)
 	var surface_screen_y: float = _water.get_global_transform_with_canvas().origin.y
 	_water_mat.set_shader_parameter("waterline_y", surface_screen_y)
+	_water_mat.set_shader_parameter("viewer_submersion", submerged)
+	# The sea's above-surface visual clip and the reflection must use
+	# the identical viewport-space waterline. Sea collision is unaffected.
+	if _sea_clip_mat != null:
+		_sea_clip_mat.set_shader_parameter("surface_screen_y", surface_screen_y)
 	if _tint_mat != null:
 		_tint_mat.set_shader_parameter("submersion", submerged)
 		_tint_mat.set_shader_parameter("surface_y_uv", surface_screen_y / 180.0)
+	_update_sunbeams()
+
+
+# Uses the same shown clock progress that already animates water and sky.
+# Each authored ray registers itself; none are required in the main scene.
+func _update_sunbeams() -> void:
+	var sunlight: float = 1.0 - smoothstep(SUNSET_START, NIGHT_START, _shown_progress)
+	var morning_tint := Color("#ffe8bd")
+	var afternoon_tint := Color("#d7f4ff")
+	var sunset_tint := Color("#ffdab0")
+	var light_color: Color = morning_tint.lerp(
+		afternoon_tint, smoothstep(0.0, AFTERNOON_START, _shown_progress))
+	light_color = light_color.lerp(
+		sunset_tint, smoothstep(SUNSET_START, NIGHT_START, _shown_progress))
+	for instance in get_tree().get_nodes_in_group(&"sea_sunbeams"):
+		if instance.has_method("set_environment_light"):
+			instance.set_environment_light(sunlight, light_color, _water.global_position.y)
 
 
 func _local_material(item: CanvasItem) -> ShaderMaterial:
@@ -232,8 +258,8 @@ func _visual_state(progress: float) -> Dictionary:
 		Color("#ffe0bd"), Color("#fff0dd"), Color("#f2f8ff"),
 		Color("#f1f6ff"), Color("#ffd0ab"), Color("#394f75"))
 	var water := _day_color(progress,
-		Color("#315879"), Color("#28638b"), Color("#206089"),
-		Color("#245b81"), Color("#414b6a"), Color("#0b203e"))
+		Color("#3c6985"), Color("#33769e"), Color("#317ca0"),
+		Color("#2d7194"), Color("#485f7d"), Color("#102643"))
 	var water_highlight := _day_color(progress,
 		Color("#f1b98b"), Color("#d9e4e5"), Color("#b9e6fb"),
 		Color("#b2dbf1"), Color("#ffd0a2"), Color("#6489b7"))

@@ -1,19 +1,23 @@
 [gd_scene format=3 uid="uid://c3426ih2exaq8"]
 
 [ext_resource type="PackedScene" uid="uid://bjt7lp2qss3qh" path="res://prefabs/world.tscn" id="1_sugp2"]
-[ext_resource type="Script" path="res://scripts/main_controller.gd" id="dive_entry"]
-[ext_resource type="Script" path="res://scripts/diving/fish_co_opening_sequence.gd" id="opening_script"]
-[ext_resource type="Script" path="res://scripts/diving/sea_dive_transition.gd" id="transition_script"]
-[ext_resource type="Script" path="res://scripts/diving/sea_speech_bubble_host.gd" id="bubble_host"]
-[ext_resource type="Script" path="res://scripts/diving/sea_debug_panel.gd" id="sea_debug_panel"]
-[ext_resource type="PackedScene" path="res://scenes/fish_co_intro.tscn" id="fish_co_intro"]
-[ext_resource type="PackedScene" path="res://scenes/sea_speech_bubble.tscn" id="sea_speech_bubble"]
-[ext_resource type="Shader" path="res://shaders/iris_transition.gdshader" id="iris_shader"]
 [ext_resource type="AudioStream" uid="uid://b4567j3srpp18" path="res://sounds/FROM THE SEA 2026-10-30 03_02_51.mp3" id="4_jyhfs"]
 [ext_resource type="Texture2D" uid="uid://vu47883rgrp5" path="res://sprites/characters/penni/penni_portrait.png" id="4_tbgi4"]
-[ext_resource type="PackedScene" path="res://prefabs/shop_menu.tscn" id="5_choun"]
+[ext_resource type="PackedScene" uid="uid://dua3yfus0j5uq" path="res://prefabs/shop_menu.tscn" id="5_choun"]
 [ext_resource type="PackedScene" uid="uid://dgsl8ux5hh1tt" path="res://prefabs/dialogue_ui.tscn" id="8_trceg"]
-[ext_resource type="PackedScene" path="res://prefabs/illustration_scene.tscn" id="10_illustration"]
+[ext_resource type="PackedScene" uid="uid://bt2iu4iois2sb" path="res://prefabs/illustration_scene.tscn" id="10_illustration"]
+[ext_resource type="Script" uid="uid://sw20trtxk6am" path="res://scripts/diving/sea_speech_bubble_host.gd" id="bubble_host"]
+[ext_resource type="Script" uid="uid://bo3sftqvuyeyx" path="res://scripts/main_controller.gd" id="dive_entry"]
+[ext_resource type="Script" uid="uid://ckavoo6kn226c" path="res://scripts/diving/diving_party.gd" id="diving_party"]
+[ext_resource type="PackedScene" path="res://scenes/fish_co_intro.tscn" id="fish_co_intro"]
+[ext_resource type="Shader" uid="uid://b0nd45xrk2mwd" path="res://shaders/iris_transition.gdshader" id="iris_shader"]
+[ext_resource type="PackedScene" path="res://scenes/npc_room_view.tscn" id="npc_room_view"]
+[ext_resource type="Script" uid="uid://51ktq42upmq2" path="res://scripts/diving/fish_co_opening_sequence.gd" id="opening_script"]
+[ext_resource type="Script" uid="uid://dtqeioibs884x" path="res://scripts/diving/sea_party_entrance.gd" id="party_entrance"]
+[ext_resource type="Script" uid="uid://byypo0swdykcg" path="res://scripts/diving/sea_debug_panel.gd" id="sea_debug_panel"]
+[ext_resource type="PackedScene" path="res://scenes/sea_speech_bubble.tscn" id="sea_speech_bubble"]
+[ext_resource type="Script" uid="uid://bhtfkxi24nqdu" path="res://scripts/diving/sea_dive_transition.gd" id="transition_script"]
+[ext_resource type="PackedScene" path="res://scenes/water_render_debug.tscn" id="water_debug"]
 
 [sub_resource type="ShaderMaterial" id="IrisMaterial"]
 shader = ExtResource("iris_shader")
@@ -23,20 +27,20 @@ shader_parameter/aspect_ratio = 1.7777778
 
 [sub_resource type="StyleBoxFlat" id="SeaDebugBackground"]
 bg_color = Color(0.015, 0.035, 0.06, 0.93)
-border_color = Color(0.5, 0.9, 1, 1)
 border_width_left = 2
 border_width_top = 2
 border_width_right = 2
 border_width_bottom = 2
+border_color = Color(0.5, 0.9, 1, 1)
 
 [node name="Main" type="Control" unique_id=51723177]
-script = ExtResource("dive_entry")
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+script = ExtResource("dive_entry")
 
 [node name="SubViewportContainer" type="SubViewportContainer" parent="." unique_id=1239905353]
 texture_filter = 1
@@ -58,6 +62,9 @@ render_target_update_mode = 4
 
 [node name="World" parent="SubViewportContainer/SubViewport" unique_id=1151991614 instance=ExtResource("1_sugp2")]
 
+[node name="NPCRoomView" parent="." unique_id=106282049 instance=ExtResource("npc_room_view")]
+layout_mode = 1
+
 [node name="CanvasLayer" type="CanvasLayer" parent="." unique_id=1326123139]
 
 [node name="ShopMenu" parent="CanvasLayer" unique_id=764201938 instance=ExtResource("5_choun")]
@@ -66,24 +73,31 @@ visible = false
 [node name="DialogueUI" parent="CanvasLayer" unique_id=1999381502 instance=ExtResource("8_trceg")]
 visible = false
 player_portrait = ExtResource("4_tbgi4")
+room_portrait_position = Vector2(0, 0)
+room_portrait_scale = 1.4000000000000001
 
-[node name="IllustrationScene" parent="." instance=ExtResource("10_illustration")]
+[node name="IllustrationScene" parent="." unique_id=1979018197 instance=ExtResource("10_illustration")]
 
-[node name="SeaSpeechBubble" parent="." instance=ExtResource("sea_speech_bubble")]
+[node name="SeaSpeechBubble" parent="." unique_id=2067386525 instance=ExtResource("sea_speech_bubble")]
 
-[node name="IntroLayer" type="CanvasLayer" parent="."]
+[node name="IntroLayer" type="CanvasLayer" parent="." unique_id=678539631]
+layer = 9
 visible = false
 script = ExtResource("opening_script")
-layer = 9
 
-[node name="FishCoIntro" parent="IntroLayer" instance=ExtResource("fish_co_intro")]
-visible = false
+[node name="FishCoIntro" parent="IntroLayer" unique_id=1423428245 instance=ExtResource("fish_co_intro")]
 
-[node name="TransitionLayer" type="CanvasLayer" parent="."]
+[node name="TransitionLayer" type="CanvasLayer" parent="." unique_id=603682694]
 layer = 100
 script = ExtResource("transition_script")
 
-[node name="Iris" type="ColorRect" parent="TransitionLayer"]
+[node name="DivingParty" type="Node" parent="TransitionLayer" unique_id=1458545197]
+script = ExtResource("diving_party")
+
+[node name="PartyEntrance" type="Node" parent="TransitionLayer" unique_id=1874475061]
+script = ExtResource("party_entrance")
+
+[node name="Iris" type="ColorRect" parent="TransitionLayer" unique_id=2146625784]
 visible = false
 material = SubResource("IrisMaterial")
 anchors_preset = 15
@@ -92,42 +106,42 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-color = Color(1, 1, 1, 1)
 
 [node name="AudioStreamPlayer2D" type="AudioStreamPlayer2D" parent="." unique_id=1332507421]
 stream = ExtResource("4_jyhfs")
 volume_db = 6.0
 autoplay = true
 
-[node name="SeaSpeechBubbleHost" type="Node" parent="."]
+[node name="SeaSpeechBubbleHost" type="Node" parent="." unique_id=1976587968]
 script = ExtResource("bubble_host")
 
-[node name="SeaDebugLayer" type="CanvasLayer" parent="."]
-visible = false
+[node name="WaterDebugLayer" parent="." unique_id=1084032570 instance=ExtResource("water_debug")]
+
+[node name="SeaDebugLayer" type="CanvasLayer" parent="." unique_id=361105896]
 layer = 120
+visible = false
 script = ExtResource("sea_debug_panel")
 
-[node name="Panel" type="Panel" parent="SeaDebugLayer"]
+[node name="Panel" type="Panel" parent="SeaDebugLayer" unique_id=242050579]
 offset_left = 10.0
 offset_top = 10.0
 offset_right = 810.0
 offset_bottom = 595.0
-mouse_filter = 0
 theme_override_styles/panel = SubResource("SeaDebugBackground")
 
-[node name="Diagnostics" type="Label" parent="SeaDebugLayer/Panel"]
+[node name="Diagnostics" type="Label" parent="SeaDebugLayer/Panel" unique_id=1285445843]
+layout_mode = 0
 offset_left = 12.0
 offset_top = 10.0
 offset_right = 787.0
 offset_bottom = 515.0
-mouse_filter = 2
 theme_override_font_sizes/font_size = 17
 
-[node name="SkipDialogue" type="Button" parent="SeaDebugLayer/Panel"]
+[node name="SkipDialogue" type="Button" parent="SeaDebugLayer/Panel" unique_id=1401436476]
+layout_mode = 0
 offset_left = 574.0
 offset_top = 537.0
 offset_right = 780.0
 offset_bottom = 571.0
-mouse_filter = 0
 theme_override_font_sizes/font_size = 16
 text = "Skip Dialogue"

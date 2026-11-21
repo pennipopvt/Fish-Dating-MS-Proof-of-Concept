@@ -8,7 +8,16 @@
 [ext_resource type="Resource" uid="uid://b4fcc4cial7fn" path="res://resources/items/kuda_scarf.tres" id="5_gift"]
 [ext_resource type="Texture2D" uid="uid://j2t1f35vluti" path="res://sprites/characters/kuda/kuda_portrait.png" id="6_2m545"]
 [ext_resource type="Texture2D" uid="uid://cktxhguj8trd2" path="res://sprites/porn/kuda.png" id="7_kuda_scene"]
+[ext_resource type="Script" uid="uid://c75tn0raimaqr" path="res://scripts/diving/kuda_combat_behavior.gd" id="kuda_behavior"]
+[ext_resource type="Resource" path="res://resources/companions/kuda_battle.tres" id="kuda_stats"]
+[ext_resource type="Resource" path="res://resources/visuals/kuda_sea_visuals.tres" id="sea_visuals"]
+[ext_resource type="Script" uid="uid://cxebrk0uj1pk8" path="res://resources/door_info.gd" id="townhouse_door_info"]
+[ext_resource type="Texture2D" uid="uid://dri2ogc522nmv" path="res://sprites/rooms/genericopendoor.png" id="townhouse_generic_door"]
 [ext_resource type="Texture2D" uid="uid://bt80yvxeajar3" path="res://sprites/fish/kuda_placeholder.png" id="underwater_kuda"]
+
+[sub_resource type="Resource" id="TownhouseKudaDoor"]
+script = ExtResource("townhouse_door_info")
+door = ExtResource("townhouse_generic_door")
 
 [sub_resource type="Resource" id="Rule_invitation"]
 script = ExtResource("2_rule")
@@ -43,7 +52,11 @@ npc_id = &"barracuda"
 display_name = "Kuda"
 portrait = ExtResource("6_2m545")
 underwater_sprite = ExtResource("underwater_kuda")
+sea_visuals = ExtResource("sea_visuals")
+sea_battle_stats = ExtResource("kuda_stats")
+sea_combat_behavior_script = ExtResource("kuda_behavior")
 house = ExtResource("4_house")
+door = SubResource("TownhouseKudaDoor")
 porn_sprite = ExtResource("7_kuda_scene")
 encounter_rules = Array[ExtResource("2_rule")]([SubResource("Rule_invitation"), SubResource("Rule_post_romance"), SubResource("Rule_casual"), SubResource("Rule_retry"), SubResource("Rule_first")])
 desired_gift = ExtResource("5_gift")

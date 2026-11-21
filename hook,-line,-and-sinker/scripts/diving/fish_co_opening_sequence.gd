@@ -170,7 +170,7 @@ func debug_skip_to_dive() -> bool:
 func request_dive(fisher: Player, dock: Node2D) -> void:
 	if not _first_dive_call_finished or _transition.transitioning or _transition.underwater or fisher != _world_player:
 		return
-	if not GameManager.can_act() or DialogueManager.is_active or GameManager.is_modal_ui_open():
+	if not GameManager.can_start_dive() or DialogueManager.is_active or GameManager.is_modal_ui_open():
 		return
 	if _dock_confirmation_target != null:
 		return

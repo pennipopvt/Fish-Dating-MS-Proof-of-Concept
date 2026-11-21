@@ -1,6 +1,13 @@
 class_name ShopMenu
 extends CanvasLayer
 
+# True while there is a newly unlocked terminal page that hasn't been seen.
+# Main connects this to the existing physical terminal exclamation bubble.
+signal progression_notice_changed(pending: bool)
+# The world terminal should never advertise a challenge reward before the
+# Challenges page is part of the player's available terminal.
+signal challenges_availability_changed(available: bool)
+
 # FISH CO. terminal: shop, inventory and calendar pages share one scene.
 # Tabs and borders are laid out in shop_menu.tscn and styled by terminal_theme.tres.
 # This script only fills in the grid, item details, and actions.
@@ -10,6 +17,7 @@ enum Page { QUOTA, SHOP, STORAGE, COLLECTION, CHALLENGES, SCHEDULE }
 const SLOT_SIZE := Vector2(168, 168) # 56 x 56 art pixels at 3x
 const MIN_SLOTS := 12                 # Four columns, three visible rows
 const LOCKED_TINT := Color(0.533, 0.57, 0.57, 0.82)
+const FISH_SILHOUETTE_SHADER: Shader = preload("res://shaders/fish_catalog_silhouette.gdshader")
 const UNAFFORD_TINT := Color(0.564, 0.099, 0.107, 0.82)
 const DARK_TEXT := Color("17363b")
 const DIM_TEXT := Color("45646a")
@@ -64,8 +72,20 @@ const TABS_HIDDEN_X_OFFSET := 12.0
 var _nav_buttons: Array[Button] = []
 var _page: int = Page.QUOTA
 var _selected_quota_fish: StringName = &""
-# First-minute onboarding: show exactly one terminal tab until the first dive.
+# Progressive disclosure through the existing terminal:
+# Quota -> Fish catalog after the shore reveal -> Upgrades after first quota.
+# Challenges are explicitly unlocked by a future gameplay beat.
+# Schedule unlocks automatically on the first date booking.
+# Page.COLLECTION remains as an enum/scene compatibility slot, but its
+# old separate tab is hidden; Page.STORAGE now shows both owned and caught.
 var _quota_only: bool = true
+var _post_dive_storage_unlocked: bool = false
+var _storage_seen: bool = false
+var _upgrades_seen: bool = false
+var _challenges_unlocked: bool = false
+var _schedule_unlocked: bool = false
+var _storage_notification: PanelContainer
+var _shop_notification: PanelContainer
 var _entries: Array[Dictionary] = []
 var _entry_buttons: Array[Button] = []
 var _selected_index: int = 0
@@ -118,12 +138,18 @@ func _ready() -> void:
 	FishingManager.storage_changed.connect(_on_inventory_changed)
 	FishingManager.fish_caught.connect(_on_inventory_changed)  # collection/dex, incl. NPC catches
 	DateManager.bookings_changed.connect(_on_schedule_changed)
+	DateManager.date_booked.connect(_on_first_date_booked)
+	_schedule_unlocked = not DateManager.bookings.is_empty()
 	QuotaManager.quota_changed.connect(_on_quota_changed)
+	QuotaManager.quota_completed.connect(_on_first_quota_completed)
 	GameManager.time_changed.connect(func(_day: int, _period: GameManager.Times) -> void: _on_schedule_changed())
 	GameManager.actions_changed.connect(func(_actions: int) -> void: _on_schedule_changed())
 	_setup_challenge_notification()
+	_storage_notification = _make_progression_tab_notice(_storage_tab, "StorageNoticeBubble")
+	_shop_notification = _make_progression_tab_notice(_shop_tab, "UpgradeNoticeBubble")
 	_refresh_page()
 	_update_nav_tabs(false)
+	_update_progression_notifications()
 
 
 func _setup_challenge_notification() -> void:
@@ -151,12 +177,116 @@ func _setup_challenge_notification() -> void:
 func _update_challenge_notification() -> void:
 	if not is_instance_valid(_challenge_notification):
 		return
-	var needs_claim: bool = ChallengeManager.get_claimable_count() > 0
+	var needs_claim: bool = is_page_unlocked(Page.CHALLENGES) \
+		and ChallengeManager.get_claimable_count() > 0
 	_challenge_notification.visible = needs_claim
 	# Never show both the ! bubble and the ordinary Challenges image.
 	var normal_icon := _challenges_tab.get_node_or_null("Icon") as TextureRect
 	if normal_icon != null:
 		normal_icon.visible = not needs_claim
+
+
+# Reuse the same compact exclamation badge/hidden-tab-icon presentation as
+# the existing Challenges notice. No new notification manager or scene.
+func _make_progression_tab_notice(tab: Button, name_for_node: String) -> PanelContainer:
+	var notice := PanelContainer.new()
+	notice.name = name_for_node
+	notice.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	notice.custom_minimum_size = Vector2(30, 30)
+	notice.position = Vector2(21, 21)
+	notice.add_theme_stylebox_override("panel", PixelUI.notification_bubble_style(PixelUI.SCALE))
+	var mark := Label.new()
+	mark.text = "!"
+	mark.add_theme_font_override("font", PixelUI.FONT_SMALL_BOLD)
+	mark.add_theme_font_size_override("font_size", 15)
+	mark.add_theme_color_override("font_color", PixelUI.CYAN)
+	mark.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	mark.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	mark.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	notice.add_child(mark)
+	tab.add_child(notice)
+	return notice
+
+
+func _show_tab_notice(tab: Button, notice: PanelContainer, pending: bool) -> void:
+	if notice == null:
+		return
+	notice.visible = pending
+	var icon: TextureRect = tab.get_node_or_null("Icon") as TextureRect
+	if icon != null:
+		icon.visible = not pending
+
+
+func _pending_progression_notice() -> bool:
+	return (_post_dive_storage_unlocked and not _storage_seen) \
+		or (QuotaManager.first_quota_completed and not _upgrades_seen)
+
+
+func _update_progression_notifications() -> void:
+	_show_tab_notice(_storage_tab, _storage_notification,
+		_post_dive_storage_unlocked and not _storage_seen)
+	_show_tab_notice(_shop_tab, _shop_notification,
+		QuotaManager.first_quota_completed and not _upgrades_seen)
+	progression_notice_changed.emit(_pending_progression_notice())
+
+
+# Connected by Main to the EXISTING Silas reveal completion signal.
+func unlock_post_dive_storage() -> void:
+	if _post_dive_storage_unlocked:
+		return
+	_post_dive_storage_unlocked = true
+	set_quota_only(false)
+	_update_progression_notifications()
+
+
+func _on_first_quota_completed(cycle: int) -> void:
+	if cycle != 1:
+		return
+	_update_nav_tabs(false)
+	_update_challenge_notification()
+	challenges_availability_changed.emit(is_page_unlocked(Page.CHALLENGES))
+	if visible:
+		_refresh_page()
+	_update_progression_notifications()
+
+
+# Challenges have no automatic unlock in this slice: the story/tutorial can
+# call this later when challenges are introduced. Their counters still track.
+func unlock_challenges() -> void:
+	if _challenges_unlocked:
+		return
+	_challenges_unlocked = true
+	_update_nav_tabs(false)
+	_update_challenge_notification()
+	challenges_availability_changed.emit(is_page_unlocked(Page.CHALLENGES))
+
+
+func _on_first_date_booked(_date: DateData, _day: int, _period: int) -> void:
+	unlock_schedule()
+
+
+func unlock_schedule() -> void:
+	if _schedule_unlocked:
+		return
+	_schedule_unlocked = true
+	_update_nav_tabs(false)
+
+
+func is_page_unlocked(page: int) -> bool:
+	if page == Page.QUOTA:
+		return true
+	if not _post_dive_storage_unlocked:
+		return false
+	match page:
+		Page.STORAGE:
+			return true
+		Page.SHOP:
+			return QuotaManager.first_quota_completed
+		Page.CHALLENGES:
+			return QuotaManager.first_quota_completed and _challenges_unlocked
+		Page.SCHEDULE:
+			return _schedule_unlocked
+	return false
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -291,9 +421,14 @@ func _select_shop_section(section: int) -> void:
 
 
 func _select_page(page: int) -> void:
-	if _quota_only and page != Page.QUOTA:
+	if not is_page_unlocked(page):
 		return
 	_page = page
+	if page == Page.STORAGE:
+		_storage_seen = true
+	elif page == Page.SHOP:
+		_upgrades_seen = true
+	_update_progression_notifications()
 	_selected_index = 0
 	_last_order_message = ""
 	if page == Page.SCHEDULE:
@@ -316,7 +451,7 @@ func _update_nav_tabs(animate: bool) -> void:
 
 	for i in range(_nav_buttons.size()):
 		var tab: Button = _nav_buttons[i]
-		tab.visible = not _quota_only or i == Page.QUOTA
+		tab.visible = is_page_unlocked(i)
 		var caption: Label = tab.get_node("VerticalTitle") as Label
 		var text_width: float = _layout_vertical_caption(caption)
 		var padded_height: float = TAB_CLOSED_HEIGHT + TAB_TEXT_GAP + text_width + TAB_TEXT_PADDING
@@ -386,16 +521,16 @@ func _refresh_page() -> void:
 		Page.STORAGE:
 			_collect_storage()
 		Page.COLLECTION:
-			_collect_fish()
+			_collect_storage()
 		Page.CHALLENGES:
 			_collect_challenges()
 
-	var names := ["QUOTA", "SHOP", "STORAGE", "COLLECTION", "CHALLENGES"]
+	var names := ["QUOTA", "UPGRADES", "FISH", "FISH", "CHALLENGES"]
 	var explanations := [
 		"Mandatory fish deliveries every 3 days",
 		"Fishing improvements and gifts",
-		"Fish and items you currently own",
-		"Fish you have discovered",
+		"Fish you own and fish you've caught",
+		"Fish you own and fish you've caught",
 		"Objectives and unlocks"
 	]
 	_page_title.text = names[_page]
@@ -940,14 +1075,44 @@ func _collect_trades() -> void:
 
 
 func _collect_storage() -> void:
+	# A single fish catalog shows both ownership and lifetime discovery.
+	# Undiscovered species use a silhouetted icon and no identifying details.
+	# Once actually caught, their sprite stays visible even at x0. Storage
+	# still comes from FishingManager for quota submissions and shop trades.
+	var species: Array[FishData] = []
+	for fish in FishingManager.possible_catches:
+		if fish != null and not _contains_fish_id(species, fish.fish_id):
+			species.append(fish)
+	for fish in FishingManager.catch_dex:
+		if fish != null and not _contains_fish_id(species, fish.fish_id):
+			species.append(fish)
+
+	var fish_ids: Dictionary = {}
+	for fish in species:
+		fish_ids[fish.fish_id] = true
+		var discovered: bool = _has_discovered_fish(fish)
+		var amount: int = FishingManager.count_in_storage(fish.fish_id)
+		_entries.append({
+			"kind": "fish",
+			"ref": fish,
+			"name": _human_name(fish.fish_id) if discovered else "???",
+			"icon": fish.item_data.sprite if fish.item_data != null else null,
+			"locked": not discovered,
+			"silhouette": not discovered,
+			"quantity": amount if discovered else 0,
+			"display_quantity": discovered,
+			"zero_quantity": discovered and amount == 0
+		})
+
+	# Keep non-fish items visible here as well. This must not silently
+	# delete gifts or other items that already live in shared storage.
 	var counts: Dictionary = {}
 	var items: Dictionary = {}
 	for item in FishingManager.current_storage:
-		if item == null or item.item_id == &"":
+		if item == null or item.item_id == &"" or fish_ids.has(item.item_id):
 			continue
 		counts[item.item_id] = int(counts.get(item.item_id, 0)) + 1
 		items[item.item_id] = item
-
 	var keys: Array = counts.keys()
 	keys.sort()
 	for key in keys:
@@ -957,31 +1122,8 @@ func _collect_storage() -> void:
 			"ref": item,
 			"name": _human_name(item.item_id),
 			"icon": item.sprite,
-			"quantity": counts[key]
-		})
-
-
-func _collect_fish() -> void:
-	# Known fish are shown normally; fish not yet caught have mystery cards.
-	var fish_list: Array[FishData] = []
-	for fish in FishingManager.possible_catches:
-		if fish != null and not _contains_fish_id(fish_list, fish.fish_id):
-			fish_list.append(fish)
-	for fish in FishingManager.catch_dex:
-		if fish != null and not _contains_fish_id(fish_list, fish.fish_id):
-			fish_list.append(fish)
-
-	for fish in fish_list:
-		var discovered := _has_discovered_fish(fish)
-		var fish_icon: Texture2D = null
-		if discovered and fish.item_data != null:
-			fish_icon = fish.item_data.sprite
-		_entries.append({
-			"kind": "fish",
-			"ref": fish,
-			"name": _human_name(fish.fish_id) if discovered else "???",
-			"icon": fish_icon,
-			"locked": not discovered
+			"quantity": counts[key],
+			"display_quantity": true
 		})
 
 
@@ -1029,7 +1171,23 @@ func _make_tile(entry: Dictionary, index: int) -> Button:
 	tile.clip_text = true
 
 	var icon: Texture2D = entry.get("icon") as Texture2D
-	if icon != null:
+	if bool(entry.get("silhouette", false)) and icon != null:
+		# Shader applies only to the picture, not the button border/text.
+		var shape := TextureRect.new()
+		shape.name = "Silhouette"
+		shape.texture = icon
+		shape.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		shape.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		shape.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		shape.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		shape.material = _new_fish_silhouette_material()
+		tile.add_child(shape)
+		shape.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		shape.offset_left = 12.0
+		shape.offset_top = 12.0
+		shape.offset_right = -12.0
+		shape.offset_bottom = -12.0
+	elif icon != null:
 		tile.icon = icon
 		tile.expand_icon = true
 		tile.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -1037,6 +1195,9 @@ func _make_tile(entry: Dictionary, index: int) -> Button:
 		tile.text = "?" if bool(entry.get("locked", false)) else String(entry.get("name", ""))
 	if bool(entry.get("locked", false)):
 		tile.self_modulate = LOCKED_TINT
+	elif bool(entry.get("zero_quantity", false)):
+		# Unowned species stay recognizable and clickable, just less vivid.
+		tile.self_modulate = Color(0.66, 0.7, 0.73, 0.82)
 
 	if bool(entry.get("claimable", false)):
 		var claim_badge := Label.new()
@@ -1046,12 +1207,12 @@ func _make_tile(entry: Dictionary, index: int) -> Button:
 		claim_badge.position = Vector2(SLOT_SIZE.x - 33, 9)
 		tile.add_child(claim_badge)
 	var amount: int = int(entry.get("quantity", 0))
-	if amount > 0:
+	if amount > 0 or bool(entry.get("display_quantity", false)):
 		var badge := Label.new()
 		badge.text = "x%d" % amount
 		badge.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 		badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		badge.add_theme_color_override("font_color", DARK_TEXT)
+		badge.add_theme_color_override("font_color", DIM_TEXT if amount == 0 else DARK_TEXT)
 		tile.add_child(badge)
 		badge.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
 		badge.offset_left = -108
@@ -1064,6 +1225,12 @@ func _make_tile(entry: Dictionary, index: int) -> Button:
 	if index == _selected_index:
 		tile.set_pressed_no_signal(true)
 	return tile
+
+
+func _new_fish_silhouette_material() -> ShaderMaterial:
+	var material := ShaderMaterial.new()
+	material.shader = FISH_SILHOUETTE_SHADER
+	return material
 
 
 func _choose_tile(index: int) -> void:
@@ -1081,6 +1248,7 @@ func _show_details() -> void:
 	_status.text = ""
 	_order_button.hide()
 	_preview.texture = null
+	_preview.material = null
 
 	if _entries.is_empty():
 		_item_name.text = "NOTHING HERE YET"
@@ -1090,6 +1258,8 @@ func _show_details() -> void:
 	var entry: Dictionary = _entries[_selected_index]
 	_item_name.text = String(entry.get("name", ""))
 	_preview.texture = entry.get("icon") as Texture2D
+	if bool(entry.get("silhouette", false)) and _preview.texture != null:
+		_preview.material = _new_fish_silhouette_material()
 
 	match String(entry.get("kind", "")):
 		"trade":
@@ -1186,16 +1356,23 @@ func _show_storage_details(entry: Dictionary) -> void:
 
 
 func _show_fish_details(fish: FishData) -> void:
+	if fish == null:
+		return
 	if not _has_discovered_fish(fish):
 		_description.text = "Catch this fish to reveal its entry."
-		_status.text = "NOT YET DISCOVERED"
+		_status.text = "UNDISCOVERED"
 		return
-	_description.text = "A fish you have discovered."
-	var total := 0
+	_description.text = "Caught fish stay recorded here after being delivered or traded."
+	var owned: int = FishingManager.count_in_storage(fish.fish_id)
+	var lifetime: int = 0
 	for known in FishingManager.catch_lifetime:
 		if known != null and known.fish_id == fish.fish_id:
-			total += int(FishingManager.catch_lifetime[known])
-	_add_detail_line("LIFETIME CATCHES: %d" % total, DARK_TEXT)
+			lifetime += int(FishingManager.catch_lifetime[known])
+	_add_detail_line("IN STORAGE: %d" % owned, DARK_TEXT)
+	_add_detail_line("TOTAL CAUGHT: %d" % lifetime, DIM_TEXT)
+	if QuotaManager.get_target(fish.fish_id) > 0:
+		_add_detail_line("CURRENT QUOTA REMAINING: %d" %
+			QuotaManager.get_remaining(fish.fish_id), DIM_TEXT)
 
 
 func _show_challenge_details(challenge: ChallengeData) -> void:

@@ -1,0 +1,16 @@
+{
+  "entry": "hook",
+  "free_greeting": true,
+  "nodes": {
+    "hook": {
+      "lines": [
+        "What do you think you're doing!?",
+        {
+          "speaker": "player",
+          "text": "Trying to catch you, duh."
+        },
+        "You're gonna have to try harder than that!"
+      ]
+    }
+  }
+}
