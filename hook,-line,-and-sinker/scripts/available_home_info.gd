@@ -1,6 +1,6 @@
 extends Node
 
-@export var available_homes: Array[Sprite2D] = []
+@export var available_homes: Array[Area2D] = []
 
 # The world registers its empty houses with the RecruitmentHandler autoload.
 # Future construction / move-out systems should call register_available_home()

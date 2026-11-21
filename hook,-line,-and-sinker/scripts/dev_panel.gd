@@ -1,10 +1,8 @@
 extends CanvasLayer
 
 # Debug-only developer panel (autoload "DevPanel"). Removed in release builds.
-#   F9  open / close the panel
-#   F5  end the current conversation immediately (no further effects)
-#   F3  during the Fish Co. opening: skip to Penni on the dock, ready to dive;
-#       afterwards: show / hide the clock overlay (day, period, actions left)
+#   F3 opens/closes this single panel. Opening, clock, room, sea and water
+#   tools are available inside; no separate F7/backslash diagnostic windows.
 # Everything here goes through the managers' public functions or writes their
 # runtime state from outside; no gameplay script depends on this panel.
 
@@ -27,6 +25,10 @@ var _tabs: TabContainer
 var _status: Label
 var _info_tabs: TabContainer
 var _info_labels: Dictionary = {}  # subtab name -> RichTextLabel
+var _debug_tabs: TabContainer
+var _sea_probe_text: RichTextLabel
+var _water_probe_text: RichTextLabel
+var _water_mode_picker: OptionButton
 var _progress_box: VBoxContainer
 var _flags_box: VBoxContainer
 var _flag_npc: OptionButton
@@ -62,19 +64,11 @@ func _ready() -> void:
 
 
 func _input(event: InputEvent) -> void:
-	if event is InputEventKey and event.echo:
+	# The only developer menu key is F3. Everything else is a visible button.
+	if event is InputEventKey and (not event.pressed or event.echo):
 		return
 	if event.is_action_pressed(&"debug_panel"):
 		toggle()
-		get_viewport().set_input_as_handled()
-	elif event.is_action_pressed(&"debug_skip_dialogue"):
-		skip_dialogue()
-		get_viewport().set_input_as_handled()
-	elif event.is_action_pressed(&"debug_clock_overlay"):
-		# During the Fish Co. opening F3 skips to the dock; afterwards it is
-		# the clock overlay again.
-		if not skip_to_dive():
-			toggle_clock_overlay()
 		get_viewport().set_input_as_handled()
 
 
@@ -101,7 +95,7 @@ func toggle() -> void:
 func skip_dialogue() -> void:
 	if DialogueManager.is_active:
 		DialogueManager.end_conversation()
-		_say("Dialogue ended (F5)")
+		_say("Dialogue ended")
 
 
 # Skips the Fish Co. opening (phone call, terminal, first-dive call) to Penni
@@ -113,7 +107,7 @@ func skip_to_dive() -> bool:
 		return false
 	if not opening.call(&"debug_skip_to_dive"):
 		return false
-	_say("Skipped to the dock (F3)")
+	_say("Skipped opening to the dock")
 	return true
 
 
@@ -124,7 +118,7 @@ func toggle_clock_overlay() -> void:
 	_update_clock_overlay()
 
 
-# ---- Clock overlay (F3) --------------------------------------------------
+# ---- Clock overlay (enabled inside F3 menu) -------------------------------
 
 func _build_clock_overlay() -> void:
 	_clock_layer = CanvasLayer.new()
@@ -540,6 +534,8 @@ func _instant_catch() -> void:
 
 func _refresh_current_tab() -> void:
 	match String(_tabs.get_current_tab_control().name):
+		"Debug":
+			_refresh_debug_tab()
 		"Info":
 			var sub := String(_info_tabs.get_current_tab_control().name)
 			(_info_labels[sub] as RichTextLabel).text = _info_section(sub)
@@ -739,7 +735,7 @@ func _build_ui() -> void:
 	_panel.add_child(root)
 	root.add_theme_constant_override("separation", 2 * PixelUI.SCALE)
 	root.add_child(PixelUI.label("DEV PANEL", &"HeaderLabel"))
-	root.add_child(PixelUI.label("[F9] close    [F5] end dialogue", &"DimLabel"))
+	root.add_child(PixelUI.label("[F3] close    Use Tools for jumps and rendering checks", &"DimLabel"))
 	_status = PixelUI.label("Ready", &"", PixelUI.CYAN)
 	_status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	root.add_child(_status)
@@ -749,6 +745,7 @@ func _build_ui() -> void:
 	_tabs.tab_changed.connect(func(_i: int) -> void: _on_tab_changed())
 	root.add_child(_tabs)
 
+	_build_debug_tab()
 	_build_info_tab()
 	_build_flags_tab()
 	_build_dates_tab()
@@ -810,6 +807,7 @@ func _build_theme() -> Theme:
 
 # Shown tab titles. Code matches tabs by node name (the keys), so rename here only.
 const TAB_TITLES := {
+	"Debug": "Tools",
 	"Info": "Game State",
 	"Dates": "Dates & Clock",
 	"Items": "Give Items",
@@ -835,6 +833,8 @@ func _apply_titles(tabs: TabContainer, titles: Dictionary) -> void:
 func _on_tab_changed() -> void:
 	_refresh_time = 0.0
 	match String(_tabs.get_current_tab_control().name):
+		"Debug":
+			_refresh_debug_tab()
 		"Progress":
 			_rebuild_progress()
 		"Flags":
@@ -877,6 +877,189 @@ func _row(parent: Control) -> HBoxContainer:
 	var row := HBoxContainer.new()
 	parent.add_child(row)
 	return row
+
+
+# ---- Unified tools: reuse existing Main-owned debug providers -------------
+# DevPanel remains the only visible menu and the only keyboard entry point.
+
+func _debug_main() -> Control:
+	var scene: Node = get_tree().current_scene
+	if scene != null and scene.has_node("NPCRoomView"):
+		return scene as Control
+	return null
+
+
+func _room_view() -> NPCRoomView:
+	var main := _debug_main()
+	return main.get_node_or_null("NPCRoomView") as NPCRoomView if main != null else null
+
+
+func _water_probe() -> WaterRenderDebug:
+	var main := _debug_main()
+	return main.get_node_or_null("WaterDebugLayer") as WaterRenderDebug if main != null else null
+
+
+func _sea_probe() -> SeaDebugPanel:
+	var main := _debug_main()
+	return main.get_node_or_null("SeaDebugLayer") as SeaDebugPanel if main != null else null
+
+
+# Preview a first-person room without recruiting, moving the player, or
+# assigning a home. Dialogue and the iris remain owned by NPCRoomView.
+func _jump_to_room(npc_id: StringName) -> void:
+	var main := _debug_main()
+	var room := _room_view()
+	var npc := _flag_npc_resource(npc_id)
+	if main == null or room == null or npc == null:
+		_say("Room scene or NPC data is missing")
+		return
+	var transition := main.get_node_or_null("TransitionLayer") as SeaDiveTransition
+	var player := _player()
+	if transition == null or player == null or transition.transitioning or transition.underwater or player.swimming:
+		_say("Return to the island and finish the current transition first")
+		return
+	if bool(room.get("_inside")) or bool(room.get("_closing")) or DateManager.is_active():
+		_say("Finish/leave the current room or date first")
+		return
+	# If the initial phone/terminal sequence is still active, reuse its
+	# existing debug skip so the opening doesn't resume over the room.
+	skip_to_dive()
+	if DialogueManager.is_active or ShopManager.is_shop_open:
+		_say("Close the current conversation or terminal first")
+		return
+	hide()
+	await get_tree().process_frame
+	if is_instance_valid(room) and not DialogueManager.is_active:
+		room.open_room(npc)
+		_say("Previewing %s's room (no recruitment changed)" % npc.display_name)
+
+
+func _leave_preview_room() -> void:
+	var room := _room_view()
+	if room == null or not bool(room.get("_inside")):
+		_say("No NPC room is currently open")
+		return
+	hide()
+	# Closing first sets _closing so ending its dialogue cannot restart it.
+	room.close_room()
+	if DialogueManager.is_active:
+		DialogueManager.end_conversation()
+	_say("Returning to island with the existing room iris")
+
+
+func _set_water_view(index: int) -> void:
+	var probe := _water_probe()
+	if probe == null:
+		_say("Water diagnostics unavailable outside the world scene")
+		return
+	probe.set_embedded_mode(index)
+	_say("Water test view: " + str(WaterRenderDebug.MODE_NAMES[index]))
+	_refresh_debug_tab()
+
+
+func _restore_water_view() -> void:
+	var probe := _water_probe()
+	if probe != null:
+		probe.restore_normal()
+	if _water_mode_picker != null:
+		_water_mode_picker.select(0)
+	_say("Normal water rendering restored")
+	_refresh_debug_tab()
+
+
+func _capture_water_view() -> void:
+	var probe := _water_probe()
+	if probe != null:
+		probe.capture_frame()
+		_say("Capturing game viewport; PNG path appears in Godot Output")
+
+
+func _copy_water_report() -> void:
+	var probe := _water_probe()
+	if probe != null:
+		DisplayServer.clipboard_set(probe.diagnostics_text())
+		_say("Water diagnostics copied")
+
+
+func _build_debug_tab() -> void:
+	_debug_tabs = TabContainer.new()
+	_debug_tabs.name = "Debug"
+	_debug_tabs.tab_changed.connect(func(_index: int) -> void: _refresh_debug_tab())
+	_tabs.add_child(_debug_tabs)
+
+	var jump := _add_debug_page("Jump")
+	_heading(jump, "Shortcuts")
+	_button(jump, "Skip opening to dock", func() -> void:
+		if not skip_to_dive():
+			_say("Opening already completed or a transition is running"))
+	_button(jump, "End current dialogue", skip_dialogue)
+	_button(jump, "Toggle clock overlay", toggle_clock_overlay)
+	_heading(jump, "Preview NPC rooms (no recruitment required)")
+	_button(jump, "Enter Silas room", func() -> void: _jump_to_room(SILAS_ID))
+	_button(jump, "Enter Kuda room", func() -> void: _jump_to_room(KUDA_ID))
+	_button(jump, "Leave current room", _leave_preview_room)
+	_heading(jump, "Sea speech bubble")
+	_button(jump, "Show test help bubble", func() -> void:
+		var probe := _sea_probe()
+		if probe != null:
+			probe.test_bubble_from_menu()
+			_say("Sea speech bubble test triggered"))
+
+	var sea := _add_debug_page("Sea")
+	_heading(sea, "Live sea / story / UI diagnostics")
+	_button(sea, "Refresh sea diagnostics", _refresh_debug_tab)
+	_sea_probe_text = RichTextLabel.new()
+	_sea_probe_text.bbcode_enabled = false
+	_sea_probe_text.fit_content = true
+	_sea_probe_text.scroll_active = false
+	_sea_probe_text.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	sea.add_child(_sea_probe_text)
+
+	var water := _add_debug_page("Water")
+	_heading(water, "Render probes: F3 hides the menu; your chosen view stays visible")
+	_water_mode_picker = OptionButton.new()
+	for name in WaterRenderDebug.MODE_NAMES:
+		_water_mode_picker.add_item(str(name))
+	_water_mode_picker.item_selected.connect(_set_water_view)
+	water.add_child(_water_mode_picker)
+	_button(water, "Restore normal water", _restore_water_view)
+	_button(water, "Hide menu / inspect game (F3 reopens)", func() -> void: hide())
+	var tools := _row(water)
+	_button(tools, "Save PNG", _capture_water_view)
+	_button(tools, "Copy readings", _copy_water_report)
+	_water_probe_text = RichTextLabel.new()
+	_water_probe_text.bbcode_enabled = false
+	_water_probe_text.fit_content = true
+	_water_probe_text.scroll_active = false
+	_water_probe_text.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	water.add_child(_water_probe_text)
+
+
+func _add_debug_page(tab_name: String) -> VBoxContainer:
+	var scroll := ScrollContainer.new()
+	scroll.name = tab_name
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	_debug_tabs.add_child(scroll)
+	var box := VBoxContainer.new()
+	box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.add_child(box)
+	return box
+
+
+func _refresh_debug_tab() -> void:
+	if _debug_tabs == null or _debug_tabs.get_current_tab_control() == null:
+		return
+	match String(_debug_tabs.get_current_tab_control().name):
+		"Sea":
+			var probe := _sea_probe()
+			if _sea_probe_text != null:
+				_sea_probe_text.text = probe.diagnostics_text() if probe != null else "Not in game world"
+		"Water":
+			var probe := _water_probe()
+			if _water_probe_text != null:
+				_water_probe_text.text = probe.diagnostics_text() if probe != null else "Not in game world"
+			if _water_mode_picker != null and probe != null and _water_mode_picker.selected != probe.mode:
+				_water_mode_picker.select(probe.mode)
 
 
 func _build_info_tab() -> void:

@@ -22,12 +22,20 @@
         },
         "I didn't think coming up here would be quite so different.",
         "But... there are so many things I want to see.",
+        "Um... what am I supposed to do now?",
         {
           "speaker": "player",
-          "text": "Just wait here by the dock for now, okay?"
+          "text": "Oh! Fish Co. said they'd be opening housing after my first dive."
         },
-        "O-okay! I can do that.",
-        "And... thank you for letting me come with you, Penni."
+        {
+          "speaker": "player",
+          "text": "Maybe we can get you a room in the townhouse."
+        },
+        "A room? Somewhere I can hide?",
+        {
+          "speaker": "player",
+          "text": "Yeah! Come on, I'll show you."
+        }
       ]
     }
   }

@@ -15,6 +15,9 @@ var deadline_day: int = CYCLE_DAYS
 var requirements: Array[Dictionary] = []
 var delivered: Dictionary = {}
 var failed: bool = false
+# First-contract completion is permanent for this run, even after a new
+# three-day quota replaces it. The terminal reads this to unlock Upgrades.
+var first_quota_completed: bool = false
 var _failure_layer: CanvasLayer = null
 
 
@@ -36,7 +39,7 @@ static func targets_for_cycle(cycle: int) -> Array[Dictionary]:
 	# once we can evaluate how much time dating competes with fishing.
 	var difficulty := maxi(0, cycle - 1)
 	return [
-		{"item_id": MULLET_ID, "label": "Mullet", "target": 5 + difficulty * 2},
+		{"item_id": MULLET_ID, "label": "Mullet", "target": 2 if cycle == 1 else 5 + difficulty * 2},
 		{"item_id": PORGY_ID, "label": "Porgy", "target": 1 + difficulty},
 	]
 
@@ -88,6 +91,8 @@ func submit(item_id: StringName, amount: int = -1) -> int:
 	delivered[item_id] = get_delivered(item_id) + take
 	quota_changed.emit()
 	if is_complete():
+		if week == 1:
+			first_quota_completed = true
 		quota_completed.emit(week)
 	return take
 
@@ -106,6 +111,7 @@ func _on_day_started(day: int) -> void:
 
 
 func reset_run() -> void:
+	first_quota_completed = false
 	if is_instance_valid(_failure_layer):
 		_failure_layer.queue_free()
 	_failure_layer = null

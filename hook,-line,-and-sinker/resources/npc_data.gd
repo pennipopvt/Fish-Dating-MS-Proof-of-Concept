@@ -9,7 +9,23 @@ extends Resource
 ## Fish-form portrait for conversations while exploring underwater.
 ## Keep the human portrait untouched for scenes on land.
 @export var underwater_sprite: Texture2D
+## Fish-form world size and underwater conversation framing. Optional.
+@export var sea_visuals: SeaCharacterVisuals
+
+@export_group("Sea Companion Combat")
+## Optional: a diving follower with stats also fights on its own. NPCs
+## without these settings remain purely visual followers.
+@export var sea_battle_stats: CompanionStats
+## Must extend CompanionCombatBehavior. Defaults to lethal base behavior;
+## Silas continues using his editor-authored specialized actor.
+@export var sea_combat_behavior_script: Script
+
+@export_group("Appearance")
 @export var house: Texture2D
+## Room doorway data. Does not control the diving party.
+@export var door: DoorInfo
+## Shown behind the shared first-person DialogueUI during room visits.
+@export var room_background: Texture2D
 @export var porn_sprite: Texture2D # Optional illustrated adult-scene background.
 
 # Scores for bold / playful / reassuring answers at jealousy tiers 0, 1, 2, 3.

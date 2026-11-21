@@ -22,9 +22,13 @@ func _ready() -> void:
 	NPCManager.npc_states.clear()
 	ChallengeManager.reset_all()
 	FishingManager.reset_session_upgrades()
+	var prior_first_quota: bool = QuotaManager.first_quota_completed
+	# This test exercises the full shop after its new tutorial unlock.
+	QuotaManager.first_quota_completed = true
 
 	var shop := SHOP_MENU.instantiate() as ShopMenu
 	add_child(shop)
+	shop.unlock_post_dive_storage()
 	_expect(shop.get("_page") == ShopMenu.Page.QUOTA, "Quota is the first page")
 	var quota_icon := shop.get_node("TerminalRoot/NavTabs/QuotaTab/Icon") as TextureRect
 	var schedule_icon := shop.get_node("TerminalRoot/NavTabs/ScheduleTab/Icon") as TextureRect
@@ -61,8 +65,8 @@ func _ready() -> void:
 
 	_expect(REEL.one_time_purchase and LINE.one_time_purchase,
 		"Reel and line upgrades cannot be repeatedly bought")
-	_expect(CAST.one_time_purchase and ShopManager.trades.has(CAST),
-		"Extra Cast is offered as a one-time purchase")
+	_expect(CAST.one_time_purchase and not ShopManager.trades.has(CAST),
+		"Obsolete Extra Cast is no longer offered in the diving shop")
 	var original_casts := FishingManager.casts_per_action
 	FishingManager.shop_reward_upgrade_casts(1)
 	FishingManager.shop_reward_upgrade_casts(1)
@@ -86,8 +90,13 @@ func _ready() -> void:
 	_expect(not hot.claimed and ShopManager.is_trade_locked(SCARF),
 		"Finishing the challenge alone does not unlock the scarf")
 	var world_notice := terminal.get_node("UnclaimedAchievementNotice") as PanelContainer
-	_expect(world_notice != null and world_notice.visible,
-		"A persistent exclamation bubble appears above the physical terminal")
+	_expect(not shop.is_page_unlocked(ShopMenu.Page.CHALLENGES)
+		and not world_notice.visible,
+		"Hidden Challenges never advertise an unclaimable reward")
+	shop.unlock_challenges()
+	terminal.set_challenge_notice_enabled(shop.is_page_unlocked(ShopMenu.Page.CHALLENGES))
+	_expect(shop.is_page_unlocked(ShopMenu.Page.CHALLENGES) and world_notice.visible,
+		"After the later unlock, claimable challenges show the existing world notice")
 	_expect(world_notice.custom_minimum_size == Vector2(16, 16)
 		and world_notice.get_theme_stylebox("panel") is StyleBoxFlat,
 		"The world exclamation fits in a 16x16 bubble with a slim border")
@@ -113,6 +122,7 @@ func _ready() -> void:
 	ChallengeManager.reset_all()
 	FishingManager.reset_session_upgrades()
 	NPCManager.npc_states = previous_states
+	QuotaManager.first_quota_completed = prior_first_quota
 	shop.queue_free()
 	terminal.queue_free()
 	print("terminal_shop_challenges_test: %s" % ("PASS" if failures == 0 else "%d FAILED" % failures))

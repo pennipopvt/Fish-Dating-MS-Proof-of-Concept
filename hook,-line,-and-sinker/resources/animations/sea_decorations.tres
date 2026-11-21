@@ -1,0 +1,118 @@
+[gd_resource type="SpriteFrames" format=3 uid="uid://cnuplgpujtld6"]
+
+[ext_resource type="Texture2D" uid="uid://btnocdpm5jgv4" path="res://sprites/environment/decor/decor_seaweed.png" id="1_d2h7r"]
+[ext_resource type="Texture2D" uid="uid://7r6vpkmqxb42" path="res://sprites/environment/decor/decor_coral_pink.png" id="1_dh6x2"]
+[ext_resource type="Texture2D" uid="uid://kbg77l6rjo5c" path="res://sprites/environment/decor/decor_brain_coral.png" id="1_rrupd"]
+[ext_resource type="Texture2D" uid="uid://3qt3fwtnpil" path="res://sprites/environment/decor/decor_seaweed_tall.png" id="2_7rysg"]
+[ext_resource type="Texture2D" uid="uid://cm3q1dvwcdh0i" path="res://sprites/environment/decor/decor_rock.png" id="2_clhn1"]
+[ext_resource type="Texture2D" uid="uid://dq0n5nbcos84y" path="res://sprites/environment/decor/decor_coral_orange.png" id="2_fpr8a"]
+[ext_resource type="Texture2D" uid="uid://0rftmfc7ie5o" path="res://sprites/environment/decor/decor_rock_s.png" id="5_3j2gm"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_7rysg"]
+atlas = ExtResource("1_d2h7r")
+region = Rect2(0, 0, 16, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_u1wxh"]
+atlas = ExtResource("1_d2h7r")
+region = Rect2(16, 0, 16, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_dh6x2"]
+atlas = ExtResource("1_d2h7r")
+region = Rect2(32, 0, 16, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_clhn1"]
+atlas = ExtResource("1_d2h7r")
+region = Rect2(48, 0, 16, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_1tb87"]
+atlas = ExtResource("2_7rysg")
+region = Rect2(0, 0, 16, 128)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_rrupd"]
+atlas = ExtResource("2_7rysg")
+region = Rect2(16, 0, 16, 128)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_fpr8a"]
+atlas = ExtResource("2_7rysg")
+region = Rect2(32, 0, 16, 128)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_3j2gm"]
+atlas = ExtResource("2_7rysg")
+region = Rect2(48, 0, 16, 128)
+
+[resource]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("1_rrupd")
+}],
+"loop": 1,
+"name": &"brain_coral",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("2_fpr8a")
+}],
+"loop": 1,
+"name": &"coral_orange",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("1_dh6x2")
+}],
+"loop": 1,
+"name": &"coral_pink",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("2_clhn1")
+}],
+"loop": 1,
+"name": &"rock",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("5_3j2gm")
+}],
+"loop": 1,
+"name": &"rock_s",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_7rysg")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_u1wxh")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_dh6x2")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_clhn1")
+}],
+"loop": 1,
+"name": &"seaweed",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_1tb87")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_rrupd")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_fpr8a")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_3j2gm")
+}],
+"loop": 1,
+"name": &"seaweed_tall",
+"speed": 5.0
+}]

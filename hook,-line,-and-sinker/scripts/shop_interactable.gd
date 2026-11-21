@@ -24,6 +24,10 @@ var _player_in_range := false
 var _claim_notice: PanelContainer
 # First-time quota reminder shares the existing challenge-notice bubble.
 var _intro_quota_notice: bool = false
+var _progression_notice: bool = false
+# Set by Main from the terminal's actual Challenges unlock state.
+# Otherwise a hidden challenge could leave an impossible-to-clear notice.
+var _challenge_notice_enabled: bool = false
 var _pending: Array[ItemPickup] = []  # bought while the menu is open
 
 
@@ -81,6 +85,16 @@ func set_intro_quota_notice(enabled: bool) -> void:
 	_update_claim_notice()
 
 
+func set_progression_notice(pending: bool) -> void:
+	_progression_notice = pending
+	_update_claim_notice()
+
+
+func set_challenge_notice_enabled(enabled: bool) -> void:
+	_challenge_notice_enabled = enabled
+	_update_claim_notice()
+
+
 func _on_shop_opened() -> void:
 	# The first visit acknowledges the onboarding prompt, even if the
 	# terminal later continues to show ordinary challenge notices.
@@ -90,7 +104,8 @@ func _on_shop_opened() -> void:
 
 func _update_claim_notice() -> void:
 	if is_instance_valid(_claim_notice):
-		_claim_notice.visible = _intro_quota_notice or ChallengeManager.get_claimable_count() > 0
+		_claim_notice.visible = _intro_quota_notice or _progression_notice \
+			or (_challenge_notice_enabled and ChallengeManager.get_claimable_count() > 0)
 
 
 func _on_body_entered(body: Node2D) -> void:

@@ -146,7 +146,10 @@ func _first_fish_on_segment(previous: Vector2, next_position: Vector2) -> Diving
 			continue
 		var t: float = clampf((fish.position - previous).dot(movement) / distance_squared, 0.0, 1.0)
 		var nearest: Vector2 = previous + movement * t
-		if fish.position.distance_squared_to(nearest) > hit_radius * hit_radius:
+		# Encounter-specific larger sprites (e.g. Kuda) have matching
+		# hit areas. Normal fish retain at least the net's authored radius.
+		var radius: float = maxf(hit_radius, fish.capture_radius)
+		if fish.position.distance_squared_to(nearest) > radius * radius:
 			continue
 		if t < earliest:
 			earliest = t

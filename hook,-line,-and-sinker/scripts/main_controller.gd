@@ -9,6 +9,8 @@ extends Control
 @onready var _transition: SeaDiveTransition = $TransitionLayer
 @onready var _bubble_host: SeaSpeechBubbleHost = $SeaSpeechBubbleHost
 @onready var _debug: SeaDebugPanel = $SeaDebugLayer
+@onready var _water_debug: WaterRenderDebug = $WaterDebugLayer
+@onready var _room_view: NPCRoomView = $NPCRoomView
 var _opening: FishCoOpeningSequence
 
 # Read-only compatibility properties for existing in-engine playtests.
@@ -47,8 +49,35 @@ func _ready() -> void:
 	_opening.configure(_world, _world_player, $CanvasLayer/ShopMenu, _transition)
 	_opening.dive_confirmed.connect(_transition.start_confirmed_dive)
 	_bubble_host.configure(self, _sea.get_node_or_null("StoryDirector") as SeaStoryDirector)
+	_room_view.configure($CanvasLayer/DialogueUI, _transition, _world_player)
+	for node in _world.get_node("AvailableHomeList").get_children():
+		var door: TransferDoor = node as TransferDoor
+		if door != null:
+			door.room_requested.connect(_on_townhouse_room_requested)
+	# Main only connects existing story, terminal UI, and world notice signals.
+	# No tutorial flags or shop logic belong in the world transition.
+	var terminal_menu: ShopMenu = $CanvasLayer/ShopMenu
+	var terminal_actor: ShopInteractable = _world.get_node("Shop") as ShopInteractable
+	terminal_menu.progression_notice_changed.connect(terminal_actor.set_progression_notice)
+	terminal_menu.challenges_availability_changed.connect(
+		terminal_actor.set_challenge_notice_enabled
+	)
+	(_sea.get_node("StoryDirector") as SeaStoryDirector).silas_townhouse_arrival_finished.connect(
+		terminal_menu.unlock_post_dive_storage
+	)
+	terminal_actor.set_progression_notice(terminal_menu._pending_progression_notice())
+	terminal_actor.set_challenge_notice_enabled(
+		terminal_menu.is_page_unlocked(ShopMenu.Page.CHALLENGES)
+	)
 	_debug.configure(self, _world_player, _sea, _bubble_host)
+	_water_debug.configure(_world, $SubViewportContainer/SubViewport, _world_player)
 	_opening.start.call_deferred()
+
+
+func _on_townhouse_room_requested(door: TransferDoor) -> void:
+	var resident: NPCData = RecruitmentHandler.get_resident(door.get_room_id())
+	if resident != null and not _transition.transitioning:
+		_room_view.open_room(resident)
 
 
 # A stable island Dock API. All confirmation belongs to the opening flow.
@@ -56,13 +85,19 @@ func request_dive(fisher: Player, dock: Node2D) -> void:
 	_opening.request_dive(fisher, dock)
 
 
+# Diving-only API; no character needs to exist in the world to be invited.
+func invite_diving_companion(npc: NPCData) -> bool:
+	return ($TransitionLayer/DivingParty as DivingParty).invite(npc)
+
+
+func dismiss_diving_companion(npc_id: StringName) -> bool:
+	return ($TransitionLayer/DivingParty as DivingParty).dismiss(npc_id)
+
+
 # Single input boundary; debug controls and underwater input are delegated.
 func _input(event: InputEvent) -> void:
-	if _debug.is_pointer_over_panel(event):
-		return
-	if _debug.handle_input(event):
-		get_viewport().set_input_as_handled()
-		return
+	# The F3 DevPanel autoload owns every developer shortcut and menu.
+	# SeaDebugPanel and WaterRenderDebug are read-only/visual diagnostic providers.
 	if _world_player.swimming and _transition.underwater and not _transition.transitioning:
 		if _sea.handle_input(event):
 			get_viewport().set_input_as_handled()

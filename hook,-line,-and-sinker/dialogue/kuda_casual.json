@@ -41,7 +41,8 @@
         "set_flags": [
           "barracuda_wind_hint"
         ]
-      }
+      },
+      "next": "topics"
     },
     "caught": {
       "lines": [
@@ -57,11 +58,33 @@
         },
         "Yeah, yeah. Laugh it up.",
         "It's not happening again."
-      ]
+      ],
+      "next": "topics"
     },
     "goodbye": {
       "lines": [
         "Later."
+      ],
+      "effects": {
+        "request_scene": "room_exit"
+      }
+    },
+    "topics": {
+      "lines": [],
+      "choices": [
+        {
+          "text": "How are you liking it up here?",
+          "next": "land"
+        },
+        {
+          "text": "So why'd you get yourself caught?",
+          "next": "caught"
+        },
+        {
+          "text": "See you later!",
+          "next": "goodbye",
+          "spends_action": false
+        }
       ]
     }
   },

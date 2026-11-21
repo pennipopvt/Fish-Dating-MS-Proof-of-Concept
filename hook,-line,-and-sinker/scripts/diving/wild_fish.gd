@@ -19,6 +19,9 @@ var trapped: bool = false
 # Companion auto-battle (DivingCompanionBattle). Damage lasts for the session.
 var max_health: float = 30.0
 var health: float = 30.0
+# Set only after a companion actually DEALS damage to this fish; a command
+# alone does not count as teamwork for the first successful catch.
+var companion_weakened: bool = false
 # Held in place while the companion fights it.
 var battling: bool = false:
 	set(value):

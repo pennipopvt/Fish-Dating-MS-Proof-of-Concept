@@ -1,8 +1,20 @@
 [gd_scene format=3 uid="uid://86k4q6ioi03u"]
 
-[ext_resource type="Texture2D" uid="uid://dgq5ngslogdof" path="res://sprites/placeholders/placeholderhousebad.png" id="1_f8tau"]
+[ext_resource type="Texture2D" uid="uid://kk5gdwmwejaw" path="res://sprites/rooms/lockeddoor.png" id="1_bvrww"]
+[ext_resource type="Script" uid="uid://cdpiige5hjear" path="res://scripts/transfer_door.gd" id="2_cp2wk"]
 
-[node name="SilasHouse" type="Sprite2D" unique_id=852988363]
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_iu4st"]
+size = Vector2(20, 31)
+
+[node name="SilasHouse" type="Area2D" unique_id=1038743476]
 z_index = -1
-position = Vector2(0, -32)
-texture = ExtResource("1_f8tau")
+position = Vector2(0, -16)
+script = ExtResource("2_cp2wk")
+transfer_loc = Vector2(313, 112)
+
+[node name="Sprite" type="Sprite2D" parent="." unique_id=1129428574]
+texture = ExtResource("1_bvrww")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1694973076]
+position = Vector2(0, 0.5)
+shape = SubResource("RectangleShape2D_iu4st")

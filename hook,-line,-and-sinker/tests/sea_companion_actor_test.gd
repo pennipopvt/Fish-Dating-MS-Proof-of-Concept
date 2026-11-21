@@ -66,8 +66,8 @@ func _run() -> void:
 	_check(not silas.can_strike_target(), "Silas cannot damage a distant fish")
 	var health_before: float = fish.health
 	battle.step(2.0, silas.can_strike_target())
-	_check(is_equal_approx(fish.health, health_before),
-		"No invisible damage while Silas is still swimming toward the fish")
+	_check(is_equal_approx(fish.health, health_before) and not fish.companion_weakened,
+		"Just commanding Silas does not mark a fish as assisted")
 
 	# Regression: the previous 22px chase destination matched the inclusive
 	# strike boundary, but movement stops within 1px of its destination.
@@ -91,8 +91,8 @@ func _run() -> void:
 	_check(silas.can_strike_target(),
 		"Silas eventually reaches the attack range and can strike")
 	battle.step(0.55, silas.can_strike_target())
-	_check(fish.health < health_before,
-		"The unchanged species damage calculation strikes after arrival")
+	_check(fish.health < health_before and fish.companion_weakened,
+		"A real companion hit flags the fish as assisted without changing damage")
 	_check(float(silas.get("_lunge_time")) > 0.0,
 		"Hit signal produces a short physical lunge")
 	_check(sea.call("_try_companion_target", fish.position),

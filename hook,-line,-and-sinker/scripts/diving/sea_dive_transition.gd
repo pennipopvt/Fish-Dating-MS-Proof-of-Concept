@@ -15,6 +15,8 @@ const DIVE_FORWARD: float = 18.0
 const SINK_FORWARD: float = 10.0
 
 @onready var _iris: ColorRect = $Iris
+@onready var _party: DivingParty = $DivingParty
+@onready var _party_entrance: SeaPartyEntrance = $PartyEntrance
 var _iris_material: ShaderMaterial
 var _world: Node2D
 var _world_player: Player
@@ -43,13 +45,28 @@ func configure(world: Node2D, player: Player, sea: DivingWorld,
 	_dialogue_ui = dialogue_ui
 	_shop_menu = shop
 	_opening = opening
+	_party.configure(_sea.get_node("StoryDirector") as SeaStoryDirector)
+	_party_entrance.configure(_world, _world_player)
+	(_sea.get_node("EncounterSequence") as SeaEncounterSequence).set_surface_presentation(_party_entrance)
 	_sea.surface_requested.connect(_on_surface_requested)
+	_sea.oxygen_return_requested.connect(_on_oxygen_return_requested)
+	_sea.kuda_recruited.connect(_on_kuda_recruited)
 	surface_completed.connect(_sea.on_surface_completed)
 	# Story can request fish/human portraits for a conversation without
 	# teaching this physical transition about any particular character.
 	(_sea.get_node("StoryDirector") as SeaStoryDirector).dialogue_mode_requested.connect(
 		_dialogue_ui.set_underwater_mode
 	)
+
+
+# Recruitment during a dive adds one follower right away. Other party
+# members are untouched, and the roster persists for subsequent dives.
+func _on_kuda_recruited() -> void:
+	if not _party.invite(DivingParty.KUDA):
+		return
+	if underwater and not transitioning:
+		var members: Array[NPCData] = _party.members()
+		_sea.add_diving_party_member(DivingParty.KUDA, members.size() - 1)
 
 
 func begin_intro_to_dock(intro: FishCoIntro) -> void:
@@ -85,12 +102,11 @@ func _transition_contract_to_dock(intro: FishCoIntro) -> void:
 
 
 func start_confirmed_dive(dock: Node2D) -> void:
-	if transitioning or underwater:
+	if transitioning or underwater or not GameManager.begin_dive_period():
 		return
 	transitioning = true
-	# Other terminal pages become available only once the player actually
-	# chooses to dive, never when they merely read the dock prompt.
-	_shop_menu.set_quota_only(false)
+	# Keep the quota-only terminal during the first dive. Main unlocks
+	# Storage only once Silas's first shore reveal dialogue has finished.
 	dock.call("mark_dive_started")
 	_world_player.busy = true
 	shore_return_position = dock.global_position + Vector2(21.0, 11.0)
@@ -98,6 +114,9 @@ func start_confirmed_dive(dock: Node2D) -> void:
 
 
 func _begin_dive(dock: Node2D) -> void:
+	# Owns the entire party entrance; no NPCs are fetched from the townhouse.
+	var members: Array[NPCData] = _party.members()
+	await _party_entrance.call_party_to_dock(members, dock)
 	var jump_start: Vector2 = _world_player.global_position
 	# Splash a little ahead of where Penni stands (same waterline as before).
 	var landing := Vector2(jump_start.x - DIVE_FORWARD, dock.global_position.y + 46.0)
@@ -110,6 +129,7 @@ func _begin_dive(dock: Node2D) -> void:
 	await jump.finished
 	_spawn_splash(landing)
 	_sea.play_sfx(&"dive")
+	await _party_entrance.jump_party_in(dock, _spawn_splash)
 
 	# No second world, teleport or viewport switch. The camera follows
 	# Penni from the dock through the same surface into the ocean.
@@ -124,9 +144,13 @@ func _begin_dive(dock: Node2D) -> void:
 	descent.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 	descent.tween_property(_world_player, "global_position", entry, 0.85)
 	descent.tween_property(island_camera, "position", Vector2.ZERO, 0.85)
+	_party_entrance.descend_with_player(entry, 0.85)
 	await descent.finished
+	_party_entrance.clear()
 	_world_player.animator.rotation = 0.0
 	_sea.enter_from_dock()
+	if (_sea.get_node("StoryDirector") as SeaStoryDirector).has_silas_flag(&"silas_surface_transformed"):
+		_sea.activate_diving_party(members)
 	_world_player.busy = false
 	transitioning = false
 
@@ -185,15 +209,90 @@ func _surface_from_dive() -> void:
 	_world_player.animator.rotation = 0.0
 	_world_player.animator.play(&"idle_l")
 	underwater = false
-	GameManager.diving_session_active = false
 	_sea.call("_set_camera_bounds", false)
 	_dialogue_ui.set_underwater_mode(false)
-	# A dive costs one ordinary time action on surfacing.
-	GameManager.spend_actions(1)
+	# Catch safety is settled BEFORE the terminal and story process the return.
+	(_sea.get_node("SeaDiveInventory") as SeaDiveInventory).secure_catch()
+	(_sea.get_node("SeaOxygen") as SeaOxygen).end_dive()
+	# Every completed dive uses the remaining morning/afternoon/night period.
+	GameManager.finish_dive_period()
+
+	var story := _sea.get_node("StoryDirector") as SeaStoryDirector
+	# The first Silas reveal already has authored dialogue and townhouse
+	# choreography. It uses the shared fish-to-human animation separately.
+	if not story.can_begin_silas_surface_reveal() and not _party.members().is_empty():
+		var approach := _sea.get_node("Points/SilasSurfaceApproach") as Marker2D
+		var dock_wait := _sea.get_node("Points/SilasDockWait") as Marker2D
+		# Keep the live fish actors until their individual poofs finish.
+		var humans: Array[Node2D] = await _party_entrance.surface_party(
+			_party.members(), _sea, approach.global_position, dock_wait.global_position
+		)
+		# Let the sea's encounter owner run any first-time shore scenes while
+		# the transformed human actors are still visible.
+		await _sea.on_party_surfaced(humans)
+		# A short exit fade covers the companions going back to their rooms.
+		# The party roster remains intact for later dives.
+		var fade := ScreenFade.new()
+		get_tree().root.add_child(fade)
+		await fade.fade_to(1.0, _party_entrance.fade_seconds)
+		_sea.end_diving_party()
+		_party_entrance.clear_surface_actors(humans)
+		await fade.fade_to(0.0, _party_entrance.fade_seconds)
+		fade.queue_free()
+	else:
+		_sea.end_diving_party()
 
 	transitioning = false
 	_world_player.busy = false
 	surface_completed.emit()
+
+
+func _on_oxygen_return_requested() -> void:
+	if transitioning or not underwater:
+		return
+	transitioning = true
+	_world_player.busy = true
+	_blackout_from_oxygen()
+
+
+func _blackout_from_oxygen() -> void:
+	# The ScreenFade already used by beds/relationship scenes gives the
+	# failure a simple blackout. We do not perform the ordinary swim ascent.
+	var fade := ScreenFade.new()
+	get_tree().root.add_child(fade)
+	await fade.fade_to(1.0, 0.45)
+	(_sea.get_node("SeaDiveInventory") as SeaDiveInventory).lose_catch()
+	(_sea.get_node("SeaOxygen") as SeaOxygen).end_dive()
+	_world_player.global_position = shore_return_position
+	_world_player.set_swimming(false)
+	_sea.end_diving_party()
+	_world_player.animator.rotation = 0.0
+	_world_player.animator.play(&"idle_l")
+	var island_camera: Camera2D = _world_player.get_node("Camera2D") as Camera2D
+	island_camera.position = Vector2(0.0, -22.0)
+	island_camera.reset_smoothing()
+	island_camera.force_update_scroll()
+	underwater = false
+	_sea.call("_set_camera_bounds", false)
+	_dialogue_ui.set_underwater_mode(false)
+	GameManager.finish_dive_period()
+	await fade.fade_to(0.0, 0.55)
+	fade.queue_free()
+	transitioning = false
+	_world_player.busy = false
+	surface_completed.emit()
+
+
+# Reuse the same iris for non-diving cutscenes and room overlays.
+# The caller changes what is visible only while the screen is closed.
+func iris_swap(content_swap: Callable, screen_center: Vector2 = Vector2(0.5, 0.5)) -> void:
+	if transitioning:
+		return
+	transitioning = true
+	await _close_iris(screen_center)
+	content_swap.call()
+	await _open_iris(screen_center)
+	transitioning = false
 
 
 func _normalized_screen_position(actor: Node2D) -> Vector2:

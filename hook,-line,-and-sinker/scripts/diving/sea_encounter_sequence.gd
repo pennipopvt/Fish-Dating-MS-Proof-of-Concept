@@ -27,7 +27,10 @@ signal fish_remove_requested(fish: DivingWildFish)
 @export var silas_poof_texture: Texture2D = preload("res://sprites/characters/poof.png")
 @export_range(0.1, 2.0, 0.05) var silas_surface_swim_seconds: float = 0.75
 @export_range(0.1, 1.2, 0.05) var silas_surface_jump_seconds: float = 0.48
+@export_range(0.1, 1.0, 0.05) var townhouse_fade_seconds: float = 0.35
 var _silas_surface_scene_running: bool = false
+# Injected by SeaDiveTransition: the same presentation handles the school.
+var _surface_presentation: SeaPartyEntrance
 
 var _player: Player
 var _story: SeaStoryDirector
@@ -80,6 +83,14 @@ func configure(player: Player, story: SeaStoryDirector, net: DivingNetProjectile
 	_silas = silas
 	_cue = cue
 	_silas_home = silas.position
+
+
+func set_surface_presentation(presentation: SeaPartyEntrance) -> void:
+	_surface_presentation = presentation
+	# Preserve the artist-editable Silas scene override in the shared actor
+	# factory, so first-return and future party exits show the same artwork.
+	if silas_land_scene != null and _story != null:
+		_surface_presentation.register_land_scene(_story.silas_data.npc_id, silas_land_scene)
 
 
 func register_tutorial_fish(fish: DivingWildFish) -> void:
@@ -360,111 +371,64 @@ func play_silas_surface_reveal() -> void:
 	var approach: Marker2D = get_parent().get_node("Points/SilasSurfaceApproach") as Marker2D
 	var dock_wait: Marker2D = get_parent().get_node("Points/SilasDockWait") as Marker2D
 
-	# Visibly catch up with Penni at the waterline, then leap onto the dock.
-	var swim: Tween = create_tween()
-	swim.tween_property(_silas, "global_position", approach.global_position,
-		silas_surface_swim_seconds).set_trans(Tween.TRANS_SINE)
-	await swim.finished
-	var jump_from: Vector2 = _silas.global_position
-	var jump_to: Vector2 = dock_wait.global_position + Vector2(-12.0, 0.0)
-	var jump: Tween = create_tween()
-	jump.tween_method(
-		_move_silas_surface_jump.bind(jump_from, jump_to),
-		0.0, 1.0, silas_surface_jump_seconds
-	).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-	await jump.finished
+	# Stage the real human art invisibly FIRST. Its feet align to the dock
+	# marker; the fish swims/jumps to that sprite's visual center (not the
+	# marker), so fish, poof and human cannot appear at different positions.
+	# Use the exact same non-interactive temporary actor/feet alignment as
+	# ordinary party exits. Silas's special story sequence stays here.
+	var temporary_actor: Node2D = _surface_presentation.stage_surface_actor(
+		_story.silas_data, dock_wait.global_position, "SilasDockActor"
+	)
+	var land_actor: NPCInteractable = temporary_actor as NPCInteractable
+	if land_actor == null:
+		push_warning("Silas's surface actor must use NPCInteractable.")
+		if is_instance_valid(temporary_actor):
+			temporary_actor.queue_free()
+	var human_center: Vector2 = _surface_presentation.surface_visual_center(land_actor) \
+		if land_actor != null else dock_wait.global_position
+	await _surface_presentation.swim_and_jump_to_surface(
+		_silas, approach.global_position, human_center,
+		silas_surface_swim_seconds, silas_surface_jump_seconds
+	)
 
 	_story.start_silas_surface_warning()
 	await _story.silas_surface_warning_finished
-	# Use the existing poof sprite and existing land NPC scene.
-	var effect: AnimatedSprite2D = _make_silas_poof(world, dock_wait.global_position)
-	await get_tree().create_timer(0.17).timeout
-	_silas.hide()
-	var land_actor: NPCInteractable = _spawn_silas_on_dock(world, dock_wait.global_position)
-	await get_tree().create_timer(0.42).timeout
-	if is_instance_valid(effect):
-		effect.queue_free()
 	if land_actor != null:
-		land_actor.show()
+		await _surface_presentation.transform_surface_fish(_silas, land_actor)
+	else:
+		_silas.hide()
 	_story.on_silas_surface_transformed()
 	await _story.silas_surface_reveal_finished
+	# One short travel fade brings the two of them in front of the townhouse.
+	# The NPC is still a CUTSCENE-ONLY actor; housing only stores an NPC ID.
+	var travel := ScreenFade.new()
+	get_tree().root.add_child(travel)
+	await travel.fade_to(1.0, townhouse_fade_seconds)
+	var player_spot: Marker2D = world.get_node("TownhouseArrival/PlayerSpot") as Marker2D
+	var silas_spot: Marker2D = world.get_node("TownhouseArrival/SilasSpot") as Marker2D
+	_player.global_position = player_spot.global_position
+	_player.animator.play(&"idle_r")
+	var camera: Camera2D = _player.get_node("Camera2D") as Camera2D
+	camera.position = Vector2.ZERO
+	camera.reset_smoothing()
+	camera.force_update_scroll()
+	if is_instance_valid(land_actor):
+		# Preserve the feet offset from the dock so the cutscene needs no walk.
+		land_actor.global_position = silas_spot.global_position + (
+			land_actor.global_position - dock_wait.global_position)
+	await travel.fade_to(0.0, townhouse_fade_seconds)
+	_story.start_silas_townhouse_arrival()
+	await _story.silas_townhouse_dialogue_finished
+	await travel.fade_to(1.0, townhouse_fade_seconds)
+	var assigned: bool = RecruitmentHandler.assign_home(_story.silas_data)
+	if not assigned:
+		push_warning("Silas accepted the room, but no townhouse door was available.")
+	if is_instance_valid(land_actor):
+		land_actor.queue_free()
+	await travel.fade_to(0.0, townhouse_fade_seconds)
+	travel.queue_free()
+	_story.complete_silas_townhouse_arrival()
 	_player.busy = false
 	_silas_surface_scene_running = false
 
 
-func _move_silas_surface_jump(t: float, start: Vector2, destination: Vector2) -> void:
-	_silas.global_position = start.lerp(destination, t) + Vector2(0.0, -22.0 * sin(PI * t))
-
-
-func _spawn_silas_on_dock(world: Node2D, at: Vector2) -> NPCInteractable:
-	var existing: NPCInteractable = world.get_node_or_null("SilasDockActor") as NPCInteractable
-	if existing != null:
-		return existing
-	if silas_land_scene == null:
-		push_warning("Silas's land NPC scene is missing.")
-		return null
-	var actor: NPCInteractable = silas_land_scene.instantiate() as NPCInteractable
-	if actor == null:
-		push_warning("Silas's land scene must use the existing NPCInteractable.")
-		return null
-	actor.name = "SilasDockActor"
-	actor.visible = false
-	world.add_child(actor)
-	# SilasDockWait marks where the feet should touch the ground, not
-	# the center of the AnimatedSprite2D (which was leaving Silas half
-	# underneath the dock). Read the actual frame so sprite edits stay safe.
-	actor.global_position = at
-	var art: AnimatedSprite2D = actor.get_node_or_null("Sprite") as AnimatedSprite2D
-	if art != null and art.sprite_frames != null:
-		var frame_texture: Texture2D = art.sprite_frames.get_frame_texture(art.animation, art.frame)
-		if frame_texture != null and art.centered:
-			actor.global_position.y -= art.position.y + frame_texture.get_height() * 0.5 * art.scale.y
-	actor.z_index = 6
-	# Waiting is NOT recruitment: prevent the old post-catch romance/recruitment
-	# dialogue from opening until a dock interaction is actually designed.
-	actor.monitoring = false
-	actor.monitorable = false
-	actor.collision_layer = 0
-	actor.collision_mask = 0
-	var collision: CollisionShape2D = actor.get_node_or_null("CollisionShape2D") as CollisionShape2D
-	if collision != null:
-		collision.set_deferred("disabled", true)
-	var prompt: InteractPrompt = actor.get_node_or_null("InteractPrompt") as InteractPrompt
-	if prompt != null:
-		prompt.pop_out()
-	return actor
-
-
-func _make_silas_poof(world: Node2D, at: Vector2) -> AnimatedSprite2D:
-	var effect: AnimatedSprite2D = AnimatedSprite2D.new()
-	effect.name = "SilasSurfacePoof"
-	effect.z_index = 12
-	effect.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	# Interpret a strip of square frames if the source art is a sprite sheet.
-	# A single square image works as a one-frame effect without assumptions.
-	var frames: SpriteFrames = SpriteFrames.new()
-	frames.add_animation(&"poof")
-	frames.set_animation_loop(&"poof", false)
-	frames.set_animation_speed(&"poof", 12.0)
-	if silas_poof_texture != null:
-		var width: int = silas_poof_texture.get_width()
-		var height: int = silas_poof_texture.get_height()
-		var horizontal: bool = width > height and width % height == 0
-		var vertical: bool = height > width and height % width == 0
-		var count: int = int(width / height) if horizontal else (int(height / width) if vertical else 1)
-		for index in range(count):
-			var frame: AtlasTexture = AtlasTexture.new()
-			frame.atlas = silas_poof_texture
-			var source_rect: Rect2 = Rect2(0.0, 0.0, width, height)
-			if horizontal:
-				source_rect = Rect2(index * height, 0, height, height)
-			elif vertical:
-				source_rect = Rect2(0, index * width, width, width)
-			frame.region = source_rect
-			frames.add_frame(&"poof", frame)
-	effect.sprite_frames = frames
-	world.add_child(effect)
-	effect.global_position = at + Vector2(0.0, -13.0)
-	if frames.get_frame_count(&"poof") > 0:
-		effect.play(&"poof")
-	return effect

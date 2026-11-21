@@ -1,72 +1,56 @@
 extends Node
 
-# Recruitment owns temporary NPC placement and the FIFO housing queue.
-# NPCManager owns story flags; FishingManager owns the catch pool.
-signal fade_to()
+# The acceptance and housing boundary. NPCManager holds the sole authoritative
+# assignment (room_id -> NPC identity is derived from per-NPC state).
+# No ordinary resident actor exists in World, and no actor is teleported.
+signal fade_to() # Retained for existing illustration/cutscene listeners.
+signal resident_assigned(npc_id: StringName, room_id: StringName)
+signal resident_vacated(npc_id: StringName, room_id: StringName)
+# Legacy hooks retained for catch and dev callers during migration.
 signal npc_waiting_for_home(actor: NPCInteractable)
-signal npc_moved_into_home(actor: NPCInteractable, home: Sprite2D)
+signal npc_moved_into_home(actor: NPCInteractable, home: Area2D)
 
 var listening: bool = false
-var available_homes: Array[Sprite2D] = []
-var waiting_npcs: Array[NPCInteractable] = []
-# Kept for the developer panel's direct house_recruit shortcut.
 var npc: NPCInteractable = null
-# Capture the exact fish across FishingController.exit_fishing().
 var pending_fish: FishData = null
-var time_to_transfer: float = 0.8
-var dock_wait_offset: Vector2 = Vector2(24.0, 0.0)
-var dock_wait_spacing: float = 16.0
+var available_homes: Array[Area2D] = []
+var waiting_npcs: Array[NPCInteractable] = [] # Deprecated: never keep actors on shore.
+var time_to_transfer: float = 0.0 # Deprecated; actor moves are removed.
 
-var _transfer_in_progress: bool = false
-var _reserved_home: Sprite2D = null
-var _transfer_generation: int = 0
+var _all_doors: Array[TransferDoor] = []
+var _waiting_residents: Array[NPCData] = []
 
 
 func _ready() -> void:
 	DialogueManager.conversation_finished.connect(check_for_recruitment)
 
 
-func _process(_delta: float) -> void:
-	# Also handles a house added directly to available_homes by older code.
-	if not _transfer_in_progress and not waiting_npcs.is_empty() and _has_available_home():
-		_try_place_waiting_npcs()
-
-
-func engage_listen(transfer: NPCInteractable, caught_fish: FishData = null) -> void:
-	# Only the initial conversation after catching this NPC may recruit it.
-	npc = transfer
+# A catch-scene actor only exists long enough to show its initial dialogue.
+func engage_listen(actor: NPCInteractable, caught_fish: FishData = null) -> void:
+	npc = actor
 	pending_fish = caught_fish
-	listening = _actor_valid(transfer)
+	listening = _actor_valid(actor)
 
 
 func check_for_recruitment(finished_npc: NPCData) -> void:
 	if not listening:
 		return
 	listening = false
-	var caught_fish: FishData = pending_fish
-	pending_fish = null
-	var caught_actor: NPCInteractable = npc
+	var actor: NPCInteractable = npc
+	var fish: FishData = pending_fish
 	npc = null
-
-	if finished_npc == null or not _actor_valid(caught_actor) or caught_actor.npc != finished_npc:
+	pending_fish = null
+	if not _actor_valid(actor) or actor.npc != finished_npc:
 		return
-
-	var flags: Dictionary = NPCManager.get_npc_state(finished_npc.npc_id).get("flags", {})
-	if not flags.get(&"Recruited", false):
-		# Declined NPCs remain in the catch pool for another chance.
-		# Barracuda visibly hops back into the water on either failed path.
+	if not NPCManager.get_npc_state(finished_npc.npc_id)["flags"].get(&"Recruited", false):
 		if finished_npc.npc_id == &"barracuda":
-			_barracuda_return_to_water(caught_actor)
+			_barracuda_return_to_water(actor)
 		else:
-			caught_actor.queue_free()
+			actor.queue_free()
 		return
-
-	# Acceptance is permanent for this session, even before a house exists.
-	_finalize_recruitment(caught_actor, caught_fish)
+	_finalize_recruitment(actor, fish)
 
 
-# Developer shortcuts must use the same catch-pool and housing path as regular
-# recruitment. Returns false instead of creating duplicate NPCs.
 func recruit_actor_for_debug(actor: NPCInteractable, fish: FishData) -> bool:
 	if not _actor_valid(actor) or actor.npc == null or fish == null or fish.npc_data == null:
 		return false
@@ -76,10 +60,10 @@ func recruit_actor_for_debug(actor: NPCInteractable, fish: FishData) -> bool:
 	if flags.get(&"Recruited", false):
 		return false
 	flags[&"Recruited"] = true
-	if npc == actor and listening:
-		listening = false
+	if npc == actor:
 		npc = null
 		pending_fish = null
+		listening = false
 	_finalize_recruitment(actor, fish)
 	return true
 
@@ -87,161 +71,164 @@ func recruit_actor_for_debug(actor: NPCInteractable, fish: FishData) -> bool:
 func _finalize_recruitment(actor: NPCInteractable, fish: FishData) -> void:
 	if not _actor_valid(actor) or actor.npc == null:
 		return
+	var data: NPCData = actor.npc
+	NPCManager.get_npc_state(data.npc_id)["flags"][&"Recruited"] = true
 	FishingManager.remove_recruited_catch(fish)
 	ShopManager.gifts_unlocked = true
-	AffectionManager.on_recruited(actor.npc.npc_id)
-	_enqueue_accepted_actor(actor)
+	# Deliberately do not call AffectionManager.on_recruited here:
+	# housing isn't a romantic commitment or a romance deadline.
+	assign_home(data)
+	actor.queue_free()
 
 
-
-# Barracuda's exit uses the existing world waterline rather than a new
-# animation asset. He hops away from the dock and sinks off-screen, then
-# despawns. Future catches still use the special return encounter.
 func _barracuda_return_to_water(actor: NPCInteractable) -> void:
 	if not _actor_valid(actor):
 		return
 	var start: Vector2 = actor.global_position
-	var water := actor.get_parent().get_node_or_null("Water") as ColorRect
-	var water_y: float = water.global_position.y if water != null else start.y + 40.0
-	var landing := Vector2(start.x - 20.0, maxf(water_y + 18.0, start.y + 38.0))
-	var jump := Vector2(start.x - 11.0, start.y - 13.0)
-	var tween := actor.create_tween()
-	tween.tween_property(actor, "global_position", jump, 0.16).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-	tween.tween_property(actor, "global_position", landing, 0.28).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	var water: ColorRect = actor.get_parent().get_node_or_null("Water") as ColorRect
+	var y: float = water.global_position.y if water != null else start.y + 40.0
+	var landing: Vector2 = Vector2(start.x - 20.0, maxf(y + 18.0, start.y + 38.0))
+	var tween: Tween = actor.create_tween()
+	tween.tween_property(actor, "global_position", start + Vector2(-11.0, -13.0), 0.16)
+	tween.tween_property(actor, "global_position", landing, 0.28)
 	tween.tween_callback(actor.queue_free)
 
 
-# Called by AvailableHomeInfo whenever the world sets up its empty houses.
-func set_available_homes(homes: Array[Sprite2D]) -> void:
+# Called once from the existing AvailableHomeInfo node.
+func set_available_homes(homes: Array[Area2D]) -> void:
+	_all_doors.clear()
 	available_homes.clear()
 	for home in homes:
-		if _home_valid(home) and not available_homes.has(home) and home != _reserved_home:
-			available_homes.append(home)
-	_try_place_waiting_npcs()
-
-
-# Call this when building a new house, or after a previously occupied house
-# has genuinely been vacated. Do not register a still-occupied house.
-func register_available_home(home: Sprite2D) -> void:
-	if not _home_valid(home) or home == _reserved_home or available_homes.has(home):
-		return
-	available_homes.append(home)
-	_try_place_waiting_npcs()
-
-
-# Cancel outstanding asynchronous transfers before a developer reset/reload.
-func reset_runtime_state() -> void:
-	_transfer_generation += 1
-	if _home_valid(_reserved_home) and not available_homes.has(_reserved_home):
-		available_homes.push_front(_reserved_home)
-	_reserved_home = null
-	_transfer_in_progress = false
-	waiting_npcs.clear()
-	listening = false
-	npc = null
-	pending_fish = null
-
-
-func _enqueue_accepted_actor(actor: NPCInteractable) -> void:
-	if not _actor_valid(actor):
-		return
-	if not waiting_npcs.has(actor):
-		waiting_npcs.append(actor)
-		_position_waiting_actor(actor)
-		npc_waiting_for_home.emit(actor)
-	_try_place_waiting_npcs()
-
-
-func _position_waiting_actor(actor: NPCInteractable) -> void:
-	# The caught NPC already appears at the dock. Anchor later queue entries
-	# there too, instead of leaving them wherever their dialogue ended.
-	var dock: Node2D = actor.get_parent().get_node_or_null("Dock") as Node2D
-	if dock != null:
-		var place: int = maxi(0, waiting_npcs.find(actor))
-		actor.global_position = dock.global_position + dock_wait_offset + Vector2(dock_wait_spacing * place, 0.0)
-
-
-func _try_place_waiting_npcs() -> void:
-	if _transfer_in_progress:
-		return
-	while not waiting_npcs.is_empty():
-		var actor: NPCInteractable = waiting_npcs.front()
-		if not _actor_valid(actor):
-			waiting_npcs.pop_front()
+		var door: TransferDoor = home as TransferDoor
+		if door == null or _all_doors.has(door):
 			continue
-		var home: Sprite2D = _take_available_home()
-		if home == null:
-			return
-		waiting_npcs.pop_front()
-		_transfer_in_progress = true
-		_reserved_home = home
-		_transfer_actor(actor, home, _transfer_generation)
-		return
+		_all_doors.append(door)
+		_sync_door(door)
+	_try_place_waiting_residents()
 
 
-func _transfer_actor(actor: NPCInteractable, home: Sprite2D, generation: int) -> void:
-	# Reserve the house before the fade so parallel recruitments can't claim it.
-	fade_to.emit()
-	await get_tree().create_timer(maxf(0.0, time_to_transfer)).timeout
-	if generation != _transfer_generation:
+func register_available_home(home: Area2D) -> void:
+	var door: TransferDoor = home as TransferDoor
+	if door == null:
 		return
-	_reserved_home = null
-	if _actor_valid(actor) and _home_valid(home):
-		_move_actor_into_home(actor, home, actor.npc.house if actor.npc != null else null)
+	if not _all_doors.has(door):
+		_all_doors.append(door)
+	_sync_door(door)
+	_try_place_waiting_residents()
+
+
+func _sync_door(door: TransferDoor) -> void:
+	if not is_instance_valid(door):
+		return
+	var resident: NPCData = get_resident(door.get_room_id())
+	if resident != null:
+		door.set_resident(resident)
+		available_homes.erase(door)
 	else:
-		# Preserve the place in line if the house disappears mid-transfer.
-		if _home_valid(home) and not available_homes.has(home):
-			available_homes.push_front(home)
-		if _actor_valid(actor):
-			waiting_npcs.push_front(actor)
-			_position_waiting_actor(actor)
-	_transfer_in_progress = false
-	_try_place_waiting_npcs()
+		door.clear_resident()
+		if not available_homes.has(door):
+			available_homes.append(door)
 
 
-func _has_available_home() -> bool:
-	for home in available_homes:
-		if _home_valid(home):
-			return true
-	return false
-
-
-func _take_available_home() -> Sprite2D:
-	while not available_homes.is_empty():
-		var home: Sprite2D = available_homes.pop_front()
-		if _home_valid(home):
-			return home
+func get_resident(room_id: StringName) -> NPCData:
+	for id: StringName in NPCManager.npc_states.keys():
+		var state: Dictionary = NPCManager.npc_states[id]
+		if StringName(str(state.get("room_id", ""))) == room_id:
+			return state.get("resident_data") as NPCData
 	return null
 
 
-# Kept for the F9 dev panel, which supplies npc and an optional house sprite.
-func house_recruit(new_house: Texture2D) -> void:
-	var actor: NPCInteractable = npc
-	if not _actor_valid(actor):
-		return
-	# Respect NPCs who were already waiting when using debug shortcuts.
-	if _transfer_in_progress or not waiting_npcs.is_empty():
-		_enqueue_accepted_actor(actor)
-		return
-	var home: Sprite2D = _take_available_home()
-	if home == null:
-		_enqueue_accepted_actor(actor)
-		return
-	_move_actor_into_home(actor, home, new_house)
+func get_room_id(npc_id: StringName) -> StringName:
+	return StringName(str(NPCManager.get_npc_state(npc_id).get("room_id", "")))
 
 
-func _move_actor_into_home(actor: NPCInteractable, home: Sprite2D, new_house: Texture2D) -> void:
-	if not _actor_valid(actor) or not _home_valid(home):
+func is_resident(npc_id: StringName) -> bool:
+	return get_room_id(npc_id) != &""
+
+
+# Used by story cutscenes or accepted catches. Room selection is data-only.
+func assign_home(resident: NPCData, preferred_room_id: StringName = &"") -> bool:
+	if resident == null or resident.npc_id == &"":
+		return false
+	if is_resident(resident.npc_id):
+		return true
+	var chosen: TransferDoor = null
+	for home in available_homes:
+		var door: TransferDoor = home as TransferDoor
+		if is_instance_valid(door) and (preferred_room_id == &"" or door.get_room_id() == preferred_room_id):
+			chosen = door
+			break
+	if chosen == null:
+		if not _waiting_residents.has(resident):
+			_waiting_residents.append(resident)
+		return false
+	var state: Dictionary = NPCManager.get_npc_state(resident.npc_id)
+	state["room_id"] = chosen.get_room_id()
+	state["resident_data"] = resident
+	# Existing encounter JSON uses Recruited as its eligibility flag. Keep
+	# that compatibility until content is migrated; do not start romance.
+	state["flags"][&"Recruited"] = true
+	_waiting_residents.erase(resident)
+	# A resident NPC can no longer appear as a wild catch. Other fish stay.
+	for fish in FishingManager.possible_catches.duplicate():
+		if fish == null or fish.npc_data == null:
+			continue
+		var preview: NPCInteractable = fish.npc_data.instantiate() as NPCInteractable
+		var match_id: bool = preview != null and preview.npc != null and preview.npc.npc_id == resident.npc_id
+		if preview != null:
+			preview.free()
+		if match_id:
+			FishingManager.remove_recruited_catch(fish)
+			break
+	_sync_door(chosen)
+	resident_assigned.emit(resident.npc_id, chosen.get_room_id())
+	return true
+
+
+func vacate_home(npc_id: StringName) -> void:
+	var room_id: StringName = get_room_id(npc_id)
+	if room_id == &"":
+		for data in _waiting_residents.duplicate():
+			if data.npc_id == npc_id:
+				_waiting_residents.erase(data)
 		return
-	actor.global_position = home.global_position
-	if new_house != null:
-		home.texture = new_house
-	npc_moved_into_home.emit(actor, home)
+	var state: Dictionary = NPCManager.get_npc_state(npc_id)
+	state.erase("room_id")
+	state.erase("resident_data")
+	state["flags"][&"Recruited"] = false
+	for door in _all_doors:
+		if is_instance_valid(door) and door.get_room_id() == room_id:
+			_sync_door(door)
+	resident_vacated.emit(npc_id, room_id)
+	_try_place_waiting_residents()
+
+
+func _try_place_waiting_residents() -> void:
+	for resident in _waiting_residents.duplicate():
+		if available_homes.is_empty():
+			break
+		assign_home(resident)
+
+
+# Dev panel compatibility: the captured NPC actor is not moved anywhere.
+func house_recruit(_house_art: Texture2D) -> void:
+	if _actor_valid(npc):
+		_finalize_recruitment(npc, pending_fish)
+		npc = null
+		pending_fish = null
+		listening = false
+
+
+func reset_runtime_state() -> void:
+	listening = false
+	npc = null
+	pending_fish = null
+	waiting_npcs.clear()
+	_waiting_residents.clear()
+	for door in _all_doors:
+		if is_instance_valid(door):
+			_sync_door(door)
 
 
 func _actor_valid(actor: NPCInteractable) -> bool:
 	return is_instance_valid(actor) and not actor.is_queued_for_deletion()
-
-
-func _home_valid(home: Sprite2D) -> bool:
-	return is_instance_valid(home) and not home.is_queued_for_deletion()

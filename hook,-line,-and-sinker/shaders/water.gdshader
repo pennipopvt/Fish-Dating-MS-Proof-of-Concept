@@ -17,10 +17,16 @@ uniform float highlight_density : hint_range(0.0, 1.0) = 0.25;
 uniform float highlight_speed : hint_range(0.0, 5.0) = 0.5;
 
 uniform float waterline_y = 140.0;
-// The sky/reflection remains readable just below the surface, then fades
-// into a blue translucent water tint. Values are in native screen pixels.
+// Viewer submersion is computed once by WorldDayNight from Penni's
+// world-space depth. Unlike the old per-pixel fade, an observer standing
+// on shore sees an OPAQUE surface at every depth.
+uniform float viewer_submersion : hint_range(0.0, 1.0) = 0.0;
+// Reflected detail can fade naturally as the sampled surface extends
+// away from the shore, without making underwater terrain visible.
 uniform float reflection_fade_depth : hint_range(4.0, 160.0) = 64.0;
-uniform float deep_water_alpha : hint_range(0.0, 1.0) = 0.58;
+// Additional blue tint on top of the underlying sea when submerged;
+// UnderwaterTint already contributes a separate screen-space blue haze.
+uniform float deep_water_alpha : hint_range(0.0, 1.0) = 0.18;
 
 
 // Stable random number for each pixel-grid cell.
@@ -36,7 +42,7 @@ void fragment() {
 	vec2 screen_pixel = SCREEN_UV / pixel_size;
 
 	float depth = max(screen_pixel.y - waterline_y, 0.0);
-	float submersion = smoothstep(0.0, max(reflection_fade_depth, 1.0), depth);
+	float reflection_falloff = smoothstep(0.0, max(reflection_fade_depth, 1.0), depth);
 
 	// Preserve the order of reflected rows: never add independent vertical
 	// waves that can make foreground/sky stripes cross over each other.
@@ -72,7 +78,7 @@ void fragment() {
 	vec3 final_color = mix(
 		water_color.rgb,
 		reflection,
-		reflection_strength * (1.0 - submersion)
+		reflection_strength * (1.0 - reflection_falloff)
 	);
 
 	// Small horizontal glints, grouped into 8x3-pixel cells.
@@ -106,7 +112,7 @@ void fragment() {
 	float highlight = glint_shape
 		* glint_exists
 		* shimmer
-		* highlight_intensity * (1.0 - submersion);
+		* highlight_intensity * (1.0 - viewer_submersion) * (1.0 - reflection_falloff);
 
 	final_color = mix(
 		final_color,
@@ -114,7 +120,8 @@ void fragment() {
 		highlight
 	);
 
-	// Close to the surface the reflected image is opaque, like the existing
-	// ocean. Underwater it becomes a translucent tint over the real scenery.
-	COLOR = vec4(final_color, mix(1.0, deep_water_alpha, submersion));
+	// Above water: opaque reflective surface hiding every sea tile.
+	// Underwater: translucent non-reflective blue, revealing sea and actors.
+	// Do not derive opacity from pixel depth; that exposed the seabed from land.
+	COLOR = vec4(final_color, mix(1.0, deep_water_alpha, viewer_submersion));
 }
