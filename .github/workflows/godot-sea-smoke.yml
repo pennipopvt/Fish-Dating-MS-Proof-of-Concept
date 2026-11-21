@@ -172,6 +172,12 @@ jobs:
           set -o pipefail
           timeout 90s godot --headless --path "hook,-line,-and-sinker" res://tests/room_lighting_test.tscn 2>&1 | tee room-lighting-test.log
           ! (grep -E 'SCRIPT ERROR:|Parse Error:|Parser Error:|ERROR:|FAIL ' room-lighting-test.log | grep -Ev 'resources still in use at exit|RID allocations.*leaked' | grep -q .)
+      - name: Test shared relationship events, priority and per-NPC state
+        shell: bash
+        run: |
+          set -o pipefail
+          timeout 90s godot --headless --path "hook,-line,-and-sinker" res://tests/relationship_event_architecture_test.tscn 2>&1 | tee relationship-events-test.log
+          ! (grep -E 'SCRIPT ERROR:|Parse Error:|Parser Error:|ERROR:|FAIL ' relationship-events-test.log | grep -Ev 'resources still in use at exit|RID allocations.*leaked' | grep -q .)
       - name: Test Kuda rejection, apology, and next-night reconciliation
         shell: bash
         run: |

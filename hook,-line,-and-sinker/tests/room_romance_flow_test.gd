@@ -288,11 +288,32 @@ func _run_failed_prelude() -> void:
 	_check(bool(state["flags"].get(npc.invitation_accepted_flag, false)) \
 		and not state["flags"].get(npc.romance_complete_flag, false),
 		"Invitation remains available, but the romance is not completed")
-	# No instant retries at the door on the same night.
+	# On the next visit Silas remembers the boundary Penni crossed.
+	# He needs a conversation, not just waiting for another night.
 	door.interact(player)
 	await get_tree().create_timer(1.25).timeout
 	_check(not bool(view.get("_prelude_active")) and illustration._active_npc == null,
 		"Unsuccessful evening cannot be repeated immediately that night")
+	_check(NPCManager.has_active_relationship_event(npc, &"prelude_boundary"),
+		"Silas remembers the rejected prelude")
+	_advance_to_choices()
+	var followup_index: int = -1
+	for i in range(DialogueManager.get_choices().size()):
+		if DialogueManager.get_choices()[i].text == "Could we talk about the other night?":
+			followup_index = i
+	_check(followup_index >= 0, "Silas offers a conversation about what happened")
+	if followup_index >= 0:
+		DialogueManager.select_choice(followup_index)
+		_advance_to_choices()
+		var apology_index: int = -1
+		for i in range(DialogueManager.get_choices().size()):
+			if DialogueManager.get_choices()[i].text == "I was pushing you. I'm sorry.":
+				apology_index = i
+		if apology_index >= 0:
+			DialogueManager.select_choice(apology_index)
+			_advance_to_choices()
+	_check(not NPCManager.has_active_relationship_event(npc, &"prelude_boundary"),
+		"An apology resolves Silas's boundary incident")
 	if DialogueManager.is_active:
 		DialogueManager.end_conversation()
 	await get_tree().create_timer(1.2).timeout

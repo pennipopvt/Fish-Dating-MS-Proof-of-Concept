@@ -4,7 +4,7 @@ extends Node
 # to apologize, and does not restart intimacy until a later night.
 const MAIN: PackedScene = preload("res://scenes/main.tscn")
 const KUDA: NPCData = preload("res://resources/npcs/kuda.tres")
-const HURT_FLAG: StringName = &"barracuda_prelude_hurt"
+const EVENT_ID: StringName = &"prelude_boundary"
 var failures: int = 0
 var stage: String = "startup"
 
@@ -62,7 +62,7 @@ func _run() -> void:
 		if not DialogueManager.is_active:
 			break
 		DialogueManager.advance()
-	_check(bool(flags.get(HURT_FLAG, false)),
+	_check(NPCManager.has_active_relationship_event(KUDA, EVENT_ID),
 		"The hurt state is set after Kuda tells Penni to leave")
 	_check(not bool(flags.get(KUDA.romance_complete_flag, false)),
 		"Rejecting a pushy answer never completes romance")
@@ -84,7 +84,7 @@ func _run() -> void:
 	_advance_to_choices()
 	_select_choice("I didn't think you'd take it so seriously.")
 	_advance_to_choices()
-	_check(bool(flags.get(HURT_FLAG, false)),
+	_check(NPCManager.has_active_relationship_event(KUDA, EVENT_ID),
 		"Dismissing his feelings doesn't clear the unresolved argument")
 	DialogueManager.end_conversation()
 	await _wait_for_room_exit(view)
@@ -97,8 +97,8 @@ func _run() -> void:
 	_advance_to_choices()
 	_select_choice("I was being a jerk. I'm sorry.")
 	_advance_to_choices()
-	_check(not bool(flags.get(HURT_FLAG, false)),
-		"Finishing the apology clears the story flag via authored JSON effects")
+	_check(not NPCManager.has_active_relationship_event(KUDA, EVENT_ID),
+		"Finishing the apology resolves the shared relationship event")
 	_check(DialogueManager.is_awaiting_choice(),
 		"After apologizing, Penni can keep chatting instead of being ejected")
 	DialogueManager.end_conversation()
