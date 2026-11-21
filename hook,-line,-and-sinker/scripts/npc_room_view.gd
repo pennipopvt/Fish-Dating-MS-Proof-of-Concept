@@ -4,6 +4,11 @@ extends Control
 # One first-person room overlay, keeping the existing DialogueUI and its
 # natural conversational chaining. The romance sequence is driven by arriving
 # at night after accepting an invitation, NOT by choosing a dialogue option.
+# Shared room-background lighting follows GameManager's existing clock; the
+# DialogueUI portrait and text live in a different layer and stay unaffected.
+@export_group("Room Lighting")
+@export var lighting_profile: RoomLightingProfile
+
 @onready var _background: TextureRect = $Background
 var _dialogue: DialogueUI
 var _transition: SeaDiveTransition
@@ -18,6 +23,24 @@ var _overnight_active: bool = false
 var _morning_dialogue_active: bool = false
 var _prelude_active: bool = false
 var _prelude_approved: bool = false
+
+
+func _ready() -> void:
+	# No second clock: the same signal drives day/night everywhere on the island.
+	GameManager.time_changed.connect(_on_time_changed)
+	_refresh_room_lighting()
+
+
+func _on_time_changed(_day: int, _period: GameManager.Times) -> void:
+	# Includes resting after an overnight encounter while still inside the room.
+	_refresh_room_lighting()
+
+
+func _refresh_room_lighting() -> void:
+	if lighting_profile == null:
+		_background.modulate = Color.WHITE
+		return
+	_background.modulate = lighting_profile.color_for_period(GameManager.get_period())
 
 
 func configure(dialogue: DialogueUI, transition: SeaDiveTransition, player: Player,
@@ -51,6 +74,9 @@ func open_room(npc: NPCData) -> void:
 
 func _show_room() -> void:
 	_background.texture = _resident.room_background
+	# Also refresh on entry so room previews and any future clock loads
+	# always show the correct lighting on their very first frame.
+	_refresh_room_lighting()
 	_dialogue.set_room_mode(true)
 	show()
 
