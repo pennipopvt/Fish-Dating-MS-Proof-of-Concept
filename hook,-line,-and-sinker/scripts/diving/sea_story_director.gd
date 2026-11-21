@@ -413,10 +413,10 @@ func on_companion_targeted() -> void:
 
 
 
-# Silas's nonlethal limit is a tutorial beat, not recurring feedback.
-# He always stops at the safety threshold in SilasCombatBehavior, but only
-# explains that behavior once per playthrough. Manual low-health refusals
-# share the same flag as automatic retreat, so they cannot repeat the lesson.
+# Silas stops fighting at his nonlethal threshold every time.
+# The automatic retreat warning is one-time to avoid interrupting combat.
+# An explicit player command to hurt an already-wounded fish is different:
+# it always opens his authored dialogue so Penni can respond to his boundary.
 func on_silas_spared_fish(_fish: DivingWildFish) -> void:
 	if has_event(&"silas_nonlethal_explained") or DialogueManager.is_active:
 		return
@@ -425,10 +425,10 @@ func on_silas_spared_fish(_fish: DivingWildFish) -> void:
 
 
 func on_silas_attack_refused(_fish: DivingWildFish) -> void:
-	if has_event(&"silas_nonlethal_explained") or DialogueManager.is_active:
+	if DialogueManager.is_active:
 		return
-	# If the player's very first command is against a weakened fish, teach
-	# the same rule through the existing dialogue instead of the retreat call.
+	# Direct player orders can trigger dialogue every time, even after the
+	# one-time automatic warning. Do not spam or overwrite active dialogue.
 	var ui: SeaSpeechBubble = _bubble()
 	if ui != null:
 		ui.hide_call()
