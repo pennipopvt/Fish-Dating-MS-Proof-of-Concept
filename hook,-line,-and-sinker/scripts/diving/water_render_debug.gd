@@ -168,7 +168,9 @@ func _set_mode(next_mode: int) -> void:
 		3:
 			_water.hide()
 		4:
-			# Explicit opaque diagnostic rectangle; no reflection shader.
+			# This diagnostic must visibly show the water coverage even if
+			# the main scene normally starts with Water hidden.
+			_water.show()
 			_water.material = null
 			_water.color = Color(1.0, 0.0, 1.0, 1.0)
 		5:
