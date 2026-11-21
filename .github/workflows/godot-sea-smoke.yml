@@ -82,6 +82,12 @@ jobs:
           set -o pipefail
           timeout 120s godot --headless --path "hook,-line,-and-sinker" res://tests/sea_population_and_visuals_test.tscn 2>&1 | tee sea-population-test.log
           ! (grep -E 'SCRIPT ERROR:|Parse Error:|Parser Error:|ERROR:|FAIL ' sea-population-test.log | grep -Ev 'resources still in use at exit|RID allocations.*leaked' | grep -q .)
+      - name: Test Day 2 Fish Co gift unlock, gift notification and shop icon
+        shell: bash
+        run: |
+          set -o pipefail
+          timeout 90s godot --headless --path "hook,-line,-and-sinker" res://tests/fish_co_gifts_unlock_test.tscn 2>&1 | tee fish-co-gifts-test.log
+          ! (grep -E 'SCRIPT ERROR:|Parse Error:|Parser Error:|ERROR:|FAIL ' fish-co-gifts-test.log | grep -Ev 'resources still in use at exit|RID allocations.*leaked' | grep -q .)
       - name: Test unlocked challenge rewards and terminal notifications
         shell: bash
         run: |
