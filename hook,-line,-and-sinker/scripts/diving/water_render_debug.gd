@@ -1,9 +1,9 @@
 extends CanvasLayer
 class_name WaterRenderDebug
 
-# Backslash is a visual-only diagnostic. None of these views change the sea's
+# The F3 menu owns this visual-only diagnostic. None of these views change the sea's
 # collisions, gameplay, scene hierarchy, or the production water shaders.
-# Every temporary change is restored when Backslash closes.
+# Every temporary change can be restored with restore_normal().
 const MODE_NAMES = ["NORMAL", "NO SEA", "NO LAND", "NO WATER", "SOLID WATER", "NO SEA CLIP"]
 
 @onready var _readout: Label = $Panel/Readout
@@ -68,6 +68,40 @@ func configure(world: Node2D, game_viewport: SubViewport, player: Player) -> voi
 	_line.z_index = 120
 	_line.visible = false
 	_world.add_child(_line)
+
+
+# The unified F3 DevPanel is the only visible debug menu. Keep this node
+# invisible and expose its existing render modes as controls in that panel.
+func set_embedded_mode(next_mode: int) -> void:
+	if _water == null:
+		return
+	mode = clampi(next_mode, 0, MODE_NAMES.size() - 1)
+	if mode == 0:
+		restore_normal()
+		return
+	set_process(true)
+	if _line != null:
+		_line.visible = true
+	_set_mode(mode)
+
+
+func restore_normal() -> void:
+	if _water == null:
+		return
+	_restore()
+	mode = 0
+	if _line != null:
+		_line.visible = false
+	set_process(false)
+	_update_readout()
+
+
+func diagnostics_text() -> String:
+	return _report()
+
+
+func capture_frame() -> void:
+	_capture()
 
 
 func handle_input(event: InputEvent) -> bool:
