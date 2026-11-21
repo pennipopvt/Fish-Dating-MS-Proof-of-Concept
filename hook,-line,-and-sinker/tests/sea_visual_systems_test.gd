@@ -43,15 +43,16 @@ func _run() -> void:
 	beam.follow_day_night = true
 
 	_check(decoration.sprite_frames != null
-		and decoration.sprite_frames.has_animation(&"placeholder")
-		and decoration.sprite_frames.get_frame_count(&"placeholder") >= 1,
-		"Shared animation library plays the artist's decoration frames")
+		and decoration.sprite_frames.has_animation(&"seaweed")
+		and decoration.sprite_frames.has_animation(&"seaweed_tall")
+		and decoration.sprite_frames.get_frame_count(&"seaweed") >= 1,
+		"Shared library preserves both of the artist's seaweed animations")
 	_check(decoration.get_node_or_null("CollisionShape2D") == null,
 		"Decorations never block player, fish or the net")
 	var copied_frames: SpriteFrames = decoration.sprite_frames.duplicate() as SpriteFrames
 	copied_frames.add_animation(&"kelp_test")
 	copied_frames.add_frame(&"kelp_test",
-		copied_frames.get_frame_texture(&"placeholder", 0))
+		copied_frames.get_frame_texture(&"seaweed", 0))
 	decoration.sprite_frames = copied_frames
 	decoration.animation = &"kelp_test"
 	await get_tree().process_frame

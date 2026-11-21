@@ -7,4 +7,4 @@
 texture_filter = 1
 script = ExtResource("1_deco")
 sprite_frames = ExtResource("2_library")
-animation = &"placeholder"
+animation = &"seaweed"

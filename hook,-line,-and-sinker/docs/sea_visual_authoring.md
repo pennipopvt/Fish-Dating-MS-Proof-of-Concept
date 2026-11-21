@@ -8,7 +8,7 @@ Existing SeaTerrain shapes, fish, collisions, waterline, and camera are unchange
 - Select the **SeaDecoration** instance. Use its native **Animation** dropdown to select the look, plus **Speed Scale**, **Flip H**, **Modulate**, and **Z Index** for per-instance variations.
 - All instances reference `res://resources/animations/sea_decorations.tres`. Select the **Sprite Frames** resource in the Inspector to open the SpriteFrames editor and add named animations plus their individual frames/FPS. Adding a name there makes it selectable in every SeaDecoration instance; leave the library shared (don't Make Unique).
 - Static props are simply one-frame animations. Animation playback works when the scene runs; **Preview In Editor** can be disabled for a quieter editing experience.
-- The current **placeholder** animation is a single 16×16 sand swatch so you can see and test the scene immediately. **No kelp/coral artwork was invented**. Replace the placeholder and create named animations when your art is ready.
+- The shared library currently contains the artist's `seaweed` and `seaweed_tall` animations. To add more art, add animations to the same resource, not another scene.
 - No collision nodes are included.
 
 ## Sunlight shafts

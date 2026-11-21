@@ -32,6 +32,15 @@ enum Phase { DORMANT, CHASING, HOOK_DIALOGUE, REELING, CAUGHT_DIALOGUE, RECRUITE
 @export_range(8.0, 40.0, 1.0) var bite_range: float = 12.0
 @export_range(0.0, 12.0, 0.5) var bite_damage: float = 4.0
 
+@export_group("Chase Steering")
+# Keep Kuda's heading through the prey rather than switching directions
+# every frame when their centers overlap.
+@export_range(0.15, 1.2, 0.05, "suffix:s") var attack_pass_seconds: float = 0.4
+@export_range(10.0, 40.0, 1.0, "suffix:px") var attack_pass_distance: float = 21.0
+@export_range(0.5, 10.0, 0.25) var hunter_turn_response: float = 4.0
+@export_range(0.5, 10.0, 0.25) var prey_turn_response: float = 3.0
+@export_range(8.0, 60.0, 1.0, "suffix:px") var edge_steering_margin: float = 24.0
+
 @export_group("Speech")
 @export_range(40.0, 220.0, 1.0) var shout_range: float = 130.0
 @export_range(2.0, 20.0, 0.5) var shout_cooldown: float = 9.0
@@ -52,6 +61,9 @@ var _bite_timer: float = 0.0
 var _prey_respawn_timer: float = 0.0
 var _speech_timer: float = 2.0
 var _prey_heading: Vector2 = Vector2.RIGHT
+var _hunter_heading: Vector2 = Vector2.RIGHT
+var _attack_pass_heading: Vector2 = Vector2.RIGHT
+var _attack_pass_remaining: float = 0.0
 
 
 func _draw() -> void:
@@ -228,8 +240,8 @@ func step(delta: float) -> void:
 		return
 	if _player == null or not _player.swimming or DialogueManager.is_active:
 		return
-	# These two fish are excluded from DivingWorld's generic swim() loop.
-	# Their net cooldowns must still advance, especially after Kuda escapes.
+	# These two fish do not use DivingWildFish.swim(), so handle net
+	# cooldowns here as well as the chase itself.
 	kuda.catch_cooldown = maxf(0.0, kuda.catch_cooldown - delta)
 	if is_instance_valid(prey):
 		prey.catch_cooldown = maxf(0.0, prey.catch_cooldown - delta)
@@ -245,28 +257,10 @@ func step(delta: float) -> void:
 	if _burst_timer <= 0.0:
 		_burst_timer = burst_interval
 		_burst_left = burst_seconds
-	var away: Vector2 = (prey.position - kuda.position).normalized()
-	if away.is_zero_approx():
-		away = Vector2.RIGHT
-	# A touch of sideways movement lets Kuda overshoot and circle back.
-	var sideways := Vector2(-away.y, away.x) * sin(Time.get_ticks_msec() * 0.002)
-	var desired_prey: Vector2 = (away * 0.85 + sideways * 0.4).normalized()
-	# Turn away from edges to create repeated, readable interception passes.
 	var bounds := Rect2(position + Vector2(10.0, 10.0),
 		area_size - Vector2(20.0, 20.0))
-	var next_prey := prey.position + desired_prey * prey_speed * delta
-	next_prey = next_prey.clamp(bounds.position, bounds.end)
-	if next_prey.distance_squared_to(prey.position) < 1.0:
-		desired_prey = (bounds.get_center() - prey.position).normalized()
-		next_prey = prey.position + desired_prey * prey_speed * delta
-	prey.position = _move_open(prey, next_prey, bounds)
-	_face(prey, desired_prey)
-	var kuda_direction: Vector2 = (prey.position - kuda.position).normalized()
-	if not kuda_direction.is_zero_approx():
-		var speed: float = burst_speed if _burst_left > 0.0 else kuda_speed
-		kuda.position = _move_open(kuda, kuda.position + kuda_direction * speed * delta,
-			bounds)
-		_face(kuda, kuda_direction)
+	_steer_prey(delta, bounds)
+	_steer_kuda(delta, bounds)
 	if kuda.position.distance_to(prey.position) < bite_range and _bite_timer <= 0.0:
 		prey.take_damage(bite_damage)
 		_bite_timer = 0.8
@@ -279,6 +273,71 @@ func step(delta: float) -> void:
 	_update_shout()
 
 
+# Prey steers gradually rather than snapping directly opposite Kuda's
+# instantaneous position. Edge recovery preserves the chase in its area.
+func _steer_prey(delta: float, bounds: Rect2) -> void:
+	var flee: Vector2 = prey.position - kuda.position
+	if flee.length_squared() < 36.0:
+		flee = _prey_heading
+	var desired: Vector2 = flee.normalized()
+	var near_edge: bool = (
+		prey.position.x < bounds.position.x + edge_steering_margin
+		or prey.position.x > bounds.end.x - edge_steering_margin
+		or prey.position.y < bounds.position.y + edge_steering_margin
+		or prey.position.y > bounds.end.y - edge_steering_margin
+	)
+	if near_edge:
+		var center: Vector2 = (bounds.get_center() - prey.position).normalized()
+		desired = (desired * 0.45 + center * 0.85).normalized()
+	_prey_heading = _turn_towards(_prey_heading, desired, prey_turn_response * delta)
+	var next: Vector2 = prey.position + _prey_heading * prey_speed * delta
+	var prior: Vector2 = prey.position
+	prey.position = _move_open(prey, next, bounds)
+	if prey.position.distance_squared_to(prior) < 0.25:
+		_prey_heading = _turn_towards(_prey_heading,
+			(bounds.get_center() - prey.position).normalized(),
+			prey_turn_response * delta * 2.0)
+	_face(prey, _prey_heading)
+
+
+# A close-range encounter starts a committed lunge THROUGH the prey.
+# Hunting resumes only after the pass, even if Kuda has crossed the target.
+# This removes the per-frame left/right flipping at overlapping positions.
+func _steer_kuda(delta: float, bounds: Rect2) -> void:
+	var to_prey: Vector2 = prey.position - kuda.position
+	if _attack_pass_remaining <= 0.0 and (
+			to_prey.length() <= attack_pass_distance):
+		_attack_pass_remaining = attack_pass_seconds
+		_attack_pass_heading = _hunter_heading
+		if _attack_pass_heading.length_squared() < 0.01:
+			_attack_pass_heading = to_prey.normalized()
+		if _attack_pass_heading.length_squared() < 0.01:
+			_attack_pass_heading = Vector2.RIGHT
+	if _attack_pass_remaining > 0.0:
+		_hunter_heading = _attack_pass_heading
+		_attack_pass_remaining = maxf(0.0, _attack_pass_remaining - delta)
+	else:
+		# Lead the fleeing fish a little, but keep a continuous turning arc.
+		var aim: Vector2 = prey.position + _prey_heading * 9.0 - kuda.position
+		if aim.length_squared() > 0.01:
+			_hunter_heading = _turn_towards(
+				_hunter_heading, aim.normalized(), hunter_turn_response * delta)
+	var speed: float = burst_speed if _attack_pass_remaining > 0.0 \
+		or _burst_left > 0.0 else kuda_speed
+	kuda.position = _move_open(
+		kuda, kuda.position + _hunter_heading * speed * delta, bounds)
+	_face(kuda, _hunter_heading)
+
+
+func _turn_towards(previous: Vector2, wanted: Vector2, amount: float) -> Vector2:
+	if wanted.length_squared() < 0.001:
+		return previous
+	if previous.length_squared() < 0.001:
+		return wanted.normalized()
+	var steered: Vector2 = previous.lerp(wanted, clampf(amount, 0.0, 1.0))
+	return steered.normalized() if steered.length_squared() > 0.001 else previous
+
+
 func _move_open(fish: DivingWildFish, destination: Vector2, bounds: Rect2) -> Vector2:
 	var next: Vector2 = destination.clamp(bounds.position, bounds.end)
 	# Reuse the wild-fish collision slide instead of ignoring spline rock.
@@ -288,7 +347,11 @@ func _move_open(fish: DivingWildFish, destination: Vector2, bounds: Rect2) -> Ve
 func _face(fish: DivingWildFish, heading: Vector2) -> void:
 	var image: Sprite2D = fish.get_node_or_null("FishSprite") as Sprite2D
 	if image != null:
-		image.flip_h = heading.x < 0.0
+		# Keep the previous facing while moving mostly vertically.
+		if heading.x < -0.25:
+			image.flip_h = true
+		elif heading.x > 0.25:
+			image.flip_h = false
 		image.position.y = sin(Time.get_ticks_msec() * 0.008) * 1.0
 
 
@@ -303,6 +366,7 @@ func _respawn_prey() -> void:
 		return
 	prey = _spawn.call(prey_species, at, randi(), 0.0, 0.0, 0.0) as DivingWildFish
 	_set_sprite_width(prey, prey_sprite_width)
+	_reset_chase()
 
 
 func _reset_chase() -> void:
@@ -310,6 +374,15 @@ func _reset_chase() -> void:
 	_burst_left = 0.0
 	_bite_timer = 0.8
 	_speech_timer = 1.8
+	_attack_pass_remaining = 0.0
+	if is_instance_valid(kuda) and is_instance_valid(prey):
+		var direction: Vector2 = (prey.position - kuda.position).normalized()
+		_hunter_heading = direction if direction.length_squared() > 0.001 else Vector2.RIGHT
+		_prey_heading = _hunter_heading
+	else:
+		_hunter_heading = Vector2.RIGHT
+		_prey_heading = Vector2.RIGHT
+	_attack_pass_heading = _hunter_heading
 
 
 func _update_shout() -> void:

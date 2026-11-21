@@ -32,3 +32,6 @@ The multiplayer / multi-target right-click **combat queue** and Kuda's lethal co
 - Kuda replaces caught or killed prey after a short delay, even if he currently has no target. The World always updates the encounter while no ordinary fishing combat is active.
 - Kuda and prey have their own sprite widths in the KudaEncounter Inspector (44 px and 26 px by default). Net collision automatically respects an enlarged fish's capture radius.
 - Kuda's temporary catch cooldown advances during the special chase; after an escape, he can be netted again instead of becoming permanently immune.
+
+## Chase steering
+Kuda now has a committed **Attack Pass** (distance and duration in the encounter Inspector). When close to his prey, he continues through it before turning around instead of snapping direction whenever their positions overlap. Both fish use smooth turn-response values, and the prey steers back into the hunting rectangle at its edges. The scene's movement and combat layers are unchanged.
