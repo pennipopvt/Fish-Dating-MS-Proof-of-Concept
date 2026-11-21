@@ -2,26 +2,28 @@
 extends Path2D
 class_name SeaTerrain
 
-# Editor-only authoring component. One closed Curve2D produces the textured
-# sand fill, tiled edge strip, and the exact same static collision shape.
-# This prototype is intentionally NOT connected to DivingWorld or its tiles.
+# One Curve2D drives a lightweight editor preview and runtime terrain.
+# Expensive collision shapes are generated only when the scene runs.
+# This prototype remains separate from DivingWorld and the existing tilemap.
+const EDITOR_PREVIEW_INTERVAL_MS: int = 50
+const EDITOR_PREVIEW_BAKE_SPACING: float = 4.0
 @export var fill_texture: Texture2D:
 	set(value):
 		fill_texture = value
 		if is_node_ready():
-			_rebuild()
+			_fill.texture = value
 
 @export var edge_texture: Texture2D:
 	set(value):
 		edge_texture = value
 		if is_node_ready():
-			_rebuild()
+			_edge.texture = value
 
 @export_range(1.0, 64.0, 1.0) var edge_width: float = 16.0:
 	set(value):
 		edge_width = value
 		if is_node_ready():
-			_rebuild()
+			_edge.width = value
 
 # The uploaded texture has a darker outer border. A robust polygon inset
 # keeps the 16px textured strip on the solid side of the collision curve.
@@ -30,45 +32,67 @@ class_name SeaTerrain
 	set(value):
 		edge_inset = value
 		if is_node_ready():
-			_rebuild()
+			_request_rebuild()
 
 @onready var _fill: Polygon2D = $Fill
 @onready var _edge: Line2D = $Edge
 @onready var _collider: CollisionPolygon2D = $StaticBody2D/CollisionPolygon2D
 var _watched_curve: Curve2D
+var _preview_dirty: bool = false
+var _last_preview_ms: int = -100000
 
 
 func _ready() -> void:
 	_connect_curve()
+	_configure_art()
 	_rebuild()
-	# Also track Curve2D replacement at runtime (e.g. instanced test scenes).
-	# This only compares a resource pointer; geometry rebuilds on change.
+	# Inspector can replace the entire Curve2D; monitor only its identity.
 	set_process(true)
 
 
 func _process(_delta: float) -> void:
-	# Godot allows replacing the entire Curve2D resource in the Inspector.
 	if curve != _watched_curve:
 		_connect_curve()
-		_rebuild()
+		_request_rebuild()
+	if Engine.is_editor_hint() and _preview_dirty:
+		var now: int = Time.get_ticks_msec()
+		if now - _last_preview_ms >= EDITOR_PREVIEW_INTERVAL_MS:
+			_preview_dirty = false
+			_last_preview_ms = now
+			_rebuild()
 
 
 func _exit_tree() -> void:
-	if _watched_curve != null and _watched_curve.changed.is_connected(_rebuild):
-		_watched_curve.changed.disconnect(_rebuild)
+	if _watched_curve != null and _watched_curve.changed.is_connected(_on_curve_changed):
+		_watched_curve.changed.disconnect(_on_curve_changed)
 
 
 func _connect_curve() -> void:
-	if _watched_curve != null and _watched_curve.changed.is_connected(_rebuild):
-		_watched_curve.changed.disconnect(_rebuild)
+	if _watched_curve != null and _watched_curve.changed.is_connected(_on_curve_changed):
+		_watched_curve.changed.disconnect(_on_curve_changed)
 	_watched_curve = curve
-	if _watched_curve != null and not _watched_curve.changed.is_connected(_rebuild):
-		_watched_curve.changed.connect(_rebuild)
+	if _watched_curve != null and not _watched_curve.changed.is_connected(_on_curve_changed):
+		_watched_curve.changed.connect(_on_curve_changed)
 
 
-func _rebuild() -> void:
+func _on_curve_changed() -> void:
+	_request_rebuild()
+
+
+func _request_rebuild() -> void:
 	if not is_node_ready():
 		return
+	if Engine.is_editor_hint():
+		# Curve2D emits 'changed' on every mouse move. Coalesce all handle
+		# edits into one preview update per interval, never a physics update.
+		_preview_dirty = true
+	else:
+		_rebuild()
+
+
+func _configure_art() -> void:
+	# Setting textures/flags on every mouse movement also forces redraws.
+	# These only need to be configured once per scene instance.
 	_fill.texture = fill_texture
 	_fill.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	_fill.texture_repeat = CanvasItem.TEXTURE_REPEAT_ENABLED
@@ -79,24 +103,26 @@ func _rebuild() -> void:
 	_edge.width = edge_width
 	_edge.antialiased = false
 
-	if curve == null or curve.point_count < 3:
-		_fill.polygon = PackedVector2Array()
-		_edge.points = PackedVector2Array()
-		_collider.polygon = PackedVector2Array()
-		return
 
-	var points: PackedVector2Array = _bake_closed_outline()
+func _rebuild() -> void:
+	if not is_node_ready():
+		return
+	var points := PackedVector2Array()
+	if curve != null and curve.point_count >= 3:
+		points = _bake_closed_outline()
 	if points.size() < 3:
 		_fill.polygon = PackedVector2Array()
 		_edge.points = PackedVector2Array()
-		_collider.polygon = PackedVector2Array()
+		if not Engine.is_editor_hint():
+			_collider.polygon = PackedVector2Array()
 		return
 
-	# The fill and collision always share ONE source of truth. Never edit the
-	# generated polygons independently in the editor.
+	# The fill and collision share the same curve, but only the *running*
+	# scene needs to build physics geometry. Editor drags avoid that work.
 	_fill.polygon = points
 	_fill.uv = points
-	_collider.polygon = points
+	if not Engine.is_editor_hint():
+		_collider.polygon = points
 
 	# Geometry2D trims intersections at corners, unlike the original
 	# averaged-normal vertex offset which could fold into giant triangles.
@@ -128,15 +154,24 @@ func _rebuild() -> void:
 func _bake_closed_outline() -> PackedVector2Array:
 	var source: Curve2D = curve
 	var point_total: int = source.point_count
+	# Fewer tessellation vertices while dragging; runtime retains the
+	# authored bake interval for accurate geometry and collision.
+	var sample_interval: float = source.bake_interval
+	if Engine.is_editor_hint():
+		sample_interval = maxf(sample_interval, EDITOR_PREVIEW_BAKE_SPACING)
 	if source.get_point_position(0).is_equal_approx(
 			source.get_point_position(point_total - 1)):
-		var existing: PackedVector2Array = source.get_baked_points()
+		var sample_source: Curve2D = source
+		if sample_interval > source.bake_interval:
+			sample_source = source.duplicate() as Curve2D
+			sample_source.bake_interval = sample_interval
+		var existing: PackedVector2Array = sample_source.get_baked_points()
 		if existing.size() > 2 and existing[0].is_equal_approx(existing[existing.size() - 1]):
 			existing.remove_at(existing.size() - 1)
 		return existing
 
 	var closed := Curve2D.new()
-	closed.bake_interval = source.bake_interval
+	closed.bake_interval = sample_interval
 	for i in range(point_total):
 		var incoming: Vector2 = source.get_point_in(i)
 		var outgoing: Vector2 = source.get_point_out(i)
