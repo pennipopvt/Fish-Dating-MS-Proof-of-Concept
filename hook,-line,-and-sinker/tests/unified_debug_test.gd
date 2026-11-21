@@ -21,7 +21,9 @@ func _watchdog() -> void:
 func _run() -> void:
 	_watchdog()
 	var main: Control = MAIN.instantiate() as Control
-	add_child(main)
+	# SceneTree.current_scene must be a direct root child, as in real play.
+	# This also exercises the DevPanel autoload's normal scene lookup.
+	get_tree().root.add_child(main)
 	get_tree().current_scene = main
 	await get_tree().process_frame
 	var world: Node2D = main.get_node("SubViewportContainer/SubViewport/World") as Node2D
