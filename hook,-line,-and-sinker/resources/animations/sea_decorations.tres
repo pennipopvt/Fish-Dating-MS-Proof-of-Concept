@@ -1,7 +1,9 @@
 [gd_resource type="SpriteFrames" format=3 uid="uid://cnuplgpujtld6"]
 
 [ext_resource type="Texture2D" uid="uid://btnocdpm5jgv4" path="res://sprites/environment/decor/decor_seaweed.png" id="1_d2h7r"]
+[ext_resource type="Texture2D" uid="uid://7r6vpkmqxb42" path="res://sprites/environment/decor/decor_coral_pink.png" id="1_dh6x2"]
 [ext_resource type="Texture2D" uid="uid://3qt3fwtnpil" path="res://sprites/environment/decor/decor_seaweed_tall.png" id="2_7rysg"]
+[ext_resource type="Texture2D" uid="uid://cm3q1dvwcdh0i" path="res://sprites/environment/decor/decor_rock.png" id="2_clhn1"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_7rysg"]
 atlas = ExtResource("1_d2h7r")
@@ -37,6 +39,22 @@ region = Rect2(48, 0, 16, 128)
 
 [resource]
 animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("1_dh6x2")
+}],
+"loop": 1,
+"name": &"coral_pink",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("2_clhn1")
+}],
+"loop": 1,
+"name": &"rock",
+"speed": 5.0
+}, {
 "frames": [{
 "duration": 1.0,
 "texture": SubResource("AtlasTexture_7rysg")
