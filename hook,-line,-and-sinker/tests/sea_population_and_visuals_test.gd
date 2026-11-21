@@ -47,6 +47,19 @@ func _ready() -> void:
 			break
 	_check(blocked_point != Vector2.INF,
 		"Fish treat the interior of a spline collider as solid rock")
+	if blocked_point != Vector2.INF:
+		# Disabling an individual spline is an authoring choice: the fish
+		# query must follow it without needing a different terrain object.
+		for candidate in spline_colliders:
+			var shape: SeaTerrain = (candidate as CollisionPolygon2D).get_parent().get_parent() as SeaTerrain
+			shape.collision_enabled = false
+		_check(bool(sea.call("_is_open_water", blocked_point)),
+			"Fish swim through decorative splines with collision disabled")
+		for candidate in spline_colliders:
+			var shape: SeaTerrain = (candidate as CollisionPolygon2D).get_parent().get_parent() as SeaTerrain
+			shape.collision_enabled = true
+		_check(not bool(sea.call("_is_open_water", blocked_point)),
+			"Fish avoid the same terrain again when collision is enabled")
 	var clear_point: Vector2 = Vector2.INF
 	for x in range(-1700, -100, 100):
 		for y in range(220, 700, 80):
