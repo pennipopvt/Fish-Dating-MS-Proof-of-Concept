@@ -42,7 +42,9 @@ func _ready() -> void:
 		DialogueManager.start_conversation(SILAS)
 		_check(DialogueManager.is_active and DialogueManager.get_current_line().text == "Oh! Penni, hi.",
 			"Normal relationship uses the usual greeting on visit %d" % (i + 1))
-		_check(DialogueManager.get_choices()[0].text == "Want to go on a date?",
+		_open_current_choices()
+		var choices: Array[DialogueChoiceData] = DialogueManager.get_choices()
+		_check(not choices.is_empty() and choices[0].text == "Want to go on a date?",
 			"Original date choice stays first at default priority")
 		DialogueManager.call("_enter_node", "check_in")
 		var topic: String = DialogueManager.get_current_line().text
@@ -62,7 +64,10 @@ func _ready() -> void:
 	DialogueManager.start_conversation(SILAS)
 	_check(DialogueManager.get_current_line().text == "Oh. Hi, Penni.",
 		"High jealousy selects the colder greeting without swapping JSON files")
-	_check(DialogueManager.get_choices()[0].text == "You seem a little distant. Is something wrong?",
+	_open_current_choices()
+	var jealous_choices: Array[DialogueChoiceData] = DialogueManager.get_choices()
+	_check(not jealous_choices.is_empty() \
+		and jealous_choices[0].text == "You seem a little distant. Is something wrong?",
 		"High-priority, conditional relationship topic appears first")
 	DialogueManager.call("_enter_node", "check_in")
 	_check(DialogueManager.get_current_line().text == "I've been trying not to think about it, but...",
@@ -108,6 +113,15 @@ func _ready() -> void:
 	print("dialogue_state_variants_test: PASS" if failures == 0 else
 		"dialogue_state_variants_test: %d FAILED" % failures)
 	get_tree().quit(0 if failures == 0 else 1)
+
+
+func _open_current_choices() -> void:
+	# get_choices() intentionally stays empty until all greeting text has
+	# actually been advanced, matching the player-facing dialogue UI.
+	for i in range(20):
+		if not DialogueManager.is_active or DialogueManager.is_awaiting_choice():
+			break
+		DialogueManager.advance()
 
 
 func _check(ok: bool, note: String) -> void:
