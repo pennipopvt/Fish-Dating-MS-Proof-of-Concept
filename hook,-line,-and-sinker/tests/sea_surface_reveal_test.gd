@@ -143,8 +143,11 @@ func _run() -> void:
 		"Silas is assigned his own room through data-only recruitment")
 	_check((transition.get_node("DivingParty") as DivingParty).has_companion(story.silas_data.npc_id),
 		"First return automatically selects Silas for future dives")
-	_check(not NPCManager.get_npc_state(story.silas_data.npc_id).has(AffectionManager.RECRUITED_DAY_KEY),
-		"Receiving a room does not start the romance deadline")
+	var morale_state: Dictionary = NPCManager.get_npc_state(story.silas_data.npc_id)
+	_check(morale_state.has(AffectionManager.RECRUITED_DAY_KEY)
+		and not AffectionManager.is_morale_active(story.silas_data.npc_id)
+		and not morale_state.get("flags", {}).get(&"romance_started", false),
+		"Receiving a room begins a morale grace period, not a romance deadline")
 	_check(not story.can_begin_silas_surface_reveal(),
 		"The first-return cutscene cannot replay on later dives")
 	var shop_menu: ShopMenu = main.get_node("CanvasLayer/ShopMenu") as ShopMenu
