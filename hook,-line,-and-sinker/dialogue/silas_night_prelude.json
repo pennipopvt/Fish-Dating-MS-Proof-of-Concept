@@ -79,7 +79,12 @@
       "lines": [
         "Oh... I don't think I'm ready for that.",
         "Could we try another night?"
-      ]
+      ],
+      "effects": {
+        "start_relationship_events": [
+          "prelude_boundary"
+        ]
+      }
     }
   }
 }

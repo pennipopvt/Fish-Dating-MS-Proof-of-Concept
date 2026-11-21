@@ -7,6 +7,17 @@
       ],
       "choices": [
         {
+          "text": "Could we talk about the other night?",
+          "next": "prelude_concern",
+          "when": {
+            "active_events": [
+              "prelude_boundary"
+            ]
+          },
+          "priority": 30,
+          "grey_when_picked": false
+        },
+        {
           "text": "Is something bothering you?",
           "next": "morale_check",
           "when": {
@@ -41,6 +52,17 @@
         }
       ],
       "line_variants": [
+        {
+          "when": {
+            "active_events": [
+              "prelude_boundary"
+            ]
+          },
+          "lines": [
+            "Oh... Penni.",
+            "I wasn't sure if you'd want to talk after the other night."
+          ]
+        },
         {
           "when": {
             "required_flags": [
@@ -194,6 +216,17 @@
       "lines": [],
       "choices": [
         {
+          "text": "Could we talk about the other night?",
+          "next": "prelude_concern",
+          "when": {
+            "active_events": [
+              "prelude_boundary"
+            ]
+          },
+          "priority": 30,
+          "grey_when_picked": false
+        },
+        {
           "text": "Is something bothering you?",
           "next": "morale_check",
           "when": {
@@ -280,6 +313,43 @@
       "lines": [
         "I've been fine! Just... a little lonely, I guess.",
         "I was hoping we could talk more."
+      ],
+      "next": "topics"
+    },
+    "prelude_concern": {
+      "lines": [
+        "I was really looking forward to spending time with you.",
+        "But when you wanted me to hurry, I felt like I was doing something wrong.",
+        "I don't want to feel rushed when I'm with you."
+      ],
+      "choices": [
+        {
+          "text": "I was pushing you. I'm sorry.",
+          "next": "prelude_reassurance"
+        },
+        {
+          "text": "I don't think I did anything wrong.",
+          "next": "prelude_unresolved"
+        }
+      ]
+    },
+    "prelude_reassurance": {
+      "lines": [
+        "Oh... thank you.",
+        "I still want to spend time together. Just... can we go at our own pace?",
+        "That would mean a lot to me."
+      ],
+      "effects": {
+        "resolve_relationship_events": [
+          "prelude_boundary"
+        ]
+      },
+      "next": "topics"
+    },
+    "prelude_unresolved": {
+      "lines": [
+        "I understand if you don't see it the same way.",
+        "But I was uncomfortable. That should matter too."
       ],
       "next": "topics"
     }

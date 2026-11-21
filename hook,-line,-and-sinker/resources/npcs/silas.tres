@@ -13,6 +13,8 @@
 [ext_resource type="Texture2D" uid="uid://djh5r2k63hmc3" path="res://sprites/rooms/silasdoor.png" id="townhouse_silas_door"]
 [ext_resource type="Texture2D" uid="uid://fur256i6ik5n" path="res://sprites/fish/silas_eel.png" id="underwater_eel"]
 
+[ext_resource type="Script" path="res://resources/relationship_event_data.gd" id="relationship_event_script"]
+
 [sub_resource type="Resource" id="TownhouseSilasDoor"]
 script = ExtResource("townhouse_door_info")
 door = ExtResource("townhouse_silas_door")
@@ -39,6 +41,12 @@ script = ExtResource("3_w20er")
 json_path = "res://dialogue/silas_casual.json"
 required_flags = Array[StringName]([&"Recruited"])
 
+[sub_resource type="Resource" id="PreludeBoundaryEvent"]
+script = ExtResource("relationship_event_script")
+event_id = &"prelude_boundary"
+priority = 30
+blocks_actions = Array[StringName]([&"overnight"])
+
 [resource]
 script = ExtResource("1_bmq75")
 npc_id = &"test_npc"
@@ -52,6 +60,7 @@ porn_sprite = ExtResource("6_porn")
 invitation_accepted_flag = &"house_invitation_accepted"
 intimacy_scene_id = &"silas_house"
 overnight_prelude_json = "res://dialogue/silas_night_prelude.json"
+relationship_events = Array[ExtResource("relationship_event_script")]([SubResource("PreludeBoundaryEvent")])
 intimacy_dialogue_json = "res://dialogue/silas_house_scene.json"
 morning_after_json = "res://dialogue/silas_after_scene.json"
 overnight_transition_text = "You sleep soundly in Silas's bed."

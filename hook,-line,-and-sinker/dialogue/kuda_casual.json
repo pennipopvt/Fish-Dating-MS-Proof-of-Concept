@@ -10,8 +10,8 @@
           "text": "Can we talk about what happened?",
           "next": "prelude_argument",
           "when": {
-            "required_flags": [
-              "barracuda_prelude_hurt"
+            "active_events": [
+              "prelude_boundary"
             ]
           },
           "priority": 30,
@@ -44,8 +44,8 @@
       "line_variants": [
         {
           "when": {
-            "required_flags": [
-              "barracuda_prelude_hurt"
+            "active_events": [
+              "prelude_boundary"
             ]
           },
           "lines": [
@@ -139,8 +139,8 @@
           "text": "Can we talk about what happened?",
           "next": "prelude_argument",
           "when": {
-            "required_flags": [
-              "barracuda_prelude_hurt"
+            "active_events": [
+              "prelude_boundary"
             ]
           },
           "priority": 30,
@@ -250,8 +250,8 @@
         "Thanks for saying it. We can take things slow, alright?"
       ],
       "effects": {
-        "clear_flags": [
-          "barracuda_prelude_hurt"
+        "resolve_relationship_events": [
+          "prelude_boundary"
         ]
       },
       "next": "topics"

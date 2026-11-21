@@ -16,6 +16,8 @@
 [ext_resource type="Texture2D" uid="uid://dri2ogc522nmv" path="res://sprites/rooms/genericopendoor.png" id="townhouse_generic_door"]
 [ext_resource type="Texture2D" uid="uid://bt80yvxeajar3" path="res://sprites/fish/kuda_placeholder.png" id="underwater_kuda"]
 
+[ext_resource type="Script" path="res://resources/relationship_event_data.gd" id="relationship_event_script"]
+
 [sub_resource type="Resource" id="TownhouseKudaDoor"]
 script = ExtResource("townhouse_door_info")
 door = ExtResource("townhouse_generic_door")
@@ -48,6 +50,12 @@ script = ExtResource("2_rule")
 json_path = "res://dialogue/kuda_first_catch.json"
 forbidden_flags = Array[StringName]([&"Recruited"])
 
+[sub_resource type="Resource" id="PreludeBoundaryEvent"]
+script = ExtResource("relationship_event_script")
+event_id = &"prelude_boundary"
+priority = 30
+blocks_actions = Array[StringName]([&"overnight"])
+
 [resource]
 script = ExtResource("1_npc")
 npc_id = &"barracuda"
@@ -64,7 +72,7 @@ porn_sprite = ExtResource("7_kuda_scene")
 invitation_accepted_flag = &"barracuda_invitation_accepted"
 intimacy_scene_id = &"barracuda_house"
 overnight_prelude_json = "res://dialogue/kuda_night_prelude.json"
-overnight_unresolved_flag = &"barracuda_prelude_hurt"
+relationship_events = Array[ExtResource("relationship_event_script")]([SubResource("PreludeBoundaryEvent")])
 intimacy_dialogue_json = "res://dialogue/kuda_house_scene.json"
 morning_after_json = "res://dialogue/kuda_after_scene.json"
 overnight_transition_text = "You drift off to sleep beside Kuda."

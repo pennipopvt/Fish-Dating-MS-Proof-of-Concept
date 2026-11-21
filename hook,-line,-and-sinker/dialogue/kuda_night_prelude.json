@@ -81,8 +81,8 @@
         "Let's call it a night."
       ],
       "effects": {
-        "set_flags": [
-          "barracuda_prelude_hurt"
+        "start_relationship_events": [
+          "prelude_boundary"
         ]
       }
     }
