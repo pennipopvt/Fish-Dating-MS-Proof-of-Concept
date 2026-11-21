@@ -1,0 +1,37 @@
+{
+  "entry": "reveal",
+  "free_greeting": true,
+  "nodes": {
+    "reveal": {
+      "lines": [
+        {
+          "speaker": "player",
+          "text": "Kuda?! You're a person too?!"
+        },
+        "What the—",
+        "WHY DO I HAVE LEGS?!",
+        {
+          "speaker": "player",
+          "text": "The same thing happened to Silas when he came up here!"
+        },
+        "You could've warned me!",
+        {
+          "speaker": "player",
+          "text": "I didn't know it'd happen again!"
+        },
+        "...Tch.",
+        "So what am I supposed to do now?",
+        {
+          "speaker": "player",
+          "text": "You could stay at the townhouse! We can get you a room."
+        },
+        "Hmph. Fine. Just until I figure this out.",
+        {
+          "speaker": "player",
+          "text": "Come on, I'll show you!"
+        },
+        "I can find a room by myself, you know."
+      ]
+    }
+  }
+}
