@@ -138,7 +138,17 @@ func _ready() -> void:
 	_check(created >= 2, "Habitats create multiple ordinary fish after the catch")
 	_check(int(counts.get(&"mullet", 0)) >= 1 and int(counts.get(&"porgy", 0)) >= 1,
 		"First new population contains guaranteed remaining quota species")
-	_check(offscreen and non_colliding, "Spawned fish start outside camera and solid tiles")
+	if not offscreen or not non_colliding:
+		print("[SPLINE FISH DEBUG] offscreen=", offscreen,
+			" open_water=", non_colliding, " camera_rect=", view)
+		for candidate in sea.get("_wild_fish"):
+			var wild: DivingWildFish = candidate as DivingWildFish
+			if wild == null or original_ids.has(wild.get_instance_id()):
+				continue
+			print("[SPLINE FISH DEBUG] fish=", wild.fish_name,
+				" position=", wild.position, " visible=", view.has_point(wild.global_position),
+				" open=", sea.call("_is_open_water", wild.position))
+	_check(offscreen and non_colliding, "Spawned fish start outside camera and spline solids")
 	var far_population: bool = false
 	var deep_population: bool = false
 	for candidate in sea.get("_habitat_fish"):
