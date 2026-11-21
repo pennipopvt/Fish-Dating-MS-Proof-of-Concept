@@ -8,6 +8,15 @@
       ],
       "choices": [
         {
+          "text": "Can we talk about how things have been?",
+          "next": "check_in",
+          "when": {
+            "max_morale": 75
+          },
+          "priority": 15,
+          "grey_when_picked": false
+        },
+        {
           "text": "You seem a little distant. Is something wrong?",
           "next": "check_in",
           "when": {
@@ -36,6 +45,33 @@
         }
       ],
       "line_variants": [
+        {
+          "when": {
+            "max_morale": 15
+          },
+          "lines": [
+            "Oh. Penni.",
+            "I don't think I can go diving with you right now."
+          ]
+        },
+        {
+          "when": {
+            "max_morale": 40
+          },
+          "lines": [
+            "Oh, Penni.",
+            "I haven't been feeling great about things lately."
+          ]
+        },
+        {
+          "when": {
+            "max_morale": 75
+          },
+          "lines": [
+            "Oh... hi, Penni.",
+            "Do you have a minute to talk?"
+          ]
+        },
         {
           "when": {
             "min_jealousy": 50
@@ -134,15 +170,27 @@
       "lines": [],
       "conditional_next": [
         {
-          "next": "check_in_jealous",
+          "next": "check_in_refusing",
           "when": {
-            "min_jealousy": 50
+            "max_morale": 15
           }
         },
         {
           "next": "check_in_hurt",
           "when": {
-            "max_affection": 4
+            "max_morale": 40
+          }
+        },
+        {
+          "next": "check_in_neglected",
+          "when": {
+            "max_morale": 75
+          }
+        },
+        {
+          "next": "check_in_jealous",
+          "when": {
+            "min_jealousy": 50
           }
         },
         {
@@ -201,6 +249,21 @@
         "I've been doing okay on my own.",
         "But... I missed seeing you around.",
         "I'm glad you came by."
+      ],
+      "next": "topics"
+    },
+    "check_in_refusing": {
+      "lines": [
+        "I know the dives are important to you.",
+        "But I just don't feel comfortable going along like nothing's wrong.",
+        "Can we spend a little time together before you ask me again?"
+      ],
+      "next": "topics"
+    },
+    "check_in_neglected": {
+      "lines": [
+        "I've been watching the birds on my own lately.",
+        "I was hoping we'd find time to do something together."
       ],
       "next": "topics"
     }

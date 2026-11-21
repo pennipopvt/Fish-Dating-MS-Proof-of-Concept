@@ -9,6 +9,15 @@
       ],
       "choices": [
         {
+          "text": "Can we talk about how things have been?",
+          "next": "check_in",
+          "when": {
+            "max_morale": 75
+          },
+          "priority": 15,
+          "grey_when_picked": false
+        },
+        {
           "text": "Something on your mind?",
           "next": "check_in",
           "when": {
@@ -37,6 +46,33 @@
         }
       ],
       "line_variants": [
+        {
+          "when": {
+            "max_morale": 15
+          },
+          "lines": [
+            "Penni.",
+            "I'm not going diving with you right now."
+          ]
+        },
+        {
+          "when": {
+            "max_morale": 40
+          },
+          "lines": [
+            "Hey.",
+            "Not really in the mood for the usual small talk."
+          ]
+        },
+        {
+          "when": {
+            "max_morale": 75
+          },
+          "lines": [
+            "Oh. Hey.",
+            "Been a while since we just talked, hasn't it?"
+          ]
+        },
         {
           "when": {
             "min_jealousy": 50
@@ -135,15 +171,27 @@
       "lines": [],
       "conditional_next": [
         {
-          "next": "check_in_jealous",
+          "next": "check_in_refusing",
           "when": {
-            "min_jealousy": 50
+            "max_morale": 15
           }
         },
         {
           "next": "check_in_hurt",
           "when": {
-            "max_affection": 4
+            "max_morale": 40
+          }
+        },
+        {
+          "next": "check_in_neglected",
+          "when": {
+            "max_morale": 75
+          }
+        },
+        {
+          "next": "check_in_jealous",
+          "when": {
+            "min_jealousy": 50
           }
         },
         {
@@ -201,6 +249,21 @@
         "Been pretty quiet around here.",
         "I can handle quiet. Doesn't mean I have to like it.",
         "Good to see you again."
+      ],
+      "next": "topics"
+    },
+    "check_in_refusing": {
+      "lines": [
+        "I don't want to be another tool you take fishing.",
+        "I like being around you, Penni. That's why this bothers me.",
+        "Can we just talk for a bit?"
+      ],
+      "next": "topics"
+    },
+    "check_in_neglected": {
+      "lines": [
+        "I'm not asking you to spend every minute here.",
+        "Just... it'd be nice to talk without a job to do."
       ],
       "next": "topics"
     }

@@ -1,24 +1,36 @@
 extends Node
 
-# Relationship values are session-only in NPCManager state.
-# Affection may dip below zero, triggering departure at the next morning.
-# Jealousy ranges 0-100 with four tiers; only dates lower jealousy.
-# After first romance, every day without a completed date incurs tier-based
-# affection decay. Casual conversations do NOT prevent that decay.
-# Placeholder dates evaluate three response styles against the jealousy tier.
+# Session-only relationship state lives in NPCManager. Attraction remains a
+# romance/dialogue score; morale is the hidden team-performance relationship
+# that responds to neglect, conversations, dates, and serious disappointments.
+# Morale begins after romance OR five full days since joining the household.
+# Low morale slows companion attacks and eventually blocks joining dives.
+# NPCs remain housed, even when they refuse to help.
 
 signal affection_changed(npc_id: StringName, value: int, delta: int)
 signal jealousy_changed(npc_id: StringName, value: int, delta: int)
-signal npc_left(npc_id: StringName)
+signal morale_changed(npc_id: StringName, value: int, delta: int)
+signal npc_left(npc_id: StringName) # Explicit authored departures only.
 
 const MAX_AFFECTION := 100
 const MAX_JEALOUSY := 100
 const TONE_AMOUNTS := {"positive": 5, "neutral": 0, "negative": -3}
-# 0-24, 25-49, 50-74, 75-100. Adjust after playtesting.
-const DAILY_DECAY_BY_TIER := [2, 4, 6, 10]
+# Editor-free balance constants, central rather than duplicated in combat/UI.
+# Attraction and morale use separate values: attraction still gates romance.
+const MAX_MORALE := 100
+const MORALE_GRACE_DAYS := 5
+const DAILY_MORALE_DECAY := 8
+const TALK_MORALE_RECOVERY := 12
+const MISSED_DATE_MORALE_LOSS := 18
+const OTHER_ROMANCE_MORALE_LOSS := 12
+const MORALE_NEGLECTED_AT := 75
+const MORALE_HURT_AT := 40
+const MORALE_REFUSING_AT := 15
+const ATTACK_SPEED_BY_STAGE := [1.0, 0.82, 0.60, 0.0]
 const OTHER_ROMANCE_JEALOUSY := 45
 const MISSED_DATE_JEALOUSY := 15
-const FIRST_ROMANCE_DEADLINE_DAYS := 5
+
+enum MoraleStage { HAPPY, NEGLECTED, HURT, REFUSING }
 const RECRUITED_DAY_KEY := "recruited_day"
 const RECRUITED_FLAG := &"Recruited"
 const LAST_DATE_KEY := "last_date_day"
@@ -47,6 +59,7 @@ func _connect_sources() -> void:
 	DialogueManager.conversation_finished.connect(_on_conversation_finished)
 	GameManager.day_started.connect(_on_day_started)
 	DateManager.date_missed.connect(_on_date_missed)
+	DateManager.date_finished.connect(_on_date_finished)
 
 
 # --- Value ---
@@ -55,7 +68,7 @@ func get_affection(npc_id: StringName) -> int:
 	return int(NPCManager.get_npc_state(npc_id).get("attraction", NPCManager.START_ATTRACTION))
 
 
-# Adds delta (capped at MAX_AFFECTION; no floor, below 0 makes a recruited NPC leave).
+# Adds attraction delta, preserving the existing romance/choice scoring.
 func change(npc_id: StringName, delta: int) -> void:
 	if delta == 0 or npc_id == &"":
 		return
@@ -63,12 +76,69 @@ func change(npc_id: StringName, delta: int) -> void:
 	var value: int = mini(get_affection(npc_id) + delta, MAX_AFFECTION)
 	state["attraction"] = value
 	affection_changed.emit(npc_id, value, delta)
-	# Never trigger departure in the middle of a date or conversation.
-	# _on_day_started() handles it on the following morning.
+	# Attraction does not drive housing or participation penalties.
 
 
 func set_affection(npc_id: StringName, value: int) -> void:
 	change(npc_id, mini(value, MAX_AFFECTION) - get_affection(npc_id))
+
+
+# --- Hidden morale (independent from romance attraction) ---
+
+func get_morale(npc_id: StringName) -> int:
+	return int(NPCManager.get_npc_state(npc_id).get("morale", MAX_MORALE))
+
+
+func set_morale(npc_id: StringName, value: int) -> void:
+	change_morale(npc_id, clampi(value, 0, MAX_MORALE) - get_morale(npc_id))
+
+
+func change_morale(npc_id: StringName, delta: int) -> void:
+	if npc_id == &"" or delta == 0:
+		return
+	var state: Dictionary = NPCManager.get_npc_state(npc_id)
+	var previous: int = get_morale(npc_id)
+	var updated: int = clampi(previous + delta, 0, MAX_MORALE)
+	if updated == previous:
+		return
+	state["morale"] = updated
+	# If a companion is willing again, a later decline should be noticeable.
+	if updated > MORALE_REFUSING_AT:
+		state.erase("morale_refusal_noticed")
+	morale_changed.emit(npc_id, updated, updated - previous)
+
+
+func is_morale_active(npc_id: StringName) -> bool:
+	var state: Dictionary = NPCManager.get_npc_state(npc_id)
+	if not state.get("flags", {}).get(RECRUITED_FLAG, false):
+		return false
+	if has_completed_romance(npc_id):
+		return true
+	# Recruitment/room assignment starts the grace window, not romance.
+	if not state.has(RECRUITED_DAY_KEY):
+		return false
+	return GameManager.get_day() - int(state[RECRUITED_DAY_KEY]) >= MORALE_GRACE_DAYS
+
+
+func get_morale_stage(npc_id: StringName) -> MoraleStage:
+	if not is_morale_active(npc_id):
+		return MoraleStage.HAPPY
+	var morale: int = get_morale(npc_id)
+	if morale <= MORALE_REFUSING_AT:
+		return MoraleStage.REFUSING
+	if morale <= MORALE_HURT_AT:
+		return MoraleStage.HURT
+	if morale <= MORALE_NEGLECTED_AT:
+		return MoraleStage.NEGLECTED
+	return MoraleStage.HAPPY
+
+
+func can_join_dive(npc_id: StringName) -> bool:
+	return get_morale_stage(npc_id) != MoraleStage.REFUSING
+
+
+func attack_speed_multiplier(npc_id: StringName) -> float:
+	return float(ATTACK_SPEED_BY_STAGE[int(get_morale_stage(npc_id))])
 
 
 func get_jealousy(npc_id: StringName) -> int:
@@ -111,13 +181,19 @@ func on_romance_completed(npc_id: StringName) -> void:
 	for other_id: StringName in NPCManager.npc_states.keys():
 		if other_id != npc_id and NPCManager.npc_states[other_id].get("flags", {}).get(RECRUITED_FLAG, false) and has_completed_romance(other_id):
 			change_jealousy(other_id, OTHER_ROMANCE_JEALOUSY)
+			change_morale(other_id, -OTHER_ROMANCE_MORALE_LOSS)
 	flags[ROMANCE_KEY] = true
+	# Starting a romance counts as meaningful time together today.
+	state[LAST_TALK_KEY] = GameManager.get_day()
 
 
 func on_recruited(npc_id: StringName) -> void:
 	var state: Dictionary = NPCManager.get_npc_state(npc_id)
-	if not has_completed_romance(npc_id):
+	# Idempotent: reassigning rooms should never restart the grace period.
+	if not state.has(RECRUITED_DAY_KEY):
 		state[RECRUITED_DAY_KEY] = GameManager.get_day()
+	if not state.has("morale"):
+		state["morale"] = MAX_MORALE
 
 
 func mark_date_completed(npc_id: StringName, day: int) -> void:
@@ -127,6 +203,23 @@ func mark_date_completed(npc_id: StringName, day: int) -> void:
 func _on_date_missed(date: DateData) -> void:
 	if date != null and date.npc != null and has_completed_romance(date.npc.npc_id):
 		change_jealousy(date.npc.npc_id, MISSED_DATE_JEALOUSY)
+		change_morale(date.npc.npc_id, -MISSED_DATE_MORALE_LOSS)
+
+
+func _on_date_finished(date: DateData) -> void:
+	if date == null or date.npc == null:
+		return
+	# A date is a bonus: meaningful conversations work too. Its outcome
+	# decides whether the time together repairs or further damages morale.
+	match DateManager.last_date_outcome:
+		"great":
+			change_morale(date.npc.npc_id, 28)
+		"good":
+			change_morale(date.npc.npc_id, 20)
+		"okay":
+			change_morale(date.npc.npc_id, 8)
+		"bad":
+			change_morale(date.npc.npc_id, -8)
 
 
 static func tone_amount(tone: String) -> int:
@@ -178,8 +271,18 @@ func clear_picked(npc_id: StringName) -> void:
 # --- Daily decay ---
 
 func _on_conversation_finished(npc: NPCData) -> void:
-	if npc != null:
-		NPCManager.get_npc_state(npc.npc_id)[LAST_TALK_KEY] = GameManager.get_day()
+	if npc == null:
+		return
+	var npc_id: StringName = npc.npc_id
+	var state: Dictionary = NPCManager.get_npc_state(npc_id)
+	if not state.get("flags", {}).get(RECRUITED_FLAG, false):
+		return
+	var today: int = GameManager.get_day()
+	# Ordinary conversation restores morale once per calendar day. Multiple
+	# dialogue nodes or repeat visits cannot farm infinite morale in one day.
+	if is_morale_active(npc_id) and int(state.get(LAST_TALK_KEY, -1)) != today:
+		change_morale(npc_id, TALK_MORALE_RECOVERY)
+	state[LAST_TALK_KEY] = today
 
 
 func _on_day_started(day: int) -> void:
@@ -187,49 +290,26 @@ func _on_day_started(day: int) -> void:
 		var state: Dictionary = NPCManager.npc_states[npc_id]
 		if not state.get("flags", {}).get(RECRUITED_FLAG, false):
 			continue
-		# There are five days from recruitment to finish the first romance.
-		# Recruited on day 1 => must complete it by the end of day 5.
-		if not has_completed_romance(npc_id):
-			# Living in the townhouse does not start a romance countdown.
-			# A future explicit romantic commitment may set this flag.
-			if not state.get("flags", {}).get(&"romance_started", false):
-				continue
-			var recruited_day: int = int(state.get(RECRUITED_DAY_KEY, day - 1))
-			state[RECRUITED_DAY_KEY] = recruited_day
-			if day - recruited_day >= FIRST_ROMANCE_DEADLINE_DAYS:
-				leave(npc_id)
-			elif day - recruited_day >= FIRST_ROMANCE_DEADLINE_DAYS - 2:
-				show_message("ROMANCE DEADLINE", "%s has %d day(s) left" % [
-					_display_name(npc_id), FIRST_ROMANCE_DEADLINE_DAYS - (day - recruited_day)
-				])
+		if not is_morale_active(npc_id):
 			continue
-		# Relationship upkeep starts after first romance. Talking never replaces dates.
-		if int(state.get(LAST_DATE_KEY, -1)) == day - 1:
+		# The relationship is a gentle, readable pressure—not a romance
+		# deadline or a requirement to schedule a date every single day.
+		# Contact or a date on the previous day prevents neglect on this day.
+		if int(state.get(LAST_TALK_KEY, -1)) == day - 1 \
+				or int(state.get(LAST_DATE_KEY, -1)) == day - 1:
 			continue
-		var decay: int = DAILY_DECAY_BY_TIER[get_jealousy_tier(npc_id)]
-		# Affection changes remain hidden from the player; only the underlying
-		# relationship state changes. Don't announce daily decay numerically.
-		change(npc_id, -decay)
-	# Departures take place at the beginning of a day, never during dialogue.
-	_check_leaving()
+		change_morale(npc_id, -DAILY_MORALE_DECAY)
 
 
 # --- Leaving ---
 
-# Recruited NPCs below 0 leave, but never mid-conversation or mid-date.
-func _check_leaving() -> void:
-	if not is_inside_tree() or DialogueManager.is_active or DateManager.is_active():
-		return
-	for npc_id: StringName in NPCManager.npc_states.keys():
-		var state: Dictionary = NPCManager.npc_states[npc_id]
-		if state.get("flags", {}).get(RECRUITED_FLAG, false) and get_affection(npc_id) < 0:
-			leave(npc_id)
-
-
+# Explicit future story departures only. Morale never calls this.
 func leave(npc_id: StringName) -> void:
 	var state: Dictionary = NPCManager.get_npc_state(npc_id)
 	state["flags"][RECRUITED_FLAG] = false
 	state["attraction"] = NPCManager.START_ATTRACTION
+	state["morale"] = MAX_MORALE
+	state.erase("morale_refusal_noticed")
 	state.erase(LAST_TALK_KEY)
 	state.erase(LAST_DATE_KEY)
 	state.erase(RECRUITED_DAY_KEY)

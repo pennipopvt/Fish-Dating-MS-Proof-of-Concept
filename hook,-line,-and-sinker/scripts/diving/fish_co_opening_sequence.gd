@@ -176,6 +176,19 @@ func request_dive(fisher: Player, dock: Node2D) -> void:
 		return
 	if _dock_confirmation_target != null:
 		return
+	# Explain a refusal once through Penni's existing dialogue UI. Companions
+	# remain housed, and another dock interaction lets Penni dive without them.
+	var party: DivingParty = _transition.get_node_or_null("DivingParty") as DivingParty
+	if party != null:
+		for member in party.unwilling_members():
+			var state: Dictionary = NPCManager.get_npc_state(member.npc_id)
+			if bool(state.get("morale_refusal_noticed", false)):
+				continue
+			state["morale_refusal_noticed"] = true
+			DialogueManager.request_player_monologue([
+				"%s doesn't want to come diving today. Maybe I should talk to him." % member.display_name
+			])
+			return
 	# A normal dialogue graph provides the Yes/No choice; the player does
 	# not dive until the Yes choice finishes through DialogueManager.
 	_dock_confirmation_target = dock

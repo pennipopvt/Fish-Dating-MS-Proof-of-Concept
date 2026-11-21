@@ -90,6 +90,11 @@ func dialogue_conditions_match(npc_id: StringName, conditions: Dictionary, jealo
 	var affection: int = int(state.get("attraction", START_ATTRACTION))
 	var jealousy: int = int(state.get("jealousy", 0))
 	var tier: int = jealousy_tier if jealousy_tier >= 0 else mini(floori(float(jealousy) / 25.0), 3)
+	var morale: int = AffectionManager.get_morale(npc_id)
+	if conditions.has("min_morale") and morale < int(conditions["min_morale"]):
+		return false
+	if conditions.has("max_morale") and morale > int(conditions["max_morale"]):
+		return false
 	if conditions.has("min_affection") and affection < int(conditions["min_affection"]):
 		return false
 	if conditions.has("max_affection") and affection > int(conditions["max_affection"]):

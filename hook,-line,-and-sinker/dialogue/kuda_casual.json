@@ -7,6 +7,15 @@
       ],
       "choices": [
         {
+          "text": "You seem bothered. Want to talk?",
+          "next": "morale_check",
+          "when": {
+            "max_morale": 75
+          },
+          "priority": 15,
+          "grey_when_picked": false
+        },
+        {
           "text": "How are you liking it up here?",
           "next": "land"
         },
@@ -19,6 +28,35 @@
           "next": "goodbye",
           "spends_action": false,
           "grey_when_picked": false
+        }
+      ],
+      "line_variants": [
+        {
+          "when": {
+            "max_morale": 15
+          },
+          "lines": [
+            "Penni.",
+            "I'm not going diving until we sort some things out."
+          ]
+        },
+        {
+          "when": {
+            "max_morale": 40
+          },
+          "lines": [
+            "Hey.",
+            "We need to talk sometime."
+          ]
+        },
+        {
+          "when": {
+            "max_morale": 75
+          },
+          "lines": [
+            "Oh, there you are.",
+            "Been busy, huh?"
+          ]
         }
       ]
     },
@@ -74,6 +112,15 @@
       "lines": [],
       "choices": [
         {
+          "text": "You seem bothered. Want to talk?",
+          "next": "morale_check",
+          "when": {
+            "max_morale": 75
+          },
+          "priority": 15,
+          "grey_when_picked": false
+        },
+        {
           "text": "How are you liking it up here?",
           "next": "land"
         },
@@ -88,6 +135,59 @@
           "grey_when_picked": false
         }
       ]
+    },
+    "morale_check": {
+      "lines": [],
+      "conditional_next": [
+        {
+          "next": "morale_refusing",
+          "when": {
+            "max_morale": 15
+          }
+        },
+        {
+          "next": "morale_hurt",
+          "when": {
+            "max_morale": 40
+          }
+        },
+        {
+          "next": "morale_neglected",
+          "when": {
+            "max_morale": 75
+          }
+        }
+      ],
+      "rotating_next": [
+        "morale_fine"
+      ]
+    },
+    "morale_fine": {
+      "lines": [
+        "I'm alright, thanks for asking."
+      ],
+      "next": "topics"
+    },
+    "morale_refusing": {
+      "lines": [
+        "I'm not going to follow you into another fight while we barely talk.",
+        "Doesn't mean I don't care. That's the problem."
+      ],
+      "next": "topics"
+    },
+    "morale_hurt": {
+      "lines": [
+        "It's like I'm only useful when there's something to fight.",
+        "I'd rather you actually wanted to see me."
+      ],
+      "next": "topics"
+    },
+    "morale_neglected": {
+      "lines": [
+        "I'm fine. Just been quiet around here.",
+        "Could use some company that isn't a job."
+      ],
+      "next": "topics"
     }
   },
   "free_greeting": true

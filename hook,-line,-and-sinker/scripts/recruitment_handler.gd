@@ -74,9 +74,8 @@ func _finalize_recruitment(actor: NPCInteractable, fish: FishData) -> void:
 	var data: NPCData = actor.npc
 	NPCManager.get_npc_state(data.npc_id)["flags"][&"Recruited"] = true
 	FishingManager.remove_recruited_catch(fish)
-	# The Fish Co housing call unlocks gifts later, not recruitment.
-	# Deliberately do not call AffectionManager.on_recruited here:
-	# housing isn't a romantic commitment or a romance deadline.
+	# Fish Co unlocks gifts later. Housing starts a non-romantic five-day
+	# morale grace period in assign_home, never a romance deadline.
 	assign_home(data)
 	actor.queue_free()
 
@@ -169,6 +168,7 @@ func assign_home(resident: NPCData, preferred_room_id: StringName = &"") -> bool
 	# Existing encounter JSON uses Recruited as its eligibility flag. Keep
 	# that compatibility until content is migrated; do not start romance.
 	state["flags"][&"Recruited"] = true
+	AffectionManager.on_recruited(resident.npc_id)
 	_waiting_residents.erase(resident)
 	# A resident NPC can no longer appear as a wild catch. Other fish stay.
 	for fish in FishingManager.possible_catches.duplicate():

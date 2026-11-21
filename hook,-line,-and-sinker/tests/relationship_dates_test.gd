@@ -212,17 +212,21 @@ func _ready() -> void:
 	DateManager.set("_active", null)
 	DateManager.set("_in_dialogue", false)
 
-	# A completed date, not just conversation, prevents the next day's decay.
+	# Morale now drives teamwork and does not consume attraction scores.
+	# A date is a repair bonus, but normal conversations also help.
 	AffectionManager.set_jealousy(KUDA.npc_id, 75)
-	var before := AffectionManager.get_affection(KUDA.npc_id)
+	AffectionManager.set_morale(KUDA.npc_id, 80)
+	var attraction_before: int = AffectionManager.get_affection(KUDA.npc_id)
 	AffectionManager.call("_on_day_started", 2)
-	_expect(AffectionManager.get_affection(KUDA.npc_id) == before - 10,
-		"Tier three jealousy causes -10 daily decay without a date")
+	_expect(AffectionManager.get_morale(KUDA.npc_id) == 72,
+		"Neglect reduces morale, not romance attraction")
+	_expect(AffectionManager.get_affection(KUDA.npc_id) == attraction_before,
+		"Romance attraction remains stable without repeated dates")
 	AffectionManager.mark_date_completed(KUDA.npc_id, 2)
-	before = AffectionManager.get_affection(KUDA.npc_id)
+	var morale_before: int = AffectionManager.get_morale(KUDA.npc_id)
 	AffectionManager.call("_on_day_started", 3)
-	_expect(AffectionManager.get_affection(KUDA.npc_id) == before,
-		"A completed date prevents an entire day's affection decay")
+	_expect(AffectionManager.get_morale(KUDA.npc_id) == morale_before,
+		"A recent date prevents next-day morale decay")
 	AffectionManager.call("_on_date_missed", DateManager.get_date(&"kuda_ship"))
 	_expect(AffectionManager.get_jealousy(KUDA.npc_id) == 90,
 		"Missing Kuda's appointment raises jealousy")

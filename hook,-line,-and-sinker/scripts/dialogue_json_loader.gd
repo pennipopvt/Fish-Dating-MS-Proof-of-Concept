@@ -120,7 +120,8 @@ static func _valid_conditions(value: Variant) -> bool:
 			if not _string_array(value[key]):
 				return false
 		elif key in ["min_affection", "max_affection", "min_jealousy", "max_jealousy",
-				"min_jealousy_tier", "max_jealousy_tier", "min_days_since_talk", "max_days_since_talk"]:
+				"min_jealousy_tier", "max_jealousy_tier", "min_days_since_talk", "max_days_since_talk",
+				"min_morale", "max_morale"]:
 			if not _json_number(value[key]):
 				return false
 		else:

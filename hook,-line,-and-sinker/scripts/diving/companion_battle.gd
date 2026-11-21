@@ -20,6 +20,8 @@ var target: DivingWildFish
 var target_data: FishData
 var _companion_timer: float = 0.0
 var _fish_timer: float = 0.0
+# Set by SeaPartyCommands from AffectionManager when entering combat.
+var attack_speed_multiplier: float = 1.0
 
 
 func _ready() -> void:
@@ -35,6 +37,10 @@ static func damage(attack: float, defense: float) -> float:
 
 static func attack_interval(speed: float) -> float:
 	return 1.0 / maxf(speed, 0.05)
+
+
+func companion_attack_interval() -> float:
+	return attack_interval(stats.speed * maxf(attack_speed_multiplier, 0.05))
 
 
 func is_active() -> bool:
@@ -59,7 +65,7 @@ func start(fish: DivingWildFish, data: FishData) -> bool:
 	fish.battling = true
 	# The companion strikes first, half an interval in, so a command
 	# feels responsive; the fish answers on its own full interval.
-	_companion_timer = attack_interval(stats.speed) * 0.5
+	_companion_timer = companion_attack_interval() * 0.5
 	_fish_timer = attack_interval(data.speed)
 	started.emit(fish)
 	return true
@@ -96,7 +102,7 @@ func step(delta: float, in_attack_range: bool = true) -> void:
 		return
 	_companion_timer -= delta
 	if _companion_timer <= 0.0:
-		_companion_timer += attack_interval(stats.speed)
+		_companion_timer += companion_attack_interval()
 		var struck: DivingWildFish = target
 		var dealt: float = damage(stats.attack, target_data.defense)
 		if behavior != null:

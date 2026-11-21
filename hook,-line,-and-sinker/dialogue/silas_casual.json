@@ -7,6 +7,15 @@
       ],
       "choices": [
         {
+          "text": "Is something bothering you?",
+          "next": "morale_check",
+          "when": {
+            "max_morale": 75
+          },
+          "priority": 15,
+          "grey_when_picked": false
+        },
+        {
           "text": "How are you liking it here?",
           "next": "curiosity"
         },
@@ -29,6 +38,35 @@
           "next": "goodbye",
           "spends_action": false,
           "grey_when_picked": false
+        }
+      ],
+      "line_variants": [
+        {
+          "when": {
+            "max_morale": 15
+          },
+          "lines": [
+            "Oh... Penni.",
+            "I don't want to go diving right now. Can we talk instead?"
+          ]
+        },
+        {
+          "when": {
+            "max_morale": 40
+          },
+          "lines": [
+            "Oh. Hello again.",
+            "I've been feeling a little left out lately."
+          ]
+        },
+        {
+          "when": {
+            "max_morale": 75
+          },
+          "lines": [
+            "Oh... hi.",
+            "I was starting to wonder when we'd talk again."
+          ]
         }
       ]
     },
@@ -154,6 +192,15 @@
       "lines": [],
       "choices": [
         {
+          "text": "Is something bothering you?",
+          "next": "morale_check",
+          "when": {
+            "max_morale": 75
+          },
+          "priority": 15,
+          "grey_when_picked": false
+        },
+        {
           "text": "How are you liking it here?",
           "next": "curiosity"
         },
@@ -178,6 +225,59 @@
           "grey_when_picked": false
         }
       ]
+    },
+    "morale_check": {
+      "lines": [],
+      "conditional_next": [
+        {
+          "next": "morale_refusing",
+          "when": {
+            "max_morale": 15
+          }
+        },
+        {
+          "next": "morale_hurt",
+          "when": {
+            "max_morale": 40
+          }
+        },
+        {
+          "next": "morale_neglected",
+          "when": {
+            "max_morale": 75
+          }
+        }
+      ],
+      "rotating_next": [
+        "morale_fine"
+      ]
+    },
+    "morale_fine": {
+      "lines": [
+        "I'm alright, thanks for asking."
+      ],
+      "next": "topics"
+    },
+    "morale_refusing": {
+      "lines": [
+        "I can't keep pretending everything's okay when we dive.",
+        "I need some time together that isn't about catching fish."
+      ],
+      "next": "topics"
+    },
+    "morale_hurt": {
+      "lines": [
+        "I know you have work to do...",
+        "Sometimes I wish you'd visit just to see me."
+      ],
+      "next": "topics"
+    },
+    "morale_neglected": {
+      "lines": [
+        "I've been fine! Just... a little lonely, I guess.",
+        "I was hoping we could talk more."
+      ],
+      "next": "topics"
     }
   },
   "free_greeting": true
