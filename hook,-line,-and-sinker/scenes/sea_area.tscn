@@ -76,15 +76,15 @@ species = ExtResource("porgy")
 weight = 2.0
 afternoon_factor = 1.3
 
-[sub_resource type="Curve2D" id="Curve2D_binbi"]
+[sub_resource type="Curve2D" id="Curve2D_n4xlb"]
 resource_local_to_scene = true
 bake_interval = 2.0
 _data = {
-"points": PackedVector2Array(-12.451056, 12.823418, 12.451056, -12.823418, -1767, -128, -7.2351265, -31.601723, 7.2351265, 31.601723, -1591, -112, -17.411709, -41.046062, 17.411709, 41.046062, -1612, 0, -59.110474, -35.11463, 59.110474, 35.11463, -1606, 247, -41.94232, -48.52706, 41.94232, 48.52706, -1499, 307, 6.4487305, -30.646461, -6.4487305, 30.646461, -1661, 406, -7.877802, -13.348497, 10.628514, 18.009428, -1612, 469, -27.74492, -9.839214, 27.74492, 9.839214, -1589, 528, -19.835754, 35.25508, 19.835754, -35.25508, -1391, 537, -27.83081, -17.216309, 27.83081, 17.216309, -1299, 517, -33.215332, 2.3220901, 33.215332, -2.3220901, -1238, 585, -28.68631, -1.4391537, 28.68631, 1.4391537, -861, 554, -57.15532, 1.2169776, 57.15532, -1.2169776, -766, 577, -50.8176, -3.565652, 50.8176, 3.565652, -537, 555, -35.254055, -3.1559505, 35.254055, 3.1559505, -401, 581, -23.510727, 27.069569, 23.510727, -27.069569, -116, 530, -0.5560075, 57.80072, 0.5560075, -57.80072, -19, 455, 62.977943, -31.571354, -62.977943, 31.571354, -106, 395, 38.771484, 2.0912864, -38.771484, -2.0912864, -308, 387, 59.00187, -6.5066924, -59.00187, 6.5066924, -583, 430, 30.601215, 16.174927, -11.953687, -6.318377, -720, 410, -11.052327, 15.184456, 11.052327, -15.184456, -720, 322, -31.054293, 29.3583, 31.054293, -29.3583, -623, 277, -40.611893, 31.774231, 40.611893, -31.774231, -473, 240, -38.758312, 35.290527, 38.758312, -35.290527, -293, 228, -35.05796, 31.94214, 35.05796, -31.94214, -121, 173, -18.522266, 16.595951, 13.637953, -12.219606, -36, 121, -36.18148, 20.541742, 44.71629, -25.387314, 4, 61, -31.826326, 9.531743, 17.741255, -5.313371, 127, 20, -22, -18, 11, 23, 255, 12, 27, -10, -30, 15, 254, 626, 32, 11, -24, -5, -1792, 628, -12.418425, 12.202497, 12.418425, -12.202497, -1767, -128)
+"points": PackedVector2Array(-12.451056, 12.823418, 12.451056, -12.823418, -1767, -128, -7.2351265, -31.601723, 7.2351265, 31.601723, -1591, -112, -17.411709, -41.046062, 17.411709, 41.046062, -1612, 0, -59.110474, -35.11463, 59.110474, 35.11463, -1606, 247, -41.94232, -48.52706, 41.94232, 48.52706, -1499, 307, 6.4487305, -30.646461, -6.4487305, 30.646461, -1661, 406, -7.877802, -13.348497, 10.628514, 18.009428, -1612, 469, -27.74492, -9.839214, 27.74492, 9.839214, -1589, 528, -19.835754, 35.25508, 19.835754, -35.25508, -1391, 537, -27.83081, -17.216309, 27.83081, 17.216309, -1299, 517, -33.215332, 2.3220901, 33.215332, -2.3220901, -1238, 585, -28.68631, -1.4391537, 28.68631, 1.4391537, -861, 554, -57.15532, 1.2169776, 57.15532, -1.2169776, -766, 577, -50.8176, -3.565652, 50.8176, 3.565652, -537, 555, -35.254055, -3.1559505, 35.254055, 3.1559505, -401, 581, -23.510727, 27.069569, 23.510727, -27.069569, -116, 530, -0.5560075, 57.80072, 0.5560075, -57.80072, -19, 455, 62.977943, -31.571354, -62.977943, 31.571354, -106, 395, 38.771484, 2.0912864, -38.771484, -2.0912864, -308, 387, 59.00187, -6.5066924, -59.00187, 6.5066924, -583, 430, 30.601215, 16.174927, -11.953687, -6.318377, -720, 410, -11.052327, 15.184456, 11.052327, -15.184456, -720, 322, -31.054293, 29.3583, 31.054293, -29.3583, -623, 277, -40.611893, 31.774231, 40.611893, -31.774231, -473, 240, -38.758312, 35.290527, 38.758312, -35.290527, -293, 228, -35.05796, 31.94214, 35.05796, -31.94214, -251, 156, -18.522266, 16.595951, 13.637953, -12.219606, -51, 110, -24.32753, 17.1549, 24.32753, -17.1549, -6, 62, -31.826326, 9.531743, 17.741255, -5.313371, 145, 41, -16.190441, 1.0119026, 16.279982, -1.0174989, 204, -18, -22, -18, 11, 23, 279, 4, 27, -10, -30, 15, 254, 626, 32, 11, -24, -5, -1792, 628, -12.418425, 12.202497, 12.418425, -12.202497, -1767, -128)
 }
-point_count = 33
+point_count = 34
 
-[sub_resource type="Curve2D" id="Curve2D_qp5f5"]
+[sub_resource type="Curve2D" id="Curve2D_8ar7h"]
 resource_local_to_scene = true
 bake_interval = 2.0
 _data = {
@@ -92,7 +92,7 @@ _data = {
 }
 point_count = 6
 
-[sub_resource type="Curve2D" id="Curve2D_7yqkl"]
+[sub_resource type="Curve2D" id="Curve2D_qp5f5"]
 resource_local_to_scene = true
 bake_interval = 2.0
 _data = {
@@ -100,7 +100,7 @@ _data = {
 }
 point_count = 10
 
-[sub_resource type="Curve2D" id="Curve2D_nhxvi"]
+[sub_resource type="Curve2D" id="Curve2D_binbi"]
 resource_local_to_scene = true
 bake_interval = 2.0
 _data = {
@@ -108,7 +108,7 @@ _data = {
 }
 point_count = 8
 
-[sub_resource type="Curve2D" id="Curve2D_5po06"]
+[sub_resource type="Curve2D" id="Curve2D_7yqkl"]
 resource_local_to_scene = true
 bake_interval = 2.0
 _data = {
@@ -116,7 +116,7 @@ _data = {
 }
 point_count = 8
 
-[sub_resource type="Curve2D" id="Curve2D_sol7m"]
+[sub_resource type="Curve2D" id="Curve2D_nhxvi"]
 resource_local_to_scene = true
 bake_interval = 2.0
 _data = {
@@ -124,7 +124,7 @@ _data = {
 }
 point_count = 7
 
-[sub_resource type="Curve2D" id="Curve2D_t40yv"]
+[sub_resource type="Curve2D" id="Curve2D_5po06"]
 resource_local_to_scene = true
 bake_interval = 2.0
 _data = {
@@ -132,7 +132,7 @@ _data = {
 }
 point_count = 8
 
-[sub_resource type="Curve2D" id="Curve2D_vychp"]
+[sub_resource type="Curve2D" id="Curve2D_sol7m"]
 resource_local_to_scene = true
 bake_interval = 2.0
 _data = {
@@ -140,7 +140,7 @@ _data = {
 }
 point_count = 7
 
-[sub_resource type="Curve2D" id="Curve2D_e16em"]
+[sub_resource type="Curve2D" id="Curve2D_t40yv"]
 resource_local_to_scene = true
 bake_interval = 2.0
 _data = {
@@ -280,36 +280,36 @@ script = ExtResource("combat")
 
 [node name="SeaTerrain" parent="." unique_id=1054208482 instance=ExtResource("27_qp5f5")]
 position = Vector2(-60, 150)
-curve = SubResource("Curve2D_binbi")
+curve = SubResource("Curve2D_n4xlb")
 
 [node name="SeaTerrain2" parent="." unique_id=1727663235 instance=ExtResource("27_qp5f5")]
 position = Vector2(-1165, 659)
-curve = SubResource("Curve2D_qp5f5")
+curve = SubResource("Curve2D_8ar7h")
 
 [node name="SeaTerrain3" parent="." unique_id=1020171375 instance=ExtResource("27_qp5f5")]
 position = Vector2(-1205, 569)
-curve = SubResource("Curve2D_7yqkl")
+curve = SubResource("Curve2D_qp5f5")
 
 [node name="SeaTerrain4" parent="." unique_id=1332715503 instance=ExtResource("27_qp5f5")]
 position = Vector2(-1376, 455)
-curve = SubResource("Curve2D_nhxvi")
+curve = SubResource("Curve2D_binbi")
 
 [node name="SeaTerrain5" parent="." unique_id=866530282 instance=ExtResource("27_qp5f5")]
 position = Vector2(-1318, 312)
-curve = SubResource("Curve2D_5po06")
+curve = SubResource("Curve2D_7yqkl")
 
 [node name="SeaTerrain6" parent="." unique_id=328690975 instance=ExtResource("27_qp5f5")]
 position = Vector2(-1516, 222)
-curve = SubResource("Curve2D_sol7m")
+curve = SubResource("Curve2D_nhxvi")
 
 [node name="SeaTerrain7" parent="." unique_id=1832567115 instance=ExtResource("27_qp5f5")]
 position = Vector2(-540, 197)
-curve = SubResource("Curve2D_t40yv")
+curve = SubResource("Curve2D_5po06")
 
 [node name="SeaTerrain8" parent="." unique_id=410987106 instance=ExtResource("27_qp5f5")]
 position = Vector2(-511, 315)
-curve = SubResource("Curve2D_vychp")
+curve = SubResource("Curve2D_sol7m")
 
 [node name="SeaTerrain9" parent="." unique_id=1330212167 instance=ExtResource("27_qp5f5")]
 position = Vector2(-768, 240)
-curve = SubResource("Curve2D_e16em")
+curve = SubResource("Curve2D_t40yv")
