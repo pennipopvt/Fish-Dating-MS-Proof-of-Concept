@@ -1,6 +1,5 @@
 class_name DoorInfo
 extends Resource
 
+# Visual customization, not a teleport destination or room assignment.
 @export var door: Texture2D
-@export var sceneLoc: Vector2
-@export var npcStand: Vector2

@@ -44,7 +44,8 @@ func _start_conversation() -> void:
 	if not DialogueManager.is_active:
 		# No eligible JSON yet: still allow leaving without trapping Penni.
 		DialogueManager.request_inline_conversation(_resident, ["Oh, hi, Penni!"], "",
-			[{"text": "Bye!", "response": "See you later!", "spends_action": false}])
+			[{"text": "Bye!", "response": "See you later!", "spends_action": false,
+				"effects": {"request_scene": "room_exit"}}])
 
 
 func _on_conversation_finished(npc: NPCData) -> void:
@@ -56,7 +57,7 @@ func _on_conversation_finished(npc: NPCData) -> void:
 
 
 func _on_scene_requested(npc: NPCData, scene_id: String) -> void:
-	if _inside and npc == _resident and scene_id == "room_exit":
+	if _inside and npc == _resident and not scene_id.is_empty():
 		_dialogue_exit_requested = true
 
 

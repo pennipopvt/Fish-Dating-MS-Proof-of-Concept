@@ -31,8 +31,6 @@ const NOTICE_OFFSET := Vector2(0, -44)
 
 # NPC fish from the starting catch pool, to put back when an NPC leaves.
 var _npc_fish: Array[FishData] = []
-# NPCInteractable instance id -> the house Sprite2D it moved into.
-var _homes: Dictionary = {}
 var _leaving_checks_pending := false
 var _messages: Array[Dictionary] = []
 var _showing_message := false
@@ -49,12 +47,6 @@ func _connect_sources() -> void:
 	DialogueManager.conversation_finished.connect(_on_conversation_finished)
 	GameManager.day_started.connect(_on_day_started)
 	DateManager.date_missed.connect(_on_date_missed)
-	RecruitmentHandler.npc_moved_into_home.connect(_on_npc_moved_into_home)
-
-
-func _on_npc_moved_into_home(actor: NPCInteractable, home: Area2D) -> void:
-	if actor != null and actor.npc != null:
-		_homes[actor.npc.npc_id] = home
 
 
 # --- Value ---
@@ -198,6 +190,10 @@ func _on_day_started(day: int) -> void:
 		# There are five days from recruitment to finish the first romance.
 		# Recruited on day 1 => must complete it by the end of day 5.
 		if not has_completed_romance(npc_id):
+			# Living in the townhouse does not start a romance countdown.
+			# A future explicit romantic commitment may set this flag.
+			if not state.get("flags", {}).get(&"romance_started", false):
+				continue
 			var recruited_day: int = int(state.get(RECRUITED_DAY_KEY, day - 1))
 			state[RECRUITED_DAY_KEY] = recruited_day
 			if day - recruited_day >= FIRST_ROMANCE_DEADLINE_DAYS:
@@ -248,7 +244,7 @@ func leave(npc_id: StringName) -> void:
 	var npc_name := _display_name(npc_id)
 	var actor := _find_actor(npc_id)
 	_return_fish(npc_id, actor)
-	_free_home(npc_id)
+	RecruitmentHandler.vacate_home(npc_id)
 	if actor != null:
 		RecruitmentHandler.waiting_npcs.erase(actor)
 		# Room residents are already inside; don't make them hop through
@@ -261,18 +257,6 @@ func leave(npc_id: StringName) -> void:
 	print("[Affection] %s went back to the sea" % npc_name)
 	show_message("DEPARTURE", "%s went back to the sea" % npc_name)
 	npc_left.emit(npc_id)
-
-
-func _free_home(npc_id: StringName) -> void:
-	var home: TransferDoor = _homes.get(npc_id) as TransferDoor
-	_homes.erase(npc_id)
-	if not is_instance_valid(home):
-		return
-	home.locked = true
-	home.transfer_loc = Vector2.ZERO
-	if home.house != null:
-		home.house.texture = preload("res://sprites/rooms/lockeddoor.png")
-	RecruitmentHandler.register_available_home(home)
 
 
 func _return_fish(npc_id: StringName, actor: NPCInteractable) -> void:

@@ -16,7 +16,6 @@
 [ext_resource type="Texture2D" uid="uid://l4228gvusjlb" path="res://sprites/environment/tilesetOnPlayer.png" id="11_onplayer"]
 [ext_resource type="Shader" uid="uid://r4rciq67coeg" path="res://shaders/water.gdshader" id="13_le6xu"]
 [ext_resource type="PackedScene" path="res://scenes/townhouse.tscn" id="23_townhouse"]
-[ext_resource type="PackedScene" path="res://prefabs/rooms/silas_room.tscn" id="24_silas_room"]
 [ext_resource type="PackedScene" path="res://prefabs/townhouse_door.tscn" id="24_xfqyr"]
 [ext_resource type="PackedScene" path="res://prefabs/bed.tscn" id="25_bed"]
 [ext_resource type="PackedScene" path="res://prefabs/beach.tscn" id="26_beach"]
@@ -224,5 +223,3 @@ script = ExtResource("sea_water_bounds")
 
 [node name="Sea" parent="." instance=ExtResource("sea_area")]
 
-[node name="SilasRoom" parent="." instance=ExtResource("24_silas_room")]
-position = Vector2(-1296, -520)

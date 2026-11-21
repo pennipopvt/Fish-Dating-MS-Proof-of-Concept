@@ -9,6 +9,7 @@ extends Control
 @onready var _transition: SeaDiveTransition = $TransitionLayer
 @onready var _bubble_host: SeaSpeechBubbleHost = $SeaSpeechBubbleHost
 @onready var _debug: SeaDebugPanel = $SeaDebugLayer
+@onready var _room_view: NPCRoomView = $NPCRoomView
 var _opening: FishCoOpeningSequence
 
 # Read-only compatibility properties for existing in-engine playtests.
@@ -47,6 +48,11 @@ func _ready() -> void:
 	_opening.configure(_world, _world_player, $CanvasLayer/ShopMenu, _transition)
 	_opening.dive_confirmed.connect(_transition.start_confirmed_dive)
 	_bubble_host.configure(self, _sea.get_node_or_null("StoryDirector") as SeaStoryDirector)
+	_room_view.configure($CanvasLayer/DialogueUI, _transition, _world_player)
+	for node in _world.get_node("AvailableHomeList").get_children():
+		var door: TransferDoor = node as TransferDoor
+		if door != null:
+			door.room_requested.connect(_on_townhouse_room_requested)
 	# Main only connects existing story, terminal UI, and world notice signals.
 	# No tutorial flags or shop logic belong in the world transition.
 	var terminal_menu: ShopMenu = $CanvasLayer/ShopMenu
@@ -64,6 +70,12 @@ func _ready() -> void:
 	)
 	_debug.configure(self, _world_player, _sea, _bubble_host)
 	_opening.start.call_deferred()
+
+
+func _on_townhouse_room_requested(door: TransferDoor) -> void:
+	var resident: NPCData = RecruitmentHandler.get_resident(door.get_room_id())
+	if resident != null and not _transition.transitioning:
+		_room_view.open_room(resident)
 
 
 # A stable island Dock API. All confirmation belongs to the opening flow.
