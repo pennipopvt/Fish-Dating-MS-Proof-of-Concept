@@ -760,6 +760,12 @@ func _return_to_surface() -> void:
 		surface_requested.emit()
 
 
+# After shared fish-to-human poofs, dispatch first-time shore scenes to the
+# character encounter that owns them. Keep their actors visible for dialogue.
+func on_party_surfaced(surface_actors: Array[Node2D]) -> void:
+	await _kuda.play_first_surface_reveal(surface_actors)
+
+
 # The transition owns physical surfacing. Only AFTER it reports completion
 # do we ask the story whether this return needs a one-time character scene.
 func on_surface_completed() -> void:
