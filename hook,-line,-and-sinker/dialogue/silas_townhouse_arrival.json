@@ -1,0 +1,27 @@
+{
+  "entry": "arrival",
+  "free_greeting": true,
+  "nodes": {
+    "arrival": {
+      "lines": [
+        "This is where I'm going to stay?",
+        {
+          "speaker": "player",
+          "text": "Yeah! Fish Co. said they were opening the townhouse for new residents."
+        },
+        "A whole room? Just for me?",
+        {
+          "speaker": "player",
+          "text": "I think so! You can make it yours."
+        },
+        "Oh... That sounds really nice.",
+        "Thank you, Penni.",
+        {
+          "speaker": "player",
+          "text": "I'll come visit you later, okay?"
+        },
+        "I'd like that."
+      ]
+    }
+  }
+}

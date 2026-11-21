@@ -3,6 +3,7 @@ extends Node
 # The acceptance and housing boundary. NPCManager holds the sole authoritative
 # assignment (room_id -> NPC identity is derived from per-NPC state).
 # No ordinary resident actor exists in World, and no actor is teleported.
+signal fade_to() # Retained for existing illustration/cutscene listeners.
 signal resident_assigned(npc_id: StringName, room_id: StringName)
 signal resident_vacated(npc_id: StringName, room_id: StringName)
 # Legacy hooks retained for catch and dev callers during migration.
@@ -176,8 +177,9 @@ func assign_home(resident: NPCData, preferred_room_id: StringName = &"") -> bool
 func vacate_home(npc_id: StringName) -> void:
 	var room_id: StringName = get_room_id(npc_id)
 	if room_id == &"":
-		_waiting_residents = _waiting_residents.filter(
-			func(data: NPCData) -> bool: return data.npc_id != npc_id)
+		for data in _waiting_residents.duplicate():
+			if data.npc_id == npc_id:
+				_waiting_residents.erase(data)
 		return
 	var state: Dictionary = NPCManager.get_npc_state(npc_id)
 	state.erase("room_id")

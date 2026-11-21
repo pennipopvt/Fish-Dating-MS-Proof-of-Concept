@@ -167,6 +167,14 @@ texture = ExtResource("7_sxw1y")
 z_index = -2
 position = Vector2(395, 43)
 
+[node name="TownhouseArrival" type="Node2D" parent="."]
+
+[node name="PlayerSpot" type="Marker2D" parent="TownhouseArrival"]
+position = Vector2(377, 112)
+
+[node name="SilasSpot" type="Marker2D" parent="TownhouseArrival"]
+position = Vector2(407, 112)
+
 [node name="AvailableHomeList" parent="." unique_id=1246650794 node_paths=PackedStringArray("available_homes") instance=ExtResource("1_u7kri")]
 script = ExtResource("2_n7i1a")
 available_homes = [NodePath("FreeHouseA"), NodePath("FreeHouseB"), NodePath("FreeHouseC"), NodePath("FreeHouseD")]

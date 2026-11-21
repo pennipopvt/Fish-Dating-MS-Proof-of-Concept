@@ -79,11 +79,14 @@ func _ready() -> void:
 	# This signal is emitted by the actual surface cinematic, not by a dive
 	# start. No duplicate progression flag lives in Main.
 	story.silas_surface_reveal_finished.emit()
+	_check(not menu.is_page_unlocked(ShopMenu.Page.STORAGE),
+		"Storage remains locked during Silas's townhouse introduction")
+	story.silas_townhouse_arrival_finished.emit()
 	_check(menu.is_page_unlocked(ShopMenu.Page.STORAGE)
 		and not menu.is_page_unlocked(ShopMenu.Page.SHOP)
 		and tabs.get_node("StorageTab").visible
 		and not tabs.get_node("ShopTab").visible,
-		"Post-reveal terminal unlocks Fish without revealing Upgrades")
+		"Post-townhouse terminal unlocks Fish without revealing Upgrades")
 	_check(not menu.is_page_unlocked(ShopMenu.Page.COLLECTION)
 		and not menu.is_page_unlocked(ShopMenu.Page.CHALLENGES)
 		and not menu.is_page_unlocked(ShopMenu.Page.SCHEDULE)

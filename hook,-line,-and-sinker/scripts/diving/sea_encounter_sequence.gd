@@ -27,6 +27,7 @@ signal fish_remove_requested(fish: DivingWildFish)
 @export var silas_poof_texture: Texture2D = preload("res://sprites/characters/poof.png")
 @export_range(0.1, 2.0, 0.05) var silas_surface_swim_seconds: float = 0.75
 @export_range(0.1, 1.2, 0.05) var silas_surface_jump_seconds: float = 0.48
+@export_range(0.1, 1.0, 0.05) var townhouse_fade_seconds: float = 0.35
 var _silas_surface_scene_running: bool = false
 
 var _player: Player
@@ -388,14 +389,35 @@ func play_silas_surface_reveal() -> void:
 		land_actor.show()
 	_story.on_silas_surface_transformed()
 	await _story.silas_surface_reveal_finished
-	# He only exists on land during this cutscene, not between dives.
-	var departure := ScreenFade.new()
-	get_tree().root.add_child(departure)
-	await departure.fade_to(1.0, 0.3)
+	# One short travel fade brings the two of them in front of the townhouse.
+	# The NPC is still a CUTSCENE-ONLY actor; housing only stores an NPC ID.
+	var travel := ScreenFade.new()
+	get_tree().root.add_child(travel)
+	await travel.fade_to(1.0, townhouse_fade_seconds)
+	var player_spot: Marker2D = world.get_node("TownhouseArrival/PlayerSpot") as Marker2D
+	var silas_spot: Marker2D = world.get_node("TownhouseArrival/SilasSpot") as Marker2D
+	_player.global_position = player_spot.global_position
+	_player.animator.play(&"idle_r")
+	var camera: Camera2D = _player.get_node("Camera2D") as Camera2D
+	camera.position = Vector2.ZERO
+	camera.reset_smoothing()
+	camera.force_update_scroll()
+	if is_instance_valid(land_actor):
+		# Preserve the feet offset from the dock so the cutscene needs no walk.
+		land_actor.global_position = silas_spot.global_position + (
+			land_actor.global_position - dock_wait.global_position)
+	await travel.fade_to(0.0, townhouse_fade_seconds)
+	_story.start_silas_townhouse_arrival()
+	await _story.silas_townhouse_dialogue_finished
+	await travel.fade_to(1.0, townhouse_fade_seconds)
+	var assigned: bool = RecruitmentHandler.assign_home(_story.silas_data)
+	if not assigned:
+		push_warning("Silas accepted the room, but no townhouse door was available.")
 	if is_instance_valid(land_actor):
 		land_actor.queue_free()
-	await departure.fade_to(0.0, 0.3)
-	departure.queue_free()
+	await travel.fade_to(0.0, townhouse_fade_seconds)
+	travel.queue_free()
+	_story.complete_silas_townhouse_arrival()
 	_player.busy = false
 	_silas_surface_scene_running = false
 

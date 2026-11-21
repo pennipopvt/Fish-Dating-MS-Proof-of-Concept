@@ -7,6 +7,8 @@ signal first_companion_catch_completed
 signal silas_following_started
 signal silas_surface_warning_finished
 signal silas_surface_reveal_finished
+signal silas_townhouse_dialogue_finished
+signal silas_townhouse_arrival_finished
 signal dialogue_mode_requested(underwater_portraits: bool)
 
 @export var silas_data: NPCData = preload("res://resources/npcs/silas.tres")
@@ -277,6 +279,10 @@ func _on_conversation_finished(finished_npc: NPCData) -> void:
 		_dialogue_stage = &""
 		silas_surface_reveal_finished.emit()
 		return
+	elif _dialogue_stage == &"townhouse_arrival":
+		_dialogue_stage = &""
+		silas_townhouse_dialogue_finished.emit()
+		return
 	_dialogue_stage = &""
 
 
@@ -376,8 +382,27 @@ func start_silas_surface_warning() -> void:
 		)
 
 
+# Called by the existing SeaEncounterSequence after the fade to the house.
+func start_silas_townhouse_arrival() -> void:
+	_dialogue_stage = &"townhouse_arrival"
+	dialogue_mode_requested.emit(false)
+	DialogueManager.request_conversation(silas_data, "res://dialogue/silas_townhouse_arrival.json")
+	if not DialogueManager.is_active:
+		DialogueManager.request_inline_conversation(
+			silas_data, ["This is where I'll be staying?", "Thank you, Penni!"], "Silas"
+		)
+
+
+func complete_silas_townhouse_arrival() -> void:
+	var flags: Dictionary = _npc_flags()
+	flags[&"silas_waiting_at_dock"] = false
+	flags[&"silas_has_home"] = true
+	silas_townhouse_arrival_finished.emit()
+
+
 func on_silas_surface_transformed() -> void:
-	# Surface residence does NOT mean recruitment or placement in a house.
+	# The dock dialogue is NOT the residence assignment. That happens
+	# only after the townhouse conversation and second fade.
 	var flags: Dictionary = _npc_flags()
 	flags[&"silas_following"] = false
 	_dialogue_stage = &"surface_reveal"

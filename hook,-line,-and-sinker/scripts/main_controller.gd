@@ -61,7 +61,7 @@ func _ready() -> void:
 	terminal_menu.challenges_availability_changed.connect(
 		terminal_actor.set_challenge_notice_enabled
 	)
-	(_sea.get_node("StoryDirector") as SeaStoryDirector).silas_surface_reveal_finished.connect(
+	(_sea.get_node("StoryDirector") as SeaStoryDirector).silas_townhouse_arrival_finished.connect(
 		terminal_menu.unlock_post_dive_storage
 	)
 	terminal_actor.set_progression_notice(terminal_menu._pending_progression_notice())
