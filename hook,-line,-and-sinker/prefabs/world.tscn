@@ -224,6 +224,5 @@ script = ExtResource("sea_water_bounds")
 
 [node name="Sea" parent="." instance=ExtResource("sea_area")]
 
-# Interiors live above the sea instead of overlapping the expanded level.
 [node name="SilasRoom" parent="." instance=ExtResource("24_silas_room")]
 position = Vector2(-1296, -520)
