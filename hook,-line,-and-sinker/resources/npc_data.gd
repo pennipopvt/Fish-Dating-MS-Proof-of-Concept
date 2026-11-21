@@ -39,6 +39,9 @@ extends Resource
 @export_file("*.json") var intimacy_dialogue_json: String = ""
 ## Played in the shared room UI the following morning, not outside the room.
 @export_file("*.json") var morning_after_json: String = ""
+## Quiet text between the illustrated encounter and the morning-after scene.
+## Leave empty to use a neutral default line.
+@export_multiline var overnight_transition_text: String = ""
 @export var romance_complete_flag: StringName = &""
 @export var romance_reward_id: StringName = &""
 

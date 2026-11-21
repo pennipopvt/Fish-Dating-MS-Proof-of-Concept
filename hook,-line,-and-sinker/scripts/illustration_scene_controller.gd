@@ -16,6 +16,9 @@ const MUSIC_FADE_DURATION := 0.75
 @onready var placeholder_image: TextureRect = $Background/PlaceholderImage
 @onready var fade_layer: CanvasLayer = $FadeLayer
 @onready var fade_rect: ColorRect = $FadeLayer/Fade
+@onready var overnight_interlude: CenterContainer = $FadeLayer/OvernightInterlude
+@onready var sleep_text: Label = $FadeLayer/OvernightInterlude/Content/SleepText
+@onready var interlude_continue: Button = $FadeLayer/OvernightInterlude/Content/ContinueButton
 @onready var dialogue_ui: DialogueUI = get_parent().get_node("CanvasLayer/DialogueUI")
 @onready var overworld_music: AudioStreamPlayer2D = get_parent().get_node("AudioStreamPlayer2D")
 
@@ -25,6 +28,7 @@ var _transitioning: bool = false
 var _scene_dialogue_started: bool = false
 var _music_stopped_for_scene: bool = false
 var _music_normal_volume_db: float = 0.0
+var _interlude_active: bool = false
 
 
 func _ready() -> void:
@@ -34,6 +38,7 @@ func _ready() -> void:
 	placeholder_image.hide()
 	warning_screen.hide()
 	fade_layer.hide()
+	overnight_interlude.hide()
 	fade_rect.color = Color.BLACK
 	fade_rect.modulate.a = 0.0
 	background.add_to_group(&"modal_ui")
@@ -144,15 +149,30 @@ func _finish_scene(completed: bool) -> void:
 	_active_npc = null
 	_active_scene_id = &""
 	_scene_dialogue_started = false
+	# Hold on a quiet, readable black screen before the day changes.
+	# Both the shown and skipped illustration take this exact same path.
+	if completed:
+		await _show_overnight_interlude(finished_npc)
 	if _music_stopped_for_scene:
 		overworld_music.volume_db = _music_normal_volume_db
 		overworld_music.play(0.0)
 		_music_stopped_for_scene = false
-	# Emit at full black: the room advances time and opens the next-morning
-	# dialogue before the fade reveals the unchanged first-person room.
+	# Advance the clock and show morning dialogue only AFTER Continue.
+	# Remain at full black until the room has switched presentation.
 	scene_finished.emit(finished_npc, finished_id, completed)
 	await _fade_to(0.0)
 	_transitioning = false
+
+
+func _show_overnight_interlude(npc: NPCData) -> void:
+	sleep_text.text = npc.overnight_transition_text if not npc.overnight_transition_text.is_empty() \
+		else "You drift off to sleep."
+	_interlude_active = true
+	overnight_interlude.show()
+	interlude_continue.grab_focus()
+	await interlude_continue.pressed
+	overnight_interlude.hide()
+	_interlude_active = false
 
 
 func _fade_to(alpha: float) -> void:

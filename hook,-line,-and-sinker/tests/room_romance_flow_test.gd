@@ -125,6 +125,26 @@ func _run_route(npc: NPCData, skip_scene: bool) -> void:
 		if DialogueManager.is_active:
 			DialogueManager.end_conversation()
 
+	stage = npc.display_name + " overnight interlude"
+	var interlude: CenterContainer = illustration.get_node("FadeLayer/OvernightInterlude") as CenterContainer
+	var interlude_label: Label = interlude.get_node("Content/SleepText") as Label
+	var interlude_continue: Button = interlude.get_node("Content/ContinueButton") as Button
+	for i in range(60):
+		if bool(illustration.get("_interlude_active")):
+			break
+		await get_tree().create_timer(0.1).timeout
+	_check(interlude.visible and bool(illustration.get("_interlude_active")),
+		"Show and Skip both lead to the overnight black-screen interlude")
+	_check(interlude_label.text == npc.overnight_transition_text,
+		"The interlude uses the NPC's editor-configurable overnight text")
+	_check(GameManager.get_day() == 2 and GameManager.is_period(GameManager.Times.NIGHT),
+		"The clock stays at night until the interlude is continued")
+	_check(not DialogueManager.is_active,
+		"The morning-after dialogue does not appear underneath the interlude")
+	# Press the same Continue button a player sees before proceeding.
+	if bool(illustration.get("_interlude_active")):
+		interlude_continue.pressed.emit()
+
 	stage = npc.display_name + " morning"
 	for i in range(60):
 		if GameManager.get_day() == 3 and DialogueManager.is_active:

@@ -54,6 +54,7 @@ intimacy_scene_id = &"silas_house"
 overnight_prelude_json = "res://dialogue/silas_night_prelude.json"
 intimacy_dialogue_json = "res://dialogue/silas_house_scene.json"
 morning_after_json = "res://dialogue/silas_after_scene.json"
+overnight_transition_text = "You sleep soundly in Silas's bed."
 romance_complete_flag = &"silas_route_complete"
 romance_reward_id = &"silas"
 date_bold_scores = Array[int]([2, 1, -2, -5])
