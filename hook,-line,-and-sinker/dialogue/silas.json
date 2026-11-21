@@ -181,14 +181,14 @@
 		  "text": "I'm the one who caught you!",
 		  "next": "gave_up",
 		  "effects": {
-			"attraction": -1
+			"affection": -1
 		  }
 		},
 		{
 		  "text": "I'm just someone who likes fishing.",
 		  "next": "gave_up",
 		  "effects": {
-			"attraction": -1
+			"affection": -1
 		  }
 		},
 		{
