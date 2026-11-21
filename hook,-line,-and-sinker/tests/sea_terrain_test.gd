@@ -38,6 +38,22 @@ func _run() -> void:
 		"Textures repeat along the curve and across the fill")
 	_check((collider.get_parent() as StaticBody2D).collision_layer == 2,
 		"Collision uses the same layer as the existing solid sea tiles")
+	_check(terrain.collision_enabled and terrain.show_edge_texture
+		and not collider.disabled and edge.visible,
+		"Existing solid spline instances keep collision and their edge by default")
+	var original_fill: PackedVector2Array = fill.polygon.duplicate()
+	terrain.show_edge_texture = false
+	_check(not edge.visible and fill.polygon == original_fill and not collider.disabled,
+		"Hiding an individual terrain edge preserves fill and collision")
+	terrain.show_edge_texture = true
+	_check(edge.visible and edge.texture != null,
+		"Showing the edge again restores the original texture")
+	terrain.collision_enabled = false
+	_check(collider.disabled and fill.polygon == original_fill and edge.visible,
+		"Disabling an individual terrain collider preserves both textures")
+	terrain.collision_enabled = true
+	_check(not collider.disabled and collider.polygon == fill.polygon,
+		"Re-enabling collision immediately restores the existing geometry")
 	# Godot appends new points after its closing duplicate. The terrain
 	# component must move the new point before that duplicate and add handles.
 	var before_append: int = terrain.curve.point_count
