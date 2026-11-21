@@ -1,0 +1,42 @@
+{
+  "entry": "call",
+  "free_greeting": true,
+  "nodes": {
+    "call": {
+      "lines": [
+        {
+          "speaker": "npc",
+          "text": "*ring ring*"
+        },
+        {
+          "speaker": "player",
+          "text": "Fish Co?"
+        },
+        {
+          "speaker": "npc",
+          "text": "We've noticed that your recent catches involve other fish assisting you."
+        },
+        {
+          "speaker": "player",
+          "text": "You mean my friends?"
+        },
+        {
+          "speaker": "npc",
+          "text": "Please be advised that companion morale has a measurable impact on team efficiency."
+        },
+        {
+          "speaker": "npc",
+          "text": "Regular check-ins with your companions are recommended. Happy fishing!"
+        },
+        {
+          "speaker": "npc",
+          "text": "*click*"
+        },
+        {
+          "speaker": "player",
+          "text": "So they're monitoring that too. Great."
+        }
+      ]
+    }
+  }
+}

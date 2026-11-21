@@ -106,6 +106,24 @@ jobs:
           set -o pipefail
           timeout 90s godot --headless --path "hook,-line,-and-sinker" res://tests/dialogue_state_variants_test.tscn 2>&1 | tee dialogue-state-variants-test.log
           ! (grep -E 'SCRIPT ERROR:|Parse Error:|Parser Error:|ERROR:|FAIL ' dialogue-state-variants-test.log | grep -Ev 'resources still in use at exit|RID allocations.*leaked' | grep -q .)
+      - name: Test five-day morale grace, team slowdown and refusal recovery
+        shell: bash
+        run: |
+          set -o pipefail
+          timeout 90s godot --headless --path "hook,-line,-and-sinker" res://tests/companion_morale_test.tscn 2>&1 | tee companion-morale-test.log
+          ! (grep -E 'SCRIPT ERROR:|Parse Error:|Parser Error:|ERROR:|FAIL ' companion-morale-test.log | grep -Ev 'resources still in use at exit|RID allocations.*leaked' | grep -q .)
+      - name: Test Day 3 Fish Co team morale phone call
+        shell: bash
+        run: |
+          set -o pipefail
+          timeout 90s godot --headless --path "hook,-line,-and-sinker" res://tests/fish_co_morale_call_test.tscn 2>&1 | tee fish-co-morale-test.log
+          ! (grep -E 'SCRIPT ERROR:|Parse Error:|Parser Error:|ERROR:|FAIL ' fish-co-morale-test.log | grep -Ev 'resources still in use at exit|RID allocations.*leaked' | grep -q .)
+      - name: Test relationship date outcomes and compatibility
+        shell: bash
+        run: |
+          set -o pipefail
+          timeout 90s godot --headless --path "hook,-line,-and-sinker" res://tests/relationship_dates_test.tscn 2>&1 | tee relationship-dates-test.log
+          ! (grep -E 'SCRIPT ERROR:|Parse Error:|Parser Error:|ERROR:|FAIL ' relationship-dates-test.log | grep -Ev 'resources still in use at exit|RID allocations.*leaked' | grep -q .)
       - name: Test date bookings and period costs
         shell: bash
         run: |

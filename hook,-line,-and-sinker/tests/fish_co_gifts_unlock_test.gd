@@ -22,7 +22,7 @@ func _ready() -> void:
 	add_child(main)
 	var opening: FishCoOpeningSequence = main.get_node("IntroLayer") as FishCoOpeningSequence
 	var director: IslandStoryDirector = main.get_node("IslandStoryDirector") as IslandStoryDirector
-	_check(director != null and director.events.size() == 1 \
+	_check(director != null and director.events.size() == 2 \
 		and director.events[0].event_id == &"fish_co_gifts",
 		"The island-wide director owns the authored Fish Co gifts event")
 	_check(director != null and not director.is_processing(),

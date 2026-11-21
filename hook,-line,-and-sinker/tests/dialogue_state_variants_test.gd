@@ -76,7 +76,7 @@ func _ready() -> void:
 
 	# Low affection and time apart are distinct state predicates and messages.
 	AffectionManager.set_jealousy(SILAS.npc_id, 0)
-	AffectionManager.set_morale(SILAS.npc_id, 3)
+	AffectionManager.set_morale(SILAS.npc_id, 32)
 	DialogueManager.start_conversation(SILAS)
 	DialogueManager.call("_enter_node", "check_in")
 	_check(DialogueManager.get_current_line().text == "I know you're busy, Penni.",

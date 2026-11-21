@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="IslandStoryEventData" format=3]
+
+[ext_resource type="Script" path="res://resources/story_events/island_story_event_data.gd" id="1_event"]
+[ext_resource type="Resource" path="res://resources/npcs/fish_co_operator.tres" id="2_operator"]
+
+[resource]
+script = ExtResource("1_event")
+event_id = &"fish_co_morale"
+speaker = ExtResource("2_operator")
+dialogue_json = "res://dialogue/fish_co_morale.json"
+earliest_day = 3
+requires_resident = true
+requires_first_dive_onboarding = true
