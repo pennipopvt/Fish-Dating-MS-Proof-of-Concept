@@ -21,9 +21,17 @@ const PICKED_CHOICE_COLOR := Color(0.55, 0.55, 0.6)
 @export var placeholder_portrait: Texture2D
 @export var player_portrait: Texture2D
 
+# At scale 1, this reproduces the existing 1040x1600 room layout.
+# Keep the portrait rectangle's proportions fixed; TextureRect's
+# Keep Aspect Centered mode preserves each NPC texture's aspect ratio.
+const ROOM_PORTRAIT_BASE_SIZE := Vector2(1040.0, 1600.0)
+
 @export_group("Room Portrait Layout")
-## Relative to the screen's bottom-center at the regular DialogueUI scale.
-@export var room_portrait_offsets: Vector4 = Vector4(-520.0, -1360.0, 520.0, 240.0)
+## Center of the room portrait, relative to the screen's bottom center.
+## Positive X moves right and positive Y moves down.
+@export var room_portrait_position: Vector2 = Vector2(0.0, -560.0)
+## Uniform portrait size: 1.0 is the original room layout.
+@export_range(0.1, 3.0, 0.05, "or_greater") var room_portrait_scale: float = 1.0
 
 @onready var _box: PanelContainer = %Box
 @onready var _player_portrait: TextureRect = %PlayerPortrait
@@ -57,7 +65,7 @@ func set_room_mode(enabled: bool) -> void:
 		_npc_portrait.anchor_right = 0.5
 		_npc_portrait.anchor_top = 1.0
 		_npc_portrait.anchor_bottom = 1.0
-		_restore_portrait_offsets(_npc_portrait, room_portrait_offsets)
+		_apply_room_portrait_layout()
 		_npc_portrait.flip_h = false
 	else:
 		_npc_portrait.anchor_left = _npc_land_anchors.x
@@ -68,6 +76,19 @@ func set_room_mode(enabled: bool) -> void:
 		_player_portrait.visible = not _illustration_mode
 	if DialogueManager.is_active:
 		_refresh()
+
+
+# Convert the two editor controls into the existing rectangle offsets.
+# Changing position moves the image; changing scale changes both dimensions
+# equally, without stretching it or affecting normal outdoor dialogue.
+func _apply_room_portrait_layout() -> void:
+	var half_size: Vector2 = ROOM_PORTRAIT_BASE_SIZE * maxf(room_portrait_scale, 0.1) * 0.5
+	_restore_portrait_offsets(_npc_portrait, Vector4(
+		room_portrait_position.x - half_size.x,
+		room_portrait_position.y - half_size.y,
+		room_portrait_position.x + half_size.x,
+		room_portrait_position.y + half_size.y
+	))
 
 
 func set_underwater_mode(enabled: bool) -> void:
