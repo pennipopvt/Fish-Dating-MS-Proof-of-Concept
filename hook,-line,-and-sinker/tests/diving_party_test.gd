@@ -63,6 +63,11 @@ func _ready() -> void:
 	await entrance.jump_party_in(dock, func(_at: Vector2) -> void: pass)
 	_check(entrance._staged.is_empty() and entrance._fish_visuals.size() == 2,
 		"Both guests jump, poof and switch to fish sprites")
+	if entrance._fish_visuals.size() == 2:
+		var kuda_art: Sprite2D = entrance._fish_visuals[1]
+		_check(is_equal_approx(float(kuda_art.texture.get_width()) * kuda_art.scale.x,
+			KUDA.sea_visuals.follower_width),
+			"Kuda's dock-entry fish uses the same per-NPC world sprite size")
 	player.set_swimming(true, sea._sea_bounds())
 	sea.activate_diving_party(party.members())
 	var silas: SeaNPC = sea.get_node("NPCs/Silas") as SeaNPC

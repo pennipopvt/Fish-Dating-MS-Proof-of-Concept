@@ -37,6 +37,19 @@ func _run() -> void:
 		"Silas is the first member of the actual dive roster")
 	transition.underwater = true
 	player.set_swimming(true, sea.call("_sea_bounds"))
+	var frames: SpriteFrames = player.animator.sprite_frames
+	_check(frames.has_animation(&"swim_l") and frames.has_animation(&"swim_r")
+		and frames.get_frame_count(&"swim_l") > 0
+		and frames.get_frame_count(&"swim_r") > 0,
+		"Penni's new directional swim sheets use her existing AnimatedSprite2D")
+	player.last_direction = -1.0
+	player.call("_swim_physics", 0.016)
+	_check(player.animator.animation == &"swim_l",
+		"Swimming left selects swim_l instead of walking")
+	player.last_direction = 1.0
+	player.call("_swim_physics", 0.016)
+	_check(player.animator.animation == &"swim_r",
+		"Swimming right selects swim_r instead of walking")
 	_check(kuda.activate(), "After Silas's first return, Kuda encounter activates")
 	_check(is_instance_valid(kuda.kuda) and is_instance_valid(kuda.prey)
 		and kuda.controls_fish(kuda.kuda) and kuda.controls_fish(kuda.prey),
@@ -60,10 +73,46 @@ func _run() -> void:
 
 	_check(kuda.protects_from_silas(hunter) and kuda.protects_from_silas(prey),
 		"Silas refuses both Kuda and the fish he is hunting")
+	_check(KUDA.sea_visuals != null
+		and is_equal_approx(KUDA.sea_visuals.follower_width, 44.0)
+		and KUDA.sea_visuals.portrait_scale > 1.0,
+		"Kuda has one shared editor-editable fish-form presentation resource")
 	var initial: Vector2 = hunter.position
 	kuda.step(0.20)
 	_check(hunter.position != initial and kuda.phase == SeaKudaEncounter.Phase.CHASING,
 		"Kuda visibly pursues prey within an editor-configured area")
+	# Drive Kuda through a close-quarters pass with prey held in place.
+	# The old direct-target steering reversed every frame on overlap.
+	var old_kuda_pos: Vector2 = hunter.position
+	var old_prey_pos: Vector2 = prey.position
+	var old_hunter_open: Callable = hunter.is_open
+	var old_prey_open: Callable = prey.is_open
+	hunter.is_open = func(_point: Vector2) -> bool: return true
+	prey.is_open = func(_point: Vector2) -> bool: return true
+	hunter.position = kuda.position + Vector2(100.0, 70.0)
+	prey.position = hunter.position + Vector2(5.0, 0.0)
+	var old_prey_speed: float = kuda.prey_speed
+	var old_bite_damage: float = kuda.bite_damage
+	kuda.prey_speed = 0.0
+	kuda.bite_damage = 0.0
+	kuda._hunter_heading = Vector2.RIGHT
+	kuda._prey_heading = Vector2.RIGHT
+	kuda._attack_pass_remaining = 0.0
+	var reverse_steps: int = 0
+	for i in range(12):
+		var previous_x: float = hunter.position.x
+		kuda.step(0.016)
+		if hunter.position.x < previous_x - 0.01:
+			reverse_steps += 1
+	_check(reverse_steps == 0 and hunter.position.x > kuda.position.x + 100.0 + 10.0,
+		"Overlapping prey triggers a forward attack pass, not rapid facing reversals")
+	kuda.prey_speed = old_prey_speed
+	kuda.bite_damage = old_bite_damage
+	hunter.position = old_kuda_pos
+	prey.position = old_prey_pos
+	hunter.is_open = old_hunter_open
+	prey.is_open = old_prey_open
+	kuda._reset_chase()
 	# Make Kuda actually kill the first prey, then advance the WORLD update.
 	# The old World skipped kuda.step() when both combat.target and prey
 	# were null, permanently freezing him with no replacement prey.
@@ -99,7 +148,14 @@ func _run() -> void:
 	sea.call("_try_companion_target", hunter.position)
 	_check(not battle.is_active() and story.has_event(&"silas_kuda_refusal"),
 		"Silas also refuses Kuda and doesn't repeat the full conversation")
+	var dialogue_ui: DialogueUI = main.get_node("CanvasLayer/DialogueUI") as DialogueUI
+	dialogue_ui.set_underwater_mode(true)
 	sea.call("_on_fish_hit", hunter)
+	var portrait: TextureRect = dialogue_ui.get_node("NPCPortrait") as TextureRect
+	_check(is_equal_approx(portrait.scale.x, KUDA.sea_visuals.portrait_scale)
+		and is_equal_approx(portrait.rotation_degrees,
+			KUDA.sea_visuals.portrait_angle_degrees),
+		"Kuda's underwater portrait applies his authored scale and angle")
 	_check(kuda.phase == SeaKudaEncounter.Phase.HOOK_DIALOGUE
 		and DialogueManager.current_npc == KUDA and not combat.is_active(),
 		"First net hit pauses Kuda for his confrontation before combat")
@@ -137,8 +193,17 @@ func _run() -> void:
 	_check(story.has_kuda_flag(&"Recruited") and party.has_companion(KUDA.npc_id)
 		and party.members().size() == 2,
 		"After underwater dialogue Kuda joins the real two-fish roster")
-	_check(sea.get_node_or_null("NPCs/PartyFish_barracuda") != null,
+	var kuda_follower: SeaPartyFollower = sea.get_node_or_null(
+		"NPCs/PartyFish_barracuda") as SeaPartyFollower
+	_check(kuda_follower != null,
 		"Kuda immediately follows Penni in fish form for the swim to shore")
+	if kuda_follower != null:
+		var art: Sprite2D = kuda_follower.get_node("FishSprite") as Sprite2D
+		_check(is_equal_approx(
+			float(art.texture.get_width()) * art.scale.x,
+			KUDA.sea_visuals.follower_width),
+			"Recruited Kuda keeps the same large 44px fish-form size")
+
 	var still_registered: bool = false
 	for wild in sea.get("_wild_fish"):
 		if is_instance_valid(wild) and wild == hunter:
@@ -148,6 +213,9 @@ func _run() -> void:
 	kuda.end_dive()
 	_check(not kuda.activate(),
 		"Kuda never respawns as prey after being recruited")
+	player.set_swimming(false)
+	_check(player.animator.animation == &"idle_r",
+		"Returning to shore switches back to the existing land animations")
 	_finish(main)
 
 

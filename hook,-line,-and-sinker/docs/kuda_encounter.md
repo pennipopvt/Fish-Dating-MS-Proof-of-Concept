@@ -35,3 +35,8 @@ The multiplayer / multi-target right-click **combat queue** and Kuda's lethal co
 
 ## Chase steering
 Kuda now has a committed **Attack Pass** (distance and duration in the encounter Inspector). When close to his prey, he continues through it before turning around instead of snapping direction whenever their positions overlap. Both fish use smooth turn-response values, and the prey steers back into the hunting rectangle at its edges. The scene's movement and combat layers are unchanged.
+
+## Fish-form presentation
+Edit `res://resources/visuals/kuda_sea_visuals.tres` (linked on Kuda's NPCData) to adjust his **Follower Width**, **Underwater Portrait Scale**, **Portrait Angle**, and **Portrait Offset**. These settings are read by the same existing party follower, dock entry, and DialogueUI systems. Silas and other NPCs without a visual profile retain their existing defaults. The wild Kuda encounter still has its separate per-area **Kuda Sprite Width** override. The portrait settings never change land/room portraits.
+
+Penni's existing `AnimatedSprite2D` now uses `penni_swim_L.png` and `penni_swim_R.png` for swimming, while walking and idling retain their original animations on shore. The swim sheet cell size and playback FPS are editable on Player.
