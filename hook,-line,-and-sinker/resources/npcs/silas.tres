@@ -8,7 +8,7 @@
 [ext_resource type="Texture2D" uid="uid://bv41gk34hgl5s" path="res://sprites/placeholders/placeholderhousegood.png" id="5_816r6"]
 [ext_resource type="Resource" uid="uid://dq4sy5yms8tqq" path="res://resources/items/spyglass.tres" id="5_spyglass"]
 [ext_resource type="Texture2D" uid="uid://c4v1axr8aete3" path="res://sprites/porn/silas.png" id="6_porn"]
-[ext_resource type="Texture2D" uid="uid://daku8xn1nfo32" path="res://sprites/placeholders/silasplaceholderroom.png" id="room_background_silas"]
+[ext_resource type="Texture2D" uid="uid://cjesho2sc0f1v" path="res://sprites/characters/silas/room_silas.png" id="10_ku7b7"]
 [ext_resource type="Script" uid="uid://cxebrk0uj1pk8" path="res://resources/door_info.gd" id="townhouse_door_info"]
 [ext_resource type="Texture2D" uid="uid://djh5r2k63hmc3" path="res://sprites/rooms/silasdoor.png" id="townhouse_silas_door"]
 [ext_resource type="Texture2D" uid="uid://fur256i6ik5n" path="res://sprites/fish/silas_eel.png" id="underwater_eel"]
@@ -47,7 +47,7 @@ portrait = ExtResource("4_a4wu8")
 underwater_sprite = ExtResource("underwater_eel")
 house = ExtResource("5_816r6")
 door = SubResource("TownhouseSilasDoor")
-room_background = ExtResource("room_background_silas")
+room_background = ExtResource("10_ku7b7")
 porn_sprite = ExtResource("6_porn")
 invitation_accepted_flag = &"house_invitation_accepted"
 intimacy_scene_id = &"silas_house"
