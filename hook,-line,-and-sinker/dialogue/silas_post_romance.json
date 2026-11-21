@@ -38,6 +38,25 @@
           "grey_when_picked": false
         },
         {
+          "text": "Do you still want to explore together someday?",
+          "next": "explore_followup",
+          "when": {
+            "active_events": [
+              "explore_together"
+            ]
+          },
+          "priority": 4,
+          "grey_when_picked": false
+        },
+        {
+          "text": "How's the spyglass?",
+          "next": "spyglass_chat",
+          "required_flags": [
+            "spyglass_complete"
+          ],
+          "grey_when_picked": false
+        },
+        {
           "text": "See you later!",
           "next": "goodbye",
           "spends_action": false,
@@ -161,6 +180,25 @@
           ]
         },
         {
+          "text": "Do you still want to explore together someday?",
+          "next": "explore_followup",
+          "when": {
+            "active_events": [
+              "explore_together"
+            ]
+          },
+          "priority": 4,
+          "grey_when_picked": false
+        },
+        {
+          "text": "How's the spyglass?",
+          "next": "spyglass_chat",
+          "required_flags": [
+            "spyglass_complete"
+          ],
+          "grey_when_picked": false
+        },
+        {
           "text": "See you later!",
           "next": "goodbye",
           "spends_action": false,
@@ -268,6 +306,22 @@
       "lines": [
         "I've been watching the birds on my own lately.",
         "I was hoping we'd find time to do something together."
+      ],
+      "next": "topics"
+    },
+    "explore_followup": {
+      "lines": [
+        "I haven't forgotten!",
+        "I'm getting less nervous about going places, especially if you're there.",
+        "One of these days, we'll do it. I'd like that."
+      ],
+      "next": "topics"
+    },
+    "spyglass_chat": {
+      "lines": [
+        "Oh, I've been taking it everywhere.",
+        "It's so nice being able to see things from a distance instead of hiding and guessing.",
+        "I'm really glad you gave it to me."
       ],
       "next": "topics"
     }

@@ -160,6 +160,8 @@ static func _valid_effects(value: Variant) -> bool:
 	for field in ["start_relationship_events", "resolve_relationship_events"]:
 		if not _string_array(value.get(field, [])):
 			return false
+	if value.has("morale_delta") and not _json_number(value["morale_delta"]):
+		return false
 	if value.has("give_held_item") and not value["give_held_item"] is bool:
 		return false
 	if value.has("request_scene") and (not value["request_scene"] is String or value["request_scene"].is_empty()):

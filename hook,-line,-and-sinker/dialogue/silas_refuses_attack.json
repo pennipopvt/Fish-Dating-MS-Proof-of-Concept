@@ -40,7 +40,13 @@
       "lines": [
         "No, Penni. I'm sorry, but I won't.",
         "Please don't ask me to."
-      ]
+      ],
+      "effects": {
+        "start_relationship_events": [
+          "fish_hurt_pressure"
+        ],
+        "morale_delta": -10
+      }
     },
     "realize": {
       "lines": [

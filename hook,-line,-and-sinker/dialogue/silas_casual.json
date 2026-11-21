@@ -45,6 +45,25 @@
           ]
         },
         {
+          "text": "You said we could explore together someday...",
+          "next": "explore_followup",
+          "when": {
+            "active_events": [
+              "explore_together"
+            ]
+          },
+          "priority": 4,
+          "grey_when_picked": false
+        },
+        {
+          "text": "How's the spyglass working out?",
+          "next": "spyglass_chat",
+          "required_flags": [
+            "spyglass_complete"
+          ],
+          "grey_when_picked": false
+        },
+        {
           "text": "See you later!",
           "next": "goodbye",
           "spends_action": false,
@@ -157,7 +176,12 @@
         "T-together?",
         "Oh... I'd like that."
       ],
-      "next": "topics"
+      "next": "topics",
+      "effects": {
+        "start_relationship_events": [
+          "explore_together"
+        ]
+      }
     },
     "reminder_intro": {
       "lines": [
@@ -252,6 +276,25 @@
           "forbidden_flags": [
             "spyglass_complete"
           ]
+        },
+        {
+          "text": "You said we could explore together someday...",
+          "next": "explore_followup",
+          "when": {
+            "active_events": [
+              "explore_together"
+            ]
+          },
+          "priority": 4,
+          "grey_when_picked": false
+        },
+        {
+          "text": "How's the spyglass working out?",
+          "next": "spyglass_chat",
+          "required_flags": [
+            "spyglass_complete"
+          ],
+          "grey_when_picked": false
         },
         {
           "text": "See you later!",
@@ -350,6 +393,23 @@
       "lines": [
         "I understand if you don't see it the same way.",
         "But I was uncomfortable. That should matter too."
+      ],
+      "next": "topics"
+    },
+    "explore_followup": {
+      "lines": [
+        "Oh... you remembered?",
+        "I have been thinking about it, actually.",
+        "Maybe when I feel a little steadier on these legs, we can find somewhere new to look around together.",
+        "I'd really like that."
+      ],
+      "next": "topics"
+    },
+    "spyglass_chat": {
+      "lines": [
+        "All the time!",
+        "I can see those birds much more clearly now.",
+        "Sometimes I spot something new and think I should show you."
       ],
       "next": "topics"
     }

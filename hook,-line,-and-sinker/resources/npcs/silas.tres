@@ -47,6 +47,17 @@ event_id = &"prelude_boundary"
 priority = 30
 blocks_actions = Array[StringName]([&"overnight"])
 
+[sub_resource type="Resource" id="ExploreTogetherEvent"]
+script = ExtResource("relationship_event_script")
+event_id = &"explore_together"
+priority = 4
+
+[sub_resource type="Resource" id="FishHurtPressureEvent"]
+script = ExtResource("relationship_event_script")
+event_id = &"fish_hurt_pressure"
+followup_dialogue_json = "res://dialogue/silas_fish_boundary_followup.json"
+priority = 45
+
 [resource]
 script = ExtResource("1_bmq75")
 npc_id = &"test_npc"
@@ -60,7 +71,7 @@ porn_sprite = ExtResource("6_porn")
 invitation_accepted_flag = &"house_invitation_accepted"
 intimacy_scene_id = &"silas_house"
 overnight_prelude_json = "res://dialogue/silas_night_prelude.json"
-relationship_events = Array[ExtResource("relationship_event_script")]([SubResource("PreludeBoundaryEvent")])
+relationship_events = Array[ExtResource("relationship_event_script")]([SubResource("PreludeBoundaryEvent"), SubResource("ExploreTogetherEvent"), SubResource("FishHurtPressureEvent")])
 intimacy_dialogue_json = "res://dialogue/silas_house_scene.json"
 morning_after_json = "res://dialogue/silas_after_scene.json"
 overnight_transition_text = "You sleep soundly in Silas's bed."

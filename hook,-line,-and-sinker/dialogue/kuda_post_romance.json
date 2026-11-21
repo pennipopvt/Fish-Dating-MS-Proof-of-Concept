@@ -39,6 +39,14 @@
           "grey_when_picked": false
         },
         {
+          "text": "How's that scarf holding up?",
+          "next": "scarf_chat",
+          "required_flags": [
+            "barracuda_scarf_complete"
+          ],
+          "grey_when_picked": false
+        },
+        {
           "text": "See you later!",
           "next": "goodbye",
           "spends_action": false,
@@ -162,6 +170,14 @@
           ]
         },
         {
+          "text": "How's that scarf holding up?",
+          "next": "scarf_chat",
+          "required_flags": [
+            "barracuda_scarf_complete"
+          ],
+          "grey_when_picked": false
+        },
+        {
           "text": "See you later!",
           "next": "goodbye",
           "spends_action": false,
@@ -268,6 +284,14 @@
       "lines": [
         "I'm not asking you to spend every minute here.",
         "Just... it'd be nice to talk without a job to do."
+      ],
+      "next": "topics"
+    },
+    "scarf_chat": {
+      "lines": [
+        "Still got it.",
+        "...I wear it more than I thought I would.",
+        "What? Don't look so pleased with yourself."
       ],
       "next": "topics"
     }

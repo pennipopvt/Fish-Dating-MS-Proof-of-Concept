@@ -35,6 +35,14 @@
           "next": "caught"
         },
         {
+          "text": "You still wearing that scarf?",
+          "next": "scarf_chat",
+          "required_flags": [
+            "barracuda_scarf_complete"
+          ],
+          "grey_when_picked": false
+        },
+        {
           "text": "See you later!",
           "next": "goodbye",
           "spends_action": false,
@@ -164,6 +172,14 @@
           "next": "caught"
         },
         {
+          "text": "You still wearing that scarf?",
+          "next": "scarf_chat",
+          "required_flags": [
+            "barracuda_scarf_complete"
+          ],
+          "grey_when_picked": false
+        },
+        {
           "text": "See you later!",
           "next": "goodbye",
           "spends_action": false,
@@ -261,6 +277,14 @@
         "Well, I did.",
         "If you're not in the mood, just say so. Don't make me feel like I'm wasting your time.",
         "That's all I'm asking."
+      ],
+      "next": "topics"
+    },
+    "scarf_chat": {
+      "lines": [
+        "Yeah. So what?",
+        "...It's warm. And it actually looks pretty good.",
+        "Don't go making a big deal out of it, alright?"
       ],
       "next": "topics"
     }

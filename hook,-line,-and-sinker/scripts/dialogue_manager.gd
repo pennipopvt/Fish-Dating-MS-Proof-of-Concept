@@ -268,6 +268,8 @@ func _apply_json_effects(effects: Variant, include_attraction: bool = true) -> v
 		NPCManager.start_relationship_event(current_npc, StringName(str(event)))
 	for event in effects.get("resolve_relationship_events", []):
 		NPCManager.resolve_relationship_event(current_npc, StringName(str(event)))
+	if effects.has("morale_delta"):
+		AffectionManager.change_morale(current_npc.npc_id, int(effects["morale_delta"]))
 
 
 # Conditions are evaluated when the menu becomes visible, using the NPC's current flags.

@@ -1,0 +1,55 @@
+{
+  "entry": "greeting",
+  "free_greeting": true,
+  "nodes": {
+    "greeting": {
+      "lines": [
+        "Oh, Penni.",
+        "I've been thinking about what happened with that fish.",
+        "I know you wanted me to help, but... it was already hurt. I couldn't keep hitting it."
+      ],
+      "choices": [
+        {
+          "text": "You're right. I shouldn't have pushed you.",
+          "next": "apology",
+          "grey_when_picked": false
+        },
+        {
+          "text": "We were just trying to catch it.",
+          "next": "defensive",
+          "grey_when_picked": false
+        },
+        {
+          "text": "Can we talk about this another time?",
+          "next": "later",
+          "grey_when_picked": false
+        }
+      ]
+    },
+    "apology": {
+      "lines": [
+        "Thank you for understanding.",
+        "I still want to help you out there.",
+        "I just need you to trust me when I say I can't do something."
+      ],
+      "effects": {
+        "resolve_relationship_events": [
+          "fish_hurt_pressure"
+        ],
+        "morale_delta": 8
+      }
+    },
+    "defensive": {
+      "lines": [
+        "I know. But I don't want to hurt it more just because it's taking a while.",
+        "I can help you catch fish without doing that.",
+        "Please... just hear me out."
+      ]
+    },
+    "later": {
+      "lines": [
+        "Okay. I just... wanted you to know why I stopped."
+      ]
+    }
+  }
+}
