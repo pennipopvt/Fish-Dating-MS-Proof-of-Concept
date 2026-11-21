@@ -1,14 +1,24 @@
 extends Node
 class_name SeaPartyEntrance
 
-# Dive presentation only: ephemeral dock actors -> jumps -> poofs -> fish.
-# This deliberately knows nothing about townhouses, housing, or dates.
+# Dive presentation only: temporary actors, jumps and fish/human poofs
+# in BOTH directions. Housing, dialogue and story decisions stay elsewhere.
 const SILAS_SCENE: PackedScene = preload("res://prefabs/silas.tscn")
 const KUDA_SCENE: PackedScene = preload("res://prefabs/kuda.tscn")
 @export_range(0.1, 1.0, 0.05) var fade_seconds: float = 0.32
 @export_range(0.2, 1.0, 0.05) var jump_seconds: float = 0.46
 @export_range(0.0, 0.5, 0.05) var jump_stagger_seconds: float = 0.14
 @export_range(0.0, 60.0, 1.0) var jump_arc_height: float = 24.0
+@export_group("Returning to Dock")
+@export_range(0.1, 2.0, 0.05) var surface_swim_seconds: float = 0.75
+@export_range(0.1, 1.2, 0.05) var surface_jump_seconds: float = 0.48
+## Additional distance left into the sea for each successive fish.
+@export_range(0.0, 48.0, 1.0) var surface_approach_spacing: float = 20.0
+## Separate human landing spots along the dock, away from Penni.
+@export_range(0.0, 48.0, 1.0) var surface_dock_spacing: float = 26.0
+## A little deeper underwater for each successive companion.
+@export_range(0.0, 24.0, 1.0) var surface_depth_spacing: float = 5.0
+@export_range(0.0, 0.5, 0.05) var surface_stagger_seconds: float = 0.12
 
 var _world: Node2D
 var _player: Player
@@ -135,6 +145,106 @@ func descend_with_player(entry: Vector2, duration: float) -> void:
 		movement.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 		movement.tween_property(fish, "global_position",
 			entry + Vector2(-20.0 - 18.0 * i, 8.0 + 7.0 * i), duration)
+
+
+# Dock markers are feet positions. All surface art for a given NPC
+# converges on the SAME rendered center of their actual human sprite.
+# These per-index slots work for any roster up to DivingParty.MAX_COMPANIONS.
+func surface_approach_position(at: Vector2, index: int) -> Vector2:
+	return at + Vector2(-surface_approach_spacing * index, surface_depth_spacing * index)
+
+
+func surface_dock_position(at: Vector2, index: int) -> Vector2:
+	return at + Vector2(surface_dock_spacing * index, 0.0)
+
+
+func stage_surface_actor(npc: NPCData, feet_at: Vector2, scene_name: String = "") -> Node2D:
+	if npc == null:
+		return null
+	var actor: Node2D = _make_actor(npc)
+	actor.name = scene_name if not scene_name.is_empty() else "SurfaceGuest_" + String(npc.npc_id)
+	actor.visible = false
+	actor.z_index = 6
+	_world.add_child(actor)
+	actor.global_position = feet_at
+	_align_feet(actor, feet_at.y)
+	return actor
+
+
+func surface_visual_center(actor: Node2D) -> Vector2:
+	var art := actor.get_node_or_null("Sprite") as AnimatedSprite2D
+	if art != null:
+		return art.global_position
+	return actor.global_position
+
+
+# Shared for Silas's first arrival AND every ordinary party return.
+# The jump ends at the human art's visual center, not its scene origin
+# or feet marker (which may differ by half a sprite height).
+func swim_and_jump_to_surface(fish: Node2D, approach: Vector2, human_center: Vector2,
+		swim_seconds: float = 0.75, leap_seconds: float = 0.48) -> void:
+	if not is_instance_valid(fish):
+		return
+	var swim := create_tween()
+	swim.tween_property(fish, "global_position", approach, swim_seconds).set_trans(Tween.TRANS_SINE)
+	await swim.finished
+	var start: Vector2 = fish.global_position
+	var jump := create_tween()
+	jump.tween_method(_move_jump.bind(fish, start, human_center),
+		0.0, 1.0, leap_seconds
+	).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	await jump.finished
+	# Do not allow a rounded tween endpoint to move the fish at transformation.
+	fish.global_position = human_center
+
+
+func transform_surface_fish(fish: Node2D, actor: Node2D) -> void:
+	if not is_instance_valid(fish) or not is_instance_valid(actor):
+		return
+	var center: Vector2 = surface_visual_center(actor)
+	fish.global_position = center
+	# SeaPoofEffect intentionally offsets its argument up 13 px; compensate
+	# so the rendered poof, fish and new human share one actual screen location.
+	var poof := SeaPoofEffect.spawn(_world, center + Vector2(0.0, 13.0))
+	fish.hide()
+	await get_tree().create_timer(0.17).timeout
+	actor.show()
+	await get_tree().create_timer(0.42).timeout
+	if is_instance_valid(poof):
+		poof.queue_free()
+
+
+# Ordinary returns use the actual fish-form actors still in DivingWorld.
+# The transition deliberately calls end_diving_party() ONLY afterward.
+func surface_party(party: Array[NPCData], sea: DivingWorld,
+		sea_approach: Vector2, dock_feet: Vector2) -> Array[Node2D]:
+	var actors: Array[Node2D] = []
+	for i in range(party.size()):
+		var npc: NPCData = party[i]
+		if npc == null:
+			continue
+		var fish_path: String = "NPCs/Silas" if npc.npc_id == &"test_npc" else (
+			"NPCs/PartyFish_" + String(npc.npc_id))
+		var fish: Node2D = sea.get_node_or_null(fish_path) as Node2D
+		if fish == null or not fish.visible:
+			push_warning("No active sea companion for surface animation: " + String(npc.npc_id))
+			continue
+		var actor: Node2D = stage_surface_actor(npc, surface_dock_position(dock_feet, i))
+		if actor == null:
+			continue
+		actors.append(actor)
+		await swim_and_jump_to_surface(fish, surface_approach_position(sea_approach, i),
+			surface_visual_center(actor), surface_swim_seconds, surface_jump_seconds)
+		await transform_surface_fish(fish, actor)
+		if i + 1 < party.size() and surface_stagger_seconds > 0.0:
+			await get_tree().create_timer(surface_stagger_seconds).timeout
+	return actors
+
+
+func clear_surface_actors(actors: Array[Node2D]) -> void:
+	for actor in actors:
+		if is_instance_valid(actor):
+			actor.queue_free()
 
 
 func clear() -> void:
