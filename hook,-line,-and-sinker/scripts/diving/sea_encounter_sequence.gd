@@ -29,6 +29,8 @@ signal fish_remove_requested(fish: DivingWildFish)
 @export_range(0.1, 1.2, 0.05) var silas_surface_jump_seconds: float = 0.48
 @export_range(0.1, 1.0, 0.05) var townhouse_fade_seconds: float = 0.35
 var _silas_surface_scene_running: bool = false
+# Injected by SeaDiveTransition: the same presentation handles the school.
+var _surface_presentation: SeaPartyEntrance
 
 var _player: Player
 var _story: SeaStoryDirector
@@ -81,6 +83,10 @@ func configure(player: Player, story: SeaStoryDirector, net: DivingNetProjectile
 	_silas = silas
 	_cue = cue
 	_silas_home = silas.position
+
+
+func set_surface_presentation(presentation: SeaPartyEntrance) -> void:
+	_surface_presentation = presentation
 
 
 func register_tutorial_fish(fish: DivingWildFish) -> void:
@@ -361,32 +367,23 @@ func play_silas_surface_reveal() -> void:
 	var approach: Marker2D = get_parent().get_node("Points/SilasSurfaceApproach") as Marker2D
 	var dock_wait: Marker2D = get_parent().get_node("Points/SilasDockWait") as Marker2D
 
-	# Visibly catch up with Penni at the waterline, then leap onto the dock.
-	var swim: Tween = create_tween()
-	swim.tween_property(_silas, "global_position", approach.global_position,
-		silas_surface_swim_seconds).set_trans(Tween.TRANS_SINE)
-	await swim.finished
-	var jump_from: Vector2 = _silas.global_position
-	var jump_to: Vector2 = dock_wait.global_position + Vector2(-12.0, 0.0)
-	var jump: Tween = create_tween()
-	jump.tween_method(
-		_move_silas_surface_jump.bind(jump_from, jump_to),
-		0.0, 1.0, silas_surface_jump_seconds
-	).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-	await jump.finished
+	# Stage the real human art invisibly FIRST. Its feet align to the dock
+	# marker; the fish swims/jumps to that sprite's visual center (not the
+	# marker), so fish, poof and human cannot appear at different positions.
+	var land_actor: NPCInteractable = _spawn_silas_on_dock(world, dock_wait.global_position)
+	var human_center: Vector2 = _surface_presentation.surface_visual_center(land_actor) \
+		if land_actor != null else dock_wait.global_position
+	await _surface_presentation.swim_and_jump_to_surface(
+		_silas, approach.global_position, human_center,
+		silas_surface_swim_seconds, silas_surface_jump_seconds
+	)
 
 	_story.start_silas_surface_warning()
 	await _story.silas_surface_warning_finished
-	# Use the existing poof sprite and existing land NPC scene.
-	var effect: AnimatedSprite2D = SeaPoofEffect.spawn(world, dock_wait.global_position)
-	await get_tree().create_timer(0.17).timeout
-	_silas.hide()
-	var land_actor: NPCInteractable = _spawn_silas_on_dock(world, dock_wait.global_position)
-	await get_tree().create_timer(0.42).timeout
-	if is_instance_valid(effect):
-		effect.queue_free()
 	if land_actor != null:
-		land_actor.show()
+		await _surface_presentation.transform_surface_fish(_silas, land_actor)
+	else:
+		_silas.hide()
 	_story.on_silas_surface_transformed()
 	await _story.silas_surface_reveal_finished
 	# One short travel fade brings the two of them in front of the townhouse.
@@ -420,10 +417,6 @@ func play_silas_surface_reveal() -> void:
 	_story.complete_silas_townhouse_arrival()
 	_player.busy = false
 	_silas_surface_scene_running = false
-
-
-func _move_silas_surface_jump(t: float, start: Vector2, destination: Vector2) -> void:
-	_silas.global_position = start.lerp(destination, t) + Vector2(0.0, -22.0 * sin(PI * t))
 
 
 func _spawn_silas_on_dock(world: Node2D, at: Vector2) -> NPCInteractable:
