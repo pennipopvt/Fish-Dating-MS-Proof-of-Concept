@@ -227,8 +227,16 @@ func _surface_from_dive() -> void:
 		var humans: Array[Node2D] = await _party_entrance.surface_party(
 			_party.members(), _sea, approach.global_position, dock_wait.global_position
 		)
+		# Give newly recruited Kuda his human-form introduction while his
+		# temporary shore actor is still visible. Existing room assignment owns
+		# housing; the surface animator remains presentation-only.
+		if story.can_begin_kuda_surface_reveal():
+			if story.start_kuda_surface_reveal():
+				await story.kuda_surface_reveal_finished
+			if not RecruitmentHandler.assign_home(story.kuda_data):
+				push_warning("Kuda reached shore, but no townhouse room was available yet.")
 		# A short exit fade covers the companions going back to their rooms.
-		# The party roster, housing and dialogue state stay untouched.
+		# The party roster remains intact for later dives.
 		var fade := ScreenFade.new()
 		get_tree().root.add_child(fade)
 		await fade.fade_to(1.0, _party_entrance.fade_seconds)
