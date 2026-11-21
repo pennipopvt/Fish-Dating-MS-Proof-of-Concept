@@ -21,6 +21,10 @@ func _run() -> void:
 	var sea: Node2D = world.get_node("Sea") as Node2D
 	var ground: TileMapLayer = world.get_node("Ground") as TileMapLayer
 	var ground_front: TileMapLayer = world.get_node("GroundFront") as TileMapLayer
+	_check(water.z_index > solids.z_index
+		and water.z_index > ground_front.z_index,
+		"Runtime World/Water draws above Sea/Solids and GroundFront (water=%d sea=%d front=%d)" % [
+			water.z_index, solids.z_index, ground_front.z_index])
 	var normal_water: Material = water.material
 	var normal_clip: Material = solids.material
 	var normal_color: Color = water.color
