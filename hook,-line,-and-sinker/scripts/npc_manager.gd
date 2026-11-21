@@ -73,6 +73,48 @@ func apply_choice(
 		if flag != null:
 			flags[flag.flag_id] = false
 
+# Read-only predicates shared by choice visibility, optional line variants,
+# and conditional topic routing. Keep relationship state in NPCManager; neither
+# DialogueManager nor JSON files should mutate it while choosing a line.
+func dialogue_conditions_match(npc_id: StringName, conditions: Dictionary, jealousy_tier: int = -1) -> bool:
+	if npc_id == &"":
+		return false
+	var state: Dictionary = get_npc_state(npc_id)
+	var flags: Dictionary = state.get("flags", {})
+	for flag in conditions.get("required_flags", []):
+		if not flags.get(StringName(str(flag)), false):
+			return false
+	for flag in conditions.get("forbidden_flags", []):
+		if flags.get(StringName(str(flag)), false):
+			return false
+	var affection: int = int(state.get("attraction", START_ATTRACTION))
+	var jealousy: int = int(state.get("jealousy", 0))
+	var tier: int = jealousy_tier if jealousy_tier >= 0 else mini(floori(float(jealousy) / 25.0), 3)
+	if conditions.has("min_affection") and affection < int(conditions["min_affection"]):
+		return false
+	if conditions.has("max_affection") and affection > int(conditions["max_affection"]):
+		return false
+	if conditions.has("min_jealousy") and jealousy < int(conditions["min_jealousy"]):
+		return false
+	if conditions.has("max_jealousy") and jealousy > int(conditions["max_jealousy"]):
+		return false
+	if conditions.has("min_jealousy_tier") and tier < int(conditions["min_jealousy_tier"]):
+		return false
+	if conditions.has("max_jealousy_tier") and tier > int(conditions["max_jealousy_tier"]):
+		return false
+	if conditions.has("min_days_since_talk") or conditions.has("max_days_since_talk"):
+		# Unknown last-talk day is not the same as neglect; first visits
+		# should fall through to the usual conversation.
+		if not state.has("last_talk_day"):
+			return false
+		var days: int = maxi(GameManager.get_day() - int(state["last_talk_day"]), 0)
+		if conditions.has("min_days_since_talk") and days < int(conditions["min_days_since_talk"]):
+			return false
+		if conditions.has("max_days_since_talk") and days > int(conditions["max_days_since_talk"]):
+			return false
+	return true
+
+
 # Returns a JSON encounter file path, or "" when none of the configured rules match.
 # When rules exist, a failure to match deliberately does not use the legacy dialogue.
 func get_encounter_json_path(npc: NPCData) -> String:

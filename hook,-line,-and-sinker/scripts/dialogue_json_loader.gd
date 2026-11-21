@@ -48,6 +48,41 @@ static func read_graph(path: String) -> Dictionary:
 					if not line is String and not (line is Dictionary and line.has("text")):
 						push_error("Invalid jealousy dialogue line at node: " + str(id))
 						return {}
+		# A node can choose state-aware text while retaining its original path.
+		# Variants are checked top-to-bottom; the first matching condition wins.
+		if node.has("line_variants"):
+			if not node["line_variants"] is Array:
+				push_error("Invalid line variants at: " + str(id))
+				return {}
+			for variant in node["line_variants"]:
+				if not variant is Dictionary or not _valid_conditions(variant.get("when", {})) \
+						or not _valid_lines(variant.get("lines", null)) or variant["lines"].is_empty():
+					push_error("Invalid conditional lines at: " + str(id))
+					return {}
+		# Optional dialogue-only routers keep full story-stage graphs reusable.
+		if node.has("conditional_next") or node.has("rotating_next"):
+			if not node.get("lines", []).is_empty() or not node.get("choices", []).is_empty() \
+					or node.has("effects") or node.has("cue") or node.has("next"):
+				push_error("Dialogue router must not also contain lines, choices or effects: " + str(id))
+				return {}
+		if node.has("conditional_next"):
+			if not node["conditional_next"] is Array:
+				push_error("Invalid conditional topic routing at: " + str(id))
+				return {}
+			for route in node["conditional_next"]:
+				if not route is Dictionary or not nodes.has(str(route.get("next", ""))) \
+						or not _valid_conditions(route.get("when", {})):
+					push_error("Invalid conditional topic destination at: " + str(id))
+					return {}
+		if node.has("rotating_next"):
+			if not node["rotating_next"] is Array or node["rotating_next"].is_empty():
+				push_error("Invalid rotating topic list at: " + str(id))
+				return {}
+			for route in node["rotating_next"]:
+				var destination: String = str(route.get("next", "")) if route is Dictionary else str(route)
+				if not nodes.has(destination) or (route is Dictionary and not _valid_conditions(route.get("when", {}))):
+					push_error("Invalid rotating topic destination at: " + str(id))
+					return {}
 		if node.has("next") and not nodes.has(str(node["next"])):
 			push_error("Missing next dialogue node at: " + str(id))
 			return {}
@@ -61,6 +96,12 @@ static func read_graph(path: String) -> Dictionary:
 			if not choice is Dictionary or not choice.has("text") or not nodes.has(str(choice.get("next", ""))):
 				push_error("Bad dialogue choice target at: " + str(id))
 				return {}
+			if not _valid_conditions(choice.get("when", {})):
+				push_error("Invalid state condition on choice in: " + str(id))
+				return {}
+			if choice.has("priority") and not choice["priority"] is int:
+				push_error("Invalid choice priority in: " + str(id))
+				return {}
 			for condition in ["required_flags", "forbidden_flags"]:
 				if not _string_array(choice.get(condition, [])):
 					push_error("Invalid " + condition + " at choice in: " + str(id))
@@ -69,6 +110,32 @@ static func read_graph(path: String) -> Dictionary:
 				push_error("Invalid choice effects at: " + str(id))
 				return {}
 	return graph
+
+# Explicit schema catches misspelled condition names during import/testing.
+static func _valid_conditions(value: Variant) -> bool:
+	if not value is Dictionary:
+		return false
+	for key in value:
+		if key in ["required_flags", "forbidden_flags"]:
+			if not _string_array(value[key]):
+				return false
+		elif key in ["min_affection", "max_affection", "min_jealousy", "max_jealousy",
+				"min_jealousy_tier", "max_jealousy_tier", "min_days_since_talk", "max_days_since_talk"]:
+			if not value[key] is int:
+				return false
+		else:
+			return false
+	return true
+
+
+static func _valid_lines(value: Variant) -> bool:
+	if not value is Array:
+		return false
+	for line in value:
+		if not line is String and not (line is Dictionary and line.has("text") and line["text"] is String):
+			return false
+	return true
+
 
 static func _string_array(value: Variant) -> bool:
 	if not value is Array:

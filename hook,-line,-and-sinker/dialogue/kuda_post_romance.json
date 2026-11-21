@@ -9,6 +9,15 @@
       ],
       "choices": [
         {
+          "text": "Something on your mind?",
+          "next": "check_in",
+          "when": {
+            "min_jealousy": 50
+          },
+          "priority": 10,
+          "grey_when_picked": false
+        },
+        {
           "text": "Want to go out on the boat?",
           "next": "ship_when",
           "required_flags": [
@@ -25,6 +34,26 @@
           "next": "goodbye",
           "spends_action": false,
           "grey_when_picked": false
+        }
+      ],
+      "line_variants": [
+        {
+          "when": {
+            "min_jealousy": 50
+          },
+          "lines": [
+            "Penni.",
+            "Been wondering when you'd show up."
+          ]
+        },
+        {
+          "when": {
+            "min_days_since_talk": 3
+          },
+          "lines": [
+            "Oh, you're back.",
+            "Was starting to think you forgot where my room was."
+          ]
         }
       ]
     },
@@ -103,9 +132,75 @@
       ]
     },
     "check_in": {
+      "lines": [],
+      "conditional_next": [
+        {
+          "next": "check_in_jealous",
+          "when": {
+            "min_jealousy": 50
+          }
+        },
+        {
+          "next": "check_in_hurt",
+          "when": {
+            "max_affection": 4
+          }
+        },
+        {
+          "next": "check_in_lonesome",
+          "when": {
+            "min_days_since_talk": 3
+          }
+        }
+      ],
+      "rotating_next": [
+        "check_in_home",
+        "check_in_surface",
+        "check_in_company"
+      ]
+    },
+    "check_in_home": {
       "lines": [
         "It's different from what I expected.",
         "...Not bad, though. Having someone around helps."
+      ],
+      "next": "topics"
+    },
+    "check_in_surface": {
+      "lines": [
+        "I watched the tide for a while today.",
+        "It's weird knowing I can just stay here and not chase anything.",
+        "Don't tell anyone I said that."
+      ],
+      "next": "topics"
+    },
+    "check_in_company": {
+      "lines": [
+        "You keep showing up, and I keep letting you in.",
+        "Guess that says something about both of us."
+      ],
+      "next": "topics"
+    },
+    "check_in_jealous": {
+      "lines": [
+        "You know I'm not great at pretending something's fine when it isn't.",
+        "I'm not asking you to stop living your life.",
+        "But I want to know where I stand."
+      ],
+      "next": "topics"
+    },
+    "check_in_hurt": {
+      "lines": [
+        "I don't feel like pretending everything's normal right now.",
+        "It's been a lot of diving and not much else, hasn't it?"
+      ],
+      "next": "topics"
+    },
+    "check_in_lonesome": {
+      "lines": [
+        "Been pretty quiet around here.",
+        "I can handle quiet. Doesn't mean I have to like it.",
+        "Good to see you again."
       ],
       "next": "topics"
     }

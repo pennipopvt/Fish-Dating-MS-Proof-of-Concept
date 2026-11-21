@@ -8,6 +8,15 @@
       ],
       "choices": [
         {
+          "text": "You seem a little distant. Is something wrong?",
+          "next": "check_in",
+          "when": {
+            "min_jealousy": 50
+          },
+          "priority": 10,
+          "grey_when_picked": false
+        },
+        {
           "text": "Want to go on a date?",
           "next": "beach_when",
           "required_flags": [
@@ -24,6 +33,26 @@
           "next": "goodbye",
           "spends_action": false,
           "grey_when_picked": false
+        }
+      ],
+      "line_variants": [
+        {
+          "when": {
+            "min_jealousy": 50
+          },
+          "lines": [
+            "Oh. Hi, Penni.",
+            "I wasn't sure you'd come by today."
+          ]
+        },
+        {
+          "when": {
+            "min_days_since_talk": 3
+          },
+          "lines": [
+            "Oh! Penni...",
+            "It's been a little while. I missed talking to you."
+          ]
         }
       ]
     },
@@ -102,9 +131,76 @@
       ]
     },
     "check_in": {
+      "lines": [],
+      "conditional_next": [
+        {
+          "next": "check_in_jealous",
+          "when": {
+            "min_jealousy": 50
+          }
+        },
+        {
+          "next": "check_in_hurt",
+          "when": {
+            "max_affection": 4
+          }
+        },
+        {
+          "next": "check_in_lonesome",
+          "when": {
+            "min_days_since_talk": 3
+          }
+        }
+      ],
+      "rotating_next": [
+        "check_in_home",
+        "check_in_birds",
+        "check_in_you"
+      ]
+    },
+    "check_in_home": {
       "lines": [
         "Honestly, I've been really happy lately.",
         "I'm still getting used to everything, but... it's nice having you around."
+      ],
+      "next": "topics"
+    },
+    "check_in_birds": {
+      "lines": [
+        "I tried watching those things flying over the island again.",
+        "I think they might be birds?",
+        "I'm getting a little braver about looking outside."
+      ],
+      "next": "topics"
+    },
+    "check_in_you": {
+      "lines": [
+        "You know, I never really asked what you like doing when you're not fishing.",
+        "I want to know more about you, too."
+      ],
+      "next": "topics"
+    },
+    "check_in_jealous": {
+      "lines": [
+        "I've been trying not to think about it, but...",
+        "Seeing you with someone else has been harder than I expected.",
+        "Could we talk about that sometime?"
+      ],
+      "next": "topics"
+    },
+    "check_in_hurt": {
+      "lines": [
+        "I know you're busy, Penni.",
+        "But lately, I feel like we only talk when you need something.",
+        "I miss when we could just spend time together."
+      ],
+      "next": "topics"
+    },
+    "check_in_lonesome": {
+      "lines": [
+        "I've been doing okay on my own.",
+        "But... I missed seeing you around.",
+        "I'm glad you came by."
       ],
       "next": "topics"
     }

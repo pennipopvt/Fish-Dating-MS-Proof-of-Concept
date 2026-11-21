@@ -102,6 +102,8 @@ var _scene_after_conversation: String = ""
 # greyed (picked before). Used by AffectionManager / DialogueUI.
 var _current_path: String = ""
 var _choice_greyed: Array[bool] = []
+# A router's selected topic stays consistent if revisited in one conversation.
+var _conversation_rotations: Dictionary = {}
 # Compatibility field. Ordinary conversations are free in the world clock.
 # Dates use their own time cost through DateManager.
 var last_conversation_cost: int = 0
@@ -110,6 +112,7 @@ var _conversation_costs_action: bool = true
 func start_conversation(npc: NPCData, json_override: String = "") -> void:
 	if is_active or npc == null:
 		return
+	_conversation_rotations.clear()
 	if not _requested_inline_graph.is_empty():
 		current_npc = npc
 		current_dialogue = null
@@ -274,17 +277,67 @@ func _choice_available(choice: Dictionary) -> bool:
 	for flag in choice.get("forbidden_flags", []):
 		if flags.get(StringName(str(flag)), false):
 			return false
-	return true
+	return NPCManager.dialogue_conditions_match(current_npc.npc_id, choice.get("when", {}))
 
-func _enter_node(id: String, reaction_tier: int = -1) -> void:
+
+# Router selection and conditional text are presentation decisions only.
+# Conversation stages and underlying affection are owned by their managers.
+func _select_rotating_target(id: String, routes: Array) -> String:
+	var key: String = "%s#%s" % [_current_path, id]
+	if _conversation_rotations.has(key):
+		return str(_conversation_rotations[key])
+	var state: Dictionary = NPCManager.get_npc_state(current_npc.npc_id)
+	var cursors: Dictionary = state.get("dialogue_rotation_cursors", {})
+	state["dialogue_rotation_cursors"] = cursors
+	var cursor: int = int(cursors.get(key, 0))
+	for offset in range(routes.size()):
+		var index: int = (cursor + offset) % routes.size()
+		var route: Variant = routes[index]
+		if route is Dictionary and not NPCManager.dialogue_conditions_match(
+				current_npc.npc_id, route.get("when", {})):
+			continue
+		var target: String = str(route.get("next", "")) if route is Dictionary else str(route)
+		cursors[key] = (index + 1) % routes.size()
+		_conversation_rotations[key] = target
+		return target
+	return ""
+
+
+func _select_node_lines(node: Dictionary, reaction_tier: int) -> Array:
+	var tier: int = reaction_tier if reaction_tier >= 0 else AffectionManager.get_jealousy_tier(current_npc.npc_id)
+	for variant in node.get("line_variants", []):
+		if NPCManager.dialogue_conditions_match(current_npc.npc_id, variant.get("when", {}), tier):
+			return variant["lines"]
+	if node.has("jealousy_lines"):
+		return DialogueJsonLoader.lines_for_jealousy_tier(node, tier)
+	return node.get("lines", [])
+
+
+func _enter_node(id: String, reaction_tier: int = -1, redirects: int = 0) -> void:
 	var nodes: Dictionary = _graph["nodes"]
 	if not nodes.has(id):
 		push_error("Dialogue JSON missing node: " + id)
 		end_conversation()
 		return
+	if redirects >= 12:
+		push_error("Dialogue router cycle near: " + id)
+		end_conversation()
+		return
+	var node: Dictionary = nodes[id]
+	for route in node.get("conditional_next", []):
+		if NPCManager.dialogue_conditions_match(current_npc.npc_id, route.get("when", {}), reaction_tier):
+			_enter_node(str(route["next"]), reaction_tier, redirects + 1)
+			return
+	if node.has("rotating_next"):
+		var target: String = _select_rotating_target(id, node["rotating_next"])
+		if target.is_empty():
+			push_error("Dialogue topic router has no eligible destinations: " + id)
+			end_conversation()
+			return
+		_enter_node(target, reaction_tier, redirects + 1)
+		return
 	_node_id = id
 	_node_effects_applied = false
-	var node: Dictionary = nodes[id]
 	if node.has("cue"):
 		dialogue_cue.emit(current_npc, str(node["cue"]))
 	_lines.clear()
@@ -294,10 +347,7 @@ func _enter_node(id: String, reaction_tier: int = -1) -> void:
 	line_index = 0
 	# Variant responses change only the text, never the choice or graph path.
 	# Other dialogue nodes continue to use their ordinary lines unchanged.
-	var lines_to_show: Array = node.get("lines", [])
-	if node.has("jealousy_lines") and current_npc != null:
-		var tier := reaction_tier if reaction_tier >= 0 else AffectionManager.get_jealousy_tier(current_npc.npc_id)
-		lines_to_show = DialogueJsonLoader.lines_for_jealousy_tier(node, tier)
+	var lines_to_show: Array = _select_node_lines(node, reaction_tier)
 	for raw_line in lines_to_show:
 		var line := DialogueLineData.new()
 		if raw_line is String:
@@ -309,10 +359,22 @@ func _enter_node(id: String, reaction_tier: int = -1) -> void:
 		else:
 			continue
 		_lines.append(line)
+	# Higher-priority state-aware topics appear first; equal priorities retain
+	# the author's original JSON order (important for existing date choices).
+	var available_choices: Array[Dictionary] = []
+	var choice_index: int = 0
 	for raw_choice in node.get("choices", []):
 		var choice: Dictionary = raw_choice
-		if not _choice_available(choice):
-			continue
+		if _choice_available(choice):
+			available_choices.append({"choice": choice, "order": choice_index})
+		choice_index += 1
+	available_choices.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
+		var left_priority: int = int(a["choice"].get("priority", 0))
+		var right_priority: int = int(b["choice"].get("priority", 0))
+		return int(a["order"]) < int(b["order"]) if left_priority == right_priority else left_priority > right_priority
+	)
+	for record in available_choices:
+		var choice: Dictionary = record["choice"]
 		var display_choice := DialogueChoiceData.new()
 		display_choice.text = str(choice.get("text", ""))
 		choice["_key"] = AffectionManager.choice_key(_current_path, id, display_choice.text)
@@ -378,6 +440,7 @@ func end_conversation() -> void:
 	_current_path = ""
 	_current_speaker_alias = ""
 	_choice_greyed.clear()
+	_conversation_rotations.clear()
 	conversation_finished.emit(finished_npc)
 	if not requested_scene.is_empty():
 		scene_requested.emit(finished_npc, requested_scene)
