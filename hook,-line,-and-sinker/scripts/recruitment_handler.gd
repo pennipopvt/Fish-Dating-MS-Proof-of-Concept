@@ -4,10 +4,10 @@ extends Node
 # NPCManager owns story flags; FishingManager owns the catch pool.
 signal fade_to()
 signal npc_waiting_for_home(actor: NPCInteractable)
-signal npc_moved_into_home(actor: NPCInteractable, home: Sprite2D)
+signal npc_moved_into_home(actor: NPCInteractable, home: Area2D)
 
 var listening: bool = false
-var available_homes: Array[Sprite2D] = []
+var available_homes: Array[Area2D] = []
 var waiting_npcs: Array[NPCInteractable] = []
 # Kept for the developer panel's direct house_recruit shortcut.
 var npc: NPCInteractable = null
@@ -18,7 +18,7 @@ var dock_wait_offset: Vector2 = Vector2(24.0, 0.0)
 var dock_wait_spacing: float = 16.0
 
 var _transfer_in_progress: bool = false
-var _reserved_home: Sprite2D = null
+var _reserved_home: Area2D = null
 var _transfer_generation: int = 0
 
 
@@ -112,7 +112,7 @@ func _barracuda_return_to_water(actor: NPCInteractable) -> void:
 
 
 # Called by AvailableHomeInfo whenever the world sets up its empty houses.
-func set_available_homes(homes: Array[Sprite2D]) -> void:
+func set_available_homes(homes: Array[Area2D]) -> void:
 	available_homes.clear()
 	for home in homes:
 		if _home_valid(home) and not available_homes.has(home) and home != _reserved_home:
@@ -122,7 +122,7 @@ func set_available_homes(homes: Array[Sprite2D]) -> void:
 
 # Call this when building a new house, or after a previously occupied house
 # has genuinely been vacated. Do not register a still-occupied house.
-func register_available_home(home: Sprite2D) -> void:
+func register_available_home(home: Area2D) -> void:
 	if not _home_valid(home) or home == _reserved_home or available_homes.has(home):
 		return
 	available_homes.append(home)
@@ -169,7 +169,7 @@ func _try_place_waiting_npcs() -> void:
 		if not _actor_valid(actor):
 			waiting_npcs.pop_front()
 			continue
-		var home: Sprite2D = _take_available_home()
+		var home: Area2D = _take_available_home()
 		if home == null:
 			return
 		waiting_npcs.pop_front()
@@ -179,7 +179,7 @@ func _try_place_waiting_npcs() -> void:
 		return
 
 
-func _transfer_actor(actor: NPCInteractable, home: Sprite2D, generation: int) -> void:
+func _transfer_actor(actor: NPCInteractable, home: Area2D, generation: int) -> void:
 	# Reserve the house before the fade so parallel recruitments can't claim it.
 	fade_to.emit()
 	await get_tree().create_timer(maxf(0.0, time_to_transfer)).timeout
@@ -187,7 +187,7 @@ func _transfer_actor(actor: NPCInteractable, home: Sprite2D, generation: int) ->
 		return
 	_reserved_home = null
 	if _actor_valid(actor) and _home_valid(home):
-		_move_actor_into_home(actor, home, actor.npc.house if actor.npc != null else null)
+		_move_actor_into_home(actor, home, actor.npc.door if actor.npc != null else null)
 	else:
 		# Preserve the place in line if the house disappears mid-transfer.
 		if _home_valid(home) and not available_homes.has(home):
@@ -206,9 +206,9 @@ func _has_available_home() -> bool:
 	return false
 
 
-func _take_available_home() -> Sprite2D:
+func _take_available_home() -> Area2D:
 	while not available_homes.is_empty():
-		var home: Sprite2D = available_homes.pop_front()
+		var home: Area2D = available_homes.pop_front()
 		if _home_valid(home):
 			return home
 	return null
@@ -223,25 +223,37 @@ func house_recruit(new_house: Texture2D) -> void:
 	if _transfer_in_progress or not waiting_npcs.is_empty():
 		_enqueue_accepted_actor(actor)
 		return
-	var home: Sprite2D = _take_available_home()
+	var home: Area2D = _take_available_home()
 	if home == null:
 		_enqueue_accepted_actor(actor)
 		return
-	_move_actor_into_home(actor, home, new_house)
+	_move_actor_into_home(actor, home, actor.npc.door if actor.npc != null else null)
 
 
-func _move_actor_into_home(actor: NPCInteractable, home: Sprite2D, new_house: Texture2D) -> void:
+func _move_actor_into_home(actor: NPCInteractable, home: Area2D, info: DoorInfo) -> void:
 	if not _actor_valid(actor) or not _home_valid(home):
 		return
-	actor.global_position = home.global_position
-	if new_house != null:
-		home.texture = new_house
+	var door: TransferDoor = home as TransferDoor
+	# If an NPC's room has not been authored, keep their door locked
+	# rather than teleporting to the origin (Kuda's placeholder case).
+	if door != null and info != null and info.sceneLoc != Vector2.ZERO:
+		door.update_door(info.sceneLoc, info.door)
+		door.locked = false
+		for node in get_tree().get_nodes_in_group(Interactable.GROUP):
+			var resident: NPCInteractable = node as NPCInteractable
+			if resident != null and resident != actor and resident.npc != null \
+					and resident.npc.npc_id == actor.npc.npc_id:
+				resident.show()
+				resident.monitoring = true
+	# The caught land actor belongs to the recruitment scene, not to
+	# a permanent overworld NPC population.
 	npc_moved_into_home.emit(actor, home)
+	actor.queue_free()
 
 
 func _actor_valid(actor: NPCInteractable) -> bool:
 	return is_instance_valid(actor) and not actor.is_queued_for_deletion()
 
 
-func _home_valid(home: Sprite2D) -> bool:
+func _home_valid(home: Area2D) -> bool:
 	return is_instance_valid(home) and not home.is_queued_for_deletion()

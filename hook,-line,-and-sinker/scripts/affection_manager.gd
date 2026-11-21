@@ -49,8 +49,12 @@ func _connect_sources() -> void:
 	DialogueManager.conversation_finished.connect(_on_conversation_finished)
 	GameManager.day_started.connect(_on_day_started)
 	DateManager.date_missed.connect(_on_date_missed)
-	RecruitmentHandler.npc_moved_into_home.connect(
-		func(actor: NPCInteractable, home: Sprite2D) -> void: _homes[actor.get_instance_id()] = home)
+	RecruitmentHandler.npc_moved_into_home.connect(_on_npc_moved_into_home)
+
+
+func _on_npc_moved_into_home(actor: NPCInteractable, home: Area2D) -> void:
+	if actor != null and actor.npc != null:
+		_homes[actor.npc.npc_id] = home
 
 
 # --- Value ---
@@ -244,27 +248,30 @@ func leave(npc_id: StringName) -> void:
 	var npc_name := _display_name(npc_id)
 	var actor := _find_actor(npc_id)
 	_return_fish(npc_id, actor)
+	_free_home(npc_id)
 	if actor != null:
-		_free_home(actor)
 		RecruitmentHandler.waiting_npcs.erase(actor)
-		_jump_into_ocean(actor)
+		# Room residents are already inside; don't make them hop through
+		# the exterior world when their relationship ends.
+		if actor.get_parent().name.ends_with("Room"):
+			actor.hide()
+			actor.monitoring = false
+		else:
+			_jump_into_ocean(actor)
 	print("[Affection] %s went back to the sea" % npc_name)
 	show_message("DEPARTURE", "%s went back to the sea" % npc_name)
 	npc_left.emit(npc_id)
 
 
-func _free_home(actor: NPCInteractable) -> void:
-	var home := _homes.get(actor.get_instance_id()) as Sprite2D
-	_homes.erase(actor.get_instance_id())
+func _free_home(npc_id: StringName) -> void:
+	var home: TransferDoor = _homes.get(npc_id) as TransferDoor
+	_homes.erase(npc_id)
 	if not is_instance_valid(home):
 		return
-	# Put the empty-house texture back (from the house's own scene).
-	if not home.scene_file_path.is_empty():
-		var scene := load(home.scene_file_path) as PackedScene
-		var fresh := scene.instantiate() as Sprite2D if scene != null else null
-		if fresh != null:
-			home.texture = fresh.texture
-			fresh.free()
+	home.locked = true
+	home.transfer_loc = Vector2.ZERO
+	if home.house != null:
+		home.house.texture = preload("res://sprites/rooms/lockeddoor.png")
 	RecruitmentHandler.register_available_home(home)
 
 

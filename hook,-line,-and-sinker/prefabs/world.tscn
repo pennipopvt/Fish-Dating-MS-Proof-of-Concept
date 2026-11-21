@@ -15,6 +15,8 @@
 [ext_resource type="Texture2D" uid="uid://dvyql68s5tvo3" path="res://sprites/environment/tileset.png" id="10_6mti1"]
 [ext_resource type="Texture2D" uid="uid://l4228gvusjlb" path="res://sprites/environment/tilesetOnPlayer.png" id="11_onplayer"]
 [ext_resource type="Shader" uid="uid://r4rciq67coeg" path="res://shaders/water.gdshader" id="13_le6xu"]
+[ext_resource type="PackedScene" path="res://scenes/townhouse.tscn" id="23_townhouse"]
+[ext_resource type="PackedScene" path="res://prefabs/rooms/silas_room.tscn" id="24_silas_room"]
 [ext_resource type="PackedScene" uid="uid://86k4q6ioi03u" path="res://prefabs/silas_house.tscn" id="24_xfqyr"]
 [ext_resource type="PackedScene" path="res://prefabs/bed.tscn" id="25_bed"]
 [ext_resource type="PackedScene" path="res://prefabs/beach.tscn" id="26_beach"]
@@ -162,17 +164,25 @@ texture = ExtResource("6_q76tg")
 position = Vector2(89, 8)
 texture = ExtResource("7_sxw1y")
 
+[node name="Townhouse" parent="." instance=ExtResource("23_townhouse")]
+z_index = -2
+position = Vector2(395, 43)
+
 [node name="AvailableHomeList" parent="." unique_id=1246650794 node_paths=PackedStringArray("available_homes") instance=ExtResource("1_u7kri")]
 script = ExtResource("2_n7i1a")
-available_homes = [NodePath("FreeHouseA"), NodePath("FreeHouseB")]
+available_homes = [NodePath("FreeHouseA"), NodePath("FreeHouseB"), NodePath("FreeHouseC"), NodePath("FreeHouseD")]
 
 [node name="FreeHouseA" parent="AvailableHomeList" unique_id=852988363 instance=ExtResource("24_xfqyr")]
 position = Vector2(333, 96)
-offset = Vector2(0, -16)
 
 [node name="FreeHouseB" parent="AvailableHomeList" unique_id=1681937105 instance=ExtResource("24_xfqyr")]
-position = Vector2(445, 96)
-offset = Vector2(0, -16)
+position = Vector2(458, 96)
+
+[node name="FreeHouseC" parent="AvailableHomeList" instance=ExtResource("24_xfqyr")]
+position = Vector2(358, 96)
+
+[node name="FreeHouseD" parent="AvailableHomeList" instance=ExtResource("24_xfqyr")]
+position = Vector2(433, 96)
 
 [node name="Dock" parent="." unique_id=501821169 instance=ExtResource("1_4284n")]
 position = Vector2(46, 101)
@@ -213,3 +223,7 @@ script = ExtResource("sea_water_bounds")
 
 
 [node name="Sea" parent="." instance=ExtResource("sea_area")]
+
+# Interiors live above the sea instead of overlapping the expanded level.
+[node name="SilasRoom" parent="." instance=ExtResource("24_silas_room")]
+position = Vector2(-1296, -520)
