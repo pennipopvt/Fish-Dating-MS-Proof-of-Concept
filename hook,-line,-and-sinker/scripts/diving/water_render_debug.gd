@@ -1,9 +1,9 @@
 extends CanvasLayer
 class_name WaterRenderDebug
 
-# F8 is a visual-only diagnostic. None of these views change the sea's
+# Backslash is a visual-only diagnostic. None of these views change the sea's
 # collisions, gameplay, scene hierarchy, or the production water shaders.
-# Every temporary change is restored when F8 closes.
+# Every temporary change is restored when Backslash closes.
 const MODE_NAMES = ["NORMAL", "NO SEA", "NO LAND", "NO WATER", "SOLID WATER", "NO SEA CLIP"]
 
 @onready var _readout: Label = $Panel/Readout
@@ -45,7 +45,7 @@ func configure(world: Node2D, game_viewport: SubViewport, player: Player) -> voi
 	_camera = player.get_node_or_null("Camera2D") as Camera2D
 	_solids = world.get_node_or_null("Sea/Solids") as TileMapLayer
 	if _water == null or _solids == null or _sea == null or _camera == null:
-		push_warning("[WATER DEBUG] Missing expected nodes; F8 diagnostics unavailable")
+		push_warning("[WATER DEBUG] Missing expected nodes; Backslash diagnostics unavailable")
 		return
 	_original_water_material = _water.material
 	_original_solids_material = _solids.material
@@ -74,7 +74,7 @@ func handle_input(event: InputEvent) -> bool:
 	var key := event as InputEventKey
 	if key == null or not key.pressed or key.echo:
 		return false
-	if key.keycode == KEY_F8:
+	if key.keycode == KEY_BACKSLASH:
 		if visible:
 			_close()
 		else:
@@ -85,7 +85,7 @@ func handle_input(event: InputEvent) -> bool:
 	if key.keycode >= KEY_1 and key.keycode <= KEY_6:
 		_set_mode(key.keycode - KEY_1)
 		return true
-	if key.keycode == KEY_F9:
+	if key.keycode == KEY_P:
 		_capture()
 		return true
 	if key.keycode == KEY_C:
@@ -112,7 +112,7 @@ func _close() -> void:
 		_line.visible = false
 	hide()
 	set_process(false)
-	print("[WATER DEBUG] F8 closed; all visual overrides restored")
+	print("[WATER DEBUG] Backslash closed; all visual overrides restored")
 
 
 func _set_mode(next_mode: int) -> void:
@@ -190,7 +190,7 @@ func _report() -> String:
 	var water_end: Vector2 = _water.get_global_transform_with_canvas() * _water.size
 	var sea_clip: String = "ON" if _solids.material != null else "OFF"
 	var lines: PackedStringArray = PackedStringArray()
-	lines.append("WATER RENDER DEBUG | F8 close | 1-6 views | F9 save PNG | C copy")
+	lines.append("WATER RENDER DEBUG | \\ toggle | 1-6 views | P save PNG | C copy")
 	lines.append("1 Normal  2 No Sea  3 No Land  4 No Water  5 Solid Magenta Water  6 No Sea Clip")
 	lines.append("MODE: %d %s | red line = actual World/Water surface" % [mode + 1, MODE_NAMES[mode]])
 	lines.append("Water: visible=%s  z=%d  shader=%s" % [
@@ -218,7 +218,7 @@ func _report() -> String:
 		float((_original_water_material as ShaderMaterial).get_shader_parameter("waterline_y"))
 		- float((_original_solids_material as ShaderMaterial).get_shader_parameter("surface_screen_y"))
 		if _original_water_material is ShaderMaterial and _original_solids_material is ShaderMaterial else 0.0])
-	lines.append("F9 last screenshot: " + _last_capture)
+	lines.append("P last screenshot: " + _last_capture)
 	return "\n".join(lines)
 
 
