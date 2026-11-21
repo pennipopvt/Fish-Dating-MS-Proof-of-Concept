@@ -147,10 +147,10 @@ func _run_route(npc: NPCData, skip_scene: bool) -> void:
 
 	stage = npc.display_name + " automatic room exit"
 	for i in range(50):
-		if not view.visible:
+		if not view.visible and not player.busy and not bool(view.get("_closing")):
 			break
 		await get_tree().create_timer(0.1).timeout
-	_check(not view.visible and not player.busy,
+	_check(not view.visible and not player.busy and not bool(view.get("_closing")),
 		"The morning-after conversation automatically returns Penni to the world")
 	_check(not DialogueManager.is_active,
 		"No repeat greeting begins after receiving the morning-after reward")
@@ -258,10 +258,10 @@ func _run_failed_prelude() -> void:
 		"Failure scenario starts the prelude")
 	_finish_graph_choices([2]) # Pushy choice: Silas asks to stop.
 	for i in range(50):
-		if not view.visible:
+		if not view.visible and not player.busy:
 			break
 		await get_tree().create_timer(0.1).timeout
-	_check(not view.visible and illustration._active_npc == null,
+	_check(not view.visible and not player.busy and illustration._active_npc == null,
 		"Misreading the mood closes the room without starting the adult scene")
 	_check(GameManager.get_day() == 1 and GameManager.is_period(GameManager.Times.NIGHT),
 		"An unsuccessful evening does not advance the clock")
