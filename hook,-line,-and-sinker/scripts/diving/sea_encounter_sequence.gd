@@ -87,6 +87,10 @@ func configure(player: Player, story: SeaStoryDirector, net: DivingNetProjectile
 
 func set_surface_presentation(presentation: SeaPartyEntrance) -> void:
 	_surface_presentation = presentation
+	# Preserve the artist-editable Silas scene override in the shared actor
+	# factory, so first-return and future party exits show the same artwork.
+	if silas_land_scene != null and _story != null:
+		_surface_presentation.register_land_scene(_story.silas_data.npc_id, silas_land_scene)
 
 
 func register_tutorial_fish(fish: DivingWildFish) -> void:
@@ -370,7 +374,16 @@ func play_silas_surface_reveal() -> void:
 	# Stage the real human art invisibly FIRST. Its feet align to the dock
 	# marker; the fish swims/jumps to that sprite's visual center (not the
 	# marker), so fish, poof and human cannot appear at different positions.
-	var land_actor: NPCInteractable = _spawn_silas_on_dock(world, dock_wait.global_position)
+	# Use the exact same non-interactive temporary actor/feet alignment as
+	# ordinary party exits. Silas's special story sequence stays here.
+	var temporary_actor: Node2D = _surface_presentation.stage_surface_actor(
+		_story.silas_data, dock_wait.global_position, "SilasDockActor"
+	)
+	var land_actor: NPCInteractable = temporary_actor as NPCInteractable
+	if land_actor == null:
+		push_warning("Silas's surface actor must use NPCInteractable.")
+		if is_instance_valid(temporary_actor):
+			temporary_actor.queue_free()
 	var human_center: Vector2 = _surface_presentation.surface_visual_center(land_actor) \
 		if land_actor != null else dock_wait.global_position
 	await _surface_presentation.swim_and_jump_to_surface(
@@ -417,44 +430,5 @@ func play_silas_surface_reveal() -> void:
 	_story.complete_silas_townhouse_arrival()
 	_player.busy = false
 	_silas_surface_scene_running = false
-
-
-func _spawn_silas_on_dock(world: Node2D, at: Vector2) -> NPCInteractable:
-	var existing: NPCInteractable = world.get_node_or_null("SilasDockActor") as NPCInteractable
-	if existing != null:
-		return existing
-	if silas_land_scene == null:
-		push_warning("Silas's land NPC scene is missing.")
-		return null
-	var actor: NPCInteractable = silas_land_scene.instantiate() as NPCInteractable
-	if actor == null:
-		push_warning("Silas's land scene must use the existing NPCInteractable.")
-		return null
-	actor.name = "SilasDockActor"
-	actor.visible = false
-	world.add_child(actor)
-	# SilasDockWait marks where the feet should touch the ground, not
-	# the center of the AnimatedSprite2D (which was leaving Silas half
-	# underneath the dock). Read the actual frame so sprite edits stay safe.
-	actor.global_position = at
-	var art: AnimatedSprite2D = actor.get_node_or_null("Sprite") as AnimatedSprite2D
-	if art != null and art.sprite_frames != null:
-		var frame_texture: Texture2D = art.sprite_frames.get_frame_texture(art.animation, art.frame)
-		if frame_texture != null and art.centered:
-			actor.global_position.y -= art.position.y + frame_texture.get_height() * 0.5 * art.scale.y
-	actor.z_index = 6
-	# Waiting is NOT recruitment: prevent the old post-catch romance/recruitment
-	# dialogue from opening until a dock interaction is actually designed.
-	actor.monitoring = false
-	actor.monitorable = false
-	actor.collision_layer = 0
-	actor.collision_mask = 0
-	var collision: CollisionShape2D = actor.get_node_or_null("CollisionShape2D") as CollisionShape2D
-	if collision != null:
-		collision.set_deferred("disabled", true)
-	var prompt: InteractPrompt = actor.get_node_or_null("InteractPrompt") as InteractPrompt
-	if prompt != null:
-		prompt.pop_out()
-	return actor
 
 
