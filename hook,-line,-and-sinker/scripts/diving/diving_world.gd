@@ -398,28 +398,31 @@ func _sync_hooked_fish(delta: float) -> void:
 		_silas.position = fish.position
 
 
-# All SeaTerrain instances are direct children of Sea. Their collision
-# polygons are authored by SeaTerrain at runtime, before Sea._ready() runs.
-# Keep the polygons themselves authoritative, not the inset decorative edge.
+# Terrain can be nested in arbitrary editor folders (e.g. "Sea Terrain")
+# or inside other decoration nodes. Find every instance once at scene load;
+# do not require level designers to keep spline instances as direct children.
+# Their runtime collision polygons remain the single authoritative geometry.
 func _cache_terrain_colliders() -> void:
 	_terrain_colliders.clear()
 	_terrain_bounds.clear()
-	for child in get_children():
-		if not child is SeaTerrain:
-			continue
-		var collider: CollisionPolygon2D = child.get_node_or_null(
-			"StaticBody2D/CollisionPolygon2D") as CollisionPolygon2D
-		if collider == null or collider.polygon.size() < 3:
-			continue
-		var body: StaticBody2D = collider.get_parent() as StaticBody2D
-		if body == null or body.collision_layer & 2 == 0:
-			continue
-		var polygon: PackedVector2Array = collider.polygon
-		var bounds := Rect2(polygon[0], Vector2.ZERO)
-		for vertex in polygon:
-			bounds = bounds.expand(vertex)
-		_terrain_colliders.append(collider)
-		_terrain_bounds.append(bounds)
+	_collect_terrain_colliders(self)
+
+
+func _collect_terrain_colliders(parent: Node) -> void:
+	for child in parent.get_children():
+		if child is SeaTerrain:
+			var collider: CollisionPolygon2D = child.get_node_or_null(
+				"StaticBody2D/CollisionPolygon2D") as CollisionPolygon2D
+			if collider != null and collider.polygon.size() >= 3:
+				var body: StaticBody2D = collider.get_parent() as StaticBody2D
+				if body != null and (body.collision_layer & 2) != 0:
+					var polygon: PackedVector2Array = collider.polygon
+					var bounds := Rect2(polygon[0], Vector2.ZERO)
+					for vertex in polygon:
+						bounds = bounds.expand(vertex)
+					_terrain_colliders.append(collider)
+					_terrain_bounds.append(bounds)
+		_collect_terrain_colliders(child)
 
 
 # Wild swimmers, hooked fish and habitat spawning all share this query.
