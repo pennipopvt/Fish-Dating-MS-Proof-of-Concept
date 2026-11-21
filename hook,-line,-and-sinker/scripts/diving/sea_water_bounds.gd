@@ -16,6 +16,11 @@ var _guide: SeaEditorGuide
 
 
 func _ready() -> void:
+	# The scene's z_index=10 may be reset when this @tool script loads.
+	# Set it after scene deserialization, so the reflective surface draws
+	# above the underwater TileMapLayer (z=2) and world foreground (z=4).
+	# Leave water geometry and SeaEditorGuide ownership unchanged.
+	z_index = 10
 	_guide = get_node_or_null(guide_path) as SeaEditorGuide
 	if _guide == null:
 		push_warning("Water requires its sibling Sea/EditorGuide.")
