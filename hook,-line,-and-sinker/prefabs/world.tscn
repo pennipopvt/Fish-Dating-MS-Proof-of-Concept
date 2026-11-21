@@ -219,14 +219,15 @@ tile_set = ExtResource("world_tiles")
 # Sea geometry, Penni, land NPCs and the net all render below this.
 # Camera/UnderwaterTint remains above it at z=80.
 # Water follows Sea/EditorGuide, including live Inspector edits.
-z_index = 10
+# Apply the render order after the tool script so the instance keeps it.
+script = ExtResource("sea_water_bounds")
 material = SubResource("ShaderMaterial_23sxu")
 custom_minimum_size = Vector2(320, 180)
 offset_left = -2052.0
 offset_top = 140.0
 offset_right = 2800.0
 offset_bottom = 800.0
-script = ExtResource("sea_water_bounds")
+z_index = 10
 
 
 [node name="Sea" parent="." instance=ExtResource("sea_area")]
