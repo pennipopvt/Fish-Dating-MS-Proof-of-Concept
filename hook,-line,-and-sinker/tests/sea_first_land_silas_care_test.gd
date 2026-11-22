@@ -60,39 +60,71 @@ func _run() -> void:
 		if not DialogueManager.is_active:
 			break
 		var line: DialogueLineData = DialogueManager.get_current_line()
-		if line != null and line.text.contains("I'll get you there"):
+		if line != null and line.text.contains("Stay here. I'll try to find something to help"):
 			heard_offer = true
 		DialogueManager.advance()
 	_check(heard_offer and transition.transitioning,
-		"Penni promises to carry Silas and the rescue triggers automatically")
+		"Penni tells Silas to stay put while she looks for help")
 
-	for i in range(100):
-		if DialogueManager.is_active:
+	# Emergency return brings Penni ashore but preserves Silas in fish form.
+	# The normal first-return scene then drives the SAME jump, poof and
+	# townhouse onboarding used after a successful introductory dive.
+	for i in range(140):
+		if DialogueManager.is_active and DialogueManager.current_npc == SILAS:
 			break
 		await get_tree().create_timer(0.05).timeout
-	_check(DialogueManager.is_active and DialogueManager.current_npc != null
-		and DialogueManager.current_npc.npc_id == &"first_land_care_test_npc",
-		"Silas sees his own first human form in Penni's care scene")
-	_check(not transition.underwater
-		and not party.has_companion(SILAS.npc_id),
-		"His roster welcome waits for the normal first-land milestone")
-	var heard_care := false
+	var silas_fish: SeaNPC = sea.get_node("NPCs/Silas") as SeaNPC
+	var dock_actor: NPCInteractable = world.get_node_or_null("SilasDockActor") as NPCInteractable
+	_check(DialogueManager.is_active and DialogueManager.current_npc == SILAS
+		and story.get("_dialogue_stage") == &"surface_warning"
+		and bool(story.get("_events").get(&"silas_surface_scene_started", false)),
+		"The rescue uses Silas's actual first-land jump and warning dialogue")
+	_check(not transition.underwater and not player.swimming
+		and player.animator.animation == &"idle_r"
+		and dock_actor != null and not dock_actor.visible
+		and silas_fish.visible and not silas_fish.following,
+		"Penni is on shore but Silas remains a fish until his dock poof")
+	var heard_silas_followed := false
+	var heard_surprise := false
 	for i in range(30):
-		if not DialogueManager.is_active:
+		if not DialogueManager.is_active or story.get("_dialogue_stage") != &"surface_warning":
 			break
 		var line: DialogueLineData = DialogueManager.get_current_line()
-		if line != null and line.text.contains("carried me"):
-			heard_care = true
+		if line != null:
+			heard_silas_followed = heard_silas_followed or line.text.contains(
+				"I told you to stay in the water")
+			heard_surprise = heard_surprise or line.text.contains(
+				"W-what?! What's happening")
 		DialogueManager.advance()
-	_check(heard_care, "Silas thanks Penni for carrying him out of the sea")
-	for i in range(90):
-		if DialogueManager.is_active:
+	_check(heard_silas_followed and heard_surprise,
+		"Silas followed Penni against instructions and reacts in surprise")
+	for i in range(80):
+		if DialogueManager.is_active and story.get("_dialogue_stage") == &"surface_reveal":
 			break
 		await get_tree().create_timer(0.05).timeout
 	_check(DialogueManager.is_active and DialogueManager.current_npc == SILAS
+		and story.get("_dialogue_stage") == &"surface_reveal"
+		and dock_actor != null and dock_actor.visible and not silas_fish.visible,
+		"Shared poof transforms Silas and starts his ORIGINAL reveal dialogue")
+	var heard_original_reveal := false
+	for i in range(40):
+		if not DialogueManager.is_active or story.get("_dialogue_stage") != &"surface_reveal":
+			break
+		var line: DialogueLineData = DialogueManager.get_current_line()
+		if line != null and line.text.contains("what am I supposed to do now"):
+			heard_original_reveal = true
+		DialogueManager.advance()
+	_check(heard_original_reveal,
+		"The rest of Silas's normal recruitment dialogue plays unchanged")
+	for i in range(90):
+		if DialogueManager.is_active and story.get("_dialogue_stage") == &"townhouse_arrival":
+			break
+		await get_tree().create_timer(0.05).timeout
+	_check(DialogueManager.is_active and DialogueManager.current_npc == SILAS
+		and story.get("_dialogue_stage") == &"townhouse_arrival"
 		and story.has_silas_flag(&"silas_surface_transformed")
 		and party.has_companion(SILAS.npc_id),
-		"Silas transforms and joins the same roster before townhouse talk")
+		"Silas reaches his original townhouse dialogue and joins the roster")
 	if DialogueManager.is_active:
 		DialogueManager.end_conversation()
 	for i in range(90):
@@ -101,8 +133,9 @@ func _run() -> void:
 		await get_tree().create_timer(0.05).timeout
 	_check(RecruitmentHandler.is_resident(SILAS.npc_id)
 		and story.has_silas_flag(&"silas_has_home")
-		and not transition.transitioning,
-		"Silas gets his room with no repeated rescue or lost recruitment")
+		and not transition.transitioning
+		and world.get_node_or_null("SilasDockActor") == null,
+		"First-land knockout finishes the standard housing and actor cleanup")
 	main.queue_free()
 	await get_tree().process_frame
 	NPCManager.npc_states.clear()
