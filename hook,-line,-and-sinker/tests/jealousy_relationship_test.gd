@@ -130,6 +130,12 @@ func _choose_reply(npc: NPCData, choice_index: int) -> void:
 	if DialogueManager.is_awaiting_choice():
 		DialogueManager.select_choice(choice_index)
 		DialogueManager.advance() # Apply choice effects and enter the response.
+		# Relationship-event resolution is a NODE effect, deliberately applied
+		# only after Penni has heard the NPC's whole reply. Don't skip it.
+		for i in range(30):
+			if not DialogueManager.is_active or DialogueManager.is_awaiting_choice():
+				break
+			DialogueManager.advance()
 	if DialogueManager.is_active:
 		DialogueManager.end_conversation()
 
