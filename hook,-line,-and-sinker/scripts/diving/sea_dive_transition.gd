@@ -3,12 +3,12 @@ class_name SeaDiveTransition
 
 signal surface_completed
 
-# Owns ONLY the physical one-world transitions: iris, dock jump,
-# sea descent and surfacing. FishCoOpeningSequence handles choices.
+# Owns ONLY physical one-world transitions: iris, a single continuous
+# dock-to-sea path, and surfacing. FishCoOpeningSequence handles choices.
 const RIPPLE: Texture2D = preload("res://sprites/environment/medium_ripple_a.png")
 const IRIS_DURATION: float = 0.52
 const IRIS_OPEN_RADIUS: float = 2.6
-# The editable Sea/MotionPaths nodes own all dive/jump geometry and timing.
+# Editable Sea/Points paths own dive/jump geometry and timing.
 
 @onready var _iris: ColorRect = $Iris
 @onready var _party: DivingParty = $DivingParty
