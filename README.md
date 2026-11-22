@@ -148,10 +148,11 @@ Debug builds only (not in exports):
   stairs, along the sand and slope), and she can't walk past the drawn ends: the pier
   tip on the left, and on the right where the sand meets the water. If the ground art
   changes, both follow automatically. Off the ground (the ship date) nothing is clamped.
-  **Camera on land:** `scripts/land_camera.gd` (on `Player/Camera2D`) follows x exactly
-  but follows height lazily: 1-2px sand bumps don't move it, and stairs/slopes are eased
-  in (dead zone, catch-up rate and max lag are Inspector exports). It only writes the
-  camera's `offset`; while swimming or in scripted scenes the lag fades out.
+  **Camera on the beach:** `scripts/land_camera.gd` (on `Player/Camera2D`) follows Penni
+  exactly, except on the beach: past the bottom of the stairs (`beach_start_x` 682 to
+  `beach_end_x` 976, Inspector exports) it holds the height she had when she stepped
+  onto the sand, and only Penni moves up and down. It only writes the camera's `offset`,
+  and is off while swimming or in scripted scenes.
 - **Diving extras:** the dive splashes and sinks straight down from where Penni stands
   on the dock. A hooked fish stays on the line length around Penni but can't go above
   the waterline or into rock/ground (left and right are open); when it's pinned in a
