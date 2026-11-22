@@ -119,9 +119,12 @@ func _update_guest_dive(actor: Node2D, info: Dictionary,
 		# The same tween continues under water, but moves fish art after
 		# the splash instead of showing the human actor twice.
 		fish.global_position = actor.global_position
-	elif not bool(state["converted"]) and actor.global_position.y >= _sea.to_global(
-			Vector2(0.0, DivingWorld.SEA_TOP)).y:
-		_transform_guest_to_fish(actor, info, state, splash)
+	elif not bool(state["converted"]):
+		var art: AnimatedSprite2D = actor.get_node_or_null("Sprite") as AnimatedSprite2D
+		var visual_y: float = art.global_position.y if art != null else actor.global_position.y
+		var surface_y: float = (_world.get_node("Water") as ColorRect).global_position.y
+		if visual_y >= surface_y:
+			_transform_guest_to_fish(actor, info, state, splash)
 
 
 func _transform_guest_to_fish(actor: Node2D, info: Dictionary,
@@ -129,7 +132,7 @@ func _transform_guest_to_fish(actor: Node2D, info: Dictionary,
 	if bool(state["converted"]) or not is_instance_valid(actor):
 		return
 	state["converted"] = true
-	var surface_y: float = _sea.to_global(Vector2(0.0, DivingWorld.SEA_TOP)).y
+	var surface_y: float = (_world.get_node("Water") as ColorRect).global_position.y
 	var splash_at := Vector2(actor.global_position.x, surface_y)
 	splash.call(splash_at)
 	var poof: AnimatedSprite2D = SeaPoofEffect.spawn(_world, splash_at)
