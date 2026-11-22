@@ -60,6 +60,8 @@ var _wild_fish: Array[DivingWildFish] = []
 # Only fish spawned by editable habitat regions are replaced each period.
 # Authored tutorial actors and Silas's hidden encounter stay untouched.
 var _habitat_fish: Array[DivingWildFish] = []
+# Rescue-gated editor spawns are dormant until Silas is freed.
+var _pending_silas_rescue_spawns: Array[DivingFishSpawn] = []
 var _fish_data: Dictionary = {}
 var _combat_debug_status: String = "No companion command yet"
 var _party_fish: Array[SeaPartyFollower] = []
@@ -194,17 +196,35 @@ func _spawn_editor_fish() -> void:
 		if not marker is DivingFishSpawn:
 			continue
 		var spawn: DivingFishSpawn = marker as DivingFishSpawn
-		var data: FishData = spawn.species
-		if data == null or data.item_data == null or data.item_data.sprite == null:
+		if spawn.spawn_after_silas_rescue and not _story.has_silas_flag(&"silas_freed"):
+			_pending_silas_rescue_spawns.append(spawn)
 			continue
-		var fish: DivingWildFish = _spawn_wild_fish(data, spawn.position,
-			spawn.random_seed, spawn.preferred_player_distance, spawn.alert_distance,
-			spawn.flee_speed)
-		if spawn.is_first_dive_fish:
-			if _encounter.tutorial_fish != null:
-				push_warning("[SEA STORY] Multiple fish spawns marked as first-dive fish.")
-			else:
-				_encounter.register_tutorial_fish(fish)
+		_spawn_authored_fish(spawn)
+
+
+func _spawn_authored_fish(spawn: DivingFishSpawn) -> void:
+	if spawn == null:
+		return
+	var data: FishData = spawn.species
+	if data == null or data.item_data == null or data.item_data.sprite == null:
+		return
+	var fish: DivingWildFish = _spawn_wild_fish(data, spawn.position,
+		spawn.random_seed, spawn.preferred_player_distance, spawn.alert_distance,
+		spawn.flee_speed)
+	if spawn.is_first_dive_fish:
+		if _encounter.tutorial_fish != null:
+			push_warning("[SEA STORY] Multiple fish spawns marked as first-dive fish.")
+		else:
+			_encounter.register_tutorial_fish(fish)
+
+
+func _spawn_rescue_unlocked_fish() -> void:
+	if not _story.has_silas_flag(&"silas_freed"):
+		return
+	for spawn in _pending_silas_rescue_spawns:
+		if is_instance_valid(spawn):
+			_spawn_authored_fish(spawn)
+	_pending_silas_rescue_spawns.clear()
 
 
 # Both authored tutorial spawns and procedural habitats use this ONE normal
@@ -675,6 +695,7 @@ func _on_combat_finished(won: bool, fish: DivingWildFish) -> void:
 
 
 func _on_silas_following_started() -> void:
+	_spawn_rescue_unlocked_fish()
 	_silas.follow_trail = _follow_trail
 	_silas.following = true
 	# During the tutorial Silas can fight before the first shore scene
