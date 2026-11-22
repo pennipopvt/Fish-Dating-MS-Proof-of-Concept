@@ -103,8 +103,6 @@ offset_right = 160.0
 offset_bottom = 90.0
 mouse_filter = 2
 
-# Keep the authored sky here for editor access. WorldDayNight reuses
-# this very node inside a fixed viewport CanvasLayer at runtime.
 [node name="Sky" type="Control" parent="." unique_id=512056317]
 z_index = -10
 clip_contents = true
