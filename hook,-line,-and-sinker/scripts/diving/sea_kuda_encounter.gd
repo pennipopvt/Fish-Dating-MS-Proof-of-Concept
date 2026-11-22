@@ -227,8 +227,14 @@ func _on_recruited() -> void:
 # Called only after the shared surface presentation has transformed the school.
 # The surface animator supplies temporary human actors; this encounter checks
 # that Kuda ACTUALLY reached shore before starting his one-time conversation.
-func play_first_surface_reveal(surface_actors: Array[Node2D]) -> void:
-	if _story == null or not _story.can_begin_kuda_surface_reveal():
+func play_first_surface_reveal(surface_actors: Array[Node2D],
+		first_land_blackout: bool = false) -> void:
+	if _story == null:
+		return
+	if first_land_blackout:
+		if _story.has_kuda_flag(&"kuda_surface_introduced"):
+			return
+	elif not _story.can_begin_kuda_surface_reveal():
 		return
 	var kuda_actor: NPCInteractable = null
 	# Only companions physically returned in this scene can speak. Do not use
@@ -244,10 +250,14 @@ func play_first_surface_reveal(surface_actors: Array[Node2D]) -> void:
 			kuda_actor = guest
 	if kuda_actor == null:
 		return
-	# The scene remains Kuda's event; guest speakers never own his story flags.
-	if not _story.start_kuda_surface_reveal(present_cast):
-		return
-	await _story.kuda_surface_reveal_finished
+	# The rescue conversation already explains Kuda's surprising new human
+	# body. Do NOT repeat his ordinary "WHY DO I HAVE LEGS" dock introduction.
+	if first_land_blackout:
+		_story.mark_kuda_surface_rescued()
+	else:
+		if not _story.start_kuda_surface_reveal(present_cast):
+			return
+		await _story.kuda_surface_reveal_finished
 	# Mirror Silas's first return: after seeing his human form on the dock,
 	# Penni shows Kuda the townhouse BEFORE he is assigned a room.
 	var world: Node2D = _player.get_parent() as Node2D

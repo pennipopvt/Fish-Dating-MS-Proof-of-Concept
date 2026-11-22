@@ -19,6 +19,7 @@ signal kuda_townhouse_arrival_finished
 @export var silas_data: NPCData = preload("res://resources/npcs/silas.tres")
 @export var kuda_data: NPCData = preload("res://resources/npcs/kuda.tres")
 @export_file("*.json") var oxygen_recovery_dialogue: String = "res://dialogue/oxygen_blackout_recovery.json"
+@export_file("*.json") var first_land_rescue_dialogue: String = "res://dialogue/oxygen_first_land_rescue.json"
 
 var _events: Dictionary = {}
 var _dialogue_stage: StringName = &""
@@ -199,11 +200,12 @@ func start_kuda_surface_reveal(present_cast: Array[NPCData] = []) -> bool:
 	return true
 
 
-# Use the ordinary multi-speaker dialogue pipeline for the companions
-# who physically rescued Penni. A non-recruited, temporary context prevents
-# conversation-finished affection rewards or character-stage callbacks.
-# This scene is replayable each blackout; it is not a relationship flag.
-func play_oxygen_blackout_recovery(present_cast: Array[NPCData]) -> void:
+# Same existing dialogue UI and JSON authoring, with optional first-land
+# lines inserted into the ONE recovery conversation. Silas/Kuda each speak
+# only if they genuinely transformed for the first time on this blackout.
+# A transient context prevents affection or relationship-story side effects.
+func play_oxygen_blackout_recovery(present_cast: Array[NPCData],
+		first_land_ids: Array[StringName] = []) -> void:
 	if present_cast.is_empty():
 		return
 	if DialogueManager.is_active:
@@ -212,11 +214,46 @@ func play_oxygen_blackout_recovery(present_cast: Array[NPCData]) -> void:
 	context.npc_id = &"oxygen_blackout_story"
 	context.display_name = "Penni's companions"
 	context.portrait = present_cast[0].portrait
+	var base_graph: Dictionary = DialogueJsonLoader.read_graph(oxygen_recovery_dialogue)
+	var base_node: Dictionary = base_graph.get("nodes", {}).get("shore", {})
+	var authored: Array = base_node.get("lines", [])
+	var lines: Array[Dictionary] = []
+	for entry in authored:
+		if entry is Dictionary:
+			lines.append(entry)
+		elif entry is String:
+			lines.append({"text": entry})
+		# Put the surprise directly after Penni wakes and her friends react.
+		if lines.size() == 3 and not first_land_ids.is_empty():
+			var first_graph: Dictionary = DialogueJsonLoader.read_graph(first_land_rescue_dialogue)
+			var nodes: Dictionary = first_graph.get("nodes", {})
+			for npc_id in first_land_ids:
+				var special_node: Dictionary = nodes.get(
+					"silas_first" if npc_id == silas_data.npc_id else
+					"kuda_first" if npc_id == kuda_data.npc_id else "", {})
+				for special_line in special_node.get("lines", []):
+					if special_line is Dictionary:
+						lines.append(special_line)
 	dialogue_mode_requested.emit(false)
-	DialogueManager.request_conversation(context, oxygen_recovery_dialogue,
-		null, present_cast)
+	DialogueManager.request_group_lines(context, lines, present_cast)
 	if DialogueManager.is_active and DialogueManager.current_npc == context:
 		await DialogueManager.conversation_finished
+
+
+func mark_kuda_surface_rescued() -> void:
+	# The human transformation was already seen at wake-up; the room scene
+	# is still separate and will assign residence after dialogue.
+	NPCManager.get_npc_state(kuda_data.npc_id)["flags"][&"kuda_surface_introduced"] = true
+	kuda_surface_reveal_finished.emit()
+
+
+func mark_silas_surface_rescued() -> void:
+	# Skip Silas's fish-jump warning/reveal, not his welcome or his room.
+	_events[&"silas_surface_scene_started"] = true
+	_set_silas_flag(&"silas_surface_transformed")
+	_set_silas_flag(&"silas_waiting_at_dock")
+	_npc_flags()[&"silas_following"] = false
+	silas_surface_reveal_finished.emit()
 
 
 # Shared dialogue system and persistent NPC flags; Kuda's physical presentation

@@ -250,7 +250,8 @@ func _on_oxygen_return_requested() -> void:
 # Actors remain staged while the story plays, so recruitment and room
 # assignment always happen before the sea party is cleared.
 func _resolve_shore_stories(humans: Array[Node2D],
-		recovered_from_blackout: bool = false) -> void:
+		recovered_from_blackout: bool = false,
+		first_land_ids: Array[StringName] = []) -> void:
 	var story := _sea.get_node("StoryDirector") as SeaStoryDirector
 	if recovered_from_blackout:
 		var rescued_cast: Array[NPCData] = []
@@ -258,8 +259,8 @@ func _resolve_shore_stories(humans: Array[Node2D],
 			var guest: NPCInteractable = actor as NPCInteractable
 			if is_instance_valid(guest) and guest.npc != null and guest.visible:
 				rescued_cast.append(guest.npc)
-		await story.play_oxygen_blackout_recovery(rescued_cast)
-	await _sea.on_party_surfaced(humans)
+		await story.play_oxygen_blackout_recovery(rescued_cast, first_land_ids)
+	await _sea.on_party_surfaced(humans, first_land_ids)
 
 
 # Normal shore returns already fade to send fish back to their rooms.
@@ -279,9 +280,23 @@ func _clear_returning_party(humans: Array[Node2D]) -> void:
 
 func _blackout_from_oxygen() -> void:
 	# No swim/jump ascent on oxygen failure: companions bring Penni home.
-	# Capture the actual dive party BEFORE releasing any sea actors.
+	# Capture who was actually underwater BEFORE teardown. During the first
+	# tutorial Silas is following even though he is not in the roster yet.
 	var returning: Array[NPCData] = _party.members()
 	var story := _sea.get_node("StoryDirector") as SeaStoryDirector
+	var first_land_ids: Array[StringName] = []
+	if story.can_begin_silas_surface_reveal():
+		first_land_ids.append(story.silas_data.npc_id)
+		var silas_present := false
+		for npc in returning:
+			if npc.npc_id == story.silas_data.npc_id:
+				silas_present = true
+				break
+		if not silas_present:
+			returning.push_front(story.silas_data)
+	for npc in returning:
+		if npc.npc_id == story.kuda_data.npc_id and story.can_begin_kuda_surface_reveal():
+			first_land_ids.append(npc.npc_id)
 	var fade := ScreenFade.new()
 	get_tree().root.add_child(fade)
 	await fade.fade_to(1.0, 0.45)
@@ -300,25 +315,24 @@ func _blackout_from_oxygen() -> void:
 	_dialogue_ui.set_underwater_mode(false)
 	GameManager.finish_dive_period()
 
-	# A first-time Silas tutorial still uses its own authored reveal
-	# after surface_completed. Never prematurely humanize him here.
+	# Under blackout cover, ALL returning fish reach land and transform.
+	# Penni wakes up to their human forms, with no normal fish-jump reveal.
 	var humans: Array[Node2D] = []
-	if not story.can_begin_silas_surface_reveal():
-		var dock_wait := _sea.get_node("Points/SilasDockWait") as Marker2D
-		for i in range(returning.size()):
-			var actor: Node2D = _party_entrance.stage_surface_actor(
-				returning[i], _party_entrance.surface_dock_position(
-					dock_wait.global_position, i))
-			if actor != null:
-				actor.show()
-				humans.append(actor)
+	var dock_wait := _sea.get_node("Points/SilasDockWait") as Marker2D
+	for i in range(returning.size()):
+		var actor: Node2D = _party_entrance.stage_surface_actor(
+			returning[i], _party_entrance.surface_dock_position(
+				dock_wait.global_position, i))
+		if actor != null:
+			actor.show()
+			humans.append(actor)
 	# Under a covered screen the active fish actors can be removed safely:
 	# their above-water appearances now exist independently in the world.
 	_sea.end_diving_party()
 	await fade.fade_to(0.0, 0.55)
 	fade.queue_free()
 	if not humans.is_empty():
-		await _resolve_shore_stories(humans, true)
+		await _resolve_shore_stories(humans, true, first_land_ids)
 		await _clear_returning_party(humans)
 	transitioning = false
 	_world_player.busy = false

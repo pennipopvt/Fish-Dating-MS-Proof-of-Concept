@@ -788,8 +788,24 @@ func _return_to_surface() -> void:
 
 # After shared fish-to-human poofs, dispatch first-time shore scenes to the
 # character encounter that owns them. Keep their actors visible for dialogue.
-func on_party_surfaced(surface_actors: Array[Node2D]) -> void:
-	await _kuda.play_first_surface_reveal(surface_actors)
+func on_party_surfaced(surface_actors: Array[Node2D],
+		first_land_ids: Array[StringName] = []) -> void:
+	# Both NPCs were human before the player woke. Their rescue lines are
+	# already in the blackout dialogue; skip the normal transformation reveal
+	# but still run their usual townhouse onboarding and housing milestones.
+	if first_land_ids.has(_story.silas_data.npc_id):
+		var silas_actor: NPCInteractable = null
+		for actor in surface_actors:
+			var guest: NPCInteractable = actor as NPCInteractable
+			if is_instance_valid(guest) and guest.npc != null \
+					and guest.npc.npc_id == _story.silas_data.npc_id:
+				silas_actor = guest
+				break
+		if silas_actor != null:
+			_story.mark_silas_surface_rescued()
+			await _encounter.play_silas_blackout_townhouse_arrival(silas_actor)
+	await _kuda.play_first_surface_reveal(surface_actors,
+		first_land_ids.has(_story.kuda_data.npc_id))
 
 
 # The transition owns physical surfacing. Only AFTER it reports completion

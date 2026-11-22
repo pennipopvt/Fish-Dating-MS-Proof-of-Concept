@@ -399,8 +399,23 @@ func play_silas_surface_reveal() -> void:
 		_silas.hide()
 	_story.on_silas_surface_transformed()
 	await _story.silas_surface_reveal_finished
-	# One short travel fade brings the two of them in front of the townhouse.
-	# The NPC is still a CUTSCENE-ONLY actor; housing only stores an NPC ID.
+	# Reuse the existing townhouse choreography for normal returns and
+	# blackouts; the latter leaves its actor for shared surface cleanup.
+	await _bring_silas_to_townhouse(land_actor, true)
+	_player.busy = false
+	_silas_surface_scene_running = false
+
+
+func play_silas_blackout_townhouse_arrival(land_actor: NPCInteractable) -> void:
+	if land_actor == null:
+		return
+	await _bring_silas_to_townhouse(land_actor, false)
+
+
+func _bring_silas_to_townhouse(land_actor: NPCInteractable,
+		cleanup_here: bool) -> void:
+	var world: Node2D = _player.get_parent() as Node2D
+	var dock_wait: Marker2D = get_parent().get_node("Points/SilasDockWait") as Marker2D
 	var travel := ScreenFade.new()
 	get_tree().root.add_child(travel)
 	await travel.fade_to(1.0, townhouse_fade_seconds)
@@ -413,22 +428,21 @@ func play_silas_surface_reveal() -> void:
 	camera.reset_smoothing()
 	camera.force_update_scroll()
 	if is_instance_valid(land_actor):
-		# Preserve the feet offset from the dock so the cutscene needs no walk.
 		land_actor.global_position = silas_spot.global_position + (
 			land_actor.global_position - dock_wait.global_position)
 	await travel.fade_to(0.0, townhouse_fade_seconds)
 	_story.start_silas_townhouse_arrival()
 	await _story.silas_townhouse_dialogue_finished
-	await travel.fade_to(1.0, townhouse_fade_seconds)
+	if cleanup_here:
+		await travel.fade_to(1.0, townhouse_fade_seconds)
 	var assigned: bool = RecruitmentHandler.assign_home(_story.silas_data)
 	if not assigned:
 		push_warning("Silas accepted the room, but no townhouse door was available.")
-	if is_instance_valid(land_actor):
-		land_actor.queue_free()
-	await travel.fade_to(0.0, townhouse_fade_seconds)
+	if cleanup_here:
+		if is_instance_valid(land_actor):
+			land_actor.queue_free()
+		await travel.fade_to(0.0, townhouse_fade_seconds)
 	travel.queue_free()
 	_story.complete_silas_townhouse_arrival()
-	_player.busy = false
-	_silas_surface_scene_running = false
 
 

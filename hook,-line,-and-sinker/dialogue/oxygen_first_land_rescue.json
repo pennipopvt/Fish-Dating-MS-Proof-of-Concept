@@ -1,0 +1,42 @@
+{
+  "entry": "silas_first",
+  "free_greeting": true,
+  "nodes": {
+    "silas_first": {
+      "lines": [
+        {
+          "speaker": "player",
+          "text": "Silas? Wait... you're a person?"
+        },
+        {
+          "speaker": "test_npc",
+          "text": "I know! I didn't even notice until we got you onto the dock. I just needed to get you out of the water."
+        },
+        {
+          "speaker": "player",
+          "text": "You really carried me all the way back?"
+        },
+        {
+          "speaker": "test_npc",
+          "text": "Of course. We can figure out the... legs part later. I'm just glad you're awake."
+        }
+      ]
+    },
+    "kuda_first": {
+      "lines": [
+        {
+          "speaker": "player",
+          "text": "Kuda...? You're human too?!"
+        },
+        {
+          "speaker": "barracuda",
+          "text": "Yeah, apparently. I noticed halfway up. Kind of hard to care when you weren't breathing."
+        },
+        {
+          "speaker": "barracuda",
+          "text": "We'll figure that weirdness out later. Don't scare me like that again."
+        }
+      ]
+    }
+  }
+}
