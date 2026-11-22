@@ -322,18 +322,20 @@ func start_date(date: DateData) -> void:
 		_venue.global_position = date.venue_position
 		venue = _venue
 	_move(player, _spot(venue, &"PlayerSpot"))
-	# Boat sprites can sit in front of the ordinary island actors. Raise both
-	# participants only for this date, then restore Penni's original layer.
-	if date.actors_z_index >= 0:
-		player.z_index = date.actors_z_index
+	# An authored date venue may specify a shared foreground layer for its
+	# characters. Keep them in World (no reparenting), and restore Penni's
+	# original draw order along with her position when the date ends.
+	var cast_layer: CanvasItem = venue.get_node_or_null("DateCastLayer") as CanvasItem
+	if cast_layer != null:
+		player.z_index = cast_layer.z_index
 	# Recruited NPCs are data-only residents, not actors in the island world.
 	# Dates and dock cutscenes use the exact same noninteractive land actor.
 	_date_actor = NPCTemporaryActor.spawn(date.npc, player.get_parent(),
 		_spot(venue, &"NpcSpot") + date.npc_feet_offset)
 	if _date_actor != null:
 		_date_actor.name = "DateGuest_" + String(date.npc.npc_id)
-		if date.actors_z_index >= 0:
-			_date_actor.z_index = date.actors_z_index
+		if cast_layer != null:
+			_date_actor.z_index = cast_layer.z_index
 	await _fade_to(0.0)
 	_in_dialogue = true
 	DialogueManager.request_conversation(date.npc, date.dialogue_json)
