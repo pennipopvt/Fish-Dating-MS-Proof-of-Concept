@@ -14,6 +14,11 @@ enum State { IDLE, OUTBOUND, RETURNING, LATCHED }
 @export_range(60.0, 800.0, 10.0) var retract_speed: float = 370.0
 @export_range(3.0, 20.0, 1.0) var hit_radius: float = 11.0
 
+# The visuals live in Sea/NetProjectile: the Sprite2D divides the authored
+# four-frame sheet equally and AnimationPlayer owns contact timing.
+@onready var _net_sprite: Sprite2D = get_node_or_null("NetSprite") as Sprite2D
+@onready var _net_animation: AnimationPlayer = get_node_or_null("AnimationPlayer") as AnimationPlayer
+
 # Match FishingLine's pale -> amber -> red tension language.
 @export var calm_line_color: Color = Color("#d8e6e4")
 @export var strained_line_color: Color = Color("#efb65a")
@@ -85,6 +90,11 @@ func cast_net(origin: Node2D, aim_position: Vector2, fish_in_water: Array[Diving
 	_candidates.clear()
 	_candidates.append_array(fish_in_water)
 	state = State.OUTBOUND
+	if _net_animation != null:
+		_net_animation.stop()
+	if _net_sprite != null:
+		_net_sprite.frame = 0
+		_net_sprite.position = tip.round()
 	visible = true
 	set_process(true)
 	queue_redraw()
@@ -114,6 +124,8 @@ func _process(delta: float) -> void:
 				_latched_fish = collided
 				tip = collided.position
 				state = State.LATCHED
+				if _net_animation != null:
+					_net_animation.play(&"contact")
 				fish_hit.emit(collided)
 			else:
 				tip = unobstructed_end
@@ -131,6 +143,8 @@ func _process(delta: float) -> void:
 			else:
 				reset_net()
 				return
+	if _net_sprite != null:
+		_net_sprite.position = tip.round()
 	queue_redraw()
 
 
@@ -170,6 +184,10 @@ func reset_net() -> void:
 	_latched_fish = null
 	_origin = null
 	_candidates.clear()
+	if _net_animation != null:
+		_net_animation.stop()
+	if _net_sprite != null:
+		_net_sprite.frame = 0
 	visible = false
 	set_process(false)
 	queue_redraw()
@@ -182,14 +200,6 @@ func _get_anchor() -> Vector2:
 func _draw() -> void:
 	if state == State.IDLE:
 		return
-	var anchor: Vector2 = _get_anchor()
-	var net_center: Vector2 = tip.round()
-	# Reusable cord on cast, on retrieval, and when attached to a fish.
-	draw_line(anchor, net_center, get_line_color(), 1.6, false)
-	if state == State.LATCHED:
-		draw_circle(net_center, 9.0, Color(0.61, 0.95, 0.85, 0.14))
-	draw_arc(net_center, 7.0, 0.0, TAU, 12, Color(0.86, 0.97, 0.91, 0.98), 1.6, true)
-	draw_line(net_center + Vector2(-5, -5), net_center + Vector2(5, 5), Color(0.73, 0.93, 0.88, 0.88), 1.0)
-	draw_line(net_center + Vector2(5, -5), net_center + Vector2(-5, 5), Color(0.73, 0.93, 0.88, 0.88), 1.0)
-	draw_line(net_center + Vector2(-7, 0), net_center + Vector2(7, 0), Color(0.73, 0.93, 0.88, 0.65), 1.0)
-	draw_line(net_center + Vector2(0, -7), net_center + Vector2(0, 7), Color(0.73, 0.93, 0.88, 0.65), 1.0)
+	# One un-antialiased pixel-wide cord; the editor-authored Sprite2D shows
+	# open / closing / latched frames instead of procedural net geometry.
+	draw_line(_get_anchor(), tip.round(), get_line_color(), 1.0, false)

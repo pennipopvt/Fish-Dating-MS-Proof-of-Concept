@@ -17,6 +17,7 @@
 [ext_resource type="PackedScene" path="res://scenes/sea_kuda_encounter.tscn" id="kuda_encounter"]
 [ext_resource type="Resource" uid="uid://bad7evmwitdpl" path="res://resources/fish/mullet.tres" id="mullet"]
 [ext_resource type="Script" uid="uid://cwfjqeua3rqvh" path="res://scripts/diving/net_projectile.gd" id="net"]
+[ext_resource type="Texture2D" path="res://sprites/ui/net.png" id="net_sheet"]
 [ext_resource type="Script" uid="uid://cev6m8id2o2sk" path="res://scripts/diving/sea_party_commands.gd" id="party_commands"]
 [ext_resource type="Resource" uid="uid://cu4aljcpk40a0" path="res://resources/fish/porgy.tres" id="porgy"]
 [ext_resource type="Script" uid="uid://byp4fou8kyseq" path="res://scripts/diving/diving_world.gd" id="sea"]
@@ -217,6 +218,27 @@ _data = {
 }
 point_count = 18
 
+[sub_resource type="Animation" id="NetContactAnimation"]
+resource_name = "contact"
+length = 0.18
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("NetSprite:frame")
+tracks/0/interp = 1
+tracks/0/loop_wrap = false
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.07, 0.14),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 1,
+"values": [1, 2, 3]
+}
+
+[sub_resource type="AnimationLibrary" id="NetAnimations"]
+_data = {
+"contact": SubResource("NetContactAnimation")
+}
+
 [node name="Sea" type="Node2D" unique_id=907830608]
 script = ExtResource("sea")
 
@@ -380,6 +402,16 @@ script = ExtResource("encounter")
 [node name="NetProjectile" type="Node2D" parent="." unique_id=110294830]
 z_index = 9
 script = ExtResource("net")
+
+[node name="NetSprite" type="Sprite2D" parent="NetProjectile"]
+texture_filter = 1
+texture = ExtResource("net_sheet")
+hframes = 4
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="NetProjectile"]
+libraries = {
+"": SubResource("NetAnimations")
+}
 
 [node name="Combat" type="Node" parent="." unique_id=447810725]
 script = ExtResource("combat")
