@@ -139,11 +139,11 @@ func _start_conversation() -> void:
 		# leaves the appointment intact and exits this visit; a "Yes"
 		# hands control to DateManager AFTER the room iris unlocks Penni.
 		DialogueManager.request_inline_conversation(_resident,
-			["Ready to get going? I'll meet you there."], _resident.display_name,
+			[ready_date.room_departure_prompt], _resident.display_name,
 			[
-				{"text": "Yes, let's go!", "response": "Okay! Let's go.",
+				{"text": "Yes, let's go!", "response": ready_date.room_departure_yes,
 					"effects": {"request_scene": "room_date_go:" + String(ready_date.date_id)}},
-				{"text": "Not yet.", "response": "Sure. I'll be here when you're ready."}
+				{"text": "Not yet.", "response": ready_date.room_departure_no}
 			])
 		return
 	# A highest-priority unresolved event may have its own complete follow-up
