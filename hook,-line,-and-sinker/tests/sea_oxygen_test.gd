@@ -90,7 +90,7 @@ func _ready() -> void:
 	await get_tree().process_frame
 	var sea: DivingWorld = main.get_node("SubViewportContainer/SubViewport/World/Sea") as DivingWorld
 	var real_hud: SeaOxygenHud = sea.get_node("SeaOxygenHud") as SeaOxygenHud
-	var camera: Camera2D = sea.get_parent().get_node("Player/Camera2D") as Camera2D
+	var camera: Camera2D = sea.get_parent().get_node("CameraController/Camera2D") as Camera2D
 	_check(real_hud.get_parent() == sea and not camera.is_ancestor_of(real_hud)
 		and not real_hud.follow_viewport_enabled,
 		"HUD belongs to the sea UI canvas, not the moving player camera")
