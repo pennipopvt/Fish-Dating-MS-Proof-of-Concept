@@ -41,6 +41,8 @@ func configure(world: Node2D, player: Player, shop: ShopMenu, transition: SeaDiv
 
 
 func start() -> void:
+	if _contract_call_finished:
+		return
 	# The phone call takes place on the REAL east-side boat in World.
 	# It uses the same Sky, Water, Player and CameraController as gameplay.
 	var boat: Node2D = _world.get_node("IntroBoat") as Node2D
