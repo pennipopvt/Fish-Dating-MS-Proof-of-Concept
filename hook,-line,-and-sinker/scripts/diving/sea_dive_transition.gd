@@ -22,6 +22,7 @@ var _shop_menu: ShopMenu
 var _opening: CanvasLayer
 var underwater: bool = false
 var transitioning: bool = false
+var _dive_has_splashed: bool = false
 var shore_return_position: Vector2 = Vector2(56.0, 112.0)
 
 
@@ -111,34 +112,25 @@ func start_confirmed_dive(dock: Node2D) -> void:
 
 
 func _begin_dive(dock: Node2D) -> void:
-	# Owns the entire party entrance; no NPCs are fetched from the townhouse.
+	# A single editable jump goes from the dock to deep water. The splash,
+	# swimming pose and water visuals transition at the real waterline, not
+	# after a separate descent animation.
 	var members: Array[NPCData] = _party.members()
 	await _party_entrance.call_party_to_dock(members, dock)
-	# Penni and the companions now move along Path2D handles you can
-	# reshape in scenes/sea_area.tscn. No computed jump arcs or hidden
-	# shoreline-search overrides remain.
-	var jump_path := _motion(&"PenniDiveJump")
-	var descent_path := _motion(&"PenniDiveDescent")
-	_world_player.animator.play(&"walk_l")
-	await jump_path.animate(_world_player, _world_player.global_position,
-		Vector2.INF, _update_dive_jump_visual)
-	var splash: Vector2 = _world_player.global_position
-	_spawn_splash(splash)
-	_sea.play_sfx(&"dive")
-	await _party_entrance.jump_party_in(dock, _spawn_splash)
-
-	# The original scene and camera remain in place; the editable descent
-	# curve now defines both the animation's bends and its actual destination.
-	underwater = true
-	GameManager.diving_session_active = true
-	_dialogue_ui.set_underwater_mode(true)
+	var jump_path: SeaMotionPath = _motion(&"PenniDiveJump")
 	var island_camera: Camera2D = _world_player.get_node("Camera2D") as Camera2D
 	var camera_start: Vector2 = island_camera.position
-	var entry: Vector2 = descent_path.authored_end()
-	_party_entrance.descend_with_player(entry)
-	await descent_path.animate(_world_player, splash, Vector2.INF,
-		func(_time: float, distance_ratio: float) -> void:
-			island_camera.position = camera_start.lerp(Vector2.ZERO, distance_ratio))
+	_dive_has_splashed = false
+	_world_player.animator.play(&"walk_l")
+	await jump_path.animate(_world_player, _world_player.global_position,
+		Vector2.INF,
+		func(_time: float, progress: float) -> void:
+			_update_dive_jump_visual(progress, camera_start, island_camera))
+	if not _dive_has_splashed:
+		push_warning("PenniDiveJump does not cross the sea surface; check its Path2D endpoint.")
+		_on_dive_splash(_sea.to_global(Vector2(0.0, DivingWorld.SEA_TOP)).y)
+	if _party_entrance.entry_in_progress():
+		await _party_entrance.dive_entries_finished
 
 	_party_entrance.clear()
 	_world_player.animator.rotation = 0.0
@@ -153,13 +145,39 @@ func _motion(path_name: StringName) -> SeaMotionPath:
 	return _sea.get_node("Points/" + String(path_name)) as SeaMotionPath
 
 
-func _update_dive_jump_visual(_time: float, progress: float) -> void:
-	# Minor pose tilt only; the actual flight trajectory comes from Path2D.
-	_world_player.animator.rotation = -0.25 * sin(PI * progress)
+func _update_dive_jump_visual(progress: float, camera_start: Vector2,
+		island_camera: Camera2D) -> void:
+	var surface_y: float = _sea.to_global(Vector2(0.0, DivingWorld.SEA_TOP)).y
+	if not _dive_has_splashed and _world_player.global_position.y >= surface_y:
+		_on_dive_splash(surface_y)
+	if not _dive_has_splashed:
+		_world_player.animator.rotation = -0.25 * sin(PI * progress)
+	else:
+		_world_player.animator.rotation = 0.0
+	# The camera follows actual underwater depth, never a second timeline.
+	var final_y: float = _motion(&"PenniDiveJump").authored_end().y
+	var depth: float = clampf((_world_player.global_position.y - surface_y)
+		/ maxf(final_y - surface_y, 1.0), 0.0, 1.0)
+	island_camera.position = camera_start.lerp(Vector2.ZERO, depth)
+
+
+func _on_dive_splash(surface_y: float) -> void:
+	if _dive_has_splashed:
+		return
+	_dive_has_splashed = true
+	_world_player.animator.rotation = 0.0
+	_spawn_splash(Vector2(_world_player.global_position.x, surface_y))
+	_sea.play_sfx(&"dive")
+	underwater = true
+	GameManager.diving_session_active = true
+	_dialogue_ui.set_underwater_mode(true)
+	_world_player.set_swimming(true, _sea._sea_bounds())
+	# Companions follow using their own single continuous dive path,
+	# starting just after Penni enters the water.
+	_party_entrance.jump_party_in(null, Callable(self, "_spawn_splash"))
 
 
 func _spawn_splash(at: Vector2) -> void:
-	_world_player.animator.rotation = 0.0
 	var splash := Sprite2D.new()
 	splash.texture = RIPPLE
 	splash.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
