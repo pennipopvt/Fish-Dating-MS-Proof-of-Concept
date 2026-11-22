@@ -81,3 +81,33 @@ godot --headless --path . res://tests/sea_motion_path_test.tscn
 Inspect the opening boat animation in the actual game before adjusting the
 frame grid, and check the first dive/splash, shore return, and both townhouse
 arrival scenes. All camera changes are isolated to `penni-diving`.
+
+
+## Stable sky and first-fish reveal
+
+The original **World → Sky** contains the actual gradient, stars, sun, moon
+and cloud templates, so you can still edit them in the world scene. At runtime
+`WorldDayNight` moves that same Sky node into `World/SkyLayer`, a
+viewport-fixed background canvas. The sky no longer follows fractional camera
+positions, avoiding camera-smoothing jitter. Its visible height is clipped
+against the **real World/Water** surface, so underwater views do not invent a
+second horizon. The cloud sprites retain their existing slow drift and use
+the same day/night tint as the original world.
+
+The existing first-fish discovery is still one-time and still owns the player
+input lock. Its `SeaEncounterSequence` now uses the shared
+`WorldCameraController` to pan to the actual tutorial fish, hold, and pan
+back before the lock ends. In **Sea → EncounterSequence**, adjust the three
+Inspector values:
+
+- **Fish Focus Pan Seconds** (default 0.4)
+- **Fish Focus Hold Seconds** (default 0.55)
+- **Fish Focus Return Seconds** (default 0.4)
+
+No new dialogue, popup, scene or duplicate camera is involved. If the encounter
+is interrupted by leaving the sea, normal camera follow is restored.
+
+Regression coverage: `world_camera_intro_test.tscn` verifies viewport sky,
+waterline clip, cloud tint and normal camera following;
+`first_fish_camera_focus_test.tscn` verifies the one-time focus, input lock,
+return and interruption handling.
