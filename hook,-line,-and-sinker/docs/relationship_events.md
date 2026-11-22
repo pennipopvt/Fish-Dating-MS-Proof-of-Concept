@@ -128,3 +128,30 @@ Silas walks in and initiates his invitation, walks out afterward, then a screen
 fade separates Kuda's own entrance and conversation. Test accept/decline,
 decline again after the cooldown, accepted flags preventing repeats, ordinary
 room dialogue without invitations, and Fish Co daytime events.
+
+## Penni's room and resting
+
+The former white world Bed has been replaced by a permanent `PenniRoomDoor`
+using the existing `TransferDoor` and `InteractPrompt` behaviors. Other
+townhouse door prompts appear only while a resident is assigned and Penni
+can interact. The Penni door uses `prefabs/penni_room_door.tscn`, a generic
+door texture and a replaceable portrait badge.
+
+`NPCRoomView.open_player_room()` opens the existing first-person room overlay.
+Set its `Player Room > Player Room Background` export to replace the placeholder
+and `Player Room Sleep Text` to change its line. Penni asks where to rest until
+via `DialogueManager`; choices only include later periods and an exit.
+`GameManager.rest()` remains the sole time owner. Skips are applied while
+`IllustrationSceneController.play_rest_transition()` displays the same fade,
+black-screen sleep text and Continue button as an NPC overnight. New-day
+morning events only begin once the room/fade releases the player.
+
+Morning invitation guests now appear stationary beside Penni using a per-event
+`guest_offset`, with no arrival or departure movement. The previously added
+MorningStoryEntry marker is no longer needed.
+
+Manual regression: check four ordinary townhouse doors (locked/unlocked
+prompts), Penni's door and badge, morning/afternoon/night available choices,
+"I'm not tired", same-day skips and next-morning day increments, and
+simultaneous invitation dialogues after wake. NPC romance overnights should
+still show their authored sleep lines without using Penni's room logic.

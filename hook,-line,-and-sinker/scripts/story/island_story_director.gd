@@ -21,8 +21,6 @@ var _pending: Array[StringName] = []
 var _active: IslandStoryEventData
 var _resolving: bool = false
 var _guest_actor: Node2D
-var _guest_entry_feet: Vector2
-var _guest_talk_feet: Vector2
 
 
 func _ready() -> void:
@@ -184,7 +182,7 @@ func _process(_delta: float) -> void:
 
 func _begin_event(event: IslandStoryEventData) -> void:
 	if event.stage_land_actor:
-		await _present_guest(event)
+		_present_guest(event)
 	DialogueManager.request_conversation(event.speaker, event.dialogue_json)
 	if not DialogueManager.is_active:
 		push_warning("Island story event failed to open: %s" % event.event_id)
@@ -194,30 +192,18 @@ func _begin_event(event: IslandStoryEventData) -> void:
 	story_event_started.emit(event.event_id)
 
 
-# The placed world marker controls where guests enter. The existing temporary
-# actor helper supplies the real NPC sprite and disables its interact prompt.
+# Spawn the existing noninteractive land sprite in place beside Penni.
+# No approach/exit movement: the morning sleep fade does the transition.
 func _present_guest(event: IslandStoryEventData) -> void:
-	var entry: Marker2D = _world.get_node_or_null("MorningStoryEntry") as Marker2D
-	_guest_entry_feet = entry.global_position if entry != null \
-		else _player.global_position + Vector2(-80.0, 0.0)
-	var side: float = -1.0 if _guest_entry_feet.x < _player.global_position.x else 1.0
-	_guest_talk_feet = _player.global_position + Vector2(side * event.approach_distance, 0.0)
-	_guest_actor = NPCTemporaryActor.spawn(event.speaker, _world, _guest_entry_feet)
+	_guest_actor = NPCTemporaryActor.spawn(event.speaker, _world,
+		_player.global_position + event.guest_offset)
 	if not is_instance_valid(_guest_actor):
 		push_warning("Cannot stage morning story guest: %s" % event.event_id)
 		return
 	_guest_actor.name = "MorningStoryGuest_" + String(event.speaker.npc_id)
-	var movement: Vector2 = _guest_talk_feet - _guest_entry_feet
-	var tween: Tween = _guest_actor.create_tween()
-	tween.tween_property(_guest_actor, "global_position",
-		_guest_actor.global_position + movement,
-		maxf(0.05, movement.length() / maxf(event.approach_speed, 1.0)))
-	await tween.finished
-	if is_instance_valid(_player) and is_instance_valid(_guest_actor):
-		var face: StringName = &"idle_l" if _guest_actor.global_position.x < _player.global_position.x else &"idle_r"
-		if _player.animator.sprite_frames.has_animation(face):
-			_player.animator.play(face)
-
+	var face: StringName = &"idle_l" if event.guest_offset.x < 0.0 else &"idle_r"
+	if _player.animator.sprite_frames.has_animation(face):
+		_player.animator.play(face)
 
 func _world_is_free() -> bool:
 	return _player != null and is_instance_valid(_player) \
@@ -243,7 +229,8 @@ func _complete_event() -> void:
 		return
 	var event: IslandStoryEventData = _active
 	if is_instance_valid(_guest_actor):
-		await _dismiss_guest(event)
+		_guest_actor.queue_free()
+		_guest_actor = null
 	_active = null
 	if event.retry_after_days > 0:
 		_last_played_day[event.event_id] = GameManager.get_day()
@@ -260,20 +247,6 @@ func _complete_event() -> void:
 	if is_instance_valid(_player):
 		_player.busy = false
 	set_process(not _pending.is_empty())
-
-
-func _dismiss_guest(event: IslandStoryEventData) -> void:
-	if not is_instance_valid(_guest_actor):
-		return
-	var movement: Vector2 = _guest_entry_feet - _guest_talk_feet
-	var tween: Tween = _guest_actor.create_tween()
-	tween.tween_property(_guest_actor, "global_position",
-		_guest_actor.global_position + movement,
-		maxf(0.05, movement.length() / maxf(event.approach_speed, 1.0)))
-	await tween.finished
-	if is_instance_valid(_guest_actor):
-		_guest_actor.queue_free()
-	_guest_actor = null
 
 
 func _has_next_morning_event() -> bool:

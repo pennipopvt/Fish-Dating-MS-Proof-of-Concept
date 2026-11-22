@@ -9,12 +9,20 @@ extends Control
 @export_group("Room Lighting")
 @export var lighting_profile: RoomLightingProfile
 
+@export_group("Player Room")
+## Optional replacement for the neutral placeholder background.
+@export var player_room_background: Texture2D
+@export_multiline var player_room_sleep_text: String = "You drift off to sleep."
+
 @onready var _background: TextureRect = $Background
+@onready var _player_room_placeholder: Label = $PlayerRoomPlaceholder
 var _dialogue: DialogueUI
 var _transition: SeaDiveTransition
 var _illustration: IllustrationSceneController
 var _player: Player
 var _resident: NPCData
+var _player_room_open: bool = false
+var _player_rest_target: int = -1
 var _inside: bool = false
 var _closing: bool = false
 var _dialogue_exit_requested: bool = false
@@ -63,6 +71,8 @@ func open_room(npc: NPCData) -> void:
 	if npc == null or _inside or _closing or _transition.transitioning or DialogueManager.is_active:
 		return
 	_resident = npc
+	_player_room_open = false
+	_player_rest_target = -1
 	_dialogue_exit_requested = false
 	_date_departure = null
 	_prelude_active = false
@@ -82,8 +92,46 @@ func open_room(npc: NPCData) -> void:
 		_start_conversation()
 
 
+# Penni has a permanent room, presented through the exact same room overlay.
+# The dialogue context is not a recruited NPC and cannot trigger a romance.
+func open_player_room() -> void:
+	if _inside or _closing or _transition.transitioning or DialogueManager.is_active:
+		return
+	_resident = NPCData.new()
+	_resident.npc_id = &"penni_monologue"
+	_resident.display_name = "Penni"
+	_player_room_open = true
+	_player_rest_target = -1
+	_inside = true
+	_player.busy = true
+	await _transition.iris_swap(_show_room)
+	_start_player_rest_prompt()
+
+
+func _start_player_rest_prompt() -> void:
+	if not _inside or not _player_room_open or DialogueManager.is_active:
+		return
+	var choices: Array[Dictionary] = []
+	var period: GameManager.Times = GameManager.get_period()
+	if period == GameManager.Times.MORNING:
+		choices.append({"text": "Afternoon", "response": "I'll rest until the afternoon.",
+			"effects": {"request_scene": "player_room_rest:afternoon"}})
+	if period != GameManager.Times.NIGHT:
+		choices.append({"text": "Night", "response": "I'll rest until tonight.",
+			"effects": {"request_scene": "player_room_rest:night"}})
+	choices.append({"text": "Next morning", "response": "I'll sleep until tomorrow morning.",
+		"effects": {"request_scene": "player_room_rest:morning"}})
+	choices.append({"text": "I'm not tired.", "response": "Maybe later.",
+		"effects": {"request_scene": "player_room_exit"}})
+	DialogueManager.request_inline_conversation(_resident,
+		["When should I rest until?"], "", choices, true)
+	if not DialogueManager.is_active:
+		close_room()
+
+
 func _show_room() -> void:
-	_background.texture = _resident.room_background
+	_background.texture = player_room_background if _player_room_open else _resident.room_background
+	_player_room_placeholder.visible = _player_room_open and player_room_background == null
 	# Also refresh on entry so room previews and any future clock loads
 	# always show the correct lighting on their very first frame.
 	_refresh_room_lighting()
@@ -168,6 +216,10 @@ func _start_conversation() -> void:
 func _on_conversation_finished(npc: NPCData) -> void:
 	if not _inside or _closing or npc != _resident:
 		return
+	if _player_room_open:
+		# scene_requested is emitted just AFTER conversation_finished.
+		call_deferred("_resume_or_exit")
+		return
 	if _prelude_active:
 		_prelude_active = false
 		# DialogueManager emits scene_requested AFTER conversation_finished;
@@ -196,6 +248,15 @@ func _on_conversation_finished(npc: NPCData) -> void:
 
 func _on_scene_requested(npc: NPCData, scene_id: String) -> void:
 	if not _inside or npc != _resident:
+		return
+	if _player_room_open:
+		match scene_id:
+			"player_room_rest:afternoon":
+				_player_rest_target = GameManager.Times.AFTERNOON
+			"player_room_rest:night":
+				_player_rest_target = GameManager.Times.NIGHT
+			"player_room_rest:morning":
+				_player_rest_target = GameManager.Times.MORNING
 		return
 	if scene_id == "room_exit":
 		_dialogue_exit_requested = true
@@ -283,9 +344,47 @@ func _complete_romance_route(npc: NPCData) -> void:
 func _resume_or_exit() -> void:
 	if not _inside or _closing or _overnight_active or DialogueManager.is_active:
 		return
+	if _player_room_open and _player_rest_target >= 0:
+		_begin_player_rest()
+		return
 	# A fresh visit starts a fresh greeting. Continuing to talk in the SAME
 	# visit uses authored "Something else..." / topics nodes instead.
 	close_room()
+
+
+# Resting uses the SAME overnight interlude as illustrated romance,
+# but returns directly from the black screen to the island.
+func _begin_player_rest() -> void:
+	if _closing or not _player_room_open:
+		return
+	if _illustration == null:
+		close_room()
+		return
+	_closing = true
+	var target: GameManager.Times = _player_rest_target as GameManager.Times
+	var target_day: int = GameManager.get_day() + (1 if target == GameManager.Times.MORNING else 0)
+	var completed: bool = await _illustration.play_rest_transition(player_room_sleep_text,
+		Callable(self, "_apply_player_rest_at_black").bind(target_day, target))
+	if not completed:
+		_closing = false
+		close_room()
+		return
+	_inside = false
+	_closing = false
+	_player_room_open = false
+	_player_rest_target = -1
+	_resident = null
+	_player.busy = false
+
+
+func _apply_player_rest_at_black(target_day: int, target: GameManager.Times) -> void:
+	_hide_room()
+	# GameManager is the sole clock owner. Skip intervening periods without
+	# broadcasting a morning wake-up until the requested morning is reached.
+	for step in range(3):
+		if GameManager.get_day() == target_day and GameManager.get_period() == target:
+			break
+		GameManager.rest()
 
 
 func close_room() -> void:
@@ -295,6 +394,8 @@ func close_room() -> void:
 	await _transition.iris_swap(_hide_room)
 	_player.busy = false
 	_inside = false
+	_player_room_open = false
+	_player_rest_target = -1
 	_closing = false
 	_dialogue_exit_requested = false
 	_resident = null
@@ -316,3 +417,4 @@ func _hide_room() -> void:
 	hide()
 	_dialogue.set_room_mode(false)
 	_background.texture = null
+	_player_room_placeholder.hide()

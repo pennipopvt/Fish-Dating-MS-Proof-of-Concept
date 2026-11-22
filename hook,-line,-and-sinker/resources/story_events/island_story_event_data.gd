@@ -21,10 +21,9 @@ extends Resource
 @export_group("Morning Presentation")
 ## Morning-only events queue on day_started, not when a flag changes midday.
 @export var morning_only: bool = false
-## Spawn the NPC's existing land sprite at World/MorningStoryEntry.
+## Display the NPC's existing land sprite beside Penni without walking.
 @export var stage_land_actor: bool = false
-@export_range(4.0, 120.0, 1.0) var approach_distance: float = 26.0
-@export_range(10.0, 200.0, 1.0) var approach_speed: float = 65.0
+@export var guest_offset: Vector2 = Vector2(-26.0, 0.0)
 
 @export_group("Completion")
 ## 0 = one-time. Positive = may be offered again after this many days

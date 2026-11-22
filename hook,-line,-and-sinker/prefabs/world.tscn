@@ -15,7 +15,7 @@
 [ext_resource type="Shader" uid="uid://r4rciq67coeg" path="res://shaders/water.gdshader" id="13_le6xu"]
 [ext_resource type="PackedScene" uid="uid://c0d22ylobcr2s" path="res://scenes/townhouse.tscn" id="23_townhouse"]
 [ext_resource type="PackedScene" path="res://prefabs/townhouse_door.tscn" id="24_xfqyr"]
-[ext_resource type="PackedScene" path="res://prefabs/bed.tscn" id="25_bed"]
+[ext_resource type="PackedScene" path="res://prefabs/penni_room_door.tscn" id="25_penni_room"]
 [ext_resource type="PackedScene" path="res://prefabs/beach.tscn" id="26_beach"]
 [ext_resource type="Shader" uid="uid://bv2isyw6ln31h" path="res://shaders/moon.gdshader" id="moon_shader"]
 [ext_resource type="Shader" uid="uid://cli6ci0c4km7b" path="res://shaders/night_stars.gdshader" id="night_stars"]
@@ -209,12 +209,8 @@ position = Vector2(46, 101)
 [node name="Shop" parent="." unique_id=1156017474 instance=ExtResource("3_07nuu")]
 position = Vector2(195, 96)
 
-[node name="Bed" parent="." unique_id=1873402519 instance=ExtResource("25_bed")]
-position = Vector2(505, 104)
-
-# Move this marker in the editor to choose where morning visitors appear.
-[node name="MorningStoryEntry" type="Marker2D" parent="."]
-position = Vector2(443, 112)
+[node name="PenniRoomDoor" parent="." instance=ExtResource("25_penni_room")]
+position = Vector2(505, 96)
 
 [node name="Beach" parent="." unique_id=1034296826 instance=ExtResource("26_beach")]
 position = Vector2(860, 112)
