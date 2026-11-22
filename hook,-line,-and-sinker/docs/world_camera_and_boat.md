@@ -42,10 +42,14 @@ properties on Player.
 
 ## Intro boat
 
-**World → IntroBoat** is east of the current playable beach at `(2250, 124)`,
-still within the original World's existing Water rectangle. The existing
-`WorldDayNight` sky and water shaders are used as-is; nothing is copied or
-recreated for the opening.
+The boat's editable source is **prefabs/intro_boat.tscn**, with its root at
+`(2250, 124)`, east of the currently playable beach. On the opening,
+`FishCoOpeningSequence` instances that exact scene under **World/IntroBoat**.
+Godot 4.7 silently discarded the instance when it was nested directly in
+`world.tscn`, so authoring the boat in its own PackedScene and placing it
+through the existing opening owner avoids that engine serialization issue.
+The boat is still part of the same persistent World at runtime, inside its
+original Water rectangle. No other sky/water clock or renderer is created.
 
 - **IntroBoat → Sprite**: `AnimatedSprite2D`, driven by
   `scripts/intro/intro_boat_sprite.gd` and the artist's
@@ -68,7 +72,7 @@ or additional player was created.
 Run these regressions from the Godot project directory:
 
 ```sh
-godot --headless --path . -s res://tests/world_camera_intro_test.gd
+godot --headless --path . res://tests/world_camera_intro_test.tscn
 godot --headless --path . -s res://tests/diving_island_transition_test.gd
 godot --headless --path . res://tests/diving_party_test.tscn
 godot --headless --path . res://tests/sea_motion_path_test.tscn
