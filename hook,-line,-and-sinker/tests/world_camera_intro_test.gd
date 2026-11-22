@@ -15,6 +15,17 @@ func _run() -> void:
 	# Ensure the authored boat is present in the original PackedScene.
 	# Runtime recovery must not hide a broken editor hierarchy.
 	var prefab_world: Node2D = WORLD.instantiate() as Node2D
+	var state: SceneState = WORLD.get_state()
+	for index in range(state.get_node_count()):
+		var node_name: String = str(state.get_node_name(index))
+		if node_name == "IntroBoat":
+			print("[BOAT DEBUG] PackedScene node=", node_name,
+				" parent=", state.get_node_path(index, true),
+				" instance=", state.get_node_instance(index))
+	var direct_children: Array[String] = []
+	for child in prefab_world.get_children():
+		direct_children.append(str(child.name))
+	print("[BOAT DEBUG] World direct children=", direct_children)
 	_check(prefab_world.has_node("IntroBoat")
 		and prefab_world.has_node("IntroBoat/PlayerSpot")
 		and prefab_world.has_node("IntroBoat/CameraFocus"),
