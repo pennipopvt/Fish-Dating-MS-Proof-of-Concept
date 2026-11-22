@@ -15,7 +15,6 @@ extends Control
 @export_multiline var player_room_sleep_text: String = "You drift off to sleep."
 
 @onready var _background: TextureRect = $Background
-@onready var _player_room_placeholder: Label = $PlayerRoomPlaceholder
 var _dialogue: DialogueUI
 var _transition: SeaDiveTransition
 var _illustration: IllustrationSceneController
@@ -131,7 +130,6 @@ func _start_player_rest_prompt() -> void:
 
 func _show_room() -> void:
 	_background.texture = player_room_background if _player_room_open else _resident.room_background
-	_player_room_placeholder.visible = _player_room_open and player_room_background == null
 	# Also refresh on entry so room previews and any future clock loads
 	# always show the correct lighting on their very first frame.
 	_refresh_room_lighting()
@@ -417,4 +415,3 @@ func _hide_room() -> void:
 	hide()
 	_dialogue.set_room_mode(false)
 	_background.texture = null
-	_player_room_placeholder.hide()

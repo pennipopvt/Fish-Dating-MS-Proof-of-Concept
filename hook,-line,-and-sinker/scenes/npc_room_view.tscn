@@ -35,18 +35,3 @@ grow_vertical = 2
 mouse_filter = 2
 expand_mode = 1
 stretch_mode = 6
-
-# An editor-replaceable placeholder until Penni gets authored room background art.
-[node name="PlayerRoomPlaceholder" type="Label" parent="."]
-visible = false
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-mouse_filter = 2
-theme_override_font_sizes/font_size = 28
-text = "Penni's Room"
-horizontal_alignment = 1
-vertical_alignment = 1

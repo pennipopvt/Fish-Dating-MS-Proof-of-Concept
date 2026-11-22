@@ -56,9 +56,6 @@ func _ready() -> void:
 		var door: TransferDoor = node as TransferDoor
 		if door != null:
 			door.room_requested.connect(_on_townhouse_room_requested)
-	var player_door: TransferDoor = _world.get_node_or_null("PenniRoomDoor") as TransferDoor
-	if player_door != null:
-		player_door.room_requested.connect(_on_townhouse_room_requested)
 	# Main only connects existing story, terminal UI, and world notice signals.
 	# No tutorial flags or shop logic belong in the world transition.
 	var terminal_menu: ShopMenu = $CanvasLayer/ShopMenu

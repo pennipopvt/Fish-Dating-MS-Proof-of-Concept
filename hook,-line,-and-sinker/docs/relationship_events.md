@@ -155,3 +155,14 @@ prompts), Penni's door and badge, morning/afternoon/night available choices,
 "I'm not tired", same-day skips and next-morning day increments, and
 simultaneous invitation dialogues after wake. NPC romance overnights should
 still show their authored sleep lines without using Penni's room logic.
+
+## Four-door townhouse layout
+
+Penni's permanent room now occupies the leftmost former `FreeHouseA` position
+inside `AvailableHomeList`. Only `FreeHouseB`, `FreeHouseC`, and `FreeHouseD`
+are registered with `RecruitmentHandler` as assignable resident housing.
+There are exactly four exterior doors; no fifth bed/door exists on the right.
+Penni's door uses the generic open-door art with no large portrait badge,
+until its dedicated sprite is ready. The large first-person Penni room label
+has also been removed; the normal neutral backdrop stays until room artwork
+is set in `NPCRoomView`.
