@@ -84,8 +84,9 @@ func _run() -> void:
 	var edited_afternoon := Color("#71b8d2")
 	world.set("water_afternoon_color", edited_afternoon)
 	world.call("_apply_immediately", world.call("_visual_state", 1.0 / 3.0))
+	var edited_shader_color: Color = water_mat.get_shader_parameter("water_color")
 	_check(background.color.is_equal_approx(edited_afternoon)
-		and (water_mat.get_shader_parameter("water_color") as Color).is_equal_approx(edited_afternoon),
+		and edited_shader_color.is_equal_approx(edited_afternoon),
 		"Editing Water Colors on the World node updates the actual water and its backdrop")
 	world.set("water_afternoon_color", old_afternoon)
 	world.call("_apply_immediately", world.call("_visual_state", world.call("_clock_progress")))
