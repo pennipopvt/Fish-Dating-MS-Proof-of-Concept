@@ -76,6 +76,13 @@ func _run() -> void:
 	var actor: Node2D = DateManager.get("_date_actor") as Node2D
 	_check(venue != null and actor != null, "Original venue and temporary date NPC are present")
 	if venue != null and actor != null:
+		_check(venue.scene_file_path == "res://prefabs/intro_boat.tscn"
+			and venue.get_node("Sprite") is IntroBoatSprite,
+			"Kuda's scheduled date instantiates the original animated boat")
+		var penni: Player = main.get_node("SubViewportContainer/SubViewport/World/Player") as Player
+		_check(penni.z_index == kuda_date.actors_z_index
+			and actor.z_index == kuda_date.actors_z_index,
+			"Both date characters appear above the boat art")
 		var expected_feet: Vector2 = (venue.get_node("NpcSpot") as Marker2D).global_position + custom_offset
 		var art: AnimatedSprite2D = actor.get_node_or_null("Sprite") as AnimatedSprite2D
 		var actor_feet: Vector2 = actor.global_position
