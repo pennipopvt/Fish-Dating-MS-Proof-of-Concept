@@ -1,20 +1,23 @@
 # Editing dive, surfacing and companion motion in Godot
 
 Open **scenes/sea_area.tscn** and expand **Sea → Points**.
-Each named animation has two different controls:
 
-- Select its child **Path** (a Godot **Path2D**) and use the 2D viewport's path tools to move its Bézier points and handles. This determines the **shape** of the movement. The **final point of PenniDiveDescent** is Penni's actual underwater destination. It is no longer replaced by an automatic search or a hidden X offset.
-- Select the parent animation node (a **SeaMotionPath**) in the Inspector. **Duration Seconds** controls total travel time. Click **Speed Curve** to edit a native Godot **Curve**: X is normalized time (0→1), and Y is **instantaneous velocity**, not location. Raise a section to make that part faster; lower it to slow down. The speed graph is integrated and normalized so the animation always finishes at its endpoint in the chosen duration.
+Each named motion has two editable controls:
+
+- Select its child **Path** (a Godot **Path2D**) and reshape the Bézier points and handles in the 2D viewport. This controls **where** the actor moves.
+- Select the parent **SeaMotionPath** node and edit **Duration Seconds** for total travel time or **Speed Curve** for velocity over time. The curve's X axis is normalized time and its Y axis is *instantaneous speed*, not position. Motion is integrated and normalized to finish at the authored destination.
 
 | Motion | What it animates |
 | --- | --- |
-| PenniDiveJump | Penni's jump from dock to splash (ends exactly where the splash appears) |
-| PenniDiveDescent | Penni sinking into deep open water after the splash |
-| CompanionDiveJump | Each selected companion jumping from the dock; the curve is shifted to their actual start/landing to avoid snapping |
-| CompanionDiveDescent | Temporary fish descending alongside Penni after their splash |
-| PenniSurface | Penni returning from the sea to the dock |
-| CompanionSurface | **All** companion fish returning from underwater to their human-form dock landing; Silas's first-land reveal uses this exact same path |
+| PenniDiveJump | **One continuous movement**, from the dock through the surface to the deep-water destination |
+| CompanionDiveJump | One continuous movement for each guest, with individual starting positions and underwater destinations |
+| PenniSurface | Penni's return from the sea to the dock |
+| CompanionSurface | Companion fish returning from the sea to human-form dock landing, including Silas's first-land reveal |
 
-The motions stay in the existing scene; there is no separate player, world or camera. For companions, the shape is smoothly anchored to their **actual starting position** and their exact human sprite landing center, so the final poof stays aligned with the land actor even if you reshape the curve.
+**There is no separate descent path.** When the player or companion crosses the sea surface (from `DivingWorld.SEA_TOP`), the splash happens. Penni switches to her underwater swim pose and the companion's temporary human sprite is replaced by its fish sprite **without restarting or replacing the movement tween**. The path then continues underwater to its final point. The existing water visuals can respond to world position/depth independently.
 
-The **Entry** and **SilasSurfaceApproach** markers are retained as reference points for older scene data/tests, but the *movement trajectory* is controlled by the paths above, not those markers. **SilasDockWait** still controls the human landing slot. The animation speed curves and paths can be tuned independently without changing combat speeds, recruitment dialogue or follow behavior.
+Companions use the same authored path shape with their real starting positions and index-spaced underwater endpoints. Their entry animations run with short overlapping start staggers instead of finishing one at a time. The per-companion surface return remains a separate movement, with individual dock landing positions.
+
+The **Entry** and **SilasSurfaceApproach** markers are retained for legacy reference, not for entry motion geometry. **SilasDockWait** still controls the human landing slots.
+
+Edit the path's *last point* to change where the dive ends. Speed curves only affect the rate of movement along the same path; they do not introduce additional movement phases.
