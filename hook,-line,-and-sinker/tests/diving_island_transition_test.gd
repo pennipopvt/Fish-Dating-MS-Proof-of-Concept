@@ -178,7 +178,9 @@ func _run() -> void:
 		"Persistent tutorial dock prompt switches back to proximity-only after Yes")
 	await create_timer(1.7).timeout
 	_check(bool(main.get("_underwater")) and player.swimming,
-		"Dock descent enables swimming in the original World with its existing Player")
+		"One continuous dock jump enables swimming in the original World")
+	_check(bool((main.get_node("TransitionLayer") as SeaDiveTransition).get("_dive_has_splashed")),
+		"Depth crossing triggers a single splash on the continuous jump path")
 	_check(sea.get_parent() == world and sea.get_node("Solids") is TileMapLayer,
 		"Underwater level is an editable child of the same persistent World")
 	_check(GameManager.diving_session_active, "Catching fish underwater does not spend additional actions")
