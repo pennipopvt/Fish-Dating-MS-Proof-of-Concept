@@ -198,6 +198,9 @@ func _ready() -> void:
 		"Completing Kuda's first romance spikes existing partner Silas's jealousy")
 	_expect(AffectionManager.get_jealousy(KUDA.npc_id) == 0,
 		"New partner does not receive a jealousy spike")
+	_expect(NPCManager.has_active_relationship_event(SILAS, &"other_romance")
+		and NPCManager.get_encounter_json_path(SILAS) == "res://dialogue/silas_other_romance.json",
+		"Initial 45-point jealousy triggers an actual Silas follow-up before the old 50 threshold")
 
 	# A date choice lowers jealousy and scores according to the current tier.
 	AffectionManager.set_jealousy(SILAS.npc_id, 70)
@@ -232,10 +235,15 @@ func _ready() -> void:
 	AffectionManager.call("_on_date_missed", DateManager.get_date(&"kuda_ship"))
 	_expect(AffectionManager.get_affection(KUDA.npc_id) == after_decay - 18,
 		"Missing a date directly hurts affection, not a separate morale score")
-	_expect(AffectionManager.get_jealousy(KUDA.npc_id) == 90,
-		"Missing Kuda's appointment also raises jealousy")
+	_expect(AffectionManager.get_jealousy(KUDA.npc_id) == 75,
+		"Missing Kuda's own appointment hurts affection without implying another romance")
 	_expect(NPCManager.get_encounter_json_path(KUDA) == "res://dialogue/kuda_post_romance.json",
 		"Kuda can arrange future dates through his own post-romance conversation")
+	DateManager.date_finished.emit(DateManager.get_date(&"silas_beach"))
+	_expect(AffectionManager.get_jealousy(KUDA.npc_id) == 90
+		and NPCManager.has_active_relationship_event(KUDA, &"other_romance")
+		and NPCManager.get_encounter_json_path(KUDA) == "res://dialogue/kuda_other_romance.json",
+		"Dating Silas while Kuda is a partner gives Kuda an authored jealousy follow-up")
 
 	DateManager.set("_active", null)
 	NPCManager.npc_states.clear()
