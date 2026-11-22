@@ -30,6 +30,13 @@ enum When {
 
 @export_file("*.json") var dialogue_json: String = ""
 
+@export_group("Room Departure Dialogue")
+# The shared NPCRoomView uses these lines for this NPC's booked-date
+# confirmation instead of generic dialogue hard-coded in the room script.
+@export_multiline var room_departure_prompt: String = "Ready to head out for our date?"
+@export_multiline var room_departure_yes: String = "Let's go!"
+@export_multiline var room_departure_no: String = "Okay, let me know when you're ready."
+
 @export_group("Timing")
 # Periods the date can happen in. None ticked = any time.
 @export_flags("Morning", "Afternoon", "Night") var periods: int = 0
