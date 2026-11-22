@@ -78,8 +78,12 @@ func _run() -> void:
 	_check(motion.authored_end().y >= DivingWorld.SEA_TOP + 80.0
 		and sea.call("_is_open_water", sea.to_local(motion.authored_end())),
 		"Single jump path ends deep underwater in open water")
+	var waterline: float = (world.get_node("Water") as ColorRect).global_position.y
+	_check(motion.authored_start().y < waterline and motion.authored_end().y > waterline + 80.0,
+		"One Penni dive curve crosses the real water surface and reaches deep water")
 	var companion: SeaMotionPath = motion_root.get_node("CompanionDiveJump") as SeaMotionPath
-	_check(companion.authored_end().y >= DivingWorld.SEA_TOP + 80.0,
+	_check(companion.authored_start().y < waterline
+		and companion.authored_end().y >= DivingWorld.SEA_TOP + 80.0,
 		"Companion jump also continues well below the waterline")
 	main.queue_free()
 	await get_tree().process_frame
