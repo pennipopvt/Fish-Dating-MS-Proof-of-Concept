@@ -47,7 +47,7 @@ var _pickup_time_left := 0.0
 
 @onready var fishing_controller: Node = $FishingController
 @onready var animator : AnimatedSprite2D = $AnimatedSprite2D
-@onready var _step_sound: AudioStreamPlayer2D = $StepSound
+@onready var _step_sound: AudioStreamPlayer = $StepSound
 @onready var _step_timer: Timer = $StepTimer
 
 func _ready() -> void:

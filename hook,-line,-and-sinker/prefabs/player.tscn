@@ -359,7 +359,7 @@ sprite_frames = SubResource("SpriteFrames_yd4fr")
 animation = &"walk_carry_l"
 autoplay = "idle_r"
 
-[node name="StepSound" type="AudioStreamPlayer2D" parent="."]
+[node name="StepSound" type="AudioStreamPlayer" parent="."]
 stream = ExtResource("step_sound")
 volume_db = -6.0
 
