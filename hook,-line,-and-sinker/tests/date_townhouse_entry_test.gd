@@ -67,12 +67,32 @@ func _check_date(npc: NPCData, date_id: StringName) -> void:
 		"Date becomes ready at its first afternoon action")
 
 	var original_player_position: Vector2 = player.global_position
-	# This is the player's real interaction path. It must start the booked date,
-	# not open another ordinary room conversation.
+	# The actual door now opens the NPC's room, asks if Penni is ready,
+	# and hands over to the EXISTING date transition only after Yes.
 	door.interact(player)
+	for i in range(30):
+		if view.visible and DialogueManager.is_active:
+			break
+		await get_tree().create_timer(0.1).timeout
+	_check(view.visible and DialogueManager.current_npc == npc,
+		"%s's door opens the correct resident's room first" % npc.display_name)
+	_check(not DateManager.is_active(), "A date never auto-starts without confirmation")
+	if DialogueManager.is_active:
+		DialogueManager.advance()
+	_check(DialogueManager.is_awaiting_choice()
+		and DialogueManager.get_choices().size() == 2,
+		"Room asks whether to go on the scheduled date, with Yes and Not yet")
+	if DialogueManager.is_awaiting_choice():
+		DialogueManager.select_choice(0)
+		DialogueManager.advance()
+		DialogueManager.advance()
+	for i in range(40):
+		if DateManager.is_active():
+			break
+		await get_tree().create_timer(0.1).timeout
 	_check(DateManager.is_active() and DateManager.get("_active") == date,
-		"%s's door starts the booked date" % npc.display_name)
-	_check(not view.visible, "The room overlay does not replace the date")
+		"%s's Yes choice starts the booked date after closing the room" % npc.display_name)
+	_check(not view.visible, "Date takes over only once room overlay closes")
 	_check(player.busy, "Movement is locked during the date")
 	for i in range(40):
 		if DialogueManager.is_active and bool(DateManager.get("_in_dialogue")):
@@ -100,7 +120,7 @@ func _check_date(npc: NPCData, date_id: StringName) -> void:
 		if sprite != null and sprite.sprite_frames != null and spot != null:
 			var frame: Texture2D = sprite.sprite_frames.get_frame_texture(sprite.animation, sprite.frame)
 			var feet_y: float = guest.global_position.y + sprite.position.y + frame.get_height() * sprite.scale.y * 0.5
-			_check(absf(feet_y - spot.global_position.y) < 0.1,
+			_check(absf(feet_y - (spot.global_position.y + date.npc_feet_offset.y)) < 0.1,
 				"Date actor's feet align with the scene's NpcSpot")
 
 	# Complete the authored four-choice date and verify its results.
