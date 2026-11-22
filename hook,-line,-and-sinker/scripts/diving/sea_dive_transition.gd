@@ -83,6 +83,10 @@ func _transition_contract_to_dock(intro: FishCoIntro) -> void:
 		intro.end()
 	if is_instance_valid(_opening):
 		_opening.hide()
+		# The opening boat is no longer used after this iris; Kuda's date
+		# instantiates the SAME PackedScene on demand instead.
+		if _opening is FishCoOpeningSequence:
+			(_opening as FishCoOpeningSequence).release_intro_boat()
 
 	# The existing island and dock are already loaded under the backdrop.
 	# This is not a new scene or a duplicate starting environment.
