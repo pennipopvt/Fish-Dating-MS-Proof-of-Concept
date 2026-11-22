@@ -103,32 +103,35 @@ offset_right = 160.0
 offset_bottom = 90.0
 mouse_filter = 2
 
-[node name="Sky" type="Control" parent="." unique_id=512056317]
-z_index = -10
+# Camera-independent sky layer: one native 320x180 image covering the
+# viewport, clipped by WorldDayNight at the actual water surface.
+# Clouds drift inside it; no camera-follow transform is applied per frame.
+[node name="SkyLayer" type="CanvasLayer" parent="."]
+layer = -1
+
+[node name="Sky" type="Control" parent="SkyLayer" unique_id=512056317]
 clip_contents = true
 layout_mode = 3
 anchors_preset = 0
-offset_left = -160.0
-offset_top = -40.0
-offset_right = 160.0
-offset_bottom = 140.0
+offset_right = 320.0
+offset_bottom = 180.0
 mouse_filter = 2
 
-[node name="SkyGradient" type="ColorRect" parent="Sky" unique_id=246657653]
+[node name="SkyGradient" type="ColorRect" parent="SkyLayer/Sky" unique_id=246657653]
 material = SubResource("ShaderMaterial_4284n")
 custom_minimum_size = Vector2(320, 180)
 layout_mode = 0
 offset_right = 320.0
 offset_bottom = 180.0
 
-[node name="NightStars" type="ColorRect" parent="Sky" unique_id=1138354271]
+[node name="NightStars" type="ColorRect" parent="SkyLayer/Sky" unique_id=1138354271]
 material = SubResource("ShaderMaterial_night_stars")
 layout_mode = 0
 offset_right = 320.0
 offset_bottom = 180.0
 mouse_filter = 2
 
-[node name="SunGlow" type="ColorRect" parent="Sky" unique_id=1434741238]
+[node name="SunGlow" type="ColorRect" parent="SkyLayer/Sky" unique_id=1434741238]
 material = SubResource("ShaderMaterial_yd4fr")
 layout_mode = 0
 offset_left = 15.0
@@ -137,40 +140,40 @@ offset_right = 175.0
 offset_bottom = 98.0
 mouse_filter = 2
 
-[node name="Sun" type="Sprite2D" parent="Sky" unique_id=1314223609]
+[node name="Sun" type="Sprite2D" parent="SkyLayer/Sky" unique_id=1314223609]
 material = SubResource("CanvasItemMaterial_sun")
 position = Vector2(95, 18)
 texture = ExtResource("3_vbln7")
 
-[node name="MoonGlow" type="ColorRect" parent="Sky" unique_id=287659905]
+[node name="MoonGlow" type="ColorRect" parent="SkyLayer/Sky" unique_id=287659905]
 material = SubResource("ShaderMaterial_moon_glow")
 layout_mode = 0
 offset_right = 96.0
 offset_bottom = 96.0
 mouse_filter = 2
 
-[node name="Moon" type="ColorRect" parent="Sky" unique_id=1664162708]
+[node name="Moon" type="ColorRect" parent="SkyLayer/Sky" unique_id=1664162708]
 material = SubResource("ShaderMaterial_moon")
 layout_mode = 0
 offset_right = 24.0
 offset_bottom = 24.0
 mouse_filter = 2
 
-[node name="Clouds" type="Node2D" parent="Sky" unique_id=1290658735]
+[node name="Clouds" type="Node2D" parent="SkyLayer/Sky" unique_id=1290658735]
 script = ExtResource("4_k40i2")
 cloud_count = 15
 min_height = 0.0
 max_height = 60.0
 
-[node name="SmallCloud" type="Sprite2D" parent="Sky/Clouds" unique_id=2035656304]
+[node name="SmallCloud" type="Sprite2D" parent="SkyLayer/Sky/Clouds" unique_id=2035656304]
 position = Vector2(63, 36)
 texture = ExtResource("5_le6xu")
 
-[node name="MediumCloud" type="Sprite2D" parent="Sky/Clouds" unique_id=1330176559]
+[node name="MediumCloud" type="Sprite2D" parent="SkyLayer/Sky/Clouds" unique_id=1330176559]
 position = Vector2(178, 4)
 texture = ExtResource("6_q76tg")
 
-[node name="LongCloud" type="Sprite2D" parent="Sky/Clouds" unique_id=130679970]
+[node name="LongCloud" type="Sprite2D" parent="SkyLayer/Sky/Clouds" unique_id=130679970]
 position = Vector2(89, 8)
 texture = ExtResource("7_sxw1y")
 
