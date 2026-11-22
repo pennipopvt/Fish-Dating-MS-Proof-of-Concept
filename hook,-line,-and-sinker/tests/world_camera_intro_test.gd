@@ -1,19 +1,19 @@
-extends SceneTree
+extends Node
 
-# Run: godot --headless --path . -s res://tests/world_camera_intro_test.gd
+# Run: godot --headless --path . res://tests/world_camera_intro_test.tscn
 # The intro boat, water, sky, and camera are all in one persistent World.
 const MAIN: PackedScene = preload("res://scenes/main.tscn")
 var failures: int = 0
 
 
-func _initialize() -> void:
-	call_deferred("_run")
+func _ready() -> void:
+	_run.call_deferred()
 
 
 func _run() -> void:
 	var main: Control = MAIN.instantiate() as Control
-	get_root().add_child(main)
-	await process_frame
+	add_child(main)
+	await get_tree().process_frame
 	var world: Node2D = main.get_node("SubViewportContainer/SubViewport/World") as Node2D
 	var player: Player = world.get_node("Player") as Player
 	var controller: WorldCameraController = world.get_node("CameraController") as WorldCameraController
@@ -47,13 +47,13 @@ func _run() -> void:
 		"New boat sheet is playing on a real world AnimatedSprite2D")
 
 	_check(opening.debug_skip_to_dive(), "Debug skip keeps normal dock onboarding")
-	await process_frame
+	await get_tree().process_frame
 	_check(not player.busy and player.z_index == 0
 		and controller.get("_following"),
 		"Returning to island restores player draw order and camera follow")
 	var old_x: float = controller.global_position.x
 	player.global_position.x += 90.0
-	await create_timer(0.15).timeout
+	await get_tree().create_timer(0.15).timeout
 	_check(controller.global_position.x > old_x
 		and controller.global_position.x < player.global_position.x,
 		"Follow is smoothed rather than teleporting with Penni")
@@ -68,18 +68,18 @@ func _run() -> void:
 	story.play_camera_pan(marker, 0.12, 0.08, 0.12)
 	_check(player.busy and not controller.get("_following"),
 		"Story director locks player control while camera pans")
-	await create_timer(0.19).timeout
+	await get_tree().create_timer(0.19).timeout
 	_check(camera.get_screen_center_position().distance_to(marker.global_position) < 6.0,
 		"Story pan reaches the requested world marker")
-	await create_timer(0.3).timeout
+	await get_tree().create_timer(0.3).timeout
 	_check(not player.busy and controller.get("_following"),
 		"Story returns camera to Penni and releases her controls")
 	marker.queue_free()
 	main.queue_free()
-	await process_frame
+	await get_tree().process_frame
 	print("world_camera_intro_test: PASS" if failures == 0 else
 		"world_camera_intro_test: %d FAILED" % failures)
-	quit(0 if failures == 0 else 1)
+	get_tree().quit(0 if failures == 0 else 1)
 
 
 func _check(ok: bool, note: String) -> void:
