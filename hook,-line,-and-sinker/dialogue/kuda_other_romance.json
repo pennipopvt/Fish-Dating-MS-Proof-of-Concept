@@ -1,0 +1,63 @@
+{
+  "entry": "opening",
+  "free_greeting": true,
+  "nodes": {
+    "opening": {
+      "lines": [
+        "Hey. There's something I've been meaning to say.",
+        "I've noticed you've been getting close to someone else.",
+        "I'm not asking you to pick sides. But I'd rather hear it from you than sit here guessing."
+      ],
+      "choices": [
+        {
+          "text": "You're right. I should have talked to you.",
+          "next": "reassure",
+          "tone": "neutral",
+          "spends_action": false,
+          "effects": {
+            "jealousy_delta": -25
+          }
+        },
+        {
+          "text": "It's none of your business.",
+          "next": "dismiss",
+          "tone": "neutral",
+          "spends_action": false,
+          "effects": {
+            "jealousy_delta": 10,
+            "affection_delta": -4
+          }
+        },
+        {
+          "text": "Can we talk about this another time?",
+          "next": "later",
+          "tone": "neutral",
+          "spends_action": false
+        }
+      ]
+    },
+    "reassure": {
+      "lines": [
+        "Yeah. That's all I wanted.",
+        "You don't need to have every answer right now. Just be straight with me."
+      ],
+      "effects": {
+        "resolve_relationship_events": [
+          "other_romance"
+        ]
+      }
+    },
+    "dismiss": {
+      "lines": [
+        "Maybe not.",
+        "But if we're close, don't act like it means nothing to me."
+      ]
+    },
+    "later": {
+      "lines": [
+        "Sure. I'm not going anywhere.",
+        "Just don't leave it hanging forever."
+      ]
+    }
+  }
+}
