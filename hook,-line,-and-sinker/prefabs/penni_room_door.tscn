@@ -1,13 +1,28 @@
 [gd_scene format=3]
 
-[ext_resource type="PackedScene" path="res://prefabs/townhouse_door.tscn" id="1_door"]
-[ext_resource type="Texture2D" path="res://sprites/rooms/genericopendoor.png" id="2_door"]
+[ext_resource type="Texture2D" path="res://sprites/rooms/genericopendoor.png" id="1_door"]
+[ext_resource type="Script" path="res://scripts/transfer_door.gd" id="2_script"]
+[ext_resource type="PackedScene" path="res://prefabs/interact_prompt.tscn" id="3_prompt"]
 
-# This is a normal authored door with an editable Sprite child. No portrait
-# placeholder is layered over it, and nothing instantiates door art in code.
-[node name="PenniRoomDoor" instance=ExtResource("1_door")]
+[sub_resource type="RectangleShape2D" id="DoorCollision"]
+size = Vector2(20, 31)
+
+# Standalone scene: no inherited FacePlaceholder or portrait TextureRect.
+# The visual is authored here, never created in script.
+[node name="PenniRoomDoor" type="Area2D" node_paths=PackedStringArray("prompt")]
+z_index = -1
+position = Vector2(0, -16)
+script = ExtResource("2_script")
 room_id = &"penni_room"
 locked = false
+prompt = NodePath("InteractPrompt")
 
-[node name="Sprite" parent="." index="0"]
-texture = ExtResource("2_door")
+[node name="Sprite" type="Sprite2D" parent="."]
+texture = ExtResource("1_door")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(0, 0.5)
+shape = SubResource("DoorCollision")
+
+[node name="InteractPrompt" parent="." instance=ExtResource("3_prompt")]
+position = Vector2(0, -25)
