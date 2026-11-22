@@ -420,10 +420,7 @@ func _bring_silas_to_townhouse(land_actor: NPCInteractable,
 	var silas_spot: Marker2D = world.get_node("TownhouseArrival/SilasSpot") as Marker2D
 	_player.global_position = player_spot.global_position
 	_player.animator.play(&"idle_r")
-	var camera: Camera2D = _player.get_node("Camera2D") as Camera2D
-	camera.position = Vector2.ZERO
-	camera.reset_smoothing()
-	camera.force_update_scroll()
+	(world.get_node("CameraController") as WorldCameraController).snap_to_player()
 	if is_instance_valid(land_actor):
 		land_actor.global_position = silas_spot.global_position + (
 			land_actor.global_position - dock_wait.global_position)
