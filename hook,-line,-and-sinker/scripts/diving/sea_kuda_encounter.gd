@@ -266,14 +266,13 @@ func play_first_surface_reveal(surface_actors: Array[Node2D]) -> void:
 	await travel.fade_to(0.0, townhouse_fade_seconds)
 	_story.start_kuda_townhouse_arrival()
 	await _story.kuda_townhouse_dialogue_finished
-	await travel.fade_to(1.0, townhouse_fade_seconds)
+	# The shared shore return already fades to black to remove its actors.
+	# Do not briefly reveal an empty townhouse, then fade a second time.
 	var assigned: bool = RecruitmentHandler.assign_home(_story.kuda_data)
 	if not assigned:
 		push_warning("Kuda accepted the room, but no townhouse door was available.")
 	else:
 		_story.complete_kuda_townhouse_arrival()
-	# The common surface transition owns temporary actor cleanup.
-	await travel.fade_to(0.0, townhouse_fade_seconds)
 	travel.queue_free()
 
 

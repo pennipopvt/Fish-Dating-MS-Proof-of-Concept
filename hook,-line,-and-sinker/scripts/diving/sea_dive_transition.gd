@@ -227,18 +227,9 @@ func _surface_from_dive() -> void:
 		var humans: Array[Node2D] = await _party_entrance.surface_party(
 			_party.members(), _sea, approach.global_position, dock_wait.global_position
 		)
-		# Let the sea's encounter owner run any first-time shore scenes while
-		# the transformed human actors are still visible.
-		await _sea.on_party_surfaced(humans)
-		# A short exit fade covers the companions going back to their rooms.
-		# The party roster remains intact for later dives.
-		var fade := ScreenFade.new()
-		get_tree().root.add_child(fade)
-		await fade.fade_to(1.0, _party_entrance.fade_seconds)
-		_sea.end_diving_party()
-		_party_entrance.clear_surface_actors(humans)
-		await fade.fade_to(0.0, _party_entrance.fade_seconds)
-		fade.queue_free()
+		# Ordinary and failed dives resolve the same shore story milestones.
+		await _resolve_shore_stories(humans)
+		await _clear_returning_party(humans)
 	else:
 		_sea.end_diving_party()
 
@@ -255,9 +246,42 @@ func _on_oxygen_return_requested() -> void:
 	_blackout_from_oxygen()
 
 
+# One story-resolution path for voluntary returns and oxygen blackouts.
+# Actors remain staged while the story plays, so recruitment and room
+# assignment always happen before the sea party is cleared.
+func _resolve_shore_stories(humans: Array[Node2D],
+		recovered_from_blackout: bool = false) -> void:
+	var story := _sea.get_node("StoryDirector") as SeaStoryDirector
+	if recovered_from_blackout:
+		var rescued_cast: Array[NPCData] = []
+		for actor in humans:
+			var guest: NPCInteractable = actor as NPCInteractable
+			if is_instance_valid(guest) and guest.npc != null and guest.visible:
+				rescued_cast.append(guest.npc)
+		await story.play_oxygen_blackout_recovery(rescued_cast)
+	await _sea.on_party_surfaced(humans)
+
+
+# Normal shore returns already fade to send fish back to their rooms.
+# Reuse that same exit fade for blackout returns and Kuda's townhouse scene.
+func _clear_returning_party(humans: Array[Node2D]) -> void:
+	if humans.is_empty():
+		_sea.end_diving_party()
+		return
+	var fade := ScreenFade.new()
+	get_tree().root.add_child(fade)
+	await fade.fade_to(1.0, _party_entrance.fade_seconds)
+	_sea.end_diving_party()
+	_party_entrance.clear_surface_actors(humans)
+	await fade.fade_to(0.0, _party_entrance.fade_seconds)
+	fade.queue_free()
+
+
 func _blackout_from_oxygen() -> void:
-	# The ScreenFade already used by beds/relationship scenes gives the
-	# failure a simple blackout. We do not perform the ordinary swim ascent.
+	# No swim/jump ascent on oxygen failure: companions bring Penni home.
+	# Capture the actual dive party BEFORE releasing any sea actors.
+	var returning: Array[NPCData] = _party.members()
+	var story := _sea.get_node("StoryDirector") as SeaStoryDirector
 	var fade := ScreenFade.new()
 	get_tree().root.add_child(fade)
 	await fade.fade_to(1.0, 0.45)
@@ -265,7 +289,6 @@ func _blackout_from_oxygen() -> void:
 	(_sea.get_node("SeaOxygen") as SeaOxygen).end_dive()
 	_world_player.global_position = shore_return_position
 	_world_player.set_swimming(false)
-	_sea.end_diving_party()
 	_world_player.animator.rotation = 0.0
 	_world_player.animator.play(&"idle_l")
 	var island_camera: Camera2D = _world_player.get_node("Camera2D") as Camera2D
@@ -276,8 +299,27 @@ func _blackout_from_oxygen() -> void:
 	_sea.call("_set_camera_bounds", false)
 	_dialogue_ui.set_underwater_mode(false)
 	GameManager.finish_dive_period()
+
+	# A first-time Silas tutorial still uses its own authored reveal
+	# after surface_completed. Never prematurely humanize him here.
+	var humans: Array[Node2D] = []
+	if not story.can_begin_silas_surface_reveal():
+		var dock_wait := _sea.get_node("Points/SilasDockWait") as Marker2D
+		for i in range(returning.size()):
+			var actor: Node2D = _party_entrance.stage_surface_actor(
+				returning[i], _party_entrance.surface_dock_position(
+					dock_wait.global_position, i))
+			if actor != null:
+				actor.show()
+				humans.append(actor)
+	# Under a covered screen the active fish actors can be removed safely:
+	# their above-water appearances now exist independently in the world.
+	_sea.end_diving_party()
 	await fade.fade_to(0.0, 0.55)
 	fade.queue_free()
+	if not humans.is_empty():
+		await _resolve_shore_stories(humans, true)
+		await _clear_returning_party(humans)
 	transitioning = false
 	_world_player.busy = false
 	surface_completed.emit()

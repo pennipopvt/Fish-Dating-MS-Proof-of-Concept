@@ -132,6 +132,8 @@ func _ready() -> void:
 		"Failed morning dive still advances the clock to afternoon")
 	_check(not sea_o2.enabled,
 		"Blackout hides oxygen until Penni enters the water again")
+	_check(not DialogueManager.is_active,
+		"An unaccompanied blackout does not invent fish dialogue")
 	main.queue_free()
 	print("sea_oxygen_test: PASS" if failures == 0 else
 		"sea_oxygen_test: %d FAILED" % failures)

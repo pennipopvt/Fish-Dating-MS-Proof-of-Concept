@@ -18,6 +18,7 @@ signal kuda_townhouse_arrival_finished
 
 @export var silas_data: NPCData = preload("res://resources/npcs/silas.tres")
 @export var kuda_data: NPCData = preload("res://resources/npcs/kuda.tres")
+@export_file("*.json") var oxygen_recovery_dialogue: String = "res://dialogue/oxygen_blackout_recovery.json"
 
 var _events: Dictionary = {}
 var _dialogue_stage: StringName = &""
@@ -196,6 +197,26 @@ func start_kuda_surface_reveal(present_cast: Array[NPCData] = []) -> bool:
 		_kuda_dialogue_stage = &""
 		return false
 	return true
+
+
+# Use the ordinary multi-speaker dialogue pipeline for the companions
+# who physically rescued Penni. A non-recruited, temporary context prevents
+# conversation-finished affection rewards or character-stage callbacks.
+# This scene is replayable each blackout; it is not a relationship flag.
+func play_oxygen_blackout_recovery(present_cast: Array[NPCData]) -> void:
+	if present_cast.is_empty():
+		return
+	if DialogueManager.is_active:
+		await DialogueManager.conversation_finished
+	var context := NPCData.new()
+	context.npc_id = &"oxygen_blackout_story"
+	context.display_name = "Penni's companions"
+	context.portrait = present_cast[0].portrait
+	dialogue_mode_requested.emit(false)
+	DialogueManager.request_conversation(context, oxygen_recovery_dialogue,
+		null, present_cast)
+	if DialogueManager.is_active and DialogueManager.current_npc == context:
+		await DialogueManager.conversation_finished
 
 
 # Shared dialogue system and persistent NPC flags; Kuda's physical presentation
