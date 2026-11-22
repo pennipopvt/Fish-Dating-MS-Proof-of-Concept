@@ -63,3 +63,44 @@ return. The event mechanics and flags are identical; their reactions are
 individually authored. The event architecture does not automatically change affection. Add an
 authored `affection_delta` effect when an incident should affect the single
 relationship score. Jealousy remains independent for context-specific reactions.
+
+
+## Affection, jealousy, and time together
+
+There is **no automatic +12 affection on conversation completion**. A visit
+records `last_talk_day` and can prevent the next day's passive neglect,
+but a hello or goodbye does not raise affection. Only authored dialogue
+choices, date outcomes and other explicit events can do that. The existing
+five-day grace for unrecruited/early companions and affection-based diving
+refusal thresholds are unchanged.
+
+Jealousy is not a synonym for low affection:
+- Completing another romance adds 45 jealousy and costs 12 affection for
+  existing recruited romantic partners.
+- Completing a date with one partner adds 15 jealousy to each **other**
+  recruited romantic partner; the person on the date is unaffected.
+- Missing an appointment costs its NPC 18 affection, not jealousy.
+- Dates retain their existing jealousy-tier-dependent reactions and
+  reassurance/playful/bold choices.
+
+The first jealousy incident starts the reusable `other_romance` relationship
+event defined on each NPC's `Relationship Events` Inspector array. The
+priority follow-ups are `dialogue/silas_other_romance.json` and
+`dialogue/kuda_other_romance.json`, each with the NPC's own voice and
+choices. They use standard `DialogueManager` and may be edited without
+editing the manager code. The authored `jealousy_delta` effect changes
+the shared jealousy score; `affection_delta` changes affection.
+Reassurance reduces jealousy by 25 and resolves the incident after the
+response has been read. Dismissal raises jealousy, hurts affection, and
+leaves the issue active; asking to talk later leaves it unresolved.
+When another partner-date happens, a previously resolved incident can start
+again, and reconciliation can work again too.
+
+The ordinary post-romance dialogue now recognizes jealousy from 25 onward,
+rather than waiting for 50, and the incident dialogue has priority over
+everyday conversation. Like other incidents, higher-priority events
+(e.g. a companion knockout) may take precedence.
+
+Coverage: `tests/jealousy_relationship_test.tscn`,
+`tests/relationship_dates_test.tscn`,
+`tests/companion_morale_test.tscn`, and the Godot smoke workflow.
