@@ -59,7 +59,7 @@ func _run() -> void:
 	var saw_silas := false
 	var saw_kuda := false
 	for i in range(40):
-		if not DialogueManager.is_active:
+		if not DialogueManager.is_active or DialogueManager.current_npc.npc_id != &"oxygen_blackout_story":
 			break
 		var line: DialogueLineData = DialogueManager.get_current_line()
 		if line != null:
