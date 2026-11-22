@@ -27,13 +27,13 @@ const REFLECTION_AT_SURFACE: float = 0.477
 @onready var _moon: ColorRect = $Sky/Moon
 @onready var _moon_glow: ColorRect = $Sky/MoonGlow
 @onready var _sky_region: Control = $Sky
-@onready var _camera: Camera2D = $Player/Camera2D
+@onready var _camera: Camera2D = $CameraController/Camera2D
 @onready var _ambient: CanvasModulate = $DayNightTint
 @onready var _water: ColorRect = $Water
 # Sea/Solids is optional now that the sea uses SeaTerrain colliders.
 @onready var _sea_solids: TileMapLayer = get_node_or_null("Sea/Solids") as TileMapLayer
 @onready var _diver: Player = $Player
-@onready var _underwater_tint: ColorRect = get_node_or_null("Player/Camera2D/UnderwaterTint") as ColorRect
+@onready var _underwater_tint: ColorRect = get_node_or_null("CameraController/Camera2D/UnderwaterTint") as ColorRect
 
 var _sky_mat: ShaderMaterial
 var _stars_mat: ShaderMaterial
@@ -86,7 +86,7 @@ func _ready() -> void:
 
 func _process(_delta: float) -> void:
 	# Camera limits can separate the actual screen center from the
-	# Camera2D node's world position. The tint is a child of Camera2D,
+	# Camera2D node's world position. The tint is a child of the world camera,
 	# so compensate for that difference to keep its entire 320x180
 	# rectangle attached to the visible game screen at sea boundaries.
 	var visible_center: Vector2 = _camera.get_screen_center_position()
