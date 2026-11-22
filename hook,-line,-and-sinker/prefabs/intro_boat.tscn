@@ -53,20 +53,15 @@ texture_filter = 1
 position = Vector2(1, -47)
 sprite_frames = SubResource("SpriteFrames_n1q85")
 animation = &"sail"
-frame_progress = 0.12398763
+frame_progress = 0.75304633
 script = ExtResource("boat_script")
 sprite_sheet = ExtResource("boat_texture")
 
 [node name="PlayerSpot" type="Marker2D" parent="." unique_id=1091404346]
 position = Vector2(22, -15)
 
-[node name="NpcSpot" type="Marker2D" parent="."]
+[node name="NpcSpot" type="Marker2D" parent="." unique_id=6374087]
 position = Vector2(-20, -15)
-
-# This marker is the date cast's draw layer, above the animated hull (z=11).
-# Adjust its z_index in the scene Inspector if the boat art changes.
-[node name="DateCastLayer" type="Marker2D" parent="."]
-z_index = 12
 
 [node name="CameraFocus" type="Marker2D" parent="." unique_id=1611632989]
 position = Vector2(0, -13)
