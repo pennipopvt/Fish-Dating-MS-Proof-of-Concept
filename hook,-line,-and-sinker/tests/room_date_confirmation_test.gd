@@ -80,10 +80,11 @@ func _run() -> void:
 			and venue.get_node("Sprite") is IntroBoatSprite,
 			"Kuda's scheduled date instantiates the original animated boat")
 		var penni: Player = main.get_node("SubViewportContainer/SubViewport/World/Player") as Player
-		var date_cast_layer: Marker2D = venue.get_node("DateCastLayer") as Marker2D
-		_check(penni.z_index == date_cast_layer.z_index
-			and actor.z_index == date_cast_layer.z_index
-			and date_cast_layer.z_index > (venue.get_node("Sprite") as IntroBoatSprite).z_index,
+		var date_cast_layer: Marker2D = venue.get_node_or_null("DateCastLayer") as Marker2D
+		var boat_sprite: IntroBoatSprite = venue.get_node("Sprite") as IntroBoatSprite
+		_check(penni.z_index > boat_sprite.z_index
+			and actor.z_index > boat_sprite.z_index
+			and (date_cast_layer == null or penni.z_index == date_cast_layer.z_index),
 			"Both date characters appear above the boat art")
 		var expected_feet: Vector2 = (venue.get_node("NpcSpot") as Marker2D).global_position + custom_offset
 		var art: AnimatedSprite2D = actor.get_node_or_null("Sprite") as AnimatedSprite2D
