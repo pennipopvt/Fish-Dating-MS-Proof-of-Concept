@@ -128,7 +128,7 @@ func _begin_dive(dock: Node2D) -> void:
 			_update_dive_jump_visual(progress, camera_start, island_camera))
 	if not _dive_has_splashed:
 		push_warning("PenniDiveJump does not cross the sea surface; check its Path2D endpoint.")
-		_on_dive_splash(_sea.to_global(Vector2(0.0, DivingWorld.SEA_TOP)).y)
+		_on_dive_splash((_world.get_node("Water") as ColorRect).global_position.y)
 	if _party_entrance.entry_in_progress():
 		await _party_entrance.dive_entries_finished
 
@@ -147,8 +147,11 @@ func _motion(path_name: StringName) -> SeaMotionPath:
 
 func _update_dive_jump_visual(progress: float, camera_start: Vector2,
 		island_camera: Camera2D) -> void:
-	var surface_y: float = _sea.to_global(Vector2(0.0, DivingWorld.SEA_TOP)).y
-	if not _dive_has_splashed and _world_player.global_position.y >= surface_y:
+	# WorldDayNight already calculates the water shader's gradual submersion
+	# from the real Water surface. Only the sprite change/splash belongs here.
+	var surface_y: float = (_world.get_node("Water") as ColorRect).global_position.y
+	var visual_center_y: float = _world_player.global_position.y + _world_player.animator.position.y
+	if not _dive_has_splashed and visual_center_y >= surface_y:
 		_on_dive_splash(surface_y)
 	if not _dive_has_splashed:
 		_world_player.animator.rotation = -0.25 * sin(PI * progress)
