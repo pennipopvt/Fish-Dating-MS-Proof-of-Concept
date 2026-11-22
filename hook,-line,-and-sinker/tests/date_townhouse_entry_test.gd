@@ -117,6 +117,17 @@ func _check_date(npc: NPCData, date_id: StringName) -> void:
 					venue = loc as Node2D
 					break
 		var spot: Marker2D = venue.get_node_or_null("NpcSpot") as Marker2D if venue != null else null
+		if date_id == &"kuda_ship":
+			var boat_art: IntroBoatSprite = venue.get_node_or_null("Sprite") as IntroBoatSprite
+			_check(venue.scene_file_path == "res://prefabs/intro_boat.tscn"
+				and boat_art != null and boat_art.is_playing()
+				and boat_art.sprite_sheet == load("res://sprites/environment/boat.png"),
+				"Kuda date uses the identical animated opening boat, not the placeholder ship")
+			_check(venue.global_position == date.venue_position
+				and venue.global_position == Vector2(2250, 124),
+				"Kuda date returns to the original intro boat location")
+			_check(player.z_index > boat_art.z_index and guest.z_index > boat_art.z_index,
+				"Penni and Kuda remain visible above the animated boat")
 		if sprite != null and sprite.sprite_frames != null and spot != null:
 			var frame: Texture2D = sprite.sprite_frames.get_frame_texture(sprite.animation, sprite.frame)
 			var feet_y: float = guest.global_position.y + sprite.position.y + frame.get_height() * sprite.scale.y * 0.5
@@ -144,6 +155,8 @@ func _check_date(npc: NPCData, date_id: StringName) -> void:
 	_check(AffectionManager.get_affection(npc.npc_id) > NPCManager.START_AFFECTION,
 		"Date outcome rewards the shared affection score")
 	_check(not player.busy, "Player regains movement after the date")
+	_check(player.z_index == 0, "Date restores Penni's original draw order")
+	_check(DateManager.get("_venue") == null, "Temporary boat is removed when date finishes")
 	_check(DateManager.get("_date_actor") == null,
 		"Temporary date actor is cleared on completion")
 	_check(player.global_position.distance_to(original_player_position) < 0.1,
