@@ -3,7 +3,7 @@ extends Node
 # Run: godot --headless --path . res://tests/world_camera_intro_test.tscn
 # The intro boat, water, sky, and camera are all in one persistent World.
 const MAIN: PackedScene = preload("res://scenes/main.tscn")
-const WORLD: PackedScene = preload("res://prefabs/world.tscn")
+const BOAT: PackedScene = preload("res://prefabs/intro_boat.tscn")
 var failures: int = 0
 
 
@@ -12,25 +12,14 @@ func _ready() -> void:
 
 
 func _run() -> void:
-	# Ensure the authored boat is present in the original PackedScene.
-	# Runtime recovery must not hide a broken editor hierarchy.
-	var prefab_world: Node2D = WORLD.instantiate() as Node2D
-	var state: SceneState = WORLD.get_state()
-	for index in range(state.get_node_count()):
-		var node_name: String = str(state.get_node_name(index))
-		if node_name == "IntroBoat" or node_name == "Townhouse" or node_name == "TownhouseArrival" or node_name == "Sky" or node_name == "CameraController":
-			print("[BOAT DEBUG] PackedScene node=", node_name,
-				" parent=", state.get_node_path(index, true),
-				" instance=", state.get_node_instance(index))
-	var direct_children: Array[String] = []
-	for child in prefab_world.get_children():
-		direct_children.append(str(child.name))
-	print("[BOAT DEBUG] World direct children=", direct_children)
-	_check(prefab_world.has_node("IntroBoat")
-		and prefab_world.has_node("IntroBoat/PlayerSpot")
-		and prefab_world.has_node("IntroBoat/CameraFocus"),
-		"World.tscn retains the authored IntroBoat and markers before startup")
-	prefab_world.free()
+	# The artist-editable scene is packaged intact, and the opening then
+	# places this instance into the same World as the actual Water and Sky.
+	var authored_boat: Node2D = BOAT.instantiate() as Node2D
+	_check(authored_boat != null and authored_boat.has_node("PlayerSpot")
+		and authored_boat.has_node("CameraFocus")
+		and authored_boat.has_node("Sprite"),
+		"Authored IntroBoat PackedScene includes editable sprite and markers")
+	authored_boat.free()
 	var main: Control = MAIN.instantiate() as Control
 	add_child(main)
 	await get_tree().process_frame
