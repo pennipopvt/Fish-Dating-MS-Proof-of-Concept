@@ -96,15 +96,16 @@ func _ready() -> void:
 		"Only Hot Streak and Perfect Timing remain active")
 	_expect(hot.unlocks_trade(SCARF),
 		"Three consecutive catches unlock the scarf")
-	_expect(ShopManager.is_trade_locked(SCARF), "Unclaimed scarf starts locked")
+	_expect(not ShopManager.is_trade_locked(SCARF),
+		"Unclaimed challenges no longer lock shop trades")
 
 	var terminal := TERMINAL.instantiate() as ShopInteractable
 	add_child(terminal)
 	ChallengeManager.debug_complete(hot)
 	_expect(ChallengeManager.get_claimable_count() == 1,
 		"Finishing a challenge queues one claimable reward")
-	_expect(not hot.claimed and ShopManager.is_trade_locked(SCARF),
-		"Finishing the challenge alone does not unlock the scarf")
+	_expect(not hot.claimed and not ShopManager.is_trade_locked(SCARF),
+		"An unclaimed completed challenge still cannot lock its shop trade")
 	var world_notice := terminal.get_node("UnclaimedAchievementNotice") as PanelContainer
 	_expect(not shop.is_page_unlocked(ShopMenu.Page.CHALLENGES)
 		and not world_notice.visible,
@@ -131,7 +132,7 @@ func _ready() -> void:
 	_expect(hot.claimed and ChallengeManager.get_claimable_count() == 0,
 		"Claiming in the Challenges tab marks the achievement claimed")
 	_expect(not ShopManager.is_trade_locked(SCARF),
-		"Claiming Hot Streak unlocks its scarf trade")
+		"Claiming Hot Streak leaves the already-accessible trade unchanged")
 	_expect(not world_notice.visible and not tab_notice.visible and challenge_tab_icon.visible,
 		"Claim badges disappear and the standard tab icon returns after collection")
 

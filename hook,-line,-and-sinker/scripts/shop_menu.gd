@@ -1319,19 +1319,13 @@ func _show_trade_details(trade: TradeData) -> void:
 	_order_button.show()
 	_order_button.self_modulate = Color.WHITE
 	_order_button.text = "ORDER"
-	var locking: ChallengeData = ChallengeManager.get_locking_challenge(trade)
-	_order_button.disabled = locking != null or not ShopManager.can_trade(trade)
+	_order_button.disabled = not ShopManager.can_trade(trade)
 	if ShopManager.is_upgrade_owned(trade):
 		_status.text = "OWNED"
 		_order_button.text = "OWNED"
 	elif ShopManager.is_upgrade_ordered(trade):
 		_status.text = "DELIVERY ORDERED"
 		_order_button.text = "ORDERED"
-	elif locking != null:
-		_status.text = ("CLAIM CHALLENGE: " if locking.completed else "LOCKED: ") + (
-			"Hidden challenge" if locking.hidden and not locking.completed else locking.display_name
-		)
-		_order_button.self_modulate = UNAFFORD_TINT
 	elif _order_button.disabled:
 		_status.text = "Not enough items to trade."
 		if trade.one_time_purchase and ShopManager.upgrades_today >= ShopManager.max_daily_upgrades:
