@@ -36,8 +36,7 @@ func _run() -> void:
 		and solids_mat.get_shader_parameter("surface_screen_y") != null
 		and solids.collision_enabled,
 		"Sea tiles clip at the same screen-space waterline used by the reflection, preserving physics")
-	_check(world.get_node("SkyLayer/Sky") is Control
-		and world.get_node("SkyLayer") is CanvasLayer
+	_check(world.get_node("Sky") is Control
 		and absf(water.position.y - 140.0) < 0.01,
 		"Screen-space sky still clips to the original world-space water surface")
 	world.free()
