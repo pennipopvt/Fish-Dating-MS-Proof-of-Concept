@@ -24,8 +24,7 @@
 [ext_resource type="Shader" uid="uid://2layvi8dplvf" path="res://shaders/underwater_tint.gdshader" id="water_tint_shader"]
 [ext_resource type="Script" uid="uid://cba27f3x60a3r" path="res://scripts/world_day_night.gd" id="world_day_night"]
 [ext_resource type="Script" path="res://scripts/world_camera_controller.gd" id="world_camera_controller"]
-[ext_resource type="Script" path="res://scripts/intro/intro_boat_sprite.gd" id="intro_boat_script"]
-[ext_resource type="Texture2D" uid="uid://dmyisdjohnnfg" path="res://sprites/environment/boat.png" id="intro_boat_texture"]
+[ext_resource type="PackedScene" path="res://prefabs/intro_boat.tscn" id="intro_boat_scene"]
 [ext_resource type="TileSet" uid="uid://chn86lfer37gd" path="res://resources/tilesets/world_tiles.tres" id="world_tiles"]
 
 [sub_resource type="ShaderMaterial" id="UnderwaterTintMaterial"]
@@ -178,20 +177,7 @@ texture = ExtResource("7_sxw1y")
 
 # The intro boat is a real, currently inaccessible location east of the
 # playable beach. Sky and Water are the SAME existing world visuals.
-[node name="IntroBoat" type="Node2D" parent="."]
-position = Vector2(2250, 124)
-
-[node name="Sprite" type="AnimatedSprite2D" parent="IntroBoat"]
-z_index = 11
-script = ExtResource("intro_boat_script")
-sprite_sheet = ExtResource("intro_boat_texture")
-frame_count = 4
-
-[node name="PlayerSpot" type="Marker2D" parent="IntroBoat"]
-position = Vector2(0, -18)
-
-[node name="CameraFocus" type="Marker2D" parent="IntroBoat"]
-position = Vector2(0, -13)
+[node name="IntroBoat" parent="." instance=ExtResource("intro_boat_scene")]
 
 [node name="Townhouse" parent="." unique_id=1180413625 instance=ExtResource("23_townhouse")]
 z_index = -2
