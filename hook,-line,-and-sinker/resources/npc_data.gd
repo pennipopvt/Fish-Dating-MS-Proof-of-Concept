@@ -6,6 +6,9 @@ extends Resource
 
 @export_group("Appearance")
 @export var portrait: Texture2D
+## Used for temporary land appearances (dates, arrivals and dock scenes).
+## A path rather than a PackedScene avoids an NPCData <-> actor-scene resource cycle.
+@export_file("*.tscn") var land_actor_scene_path: String = ""
 ## Fish-form portrait for conversations while exploring underwater.
 ## Keep the human portrait untouched for scenes on land.
 @export var underwater_sprite: Texture2D

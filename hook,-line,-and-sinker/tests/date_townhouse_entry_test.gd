@@ -66,6 +66,7 @@ func _check_date(npc: NPCData, date_id: StringName) -> void:
 	_check(DateManager.get_ready_booking_for_npc(npc.npc_id) == date,
 		"Date becomes ready at its first afternoon action")
 
+	var original_player_position: Vector2 = player.global_position
 	# This is the player's real interaction path. It must start the booked date,
 	# not open another ordinary room conversation.
 	door.interact(player)
@@ -80,6 +81,27 @@ func _check_date(npc: NPCData, date_id: StringName) -> void:
 	_check(DialogueManager.is_active and bool(DateManager.get("_in_dialogue"))
 		and DialogueManager.current_npc == npc,
 		"%s's real date dialogue begins after the transition" % npc.display_name)
+	var guest: Node2D = DateManager.get("_date_actor") as Node2D
+	_check(is_instance_valid(guest) and guest.is_visible_in_tree(),
+		"%s appears as a visible temporary actor during the date" % npc.display_name)
+	if is_instance_valid(guest):
+		var sprite: AnimatedSprite2D = guest.get_node_or_null("Sprite") as AnimatedSprite2D
+		_check(sprite != null and sprite.visible and sprite.sprite_frames != null,
+			"%s uses the real animated human sprite, not a placeholder" % npc.display_name)
+		_check(guest is NPCInteractable and (guest as NPCInteractable).npc == npc,
+			"Date actor belongs to the correct NPC")
+		var venue: Node2D = DateManager.get("_venue") as Node2D
+		if venue == null:
+			for loc in get_tree().get_nodes_in_group(DateManager.LOCATION_GROUP):
+				if loc is DateLocation and (loc as DateLocation).location_id == date.location_id:
+					venue = loc as Node2D
+					break
+		var spot: Marker2D = venue.get_node_or_null("NpcSpot") as Marker2D if venue != null else null
+		if sprite != null and sprite.sprite_frames != null and spot != null:
+			var frame: Texture2D = sprite.sprite_frames.get_frame_texture(sprite.animation, sprite.frame)
+			var feet_y: float = guest.global_position.y + sprite.position.y + frame.get_height() * sprite.scale.y * 0.5
+			_check(absf(feet_y - spot.global_position.y) < 0.1,
+				"Date actor's feet align with the scene's NpcSpot")
 
 	# Complete the authored four-choice date and verify its results.
 	for i in range(200):
@@ -102,6 +124,10 @@ func _check_date(npc: NPCData, date_id: StringName) -> void:
 	_check(AffectionManager.get_affection(npc.npc_id) > NPCManager.START_AFFECTION,
 		"Date outcome rewards the shared affection score")
 	_check(not player.busy, "Player regains movement after the date")
+	_check(DateManager.get("_date_actor") == null,
+		"Temporary date actor is cleared on completion")
+	_check(player.global_position.distance_to(original_player_position) < 0.1,
+		"Penni returns to her original world position")
 	main.queue_free()
 	await get_tree().process_frame
 	if DateManager.is_booked(date):

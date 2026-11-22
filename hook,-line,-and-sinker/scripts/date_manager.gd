@@ -54,6 +54,8 @@ var _conversation_period: int = 0
 # Day/period the date took place in (after any clock jump).
 var _date_day: int = 0
 var _date_period: int = 0
+# Temporary visuals, separate from the persistent townhouse resident.
+var _date_actor: Node2D = null
 # The date's spawned venue (DateData.venue_scene), removed after the date.
 var _venue: Node2D = null
 # [[Node2D, Vector2 global position], ...] to put back after the date.
@@ -320,7 +322,11 @@ func start_date(date: DateData) -> void:
 		_venue.global_position = date.venue_position
 		venue = _venue
 	_move(player, _spot(venue, &"PlayerSpot"))
-	_move(_find_actor(date.npc.npc_id), _spot(venue, &"NpcSpot"))
+	# Recruited NPCs are data-only residents, not actors in the island world.
+	# Dates and dock cutscenes use the exact same noninteractive land actor.
+	_date_actor = NPCTemporaryActor.spawn(date.npc, player.get_parent(), _spot(venue, &"NpcSpot"))
+	if _date_actor != null:
+		_date_actor.name = "DateGuest_" + String(date.npc.npc_id)
 	await _fade_to(0.0)
 	_in_dialogue = true
 	DialogueManager.request_conversation(date.npc, date.dialogue_json)
@@ -392,6 +398,9 @@ func _finish(completed: bool) -> void:
 		if is_instance_valid(node):
 			node.global_position = entry[1]
 	_restore.clear()
+	if is_instance_valid(_date_actor):
+		_date_actor.queue_free()
+	_date_actor = null
 	if is_instance_valid(_venue):
 		_venue.queue_free()
 	_venue = null
@@ -443,15 +452,6 @@ func _find_location(location_id: StringName) -> DateLocation:
 		var location := node as DateLocation
 		if location != null and location.location_id == location_id:
 			return location
-	return null
-
-
-# The NPC's body in the world (spawned when caught/recruited), or null.
-func _find_actor(npc_id: StringName) -> NPCInteractable:
-	for node in get_tree().get_nodes_in_group(Interactable.GROUP):
-		var actor := node as NPCInteractable
-		if actor != null and actor.npc != null and actor.npc.npc_id == npc_id and not actor.is_queued_for_deletion():
-			return actor
 	return null
 
 

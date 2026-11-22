@@ -3,8 +3,6 @@ class_name SeaPartyEntrance
 
 # Dive presentation only: temporary actors, jumps and fish/human poofs
 # in BOTH directions. Housing, dialogue and story decisions stay elsewhere.
-const SILAS_SCENE: PackedScene = preload("res://prefabs/silas.tscn")
-const KUDA_SCENE: PackedScene = preload("res://prefabs/kuda.tscn")
 @export_range(0.1, 1.0, 0.05) var fade_seconds: float = 0.32
 @export_range(0.2, 1.0, 0.05) var jump_seconds: float = 0.46
 @export_range(0.0, 0.5, 0.05) var jump_stagger_seconds: float = 0.14
@@ -22,7 +20,7 @@ const KUDA_SCENE: PackedScene = preload("res://prefabs/kuda.tscn")
 
 var _world: Node2D
 var _player: Player
-var _land_scenes: Dictionary = {&"test_npc": SILAS_SCENE, &"barracuda": KUDA_SCENE}
+var _land_scenes: Dictionary = {} # Optional cutscene-specific overrides.
 var _staged: Array[Dictionary] = []
 var _fish_visuals: Array[Sprite2D] = []
 
@@ -52,52 +50,15 @@ func call_party_to_dock(party: Array[NPCData], dock: Node2D) -> void:
 	camera.force_update_scroll()
 	for i in range(party.size()):
 		var npc: NPCData = party[i]
-		var actor: Node2D = _make_actor(npc)
+		var actor: Node2D = NPCTemporaryActor.spawn(npc, _world,
+			dock.global_position + Vector2(42.0 + 24.0 * i, 11.0),
+			_land_scenes.get(npc.npc_id) as PackedScene)
+		if actor == null:
+			continue
 		actor.name = "DiveGuest_" + String(npc.npc_id)
-		_world.add_child(actor)
-		actor.global_position = dock.global_position + Vector2(42.0 + 24.0 * i, 11.0)
-		_align_feet(actor, dock.global_position.y + 11.0)
 		_staged.append({"npc": npc, "actor": actor, "index": i})
 	await fade.fade_to(0.0, fade_seconds)
 	fade.queue_free()
-
-
-func _make_actor(npc: NPCData) -> Node2D:
-	var scene: PackedScene = _land_scenes.get(npc.npc_id) as PackedScene
-	if scene != null:
-		var actor: Node2D = scene.instantiate() as Node2D
-		if actor != null:
-			if actor is Area2D:
-				(actor as Area2D).monitoring = false
-				(actor as Area2D).monitorable = false
-				(actor as Area2D).collision_layer = 0
-				(actor as Area2D).collision_mask = 0
-			var collision: CollisionShape2D = actor.get_node_or_null("CollisionShape2D") as CollisionShape2D
-			if collision != null:
-				collision.disabled = true
-			var prompt: InteractPrompt = actor.get_node_or_null("InteractPrompt") as InteractPrompt
-			if prompt != null:
-				prompt.hide()
-			return actor
-	# If new NPC art isn't ready, the portrait is a visible temporary fallback.
-	var sprite := Sprite2D.new()
-	sprite.texture = npc.portrait
-	sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	if sprite.texture != null:
-		sprite.scale = Vector2.ONE * (30.0 / maxf(float(sprite.texture.get_width()), 1.0))
-	return sprite
-
-
-func _align_feet(actor: Node2D, ground_y: float) -> void:
-	var art: AnimatedSprite2D = actor.get_node_or_null("Sprite") as AnimatedSprite2D
-	if art != null and art.sprite_frames != null:
-		var frame: Texture2D = art.sprite_frames.get_frame_texture(art.animation, art.frame)
-		if frame != null and art.centered:
-			actor.global_position.y = ground_y - art.position.y - frame.get_height() * 0.5 * art.scale.y
-	elif actor is Sprite2D:
-		var image: Sprite2D = actor as Sprite2D
-		if image.texture != null and image.centered:
-			actor.global_position.y = ground_y - image.texture.get_height() * image.scale.y * 0.5
 
 
 # Guests jump after Penni; each temporary human actor disappears at the poof.
@@ -162,13 +123,12 @@ func surface_dock_position(at: Vector2, index: int) -> Vector2:
 func stage_surface_actor(npc: NPCData, feet_at: Vector2, scene_name: String = "") -> Node2D:
 	if npc == null:
 		return null
-	var actor: Node2D = _make_actor(npc)
+	var actor: Node2D = NPCTemporaryActor.spawn(npc, _world, feet_at,
+		_land_scenes.get(npc.npc_id) as PackedScene)
+	if actor == null:
+		return null
 	actor.name = scene_name if not scene_name.is_empty() else "SurfaceGuest_" + String(npc.npc_id)
 	actor.visible = false
-	actor.z_index = 6
-	_world.add_child(actor)
-	actor.global_position = feet_at
-	_align_feet(actor, feet_at.y)
 	return actor
 
 

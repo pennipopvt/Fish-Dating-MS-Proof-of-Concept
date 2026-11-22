@@ -62,6 +62,7 @@ priority = 45
 script = ExtResource("1_bmq75")
 npc_id = &"test_npc"
 display_name = "Silas"
+land_actor_scene_path = "res://prefabs/silas.tscn"
 portrait = ExtResource("4_a4wu8")
 underwater_sprite = ExtResource("underwater_eel")
 house = ExtResource("5_816r6")
