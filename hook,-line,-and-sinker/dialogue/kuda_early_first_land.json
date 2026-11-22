@@ -6,23 +6,27 @@
       "lines": [
         {
           "speaker": "player",
-          "text": "Kuda?! You made it back... but you have legs?!"
+          "text": "There. We made it to the dock. How are you feeling?"
         },
         {
           "speaker": "barracuda",
-          "text": "Yeah, I noticed. Had to drag myself out of the water after that fight, and suddenly—this."
-        },
-        {
-          "speaker": "barracuda",
-          "text": "I was worried you were still down there. Don't pull that on me again."
+          "text": "You seriously carried me up here...? I didn't think I'd make it."
         },
         {
           "speaker": "player",
-          "text": "You need somewhere to rest. Come on, I'll show you the townhouse."
+          "text": "I wasn't leaving you hurt down there."
         },
         {
           "speaker": "barracuda",
-          "text": "Hmph. Fine. But I'm walking there on my own."
+          "text": "Wait a second. Why do I have feet? ...What happened to my fins?"
+        },
+        {
+          "speaker": "player",
+          "text": "I think you changed when we came out of the water. Let's get you a place to recover."
+        },
+        {
+          "speaker": "barracuda",
+          "text": "...Yeah. Thanks, Penni. I owe you one."
         }
       ]
     }

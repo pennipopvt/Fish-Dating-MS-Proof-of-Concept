@@ -1,0 +1,26 @@
+{
+  "entry": "injured",
+  "free_greeting": true,
+  "nodes": {
+    "injured": {
+      "lines": [
+        {
+          "speaker": "test_npc",
+          "text": "P-Penni... I can't keep fighting. Everything hurts..."
+        },
+        {
+          "speaker": "player",
+          "text": "Silas! You're hurt. I'm taking you somewhere safe."
+        },
+        {
+          "speaker": "test_npc",
+          "text": "Out of the water? But... I don't know if I can..."
+        },
+        {
+          "speaker": "player",
+          "text": "You don't have to. I'll get you there. Just stay with me."
+        }
+      ]
+    }
+  }
+}

@@ -885,9 +885,9 @@ func _return_to_surface() -> void:
 # character encounter that owns them. Keep their actors visible for dialogue.
 func on_party_surfaced(surface_actors: Array[Node2D],
 		first_land_ids: Array[StringName] = []) -> void:
-	# Both NPCs were human before the player woke. Their rescue lines are
-	# already in the blackout dialogue; skip the normal transformation reveal
-	# but still run their usual townhouse onboarding and housing milestones.
+	# These NPCs already transformed beneath the emergency fade. Their
+	# blackout rescue OR Penni's first-land care dialogue happened above;
+	# skip the normal poof/reveal but keep townhouse onboarding and housing.
 	if first_land_ids.has(_story.silas_data.npc_id):
 		var silas_actor: NPCInteractable = null
 		for actor in surface_actors:

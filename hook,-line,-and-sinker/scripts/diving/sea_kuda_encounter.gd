@@ -250,8 +250,8 @@ func play_first_surface_reveal(surface_actors: Array[Node2D],
 			kuda_actor = guest
 	if kuda_actor == null:
 		return
-	# The rescue conversation already explains Kuda's surprising new human
-	# body. Do NOT repeat his ordinary "WHY DO I HAVE LEGS" dock introduction.
+	# The blackout-rescue OR first-land-care conversation already explains
+	# Kuda's human body. Don't repeat the ordinary dock transformation speech.
 	if first_land_blackout:
 		_story.mark_kuda_surface_rescued()
 	else:
