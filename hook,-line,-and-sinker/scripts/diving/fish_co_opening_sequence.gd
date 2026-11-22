@@ -41,6 +41,14 @@ func configure(world: Node2D, player: Player, shop: ShopMenu, transition: SeaDiv
 
 
 func start() -> void:
+	# The phone call takes place on the REAL east-side boat in World.
+	# It uses the same Sky, Water, Player and CameraController as gameplay.
+	var boat: Node2D = _world.get_node("IntroBoat") as Node2D
+	_world_player.global_position = (boat.get_node("PlayerSpot") as Marker2D).global_position
+	_world_player.animator.play(&"idle_l")
+	_world_player.z_index = 12  # Show Penni above the water/boat during the intro.
+	var camera: WorldCameraController = _world.get_node("CameraController") as WorldCameraController
+	camera.snap_to((boat.get_node("CameraFocus") as Marker2D).global_position)
 	_start_contract_call()
 
 
@@ -62,13 +70,8 @@ func _start_contract_call() -> void:
 		return
 	_world_player.busy = true
 	_shop_menu.set_quota_only(true)
-	if _intro_layer == null or _intro == null:
-		_ensure_intro_nodes()
-	if _intro_layer != null and _intro != null:
-		_intro_layer.show()
-		_intro.play()
-	else:
-		push_warning("Fish Co intro backdrop unavailable; continuing the phone call.")
+	# Keep the former FishCoIntro node dormant for existing scene/tests,
+	# but never show its fake painted sky, water or boat.
 	# The same DialogueManager/DialogueUI, NPCData, and graph loader used for
 	# every other conversation. Speaker tags in the JSON distinguish Penni
 	# from the Fish Co representative while both normal portraits remain.
@@ -160,10 +163,9 @@ func debug_skip_to_dive() -> bool:
 	hide()
 	var dock: Node2D = _world.get_node("Dock") as Node2D
 	_world_player.global_position = dock.global_position + Vector2(22.0, 11.0)
+	_world_player.z_index = 0
 	_world_player.animator.play(&"idle_l")
-	var island_camera: Camera2D = _world_player.get_node("Camera2D") as Camera2D
-	island_camera.reset_smoothing()
-	island_camera.force_update_scroll()
+	(_world.get_node("CameraController") as WorldCameraController).snap_to_player()
 	(_world.get_node("Shop") as ShopInteractable).set_intro_quota_notice(false)
 	_finish_first_dive_call()
 	return true
