@@ -22,6 +22,10 @@ extends Resource
 ## Must extend CompanionCombatBehavior. Defaults to lethal base behavior;
 ## Silas continues using his editor-authored specialized actor.
 @export var sea_combat_behavior_script: Script
+## Shown in the existing underwater conversation UI after a companion KO.
+@export_file("*.json") var sea_knockout_dialogue_json: String = ""
+## First dock meeting after they retreated alone before ever receiving a room.
+@export_file("*.json") var sea_first_land_after_knockout_json: String = ""
 
 @export_group("Appearance")
 @export var house: Texture2D

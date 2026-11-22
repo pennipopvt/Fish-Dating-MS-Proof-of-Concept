@@ -219,17 +219,27 @@ func _surface_from_dive() -> void:
 	GameManager.finish_dive_period()
 
 	var story := _sea.get_node("StoryDirector") as SeaStoryDirector
-	# The first Silas reveal already has authored dialogue and townhouse
-	# choreography. It uses the shared fish-to-human animation separately.
-	if not story.can_begin_silas_surface_reveal() and not _party.members().is_empty():
+	var early: Array[NPCData] = _sea.early_returning_companions()
+	var swimming: Array[NPCData] = []
+	for member in _party.members():
+		if not early.has(member):
+			swimming.append(member)
+	var first_early: Array[NPCData] = _unhoused_early_returns(early)
+	# Silas's ordinary first-return leap stays intact unless he got knocked
+	# out and reached the dock ahead of Penni.
+	if (not story.can_begin_silas_surface_reveal() or early.has(story.silas_data)) \
+			and (not swimming.is_empty() or not first_early.is_empty()):
 		var approach := _sea.get_node("Points/SilasSurfaceApproach") as Marker2D
 		var dock_wait := _sea.get_node("Points/SilasDockWait") as Marker2D
-		# Keep the live fish actors until their individual poofs finish.
-		var humans: Array[Node2D] = await _party_entrance.surface_party(
-			_party.members(), _sea, approach.global_position, dock_wait.global_position
-		)
-		# Ordinary and failed dives resolve the same shore story milestones.
-		await _resolve_shore_stories(humans)
+		var humans: Array[Node2D] = []
+		if not swimming.is_empty():
+			humans = await _party_entrance.surface_party(swimming, _sea,
+				approach.global_position, dock_wait.global_position)
+		var first_ids: Array[StringName] = []
+		for npc in first_early:
+			first_ids.append(npc.npc_id)
+		_stage_early_returners(first_early, humans)
+		await _resolve_shore_stories(humans, false, first_ids, first_early)
 		await _clear_returning_party(humans)
 	else:
 		_sea.end_diving_party()
@@ -252,16 +262,46 @@ func _on_oxygen_return_requested() -> void:
 # assignment always happen before the sea party is cleared.
 func _resolve_shore_stories(humans: Array[Node2D],
 		recovered_from_blackout: bool = false,
-		first_land_ids: Array[StringName] = []) -> void:
+		first_land_ids: Array[StringName] = [],
+		early: Array[NPCData] = []) -> void:
 	var story := _sea.get_node("StoryDirector") as SeaStoryDirector
+	var dock_cast: Array[NPCData] = []
+	for actor in humans:
+		var guest: NPCInteractable = actor as NPCInteractable
+		if is_instance_valid(guest) and guest.npc != null and guest.visible:
+			dock_cast.append(guest.npc)
 	if recovered_from_blackout:
 		var rescued_cast: Array[NPCData] = []
-		for actor in humans:
-			var guest: NPCInteractable = actor as NPCInteractable
-			if is_instance_valid(guest) and guest.npc != null and guest.visible:
-				rescued_cast.append(guest.npc)
-		await story.play_oxygen_blackout_recovery(rescued_cast, first_land_ids)
+		var rescue_first_ids: Array[StringName] = []
+		for npc in dock_cast:
+			if not early.has(npc):
+				rescued_cast.append(npc)
+				if first_land_ids.has(npc.npc_id):
+					rescue_first_ids.append(npc.npc_id)
+		await story.play_oxygen_blackout_recovery(rescued_cast, rescue_first_ids)
+	if not early.is_empty():
+		await story.play_early_shore_reunions(early, dock_cast)
 	await _sea.on_party_surfaced(humans, first_land_ids)
+
+
+func _unhoused_early_returns(early: Array[NPCData]) -> Array[NPCData]:
+	var waiting: Array[NPCData] = []
+	for npc in early:
+		if not RecruitmentHandler.is_resident(npc.npc_id):
+			waiting.append(npc)
+	return waiting
+
+
+func _stage_early_returners(early: Array[NPCData],
+		humans: Array[Node2D]) -> void:
+	var dock_wait := _sea.get_node("Points/SilasDockWait") as Marker2D
+	for npc in early:
+		var actor: Node2D = _party_entrance.stage_surface_actor(npc,
+			_party_entrance.surface_dock_position(
+				dock_wait.global_position, humans.size()))
+		if actor != null:
+			actor.show()
+			humans.append(actor)
 
 
 # Normal shore returns already fade to send fish back to their rooms.
@@ -283,10 +323,17 @@ func _blackout_from_oxygen() -> void:
 	# No swim/jump ascent on oxygen failure: companions bring Penni home.
 	# Capture who was actually underwater BEFORE teardown. During the first
 	# tutorial Silas is following even though he is not in the roster yet.
-	var returning: Array[NPCData] = _party.members()
+	var early: Array[NPCData] = _sea.early_returning_companions()
+	var returning: Array[NPCData] = []
+	for member in _party.members():
+		if not early.has(member):
+			returning.append(member)
+	var first_early: Array[NPCData] = _unhoused_early_returns(early)
 	var story := _sea.get_node("StoryDirector") as SeaStoryDirector
 	var first_land_ids: Array[StringName] = []
-	if story.can_begin_silas_surface_reveal():
+	for npc in first_early:
+		first_land_ids.append(npc.npc_id)
+	if story.can_begin_silas_surface_reveal() and not early.has(story.silas_data):
 		first_land_ids.append(story.silas_data.npc_id)
 		var silas_present := false
 		for npc in returning:
@@ -328,13 +375,14 @@ func _blackout_from_oxygen() -> void:
 		if actor != null:
 			actor.show()
 			humans.append(actor)
-	# Under a covered screen the active fish actors can be removed safely:
-	# their above-water appearances now exist independently in the world.
+	# Early retreaters reached the dock on their own, not as Penni's rescuers.
+	_stage_early_returners(first_early, humans)
+	# Under a covered screen the active fish actors can be removed safely.
 	_sea.end_diving_party()
 	await fade.fade_to(0.0, 0.55)
 	fade.queue_free()
 	if not humans.is_empty():
-		await _resolve_shore_stories(humans, true, first_land_ids)
+		await _resolve_shore_stories(humans, true, first_land_ids, first_early)
 		await _clear_returning_party(humans)
 	transitioning = false
 	_world_player.busy = false

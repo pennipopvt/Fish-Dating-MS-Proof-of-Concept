@@ -64,6 +64,10 @@ var _combat_debug_status: String = "No companion command yet"
 var _party_fish: Array[SeaPartyFollower] = []
 var _party_dive_active: bool = false
 var _world_dialogue_queue: SeaWorldDialogueQueue
+# Fish that left the dive ahead of Penni. Kept until the shore transition
+# completes; only first-time visitors need an introduction at the dock.
+var _ko_departures: Array[NPCData] = []
+var _pending_ko_retreats: Dictionary = {}
 var _perfect_parry_line_flash_left: float = 0.0
 # Keeps the hooked fish in open water during the fight (see _is_open_water).
 # Loaded by path (like WILD_FISH_SCRIPT) so it works before the editor has
@@ -101,6 +105,7 @@ func _ready() -> void:
 	_world_dialogue_queue.name = "WorldDialogueQueue"
 	add_child(_world_dialogue_queue)
 	_world_dialogue_queue.configure(can_start_world_dialogue)
+	_world_dialogue_queue.world_event_finished.connect(_on_ko_dialogue_finished)
 	_oxygen.oxygen_changed.connect(_update_oxygen_hud)
 	_oxygen.oxygen_depleted.connect(_on_oxygen_depleted)
 	_story.first_companion_catch_completed.connect(_on_first_companion_catch_oxygen)
@@ -311,6 +316,8 @@ func enter_from_dock() -> void:
 	_player.set_swimming(true, _sea_bounds())
 	_dive_inventory.begin_dive()
 	_world_dialogue_queue.begin_new_dive()
+	_ko_departures.clear()
+	_pending_ko_retreats.clear()
 	_oxygen.begin_dive(_story.has_event(&"first_companion_catch"))
 	# The first dive remains scripted until Silas helps with a catch.
 	# Every subsequent period gets a fresh habitat population only on entry,
@@ -375,6 +382,7 @@ func add_diving_party_member(npc: NPCData, index: int) -> void:
 func end_diving_party() -> void:
 	# Covers the tutorial's Silas-only party as well as roster-backed dives.
 	_world_dialogue_queue.clear_pending()
+	_pending_ko_retreats.clear()
 	_commands.clear()
 	if not _party_dive_active:
 		return
@@ -462,7 +470,7 @@ func _process(delta: float) -> void:
 				or _kuda.controls_fish(fish):
 			continue
 		fish.swim(delta, _player.position, false)
-	if _story.has_silas_flag(&"silas_following"):
+	if _silas.following and _story.has_silas_flag(&"silas_following"):
 		_story.maybe_offer_companion_help(_player.position, _wild_fish)
 
 
@@ -747,29 +755,61 @@ func _handle_companion_knockout(npc: NPCData, actor: Node2D) -> void:
 	# for new commands again in the same dive.
 	_commands.unregister_member(npc.npc_id)
 	_combat_debug_status = npc.display_name + " knocked out; cannot fight"
-	# Silas's tutorial and Kuda's first caught dive happen before housing.
-	# They must still be able to reach the dock and acquire a room; blocking
-	# their first landing would permanently strand them.
-	if not RecruitmentHandler.is_resident(npc.npc_id):
+	# A KO is a departure from this dive, not a cancellation of recruitment.
+	# Before receiving a room they can still finish their first-land event.
+	_ko_departures.append(npc)
+	if RecruitmentHandler.is_resident(npc.npc_id):
+		AffectionManager.change_affection(npc.npc_id, -knockout_affection_loss)
+		NPCManager.start_relationship_event(npc, &"companion_knockout")
+	# Don't credit a routine friendly check-in for being knocked out:
+	# the temporary conversation owner is not a recruited NPC.
+	var event_id := StringName("companion_ko_%s" % String(npc.npc_id))
+	var context := NPCData.new()
+	context.npc_id = event_id
+	context.display_name = npc.display_name
+	context.portrait = npc.portrait
+	var cast: Array[NPCData] = [npc]
+	if not npc.sea_knockout_dialogue_json.is_empty() and queue_world_dialogue(
+			event_id, context, npc.sea_knockout_dialogue_json, cast, 100):
+		_pending_ko_retreats[event_id] = actor
+	else:
+		_begin_ko_retreat(npc, actor)
+	print("[SEA COMBAT] " + _combat_debug_status)
+
+
+func _on_ko_dialogue_finished(event_id: StringName) -> void:
+	if not _pending_ko_retreats.has(event_id):
 		return
-	AffectionManager.change_affection(npc.npc_id, -knockout_affection_loss)
-	NPCManager.start_relationship_event(npc, &"companion_knockout")
+	var actor: Node2D = _pending_ko_retreats[event_id] as Node2D
+	_pending_ko_retreats.erase(event_id)
+	var npc_id := StringName(String(event_id).trim_prefix("companion_ko_"))
+	for npc in _ko_departures:
+		if npc.npc_id == npc_id:
+			_begin_ko_retreat(npc, actor)
+			return
+
+
+func _begin_ko_retreat(npc: NPCData, actor: Node2D) -> void:
+	if not is_instance_valid(actor):
+		return
 	if actor == _silas:
 		_silas.following = false
-		NPCManager.get_npc_state(npc.npc_id)["flags"][&"silas_following"] = false
+		# Keep the unfinished first-land Silas flag; after an early return
+		# the normal story still needs to award his first townhouse room.
+		if RecruitmentHandler.is_resident(npc.npc_id):
+			NPCManager.get_npc_state(npc.npc_id)["flags"][&"silas_following"] = false
 		_silas.queue_redraw()
 	elif actor is SeaPartyFollower:
 		(actor as SeaPartyFollower).begin_retreat()
-	if not is_instance_valid(actor):
-		return
-	# The injured fish leaves the world presentation; the NPC is still a
-	# resident, and the ordinary room dialogue owns their reconciliation.
 	var retreat := actor.create_tween().set_parallel(true)
 	retreat.tween_property(actor, "global_position",
 		actor.global_position + Vector2(-36.0, -28.0), knockout_retreat_seconds)
 	retreat.tween_property(actor, "modulate:a", 0.0, knockout_retreat_seconds)
 	retreat.finished.connect(actor.hide)
-	print("[SEA COMBAT] " + _combat_debug_status)
+
+
+func early_returning_companions() -> Array[NPCData]:
+	return _ko_departures.duplicate()
 
 
 func _try_companion_target(world_mouse: Vector2) -> bool:
