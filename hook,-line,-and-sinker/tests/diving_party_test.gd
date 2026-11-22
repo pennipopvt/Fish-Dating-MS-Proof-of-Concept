@@ -103,6 +103,8 @@ func _ready() -> void:
 		and first_human != null and not first_human.visible
 		and silas.visible,
 		"On regular return, live fish stay until they reach the dock and transform")
+	_check(player.animator.animation == &"idle_r" and player.last_direction > 0.0,
+		"Penni faces inland after surfacing, away from the sea")
 	if first_human != null:
 		var visual: AnimatedSprite2D = first_human.get_node_or_null("Sprite") as AnimatedSprite2D
 		if visual != null:

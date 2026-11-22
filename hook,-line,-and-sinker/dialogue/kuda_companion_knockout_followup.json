@@ -1,0 +1,47 @@
+{
+  "entry": "concern",
+  "free_greeting": true,
+  "nodes": {
+    "concern": {
+      "lines": [
+        "Hey. We need to talk about that fight.",
+        "I went down hard out there. I can take a hit, but I can't keep taking orders like nothing happened."
+      ],
+      "choices": [
+        {
+          "text": "You're right. I'm sorry I let it go that far.",
+          "next": "make_up"
+        },
+        {
+          "text": "That's part of fighting. Get over it.",
+          "next": "dismiss"
+        }
+      ]
+    },
+    "make_up": {
+      "lines": [
+        {
+          "speaker": "player",
+          "text": "Next time I'll call you back before things get that bad."
+        },
+        "...All right. I know you didn't mean for me to get hurt.",
+        "I'm willing to give it another shot. Just don't forget what you said."
+      ],
+      "effects": {
+        "affection_delta": 12,
+        "resolve_relationship_events": [
+          "companion_knockout"
+        ]
+      }
+    },
+    "dismiss": {
+      "lines": [
+        "Tch. Then you can go diving without me.",
+        "Come back when you're ready to take it seriously."
+      ],
+      "effects": {
+        "affection_delta": -5
+      }
+    }
+  }
+}

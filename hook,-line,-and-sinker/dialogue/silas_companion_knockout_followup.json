@@ -1,0 +1,47 @@
+{
+  "entry": "concern",
+  "free_greeting": true,
+  "nodes": {
+    "concern": {
+      "lines": [
+        "Oh, Penni... I've been thinking about what happened in the sea.",
+        "I was so scared. I couldn't keep going, and I thought you might send me right back into another fight."
+      ],
+      "choices": [
+        {
+          "text": "I'm sorry, Silas. I should have kept you safe.",
+          "next": "make_up"
+        },
+        {
+          "text": "You're okay now, aren't you?",
+          "next": "dismiss"
+        }
+      ]
+    },
+    "make_up": {
+      "lines": [
+        {
+          "speaker": "player",
+          "text": "I won't push you past what you can handle. You can tell me when you need to stop."
+        },
+        "...Thank you. I want to help you, but I need to know you'll listen.",
+        "I think I can try diving with you again."
+      ],
+      "effects": {
+        "affection_delta": 12,
+        "resolve_relationship_events": [
+          "companion_knockout"
+        ]
+      }
+    },
+    "dismiss": {
+      "lines": [
+        "I know I'm safe now. That's not really what I was trying to tell you.",
+        "I think I need some more time before I can go back out with you."
+      ],
+      "effects": {
+        "affection_delta": -5
+      }
+    }
+  }
+}

@@ -178,6 +178,12 @@ jobs:
           set -o pipefail
           timeout 120s godot --headless --path "hook,-line,-and-sinker" res://tests/sea_oxygen_test.tscn 2>&1 | tee sea-oxygen-test.log
           ! (grep -E 'SCRIPT ERROR:|Parse Error:|Parser Error:|ERROR:|FAIL ' sea-oxygen-test.log | grep -Ev 'resources still in use at exit|RID allocations.*leaked' | grep -q .)
+      - name: Test companion knockouts, affection, retreat and room reconciliation
+        shell: bash
+        run: |
+          set -o pipefail
+          timeout 120s godot --headless --path "hook,-line,-and-sinker" res://tests/companion_knockout_relationship_test.tscn 2>&1 | tee companion-knockout-relationship-test.log
+          ! (grep -E 'SCRIPT ERROR:|Parse Error:|Parser Error:|ERROR:|FAIL ' companion-knockout-relationship-test.log | grep -Ev 'resources still in use at exit|RID allocations.*leaked' | grep -q .)
       - name: Test simultaneous party battles, FIFO commands and lethal Kuda behavior
         shell: bash
         run: |
