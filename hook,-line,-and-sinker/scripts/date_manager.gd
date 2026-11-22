@@ -322,12 +322,18 @@ func start_date(date: DateData) -> void:
 		_venue.global_position = date.venue_position
 		venue = _venue
 	_move(player, _spot(venue, &"PlayerSpot"))
+	# Boat sprites can sit in front of the ordinary island actors. Raise both
+	# participants only for this date, then restore Penni's original layer.
+	if date.actors_z_index >= 0:
+		player.z_index = date.actors_z_index
 	# Recruited NPCs are data-only residents, not actors in the island world.
 	# Dates and dock cutscenes use the exact same noninteractive land actor.
 	_date_actor = NPCTemporaryActor.spawn(date.npc, player.get_parent(),
 		_spot(venue, &"NpcSpot") + date.npc_feet_offset)
 	if _date_actor != null:
 		_date_actor.name = "DateGuest_" + String(date.npc.npc_id)
+		if date.actors_z_index >= 0:
+			_date_actor.z_index = date.actors_z_index
 	await _fade_to(0.0)
 	_in_dialogue = true
 	DialogueManager.request_conversation(date.npc, date.dialogue_json)
@@ -398,6 +404,7 @@ func _finish(completed: bool) -> void:
 		var node: Node2D = entry[0]
 		if is_instance_valid(node):
 			node.global_position = entry[1]
+			node.z_index = entry[2]
 	_restore.clear()
 	if is_instance_valid(_date_actor):
 		_date_actor.queue_free()
@@ -444,7 +451,7 @@ func _spot(venue: Node2D, marker: StringName) -> Vector2:
 func _move(node: Node2D, spot: Vector2) -> void:
 	if node == null:
 		return
-	_restore.append([node, node.global_position])
+	_restore.append([node, node.global_position, node.z_index])
 	node.global_position = spot
 
 
