@@ -77,6 +77,15 @@ func _run() -> void:
 		"Finishing the townhouse scene assigns Kuda's room and remembers it")
 	_check(bool(kuda_flags.get(&"kuda_surface_introduced", false)),
 		"Human-form introduction is still recorded separately")
+	# This directly calls the story owner without the regular shore transition.
+	# Kuda must not create its own second fade once the townhouse talk ends.
+	await get_tree().process_frame
+	var fading_again: bool = false
+	for child in get_tree().root.get_children():
+		if child is ScreenFade:
+			fading_again = true
+	_check(not fading_again and is_instance_valid(actor) and actor.visible,
+		"Kuda does not fade away separately before shared shore cleanup")
 	main.queue_free()
 	await get_tree().process_frame
 	print("kuda_townhouse_arrival_test: PASS" if failures == 0 else
