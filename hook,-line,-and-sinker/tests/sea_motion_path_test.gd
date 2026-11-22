@@ -83,8 +83,9 @@ func _run() -> void:
 		"One editable Penni curve crosses the real water surface and ends underwater")
 	var companion: SeaMotionPath = motion_root.get_node("CompanionDiveJump") as SeaMotionPath
 	_check(companion.authored_start().y < waterline
-		and companion.authored_end().y >= DivingWorld.SEA_TOP + 80.0,
-		"Companion jump also continues well below the waterline")
+		and companion.authored_end().y > waterline + 8.0
+		and sea._sea_bounds().has_point(sea.to_local(companion.authored_end())),
+		"Companion's edited dive curve crosses the waterline and ends in the swim area")
 	main.queue_free()
 	await get_tree().process_frame
 	print("sea_motion_path_test: PASS" if failures == 0 else
