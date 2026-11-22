@@ -16,6 +16,7 @@ const IRIS_OPEN_RADIUS: float = 2.6
 var _iris_material: ShaderMaterial
 var _world: Node2D
 var _world_player: Player
+var _camera_controller: WorldCameraController
 var _sea: DivingWorld
 var _dialogue_ui: DialogueUI
 var _shop_menu: ShopMenu
@@ -38,6 +39,7 @@ func configure(world: Node2D, player: Player, sea: DivingWorld,
 		dialogue_ui: DialogueUI, shop: ShopMenu, opening: CanvasLayer) -> void:
 	_world = world
 	_world_player = player
+	_camera_controller = world.get_node("CameraController") as WorldCameraController
 	_sea = sea
 	_dialogue_ui = dialogue_ui
 	_shop_menu = shop
@@ -86,10 +88,9 @@ func _transition_contract_to_dock(intro: FishCoIntro) -> void:
 	# This is not a new scene or a duplicate starting environment.
 	var dock: Node2D = _world.get_node("Dock") as Node2D
 	_world_player.global_position = dock.global_position + Vector2(22.0, 11.0)
+	_world_player.z_index = 0
 	_world_player.animator.play(&"idle_l")
-	var island_camera: Camera2D = _world_player.get_node("Camera2D") as Camera2D
-	island_camera.reset_smoothing()
-	island_camera.force_update_scroll()
+	_camera_controller.snap_to_player()
 	var terminal: ShopInteractable = _world.get_node("Shop") as ShopInteractable
 	terminal.set_intro_quota_notice(true)
 
@@ -118,14 +119,10 @@ func _begin_dive(dock: Node2D) -> void:
 	var members: Array[NPCData] = _party.members()
 	await _party_entrance.call_party_to_dock(members, dock)
 	var jump_path: SeaMotionPath = _motion(&"PenniDiveJump")
-	var island_camera: Camera2D = _world_player.get_node("Camera2D") as Camera2D
-	var camera_start: Vector2 = island_camera.position
 	_dive_has_splashed = false
 	_world_player.animator.play(&"walk_l")
 	await jump_path.animate(_world_player, _world_player.global_position,
-		Vector2.INF,
-		func(_time: float, progress: float) -> void:
-			_update_dive_jump_visual(progress, camera_start, island_camera))
+		Vector2.INF, _update_dive_jump_visual)
 	if not _dive_has_splashed:
 		push_warning("PenniDiveJump does not cross the sea surface; check its Path2D endpoint.")
 		_on_dive_splash((_world.get_node("Water") as ColorRect).global_position.y)
@@ -145,10 +142,9 @@ func _motion(path_name: StringName) -> SeaMotionPath:
 	return _sea.get_node("Points/" + String(path_name)) as SeaMotionPath
 
 
-func _update_dive_jump_visual(progress: float, camera_start: Vector2,
-		island_camera: Camera2D) -> void:
-	# WorldDayNight already calculates the water shader's gradual submersion
-	# from the real Water surface. Only the sprite change/splash belongs here.
+func _update_dive_jump_visual(_time: float, progress: float) -> void:
+	# One authored path controls Penni's position. The existing world
+	# shader already uses real water depth for its reflection/tint.
 	var surface_y: float = (_world.get_node("Water") as ColorRect).global_position.y
 	var visual_center_y: float = _world_player.global_position.y + _world_player.animator.position.y
 	if not _dive_has_splashed and visual_center_y >= surface_y:
@@ -157,12 +153,6 @@ func _update_dive_jump_visual(progress: float, camera_start: Vector2,
 		_world_player.animator.rotation = -0.25 * sin(PI * progress)
 	else:
 		_world_player.animator.rotation = 0.0
-	# The camera follows actual underwater depth, never a second timeline.
-	var final_y: float = _motion(&"PenniDiveJump").authored_end().y
-	var depth: float = clampf((_world_player.global_position.y - surface_y)
-		/ maxf(final_y - surface_y, 1.0), 0.0, 1.0)
-	island_camera.position = camera_start.lerp(Vector2.ZERO, depth)
-
 
 func _on_dive_splash(surface_y: float) -> void:
 	if _dive_has_splashed:
@@ -175,6 +165,7 @@ func _on_dive_splash(surface_y: float) -> void:
 	GameManager.diving_session_active = true
 	_dialogue_ui.set_underwater_mode(true)
 	_world_player.set_swimming(true, _sea._sea_bounds())
+	_camera_controller.set_underwater_mode(true)
 	# Companions follow using their own single continuous dive path,
 	# starting just after Penni enters the water.
 	_party_entrance.jump_party_in(null, Callable(self, "_spawn_splash"))
@@ -207,15 +198,12 @@ func _on_surface_requested() -> void:
 func _surface_from_dive() -> void:
 	# Return through the SAME water surface. Sky stays visible in the camera;
 	# there is no fade-to-black or replacement scene.
-	var island_camera: Camera2D = _world_player.get_node("Camera2D") as Camera2D
 	var surface_path := _motion(&"PenniSurface")
-	var camera_start: Vector2 = island_camera.position
 	await surface_path.animate(_world_player, _world_player.global_position,
-		shore_return_position,
-		func(_time: float, distance_ratio: float) -> void:
-			island_camera.position = camera_start.lerp(Vector2(0.0, -22.0), distance_ratio))
+		shore_return_position)
 	_world_player.last_direction = 1.0 # Face inland when returning from the sea.
 	_world_player.set_swimming(false)
+	_camera_controller.set_underwater_mode(false)
 	_world_player.animator.rotation = 0.0
 	_world_player.animator.play(&"idle_r")
 	underwater = false
@@ -324,10 +312,8 @@ func _blackout_from_oxygen(cared_for: NPCData = null) -> void:
 	_world_player.set_swimming(false)
 	_world_player.animator.rotation = 0.0
 	_world_player.animator.play(&"idle_r")
-	var island_camera: Camera2D = _world_player.get_node("Camera2D") as Camera2D
-	island_camera.position = Vector2(0.0, -22.0)
-	island_camera.reset_smoothing()
-	island_camera.force_update_scroll()
+	_camera_controller.set_underwater_mode(false)
+	_camera_controller.snap_to_player()
 	underwater = false
 	_sea.call("_set_camera_bounds", false)
 	_dialogue_ui.set_underwater_mode(false)
