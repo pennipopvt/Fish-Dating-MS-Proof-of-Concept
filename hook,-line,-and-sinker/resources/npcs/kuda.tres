@@ -50,6 +50,13 @@ script = ExtResource("2_rule")
 json_path = "res://dialogue/kuda_first_catch.json"
 forbidden_flags = Array[StringName]([&"Recruited"])
 
+[sub_resource type="Resource" id="CompanionKnockoutEvent"]
+script = ExtResource("relationship_event_script")
+event_id = &"companion_knockout"
+followup_dialogue_json = "res://dialogue/kuda_companion_knockout_followup.json"
+priority = 65
+blocks_actions = Array[StringName]([&"dive", &"overnight"])
+
 [sub_resource type="Resource" id="PreludeBoundaryEvent"]
 script = ExtResource("relationship_event_script")
 event_id = &"prelude_boundary"
@@ -73,7 +80,7 @@ porn_sprite = ExtResource("7_kuda_scene")
 invitation_accepted_flag = &"barracuda_invitation_accepted"
 intimacy_scene_id = &"barracuda_house"
 overnight_prelude_json = "res://dialogue/kuda_night_prelude.json"
-relationship_events = Array[ExtResource("relationship_event_script")]([SubResource("PreludeBoundaryEvent")])
+relationship_events = Array[ExtResource("relationship_event_script")]([SubResource("PreludeBoundaryEvent"), SubResource("CompanionKnockoutEvent")])
 intimacy_dialogue_json = "res://dialogue/kuda_house_scene.json"
 morning_after_json = "res://dialogue/kuda_after_scene.json"
 overnight_transition_text = "You drift off to sleep beside Kuda."

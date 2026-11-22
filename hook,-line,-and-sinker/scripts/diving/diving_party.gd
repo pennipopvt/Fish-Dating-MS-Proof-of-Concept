@@ -29,7 +29,8 @@ func invite(npc: NPCData) -> bool:
 		return false
 	# Refusal is temporary. Leave the existing roster membership intact so
 	# the companion automatically rejoins when their affection recovers.
-	if not AffectionManager.can_join_dive(npc.npc_id):
+	if not AffectionManager.can_join_dive(npc.npc_id) \
+			or NPCManager.has_blocking_relationship_event(npc, &"dive"):
 		return false
 	for member in _members:
 		if member.npc_id == npc.npc_id:
@@ -71,7 +72,8 @@ func members() -> Array[NPCData]:
 	# entrance, followers and surfacing). Keep unwilling NPCs in the roster.
 	var willing: Array[NPCData] = []
 	for member in _members:
-		if AffectionManager.can_join_dive(member.npc_id):
+		if AffectionManager.can_join_dive(member.npc_id) \
+				and not NPCManager.has_blocking_relationship_event(member, &"dive"):
 			willing.append(member)
 	return willing
 
@@ -83,6 +85,7 @@ func roster_members() -> Array[NPCData]:
 func unwilling_members() -> Array[NPCData]:
 	var unwilling: Array[NPCData] = []
 	for member in _members:
-		if not AffectionManager.can_join_dive(member.npc_id):
+		if not AffectionManager.can_join_dive(member.npc_id) \
+				or NPCManager.has_blocking_relationship_event(member, &"dive"):
 			unwilling.append(member)
 	return unwilling

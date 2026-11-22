@@ -41,6 +41,13 @@ script = ExtResource("3_w20er")
 json_path = "res://dialogue/silas_casual.json"
 required_flags = Array[StringName]([&"Recruited"])
 
+[sub_resource type="Resource" id="CompanionKnockoutEvent"]
+script = ExtResource("relationship_event_script")
+event_id = &"companion_knockout"
+followup_dialogue_json = "res://dialogue/silas_companion_knockout_followup.json"
+priority = 65
+blocks_actions = Array[StringName]([&"dive", &"overnight"])
+
 [sub_resource type="Resource" id="PreludeBoundaryEvent"]
 script = ExtResource("relationship_event_script")
 event_id = &"prelude_boundary"
@@ -72,7 +79,7 @@ porn_sprite = ExtResource("6_porn")
 invitation_accepted_flag = &"house_invitation_accepted"
 intimacy_scene_id = &"silas_house"
 overnight_prelude_json = "res://dialogue/silas_night_prelude.json"
-relationship_events = Array[ExtResource("relationship_event_script")]([SubResource("PreludeBoundaryEvent"), SubResource("ExploreTogetherEvent"), SubResource("FishHurtPressureEvent")])
+relationship_events = Array[ExtResource("relationship_event_script")]([SubResource("PreludeBoundaryEvent"), SubResource("ExploreTogetherEvent"), SubResource("FishHurtPressureEvent"), SubResource("CompanionKnockoutEvent")])
 intimacy_dialogue_json = "res://dialogue/silas_house_scene.json"
 morning_after_json = "res://dialogue/silas_after_scene.json"
 overnight_transition_text = "You sleep soundly in Silas's bed."

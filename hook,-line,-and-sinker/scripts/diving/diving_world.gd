@@ -26,6 +26,12 @@ const FISH_COMBAT_VISUAL_SCENE: PackedScene = preload("res://prefabs/sea_fish_co
 @export_group("Sea Parry Feedback")
 @export_range(0.05, 1.0, 0.05) var perfect_parry_line_flash_seconds: float = 0.35
 
+@export_group("Companion Knockouts")
+# Shared consequence; per-NPC conversation and dive blocking are authored
+# in each NPCData.relationship_events entry.
+@export_range(0, 100, 1) var knockout_affection_loss: int = 25
+@export_range(0.1, 2.0, 0.05) var knockout_retreat_seconds: float = 0.65
+
 @onready var _guide: SeaEditorGuide = $EditorGuide
 @onready var _entry: Marker2D = $Points/Entry
 @onready var _exit: Marker2D = $Points/SurfaceExit
@@ -341,6 +347,9 @@ func add_diving_party_member(npc: NPCData, index: int) -> void:
 	_party_dive_active = true
 	if npc.npc_id == _story.silas_data.npc_id:
 		_silas.global_position = _player.global_position + Vector2(-24.0 - index * 16.0, 8.0)
+		# Silas's battle instance persists across dives; Kuda's is recreated.
+		_battle.rest()
+		_silas.modulate.a = 1.0
 		_silas.show()
 		_silas.following = true
 		_commands.register_member(npc, _silas, _battle, _silas_behavior)
@@ -701,8 +710,7 @@ func _on_battle_fish_knocked_out(fish: DivingWildFish) -> void:
 
 
 func _on_battle_companion_knocked_out() -> void:
-	_combat_debug_status = "Silas exhausted; rest to heal"
-	print("[SEA COMBAT] " + _combat_debug_status)
+	_handle_companion_knockout(_story.silas_data, _silas)
 
 
 func _on_extra_battle_started(fish: DivingWildFish, npc_id: StringName) -> void:
@@ -720,7 +728,43 @@ func _on_extra_battle_hit(on_fish: bool, damage: float,
 
 
 func _on_extra_companion_knocked_out(npc_id: StringName) -> void:
-	_combat_debug_status = String(npc_id) + " exhausted; rest to heal"
+	for follower in _party_fish:
+		if is_instance_valid(follower) and follower.npc_data != null \
+				and follower.npc_data.npc_id == npc_id:
+			_handle_companion_knockout(follower.npc_data, follower)
+			return
+
+
+func _handle_companion_knockout(npc: NPCData, actor: Node2D) -> void:
+	if npc == null or not _commands.party_order().has(npc.npc_id):
+		return
+	# The shared command queue receives the knockout AFTER Battle.stop().
+	# Remove this slot, otherwise the ended signal would make it available
+	# for new commands again in the same dive.
+	_commands.unregister_member(npc.npc_id)
+	_combat_debug_status = npc.display_name + " knocked out; cannot fight"
+	# Silas's tutorial and Kuda's first caught dive happen before housing.
+	# They must still be able to reach the dock and acquire a room; blocking
+	# their first landing would permanently strand them.
+	if not RecruitmentHandler.is_resident(npc.npc_id):
+		return
+	AffectionManager.change_affection(npc.npc_id, -knockout_affection_loss)
+	NPCManager.start_relationship_event(npc, &"companion_knockout")
+	if actor == _silas:
+		_silas.following = false
+		NPCManager.get_npc_state(npc.npc_id)["flags"][&"silas_following"] = false
+		_silas.queue_redraw()
+	elif actor is SeaPartyFollower:
+		(actor as SeaPartyFollower).begin_retreat()
+	if not is_instance_valid(actor):
+		return
+	# The injured fish leaves the world presentation; the NPC is still a
+	# resident, and the ordinary room dialogue owns their reconciliation.
+	var retreat := actor.create_tween().set_parallel(true)
+	retreat.tween_property(actor, "global_position",
+		actor.global_position + Vector2(-36.0, -28.0), knockout_retreat_seconds)
+	retreat.tween_property(actor, "modulate:a", 0.0, knockout_retreat_seconds)
+	retreat.finished.connect(actor.hide)
 	print("[SEA COMBAT] " + _combat_debug_status)
 
 

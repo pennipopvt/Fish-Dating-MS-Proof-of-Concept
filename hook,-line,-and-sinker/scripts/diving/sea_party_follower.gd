@@ -11,6 +11,8 @@ class_name SeaPartyFollower
 
 var battle: DivingCompanionBattle
 var behavior: CompanionCombatBehavior
+var npc_data: NPCData
+var retreating: bool = false
 var _player: Player
 var _index: int
 var _sprite: Sprite2D
@@ -19,6 +21,7 @@ var _hurt_time: float = 0.0
 
 
 func setup(npc: NPCData, player: Player, index: int) -> void:
+	npc_data = npc
 	_player = player
 	_index = index
 	_sprite = Sprite2D.new()
@@ -43,8 +46,13 @@ func setup(npc: NPCData, player: Player, index: int) -> void:
 		add_child(behavior)
 
 
+func begin_retreat() -> void:
+	retreating = true
+	queue_redraw()
+
+
 func _process(delta: float) -> void:
-	if _player == null or not _player.swimming:
+	if retreating or _player == null or not _player.swimming:
 		return
 	_lunge_time = maxf(0.0, _lunge_time - delta)
 	_hurt_time = maxf(0.0, _hurt_time - delta)
@@ -88,7 +96,7 @@ func on_battle_hit(on_fish: bool) -> void:
 
 
 func _draw() -> void:
-	if battle == null or not _player or not _player.swimming:
+	if retreating or battle == null or not _player or not _player.swimming:
 		return
 	if battle.is_active() or battle.health < battle.stats.max_health:
 		DivingCompanionBattle.draw_health_bar(
