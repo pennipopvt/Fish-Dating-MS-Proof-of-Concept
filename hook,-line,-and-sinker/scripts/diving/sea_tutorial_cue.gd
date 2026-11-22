@@ -102,4 +102,3 @@ func _finish_hide() -> void:
 	hide()
 	set_process(false)
 	current_action = &""
-
