@@ -13,6 +13,9 @@
 [ext_resource type="Shader" uid="uid://b0nd45xrk2mwd" path="res://shaders/iris_transition.gdshader" id="iris_shader"]
 [ext_resource type="PackedScene" path="res://scenes/npc_room_view.tscn" id="npc_room_view"]
 [ext_resource type="Script" uid="uid://51ktq42upmq2" path="res://scripts/diving/fish_co_opening_sequence.gd" id="opening_script"]
+[ext_resource type="Script" path="res://scripts/story/island_story_director.gd" id="island_story_director"]
+[ext_resource type="Resource" path="res://resources/story_events/fish_co_gifts.tres" id="fish_co_gifts_event"]
+[ext_resource type="Resource" path="res://resources/story_events/fish_co_morale.tres" id="fish_co_morale_event"]
 [ext_resource type="Script" uid="uid://dtqeioibs884x" path="res://scripts/diving/sea_party_entrance.gd" id="party_entrance"]
 [ext_resource type="Script" uid="uid://byypo0swdykcg" path="res://scripts/diving/sea_debug_panel.gd" id="sea_debug_panel"]
 [ext_resource type="PackedScene" path="res://scenes/sea_speech_bubble.tscn" id="sea_speech_bubble"]
@@ -86,6 +89,10 @@ visible = false
 script = ExtResource("opening_script")
 
 [node name="FishCoIntro" parent="IntroLayer" unique_id=1423428245 instance=ExtResource("fish_co_intro")]
+
+[node name="IslandStoryDirector" type="Node" parent="."]
+script = ExtResource("island_story_director")
+events = Array[Resource]([ExtResource("fish_co_gifts_event"), ExtResource("fish_co_morale_event")])
 
 [node name="TransitionLayer" type="CanvasLayer" parent="." unique_id=603682694]
 layer = 100

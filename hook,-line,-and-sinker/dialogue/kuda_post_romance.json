@@ -4,9 +4,28 @@
   "nodes": {
     "greeting": {
       "lines": [
-        "Hey."
+        "Hey, Penni.",
+        "What's on your mind?"
       ],
       "choices": [
+        {
+          "text": "Can we talk about how things have been?",
+          "next": "check_in",
+          "when": {
+            "max_affection": 45
+          },
+          "priority": 15,
+          "grey_when_picked": false
+        },
+        {
+          "text": "Something on your mind?",
+          "next": "check_in",
+          "when": {
+            "min_jealousy": 50
+          },
+          "priority": 10,
+          "grey_when_picked": false
+        },
         {
           "text": "Want to go out on the boat?",
           "next": "ship_when",
@@ -15,9 +34,72 @@
           ]
         },
         {
+          "text": "Something else...",
+          "next": "topics",
+          "grey_when_picked": false
+        },
+        {
+          "text": "How's that scarf holding up?",
+          "next": "scarf_chat",
+          "required_flags": [
+            "barracuda_scarf_complete"
+          ],
+          "grey_when_picked": false
+        },
+        {
           "text": "See you later!",
           "next": "goodbye",
-          "spends_action": false
+          "spends_action": false,
+          "grey_when_picked": false
+        }
+      ],
+      "line_variants": [
+        {
+          "when": {
+            "required_flags": [
+              "refuses_diving"
+            ]
+          },
+          "lines": [
+            "Penni.",
+            "I'm not going diving with you right now."
+          ]
+        },
+        {
+          "when": {
+            "max_affection": 25
+          },
+          "lines": [
+            "Hey.",
+            "Not really in the mood for the usual small talk."
+          ]
+        },
+        {
+          "when": {
+            "max_affection": 45
+          },
+          "lines": [
+            "Oh. Hey.",
+            "Been a while since we just talked, hasn't it?"
+          ]
+        },
+        {
+          "when": {
+            "min_jealousy": 50
+          },
+          "lines": [
+            "Penni.",
+            "Been wondering when you'd show up."
+          ]
+        },
+        {
+          "when": {
+            "min_days_since_talk": 3
+          },
+          "lines": [
+            "Oh, you're back.",
+            "Was starting to think you forgot where my room was."
+          ]
         }
       ]
     },
@@ -66,7 +148,152 @@
     "goodbye": {
       "lines": [
         "Later."
+      ],
+      "effects": {
+        "request_scene": "room_exit"
+      }
+    },
+    "topics": {
+      "lines": [
+        "Alright. What else?"
+      ],
+      "choices": [
+        {
+          "text": "How's living up here?",
+          "next": "check_in"
+        },
+        {
+          "text": "Want to go out on the boat?",
+          "next": "ship_when",
+          "required_flags": [
+            "date_ok_kuda_ship"
+          ]
+        },
+        {
+          "text": "How's that scarf holding up?",
+          "next": "scarf_chat",
+          "required_flags": [
+            "barracuda_scarf_complete"
+          ],
+          "grey_when_picked": false
+        },
+        {
+          "text": "See you later!",
+          "next": "goodbye",
+          "spends_action": false,
+          "grey_when_picked": false
+        }
       ]
+    },
+    "check_in": {
+      "lines": [],
+      "conditional_next": [
+        {
+          "next": "check_in_refusing",
+          "when": {
+            "required_flags": [
+              "refuses_diving"
+            ]
+          }
+        },
+        {
+          "next": "check_in_hurt",
+          "when": {
+            "max_affection": 25
+          }
+        },
+        {
+          "next": "check_in_neglected",
+          "when": {
+            "max_affection": 45
+          }
+        },
+        {
+          "next": "check_in_jealous",
+          "when": {
+            "min_jealousy": 50
+          }
+        },
+        {
+          "next": "check_in_lonesome",
+          "when": {
+            "min_days_since_talk": 3
+          }
+        }
+      ],
+      "rotating_next": [
+        "check_in_home",
+        "check_in_surface",
+        "check_in_company"
+      ]
+    },
+    "check_in_home": {
+      "lines": [
+        "It's different from what I expected.",
+        "...Not bad, though. Having someone around helps."
+      ],
+      "next": "topics"
+    },
+    "check_in_surface": {
+      "lines": [
+        "I watched the tide for a while today.",
+        "It's weird knowing I can just stay here and not chase anything.",
+        "Don't tell anyone I said that."
+      ],
+      "next": "topics"
+    },
+    "check_in_company": {
+      "lines": [
+        "You keep showing up, and I keep letting you in.",
+        "Guess that says something about both of us."
+      ],
+      "next": "topics"
+    },
+    "check_in_jealous": {
+      "lines": [
+        "You know I'm not great at pretending something's fine when it isn't.",
+        "I'm not asking you to stop living your life.",
+        "But I want to know where I stand."
+      ],
+      "next": "topics"
+    },
+    "check_in_hurt": {
+      "lines": [
+        "I don't feel like pretending everything's normal right now.",
+        "It's been a lot of diving and not much else, hasn't it?"
+      ],
+      "next": "topics"
+    },
+    "check_in_lonesome": {
+      "lines": [
+        "Been pretty quiet around here.",
+        "I can handle quiet. Doesn't mean I have to like it.",
+        "Good to see you again."
+      ],
+      "next": "topics"
+    },
+    "check_in_refusing": {
+      "lines": [
+        "I don't want to be another tool you take fishing.",
+        "I like being around you, Penni. That's why this bothers me.",
+        "Can we just talk for a bit?"
+      ],
+      "next": "topics"
+    },
+    "check_in_neglected": {
+      "lines": [
+        "I'm not asking you to spend every minute here.",
+        "Just... it'd be nice to talk without a job to do."
+      ],
+      "next": "topics"
+    },
+    "scarf_chat": {
+      "lines": [
+        "Still got it.",
+        "...I wear it more than I thought I would.",
+        "What? Don't look so pleased with yourself."
+      ],
+      "next": "topics"
     }
   }
 }

@@ -141,8 +141,9 @@ func _run() -> void:
 		DialogueManager.end_conversation()
 	fish.health = 1.0
 	_check(sea.call("_try_companion_target", fish.position)
-		and refused_events.size() == 2 and is_equal_approx(fish.health, 1.0),
-		"Silas also refuses fish already below his limit without damaging them")
+		and refused_events.size() == 2 and is_equal_approx(fish.health, 1.0)
+		and DialogueManager.is_active and DialogueManager.current_npc == story.silas_data,
+		"Repeated deliberate orders still start Silas dialogue and never injure fish")
 	if DialogueManager.is_active:
 		DialogueManager.end_conversation()
 

@@ -8,7 +8,8 @@
 [ext_resource type="Texture2D" uid="uid://bv41gk34hgl5s" path="res://sprites/placeholders/placeholderhousegood.png" id="5_816r6"]
 [ext_resource type="Resource" uid="uid://dq4sy5yms8tqq" path="res://resources/items/spyglass.tres" id="5_spyglass"]
 [ext_resource type="Texture2D" uid="uid://c4v1axr8aete3" path="res://sprites/porn/silas.png" id="6_porn"]
-[ext_resource type="Texture2D" uid="uid://daku8xn1nfo32" path="res://sprites/placeholders/silasplaceholderroom.png" id="room_background_silas"]
+[ext_resource type="Texture2D" uid="uid://cjesho2sc0f1v" path="res://sprites/characters/silas/room_silas.png" id="10_ku7b7"]
+[ext_resource type="Script" uid="uid://chpwa10g4jhyo" path="res://resources/relationship_event_data.gd" id="relationship_event_script"]
 [ext_resource type="Script" uid="uid://cxebrk0uj1pk8" path="res://resources/door_info.gd" id="townhouse_door_info"]
 [ext_resource type="Texture2D" uid="uid://djh5r2k63hmc3" path="res://sprites/rooms/silasdoor.png" id="townhouse_silas_door"]
 [ext_resource type="Texture2D" uid="uid://fur256i6ik5n" path="res://sprites/fish/silas_eel.png" id="underwater_eel"]
@@ -32,25 +33,63 @@ script = ExtResource("3_w20er")
 json_path = "res://dialogue/silas_invitation.json"
 required_flags = Array[StringName]([&"Recruited", &"spyglass_complete"])
 forbidden_flags = Array[StringName]([&"house_invitation_accepted", &"silas_route_complete"])
+min_days_after_gift = 1
 
 [sub_resource type="Resource" id="Resource_w20er"]
 script = ExtResource("3_w20er")
 json_path = "res://dialogue/silas_casual.json"
 required_flags = Array[StringName]([&"Recruited"])
 
+[sub_resource type="Resource" id="PreludeBoundaryEvent"]
+script = ExtResource("relationship_event_script")
+event_id = &"prelude_boundary"
+priority = 30
+blocks_actions = Array[StringName]([&"overnight"])
+
+[sub_resource type="Resource" id="ExploreTogetherEvent"]
+script = ExtResource("relationship_event_script")
+event_id = &"explore_together"
+priority = 4
+
+[sub_resource type="Resource" id="FishHurtPressureEvent"]
+script = ExtResource("relationship_event_script")
+event_id = &"fish_hurt_pressure"
+followup_dialogue_json = "res://dialogue/silas_fish_boundary_followup.json"
+priority = 45
+
+[sub_resource type="Resource" id="CompanionKnockoutEvent"]
+script = ExtResource("relationship_event_script")
+event_id = &"companion_knockout"
+followup_dialogue_json = "res://dialogue/silas_companion_knockout_followup.json"
+priority = 65
+blocks_actions = Array[StringName]([&"dive", &"overnight"])
+
 [resource]
 script = ExtResource("1_bmq75")
 npc_id = &"test_npc"
 display_name = "Silas"
 portrait = ExtResource("4_a4wu8")
+land_actor_scene_path = "res://prefabs/silas.tscn"
 underwater_sprite = ExtResource("underwater_eel")
+sea_knockout_dialogue_json = "res://dialogue/silas_sea_knockout.json"
+sea_first_land_knockout_dialogue_json = "res://dialogue/silas_first_land_knockout.json"
+sea_first_land_after_knockout_json = "res://dialogue/silas_early_first_land.json"
 house = ExtResource("5_816r6")
 door = SubResource("TownhouseSilasDoor")
-room_background = ExtResource("room_background_silas")
+room_background = ExtResource("10_ku7b7")
 porn_sprite = ExtResource("6_porn")
+invitation_accepted_flag = &"house_invitation_accepted"
+intimacy_scene_id = &"silas_house"
+overnight_prelude_json = "res://dialogue/silas_night_prelude.json"
+intimacy_dialogue_json = "res://dialogue/silas_house_scene.json"
+morning_after_json = "res://dialogue/silas_after_scene.json"
+overnight_transition_text = "You sleep soundly in Silas's bed."
+romance_complete_flag = &"silas_route_complete"
+romance_reward_id = &"silas"
 date_bold_scores = Array[int]([2, 1, -2, -5])
 date_playful_scores = Array[int]([6, 5, 2, 0])
 date_reassure_scores = Array[int]([3, 4, 5, 6])
+relationship_events = Array[ExtResource("relationship_event_script")]([SubResource("PreludeBoundaryEvent"), SubResource("ExploreTogetherEvent"), SubResource("FishHurtPressureEvent"), SubResource("CompanionKnockoutEvent")])
 encounter_rules = Array[ExtResource("3_w20er")]([SubResource("Resource_hvwbg"), SubResource("Resource_silas_post_romance"), SubResource("Resource_silas_invitation"), SubResource("Resource_w20er")])
 desired_gift = ExtResource("5_spyglass")
 correct_gift_json = "res://dialogue/silas_gift_correct.json"

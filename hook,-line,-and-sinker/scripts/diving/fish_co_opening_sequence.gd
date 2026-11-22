@@ -4,10 +4,12 @@ class_name FishCoOpeningSequence
 # Owns the Fish Co phone introduction, terminal prerequisite, and the
 # dock's Yes/No choice. Does not animate world movement or own the iris.
 signal dive_confirmed(dock: Node2D)
+signal first_dive_onboarding_finished
 
 const FISH_CO_OPERATOR: NPCData = preload("res://resources/npcs/fish_co_operator.tres")
 const DOCK_CONFIRM: NPCData = preload("res://resources/npcs/dock_dive_prompt.tres")
 const FISH_CO_INTRO_SCENE: PackedScene = preload("res://scenes/fish_co_intro.tscn")
+const INTRO_BOAT_SCENE: PackedScene = preload("res://prefabs/intro_boat.tscn")
 
 var _world: Node2D
 var _world_player: Player
@@ -40,7 +42,40 @@ func configure(world: Node2D, player: Player, shop: ShopMenu, transition: SeaDiv
 
 
 func start() -> void:
+	if _contract_call_finished:
+		return
+	# Stage the existing world-space boat before the phone call.
+	# Godot 4.7 silently omitted the authored nested scene instance inside
+	# world.tscn. The existing opening owner places its reusable boat scene
+	# directly into the SAME World instead of relying on that broken nesting.
+	var boat: Node2D = _ensure_intro_boat()
+	var camera: WorldCameraController = _world.get_node_or_null("CameraController") as WorldCameraController
+	if boat != null:
+		var spot: Marker2D = boat.get_node_or_null("PlayerSpot") as Marker2D
+		var focus: Marker2D = boat.get_node_or_null("CameraFocus") as Marker2D
+		if spot != null:
+			_world_player.global_position = spot.global_position
+			_world_player.animator.play(&"idle_l")
+			_world_player.z_index = 12
+		if camera != null and focus != null:
+			camera.snap_to(focus.global_position)
+	if camera == null:
+		push_error("Fish Co opening requires World/CameraController; reload world.tscn.")
 	_start_contract_call()
+
+
+func _ensure_intro_boat() -> Node2D:
+	var boat: Node2D = _world.get_node_or_null("IntroBoat") as Node2D
+	if boat != null:
+		return boat
+	# Spawn once in the existing world at the authored scene coordinates.
+	boat = INTRO_BOAT_SCENE.instantiate() as Node2D
+	if boat == null:
+		push_error("Could not instantiate the intro boat scene.")
+		return null
+	boat.name = "IntroBoat"
+	_world.add_child(boat)
+	return boat
 
 
 # Existing authored FishCoIntro takes priority; restore that same PackedScene
@@ -61,13 +96,8 @@ func _start_contract_call() -> void:
 		return
 	_world_player.busy = true
 	_shop_menu.set_quota_only(true)
-	if _intro_layer == null or _intro == null:
-		_ensure_intro_nodes()
-	if _intro_layer != null and _intro != null:
-		_intro_layer.show()
-		_intro.play()
-	else:
-		push_warning("Fish Co intro backdrop unavailable; continuing the phone call.")
+	# Keep the former FishCoIntro node dormant for existing scene/tests,
+	# but never show its fake painted sky, water or boat.
 	# The same DialogueManager/DialogueUI, NPCData, and graph loader used for
 	# every other conversation. Speaker tags in the JSON distinguish Penni
 	# from the Fish Co representative while both normal portraits remain.
@@ -130,6 +160,7 @@ func _on_first_dive_conversation_finished(npc: NPCData) -> void:
 func _finish_first_dive_call() -> void:
 	_first_dive_call_finished = true
 	_world_player.busy = false
+	first_dive_onboarding_finished.emit()
 	var dock: Node2D = _world.get_node("Dock") as Node2D
 	# Existing InteractPrompt is visible from a distance the first time,
 	# then returns to ordinary proximity behavior once diving begins.
@@ -158,10 +189,9 @@ func debug_skip_to_dive() -> bool:
 	hide()
 	var dock: Node2D = _world.get_node("Dock") as Node2D
 	_world_player.global_position = dock.global_position + Vector2(22.0, 11.0)
+	_world_player.z_index = 0
 	_world_player.animator.play(&"idle_l")
-	var island_camera: Camera2D = _world_player.get_node("Camera2D") as Camera2D
-	island_camera.reset_smoothing()
-	island_camera.force_update_scroll()
+	(_world.get_node("CameraController") as WorldCameraController).snap_to_player()
 	(_world.get_node("Shop") as ShopInteractable).set_intro_quota_notice(false)
 	_finish_first_dive_call()
 	return true
@@ -174,6 +204,19 @@ func request_dive(fisher: Player, dock: Node2D) -> void:
 		return
 	if _dock_confirmation_target != null:
 		return
+	# Explain a refusal once through Penni's existing dialogue UI. Companions
+	# remain housed, and another dock interaction lets Penni dive without them.
+	var party: DivingParty = _transition.get_node_or_null("DivingParty") as DivingParty
+	if party != null:
+		for member in party.unwilling_members():
+			var state: Dictionary = NPCManager.get_npc_state(member.npc_id)
+			if bool(state.get(AffectionManager.REFUSAL_NOTICE_KEY, false)):
+				continue
+			state[AffectionManager.REFUSAL_NOTICE_KEY] = true
+			DialogueManager.request_player_monologue([
+				"%s doesn't want to come diving today. Maybe I should talk to him." % member.display_name
+			])
+			return
 	# A normal dialogue graph provides the Yes/No choice; the player does
 	# not dive until the Yes choice finishes through DialogueManager.
 	_dock_confirmation_target = dock

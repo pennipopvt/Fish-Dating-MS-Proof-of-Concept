@@ -1,0 +1,34 @@
+{
+  "entry": "dock",
+  "free_greeting": true,
+  "nodes": {
+    "dock": {
+      "lines": [
+        {
+          "speaker": "player",
+          "text": "There. We made it to the dock. How are you feeling?"
+        },
+        {
+          "speaker": "barracuda",
+          "text": "You seriously carried me up here...? I didn't think I'd make it."
+        },
+        {
+          "speaker": "player",
+          "text": "I wasn't leaving you hurt down there."
+        },
+        {
+          "speaker": "barracuda",
+          "text": "Wait a second. Why do I have feet? ...What happened to my fins?"
+        },
+        {
+          "speaker": "player",
+          "text": "I think you changed when we came out of the water. Let's get you a place to recover."
+        },
+        {
+          "speaker": "barracuda",
+          "text": "...Yeah. Thanks, Penni. I owe you one."
+        }
+      ]
+    }
+  }
+}

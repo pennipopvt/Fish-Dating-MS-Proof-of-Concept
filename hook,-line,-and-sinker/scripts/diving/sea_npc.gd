@@ -36,6 +36,10 @@ class_name SeaNPC
 @onready var _indicator: InteractPrompt = $InteractPrompt
 
 var following: bool = false
+var follow_trail: SeaFollowTrail
+@export_group("Following Penni")
+@export_range(16.0, 90.0, 1.0) var follow_trail_distance: float = 32.0
+@export_range(1.0, 12.0, 0.5) var follow_arrival_radius: float = 4.0
 var _player: Player
 var _story: SeaStoryDirector
 var _battle: DivingCompanionBattle
@@ -95,10 +99,17 @@ func _process(delta: float) -> void:
 		speed = combat_swim_speed
 		_last_swim_state = &"approach" if position.distance_to(destination) > combat_attack_range else &"engaged"
 	else:
-		destination = _player.position + Vector2(-24.0 if _player.last_direction >= 0.0 else 24.0, 6.0)
-		speed = 114.0 if position.distance_to(destination) > 95.0 else 74.0
+		if follow_trail != null:
+			var direction: Vector2 = Vector2.RIGHT if _player.last_direction >= 0.0 else Vector2.LEFT
+			destination = get_parent().to_local(
+				follow_trail.point_behind(follow_trail_distance, direction))
+		else:
+			destination = _player.position + Vector2(-24.0 if _player.last_direction >= 0.0 else 24.0, 6.0)
+		speed = 114.0 if position.distance_to(destination) > 95.0 else 84.0
 		_last_swim_state = &"returning"
-	if position.distance_to(destination) > 1.0:
+	var active_combat: bool = _battle != null and _battle.is_active()
+	var arrival_radius: float = 1.0 if active_combat else follow_arrival_radius
+	if position.distance_to(destination) > arrival_radius:
 		position = position.move_toward(destination, speed * delta)
 	# Preserve the last facing direction when stopped or moving vertically.
 	# A boolean assignment every frame used to force Silas facing right.

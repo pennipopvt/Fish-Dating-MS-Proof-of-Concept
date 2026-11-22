@@ -221,29 +221,66 @@ func _on_recruited() -> void:
 	recruited.emit()
 
 
+@export_group("First Townhouse Arrival")
+@export_range(0.1, 1.0, 0.05) var townhouse_fade_seconds: float = 0.35
+
 # Called only after the shared surface presentation has transformed the school.
 # The surface animator supplies temporary human actors; this encounter checks
 # that Kuda ACTUALLY reached shore before starting his one-time conversation.
-func play_first_surface_reveal(surface_actors: Array[Node2D]) -> void:
-	if _story == null or not _story.can_begin_kuda_surface_reveal():
+func play_first_surface_reveal(surface_actors: Array[Node2D],
+		first_land_blackout: bool = false) -> void:
+	if _story == null:
+		return
+	if first_land_blackout:
+		if _story.has_kuda_flag(&"kuda_surface_introduced"):
+			return
+	elif not _story.can_begin_kuda_surface_reveal():
 		return
 	var kuda_actor: NPCInteractable = null
+	# Only companions physically returned in this scene can speak. Do not use
+	# the school roster: a recruited fish might not be on the current dive.
+	var present_cast: Array[NPCData] = []
 	for actor in surface_actors:
 		var guest: NPCInteractable = actor as NPCInteractable
-		if is_instance_valid(guest) and guest.visible and guest.npc != null \
-				and guest.npc.npc_id == _story.kuda_data.npc_id:
+		if not is_instance_valid(guest) or not guest.visible or guest.npc == null:
+			continue
+		if not present_cast.has(guest.npc):
+			present_cast.append(guest.npc)
+		if guest.npc.npc_id == _story.kuda_data.npc_id:
 			kuda_actor = guest
-			break
 	if kuda_actor == null:
 		return
-	# Keep the visible human actor on the dock until the dialogue ends.
-	if not _story.start_kuda_surface_reveal():
-		return
-	await _story.kuda_surface_reveal_finished
-	# RecruitmentHandler assigns a room by NPC identity, never by moving
-	# the temporary dock actor or creating another interior scene.
-	if not RecruitmentHandler.assign_home(_story.kuda_data):
-		push_warning("Kuda reached shore, but no townhouse room was available yet.")
+	# The blackout-rescue OR first-land-care conversation already explains
+	# Kuda's human body. Don't repeat the ordinary dock transformation speech.
+	if first_land_blackout:
+		_story.mark_kuda_surface_rescued()
+	else:
+		if not _story.start_kuda_surface_reveal(present_cast):
+			return
+		await _story.kuda_surface_reveal_finished
+	# Mirror Silas's first return: after seeing his human form on the dock,
+	# Penni shows Kuda the townhouse BEFORE he is assigned a room.
+	var world: Node2D = _player.get_parent() as Node2D
+	var player_spot: Marker2D = world.get_node("TownhouseArrival/PlayerSpot") as Marker2D
+	var kuda_spot: Marker2D = world.get_node("TownhouseArrival/KudaSpot") as Marker2D
+	var travel := ScreenFade.new()
+	get_tree().root.add_child(travel)
+	await travel.fade_to(1.0, townhouse_fade_seconds)
+	_player.global_position = player_spot.global_position
+	_player.animator.play(&"idle_r")
+	(world.get_node("CameraController") as WorldCameraController).snap_to_player()
+	NPCTemporaryActor.place_feet(kuda_actor, kuda_spot.global_position)
+	await travel.fade_to(0.0, townhouse_fade_seconds)
+	_story.start_kuda_townhouse_arrival()
+	await _story.kuda_townhouse_dialogue_finished
+	# The shared shore return already fades to black to remove its actors.
+	# Do not briefly reveal an empty townhouse, then fade a second time.
+	var assigned: bool = RecruitmentHandler.assign_home(_story.kuda_data)
+	if not assigned:
+		push_warning("Kuda accepted the room, but no townhouse door was available.")
+	else:
+		_story.complete_kuda_townhouse_arrival()
+	travel.queue_free()
 
 
 func end_dive() -> void:

@@ -1,0 +1,90 @@
+{
+  "entry": "arrival",
+  "nodes": {
+    "arrival": {
+      "lines": [
+        "Oh! You really came.",
+        "I've been looking forward to tonight, actually.",
+        "...I'm a little nervous. Is that silly?"
+      ],
+      "choices": [
+        {
+          "text": "I'm nervous too. But I want to be here.",
+          "next": "settle"
+        },
+        {
+          "text": "We can take our time.",
+          "next": "settle"
+        },
+        {
+          "text": "Come on, don't be so nervous.",
+          "next": "too_fast"
+        }
+      ]
+    },
+    "settle": {
+      "lines": [
+        "You don't mind?",
+        "That makes me feel a lot better.",
+        "Could we just sit together for a little while?"
+      ],
+      "choices": [
+        {
+          "text": "I'd really like that.",
+          "next": "close"
+        },
+        {
+          "text": "We don't have to do anything tonight.",
+          "next": "close"
+        },
+        {
+          "text": "I thought you invited me for more than sitting.",
+          "next": "too_fast"
+        }
+      ]
+    },
+    "close": {
+      "lines": [
+        "...",
+        "I'm glad you're here.",
+        "Can I come a little closer?"
+      ],
+      "choices": [
+        {
+          "text": "Of course.",
+          "next": "ready"
+        },
+        {
+          "text": "Maybe we should wait until another night.",
+          "next": "postpone"
+        }
+      ]
+    },
+    "ready": {
+      "lines": [
+        "Hehe... okay.",
+        "...I'm happy it's you."
+      ],
+      "effects": {
+        "request_scene": "room_overnight_ready"
+      }
+    },
+    "postpone": {
+      "lines": [
+        "That's okay. Really.",
+        "Thank you for telling me."
+      ]
+    },
+    "too_fast": {
+      "lines": [
+        "Oh... I don't think I'm ready for that.",
+        "Could we try another night?"
+      ],
+      "effects": {
+        "start_relationship_events": [
+          "prelude_boundary"
+        ]
+      }
+    }
+  }
+}

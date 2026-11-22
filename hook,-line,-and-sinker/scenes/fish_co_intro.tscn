@@ -1,10 +1,9 @@
-[gd_scene load_steps=3 format=3]
+[gd_scene format=3 uid="uid://d1x4yl86i5h5j"]
 
-[ext_resource type="Script" path="res://scripts/intro/fish_co_intro.gd" id="intro_script"]
-[ext_resource type="Texture2D" path="res://sprites/characters/penni/penni_idle.png" id="penni_idle"]
+[ext_resource type="Script" uid="uid://cwcpi8mdbrsp5" path="res://scripts/intro/fish_co_intro.gd" id="intro_script"]
+[ext_resource type="Texture2D" uid="uid://dxo0aerjkiu3h" path="res://sprites/characters/penni/penni_idle.png" id="penni_idle"]
 
-[node name="FishCoIntro" type="Control"]
-visible = false
+[node name="FishCoIntro" type="Control" unique_id=831046338]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -14,8 +13,8 @@ grow_vertical = 2
 mouse_filter = 2
 script = ExtResource("intro_script")
 
-[node name="Penni" type="Sprite2D" parent="."]
-texture_filter = 1
+[node name="Penni" type="Sprite2D" parent="." unique_id=990693039]
 z_index = 2
+texture_filter = 1
 texture = ExtResource("penni_idle")
 hframes = 2

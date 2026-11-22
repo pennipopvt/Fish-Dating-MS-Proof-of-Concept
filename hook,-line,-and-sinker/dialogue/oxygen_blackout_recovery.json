@@ -1,0 +1,46 @@
+{
+  "entry": "shore",
+  "free_greeting": true,
+  "nodes": {
+    "shore": {
+      "lines": [
+        {
+          "speaker": "player",
+          "text": "...Huh? Did we make it back?"
+        },
+        {
+          "speaker": "test_npc",
+          "text": "Penni! You're awake! I was so scared when you stopped moving..."
+        },
+        {
+          "speaker": "barracuda",
+          "text": "You ran out of air! What were you thinking?!"
+        },
+        {
+          "speaker": "test_npc",
+          "text": "We got you out of the water as fast as we could."
+        },
+        {
+          "speaker": "barracuda",
+          "text": "We hauled you all the way back here. Don't do that to us again."
+        },
+        {
+          "speaker": "player",
+          "text": "I'm sorry. I didn't mean to worry everyone."
+        },
+        {
+          "speaker": "test_npc",
+          "text": "Just... please be more careful next time. I don't want to lose you."
+        },
+        {
+          "speaker": "barracuda",
+          "text": "Tch. Just make sure you can breathe before you go chasing things down there."
+        },
+        {
+          "speaker": "player",
+          "text": "I will. Thank you for bringing me back."
+        }
+      ]
+    }
+  }
+}

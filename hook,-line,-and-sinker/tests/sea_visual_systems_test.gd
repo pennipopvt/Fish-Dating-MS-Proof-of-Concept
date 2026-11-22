@@ -67,11 +67,30 @@ func _run() -> void:
 	await get_tree().process_frame
 	var world: Node2D = main.get_node("SubViewportContainer/SubViewport/World") as Node2D
 	var water: ColorRect = world.get_node("Water") as ColorRect
-	var underwater: ColorRect = world.get_node("Player/Camera2D/UnderwaterTint") as ColorRect
+	var underwater: ColorRect = world.get_node("CameraController/Camera2D/UnderwaterTint") as ColorRect
 	var tint_color: Color = (underwater.material as ShaderMaterial).get_shader_parameter("tint_color")
-	var deep_alpha: float = float((water.material as ShaderMaterial).get_shader_parameter("deep_water_alpha"))
+	var water_mat: ShaderMaterial = water.material as ShaderMaterial
+	var deep_alpha: float = float(water_mat.get_shader_parameter("deep_water_alpha"))
 	_check(tint_color.a < 0.35 and deep_alpha <= 0.15,
 		"Submerged water uses lighter tint layers without changing the waterline")
+	var background_layer: CanvasLayer = world.get_node("UnderwaterBackgroundLayer") as CanvasLayer
+	var background: ColorRect = background_layer.get_node("UnderwaterBackground") as ColorRect
+	_check(background_layer.layer < (world.get_node("SkyLayer") as CanvasLayer).layer
+		and background.color.a > 0.99 and background.size == Vector2(320, 180),
+		"Opaque blue underwater background fills the original viewport behind the existing sky and sea")
+	_check(background.color.is_equal_approx(water_mat.get_shader_parameter("water_color")),
+		"Day/night underwater background and water surface share the same editable color")
+	var old_afternoon: Color = world.get("water_afternoon_color")
+	var edited_afternoon := Color("#71b8d2")
+	world.set("water_afternoon_color", edited_afternoon)
+	world.call("_apply_immediately", world.call("_visual_state", 1.0 / 3.0))
+	var edited_shader_color: Color = water_mat.get_shader_parameter("water_color")
+	_check(background.color.is_equal_approx(edited_afternoon)
+		and edited_shader_color.is_equal_approx(edited_afternoon),
+		"Editing Water Colors on the World node updates the actual water and its backdrop")
+	world.set("water_afternoon_color", old_afternoon)
+	world.call("_apply_immediately", world.call("_visual_state", world.call("_clock_progress")))
+
 	# The same daylight signal updates a beam, without a second clock.
 	world.set("_shown_progress", 0.4)
 	world.call("_update_sunbeams")

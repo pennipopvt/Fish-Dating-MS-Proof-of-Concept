@@ -7,6 +7,26 @@
       ],
       "choices": [
         {
+          "text": "Could we talk about the other night?",
+          "next": "prelude_concern",
+          "when": {
+            "active_events": [
+              "prelude_boundary"
+            ]
+          },
+          "priority": 30,
+          "grey_when_picked": false
+        },
+        {
+          "text": "Is something bothering you?",
+          "next": "morale_check",
+          "when": {
+            "max_affection": 45
+          },
+          "priority": 15,
+          "grey_when_picked": false
+        },
+        {
           "text": "How are you liking it here?",
           "next": "curiosity"
         },
@@ -25,9 +45,71 @@
           ]
         },
         {
+          "text": "You said we could explore together someday...",
+          "next": "explore_followup",
+          "when": {
+            "active_events": [
+              "explore_together"
+            ]
+          },
+          "priority": 4,
+          "grey_when_picked": false
+        },
+        {
+          "text": "How's the spyglass working out?",
+          "next": "spyglass_chat",
+          "required_flags": [
+            "spyglass_complete"
+          ],
+          "grey_when_picked": false
+        },
+        {
           "text": "See you later!",
           "next": "goodbye",
-          "spends_action": false
+          "spends_action": false,
+          "grey_when_picked": false
+        }
+      ],
+      "line_variants": [
+        {
+          "when": {
+            "active_events": [
+              "prelude_boundary"
+            ]
+          },
+          "lines": [
+            "Oh... Penni.",
+            "I wasn't sure if you'd want to talk after the other night."
+          ]
+        },
+        {
+          "when": {
+            "required_flags": [
+              "refuses_diving"
+            ]
+          },
+          "lines": [
+            "Oh... Penni.",
+            "I don't want to go diving right now. Can we talk instead?"
+          ]
+        },
+        {
+          "when": {
+            "max_affection": 25
+          },
+          "lines": [
+            "Oh. Hello again.",
+            "I've been feeling a little left out lately."
+          ]
+        },
+        {
+          "when": {
+            "max_affection": 45
+          },
+          "lines": [
+            "Oh... hi.",
+            "I was starting to wonder when we'd talk again."
+          ]
         }
       ]
     },
@@ -94,7 +176,12 @@
         "T-together?",
         "Oh... I'd like that."
       ],
-      "next": "topics"
+      "next": "topics",
+      "effects": {
+        "start_relationship_events": [
+          "explore_together"
+        ]
+      }
     },
     "reminder_intro": {
       "lines": [
@@ -117,7 +204,8 @@
         },
         {
           "text": "Never mind!",
-          "next": "reminder_cancel"
+          "next": "reminder_cancel",
+          "grey_when_picked": false
         }
       ]
     },
@@ -152,6 +240,26 @@
       "lines": [],
       "choices": [
         {
+          "text": "Could we talk about the other night?",
+          "next": "prelude_concern",
+          "when": {
+            "active_events": [
+              "prelude_boundary"
+            ]
+          },
+          "priority": 30,
+          "grey_when_picked": false
+        },
+        {
+          "text": "Is something bothering you?",
+          "next": "morale_check",
+          "when": {
+            "max_affection": 45
+          },
+          "priority": 15,
+          "grey_when_picked": false
+        },
+        {
           "text": "How are you liking it here?",
           "next": "curiosity"
         },
@@ -170,11 +278,140 @@
           ]
         },
         {
+          "text": "You said we could explore together someday...",
+          "next": "explore_followup",
+          "when": {
+            "active_events": [
+              "explore_together"
+            ]
+          },
+          "priority": 4,
+          "grey_when_picked": false
+        },
+        {
+          "text": "How's the spyglass working out?",
+          "next": "spyglass_chat",
+          "required_flags": [
+            "spyglass_complete"
+          ],
+          "grey_when_picked": false
+        },
+        {
           "text": "See you later!",
           "next": "goodbye",
-          "spends_action": false
+          "spends_action": false,
+          "grey_when_picked": false
         }
       ]
+    },
+    "morale_check": {
+      "lines": [],
+      "conditional_next": [
+        {
+          "next": "morale_refusing",
+          "when": {
+            "required_flags": [
+              "refuses_diving"
+            ]
+          }
+        },
+        {
+          "next": "morale_hurt",
+          "when": {
+            "max_affection": 25
+          }
+        },
+        {
+          "next": "morale_neglected",
+          "when": {
+            "max_affection": 45
+          }
+        }
+      ],
+      "rotating_next": [
+        "morale_fine"
+      ]
+    },
+    "morale_fine": {
+      "lines": [
+        "I'm alright, thanks for asking."
+      ],
+      "next": "topics"
+    },
+    "morale_refusing": {
+      "lines": [
+        "I can't keep pretending everything's okay when we dive.",
+        "I need some time together that isn't about catching fish."
+      ],
+      "next": "topics"
+    },
+    "morale_hurt": {
+      "lines": [
+        "I know you have work to do...",
+        "Sometimes I wish you'd visit just to see me."
+      ],
+      "next": "topics"
+    },
+    "morale_neglected": {
+      "lines": [
+        "I've been fine! Just... a little lonely, I guess.",
+        "I was hoping we could talk more."
+      ],
+      "next": "topics"
+    },
+    "prelude_concern": {
+      "lines": [
+        "I was really looking forward to spending time with you.",
+        "But when you wanted me to hurry, I felt like I was doing something wrong.",
+        "I don't want to feel rushed when I'm with you."
+      ],
+      "choices": [
+        {
+          "text": "I was pushing you. I'm sorry.",
+          "next": "prelude_reassurance"
+        },
+        {
+          "text": "I don't think I did anything wrong.",
+          "next": "prelude_unresolved"
+        }
+      ]
+    },
+    "prelude_reassurance": {
+      "lines": [
+        "Oh... thank you.",
+        "I still want to spend time together. Just... can we go at our own pace?",
+        "That would mean a lot to me."
+      ],
+      "effects": {
+        "resolve_relationship_events": [
+          "prelude_boundary"
+        ]
+      },
+      "next": "topics"
+    },
+    "prelude_unresolved": {
+      "lines": [
+        "I understand if you don't see it the same way.",
+        "But I was uncomfortable. That should matter too."
+      ],
+      "next": "topics"
+    },
+    "explore_followup": {
+      "lines": [
+        "Oh... you remembered?",
+        "I have been thinking about it, actually.",
+        "Maybe when I feel a little steadier on these legs, we can find somewhere new to look around together.",
+        "I'd really like that."
+      ],
+      "next": "topics"
+    },
+    "spyglass_chat": {
+      "lines": [
+        "All the time!",
+        "I can see those birds much more clearly now.",
+        "Sometimes I spot something new and think I should show you."
+      ],
+      "next": "topics"
     }
   },
   "free_greeting": true

@@ -1,0 +1,30 @@
+{
+  "entry": "injured",
+  "free_greeting": true,
+  "nodes": {
+    "injured": {
+      "lines": [
+        {
+          "speaker": "test_npc",
+          "text": "P-Penni... I can't keep fighting. Everything hurts..."
+        },
+        {
+          "speaker": "player",
+          "text": "Silas! You're hurt. Don't try to move."
+        },
+        {
+          "speaker": "test_npc",
+          "text": "I-I think I just need to rest a little..."
+        },
+        {
+          "speaker": "player",
+          "text": "Stay here. I'll try to find something to help."
+        },
+        {
+          "speaker": "test_npc",
+          "text": "O-okay... Please be careful."
+        }
+      ]
+    }
+  }
+}

@@ -2,8 +2,20 @@ extends Node2D
 
 # Visuals follow the existing action-based GameManager clock. No second clock:
 # each of the three periods contains three visual steps (one per action).
-# The sky pans horizontally with the camera but stays fixed above the surface.
+# Sky artwork is viewport-anchored through World/SkyLayer. Only its
+# visible height follows the world-space waterline; it never chases a camera.
 @export_range(0.0, 4.0, 0.1) var transition_seconds: float = 1.6
+
+# These are the real gameplay colors, not just shader defaults. Editing
+# them on World changes both the surface and its opaque backdrop underwater.
+@export_group("Water Colors")
+@export var water_sunrise_color: Color = Color("#4e7c96")
+@export var water_morning_color: Color = Color("#4a88a7")
+@export var water_afternoon_color: Color = Color("#4289ac")
+@export var water_late_afternoon_color: Color = Color("#3c7c9e")
+@export var water_sunset_color: Color = Color("#58718f")
+@export var water_night_color: Color = Color("#162c4b")
+
 
 const AFTERNOON_START: float = 1.0 / 3.0
 const SUNSET_START: float = 5.0 / 9.0
@@ -19,6 +31,7 @@ const MOON_BELOW_SCREEN_Y: float = 240.0
 const MOON_ARC_HEIGHT: float = 220.0
 # The surface is the upper edge of the existing World/Water ColorRect.
 const REFLECTION_AT_SURFACE: float = 0.477
+const VIEWPORT_SKY_HEIGHT: float = 180.0
 
 @onready var _sky: ColorRect = $Sky/SkyGradient
 @onready var _stars: ColorRect = $Sky/NightStars
@@ -27,13 +40,14 @@ const REFLECTION_AT_SURFACE: float = 0.477
 @onready var _moon: ColorRect = $Sky/Moon
 @onready var _moon_glow: ColorRect = $Sky/MoonGlow
 @onready var _sky_region: Control = $Sky
-@onready var _camera: Camera2D = $Player/Camera2D
+@onready var _clouds: Node2D = $Sky/Clouds
+@onready var _camera: Camera2D = $CameraController/Camera2D
 @onready var _ambient: CanvasModulate = $DayNightTint
 @onready var _water: ColorRect = $Water
 # Sea/Solids is optional now that the sea uses SeaTerrain colliders.
 @onready var _sea_solids: TileMapLayer = get_node_or_null("Sea/Solids") as TileMapLayer
 @onready var _diver: Player = $Player
-@onready var _underwater_tint: ColorRect = get_node_or_null("Player/Camera2D/UnderwaterTint") as ColorRect
+@onready var _underwater_tint: ColorRect = get_node_or_null("CameraController/Camera2D/UnderwaterTint") as ColorRect
 
 var _sky_mat: ShaderMaterial
 var _stars_mat: ShaderMaterial
@@ -41,6 +55,7 @@ var _sun_glow_mat: ShaderMaterial
 var _moon_mat: ShaderMaterial
 var _moon_glow_mat: ShaderMaterial
 var _water_mat: ShaderMaterial
+var _underwater_background: ColorRect
 var _sea_clip_mat: ShaderMaterial
 var _tint_mat: ShaderMaterial
 var _transition: Tween
@@ -52,6 +67,32 @@ var _shown_progress: float = 0.0
 
 
 func _ready() -> void:
+	# The water shader is intentionally transparent while Penni swims.
+	# Without a background, that alpha exposes the viewport's near-black
+	# clear color. Add one flat backdrop behind the existing sea and sky;
+	# it uses the SAME palette and day/night clock as the water surface.
+	var underwater_layer := CanvasLayer.new()
+	underwater_layer.name = "UnderwaterBackgroundLayer"
+	underwater_layer.layer = -2
+	add_child(underwater_layer)
+	_underwater_background = ColorRect.new()
+	_underwater_background.name = "UnderwaterBackground"
+	_underwater_background.size = Vector2(320.0, 180.0)
+	_underwater_background.color = water_afternoon_color
+	_underwater_background.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	underwater_layer.add_child(_underwater_background)
+
+	# World/Sky remains a normal editable scene node. We move that SAME
+	# hierarchy into a viewport-locked background layer at runtime so camera
+	# smoothing cannot make the gradient, sun or moon shimmer. Clouds still
+	# drift using their existing script; there is no duplicate sky.
+	var sky_layer := CanvasLayer.new()
+	sky_layer.name = "SkyLayer"
+	sky_layer.layer = -1
+	add_child(sky_layer)
+	_sky_region.reparent(sky_layer, false)
+	_sky_region.position = Vector2.ZERO
+	_sky_region.size = Vector2(320.0, VIEWPORT_SKY_HEIGHT)
 	# Scene shader subresources may be shared by instances; do not animate the
 	# source assets or affect other World instances / editor previews.
 	_sky_mat = _local_material(_sky)
@@ -86,7 +127,7 @@ func _ready() -> void:
 
 func _process(_delta: float) -> void:
 	# Camera limits can separate the actual screen center from the
-	# Camera2D node's world position. The tint is a child of Camera2D,
+	# Camera2D node's world position. The tint is a child of the world camera,
 	# so compensate for that difference to keep its entire 320x180
 	# rectangle attached to the visible game screen at sea boundaries.
 	var visible_center: Vector2 = _camera.get_screen_center_position()
@@ -95,12 +136,6 @@ func _process(_delta: float) -> void:
 			visible_center - _camera.global_position
 			- _underwater_tint.size * 0.5
 		)
-	# Horizontal parallax follows the camera, but the sky's BOTTOM stays at
-	# the actual world-space waterline. It cannot follow Penni underwater.
-	_sky_region.global_position = Vector2(
-		visible_center.x - 160.0,
-		_water.global_position.y - _sky_region.size.y
-	)
 	# Reflection exists at the surface, but dissolves as the original player
 	# swims below it. No second viewport, water clock or duplicate shader.
 	var surface_y: float = _water.global_position.y
@@ -110,6 +145,9 @@ func _process(_delta: float) -> void:
 		"reflection_strength", REFLECTION_AT_SURFACE * (1.0 - submerged)
 	)
 	var surface_screen_y: float = _water.get_global_transform_with_canvas().origin.y
+	# The sky stays absolutely still in viewport pixels while the camera
+	# smooths or pans. Only the clip bottom follows the true sea surface.
+	_sky_region.size.y = clampf(ceilf(surface_screen_y), 0.0, VIEWPORT_SKY_HEIGHT)
 	_water_mat.set_shader_parameter("waterline_y", surface_screen_y)
 	_water_mat.set_shader_parameter("viewer_submersion", submerged)
 	# The sea's above-surface visual clip and the reflection must use
@@ -193,7 +231,11 @@ func _refresh_target() -> void:
 	_transition.tween_property(_sky_mat, "shader_parameter/top_color", state["top"], transition_seconds)
 	_transition.tween_property(_sky_mat, "shader_parameter/horizon_color", state["horizon"], transition_seconds)
 	_transition.tween_property(_ambient, "color", state["ambient"], transition_seconds)
+	# The clouds now draw on a screen-space canvas and no longer inherit the
+	# World CanvasModulate, so apply the SAME clock color here explicitly.
+	_transition.tween_property(_clouds, "modulate", state["ambient"], transition_seconds)
 	_transition.tween_property(_water_mat, "shader_parameter/water_color", state["water"], transition_seconds)
+	_transition.tween_property(_underwater_background, "color", state["water"], transition_seconds)
 	_transition.tween_property(_water_mat, "shader_parameter/highlight_color", state["water_highlight"], transition_seconds)
 	_transition.tween_method(_show_discs_at.bind(not day_rollover), _shown_progress, progress, transition_seconds)
 	_transition.tween_property(_sun_glow_mat, "shader_parameter/intensity", state["sun_glow"], transition_seconds)
@@ -231,7 +273,9 @@ func _apply_immediately(state: Dictionary) -> void:
 	_sky_mat.set_shader_parameter("top_color", state["top"])
 	_sky_mat.set_shader_parameter("horizon_color", state["horizon"])
 	_ambient.color = state["ambient"]
+	_clouds.modulate = state["ambient"]
 	_water_mat.set_shader_parameter("water_color", state["water"])
+	_underwater_background.color = state["water"]
 	_water_mat.set_shader_parameter("highlight_color", state["water_highlight"])
 	_sun.position = state["sun_position"]
 	_sun.modulate = Color.WHITE
@@ -258,8 +302,8 @@ func _visual_state(progress: float) -> Dictionary:
 		Color("#ffe0bd"), Color("#fff0dd"), Color("#f2f8ff"),
 		Color("#f1f6ff"), Color("#ffd0ab"), Color("#394f75"))
 	var water := _day_color(progress,
-		Color("#3c6985"), Color("#33769e"), Color("#317ca0"),
-		Color("#2d7194"), Color("#485f7d"), Color("#102643"))
+		water_sunrise_color, water_morning_color, water_afternoon_color,
+		water_late_afternoon_color, water_sunset_color, water_night_color)
 	var water_highlight := _day_color(progress,
 		Color("#f1b98b"), Color("#d9e4e5"), Color("#b9e6fb"),
 		Color("#b2dbf1"), Color("#ffd0a2"), Color("#6489b7"))

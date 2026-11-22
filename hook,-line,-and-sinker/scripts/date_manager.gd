@@ -32,7 +32,8 @@ const JEALOUSY_BY_STYLE := {
 	"playful": [-3, -5, -6, -8],
 	"reassure": [-8, -10, -12, -15],
 }
-const OUTCOME_AFFECTION := {"bad": -6, "okay": 1, "good": 5, "great": 10}
+# Apply each completed date once to the same affection score as dialogue/diving.
+const OUTCOME_AFFECTION := {"bad": -8, "okay": 8, "good": 20, "great": 28}
 
 # date_id -> DateData
 var dates: Dictionary = {}
@@ -53,11 +54,14 @@ var _conversation_period: int = 0
 # Day/period the date took place in (after any clock jump).
 var _date_day: int = 0
 var _date_period: int = 0
+# Temporary visuals, separate from the persistent townhouse resident.
+var _date_actor: Node2D = null
 # The date's spawned venue (DateData.venue_scene), removed after the date.
 var _venue: Node2D = null
 # [[Node2D, Vector2 global position], ...] to put back after the date.
 var _restore: Array = []
 var _fade: ScreenFade
+var _date_player: Player = null
 
 
 func _ready() -> void:
@@ -108,7 +112,7 @@ func is_booked(date: DateData) -> bool:
 	return date != null and bookings.has(date.date_id)
 
 
-# Flags/attraction/repeat rules only (no timing).
+# Flags/affection/repeat rules only (no timing).
 func meets_requirements(date: DateData) -> bool:
 	if date == null or date.npc == null:
 		return false
@@ -116,7 +120,7 @@ func meets_requirements(date: DateData) -> bool:
 	var flags: Dictionary = state.get("flags", {})
 	if not date.repeatable and flags.get(date.get_completed_flag(), false):
 		return false
-	if date.use_min_attraction and int(state.get("attraction", 0)) < date.min_attraction:
+	if date.use_min_affection and AffectionManager.get_affection(date.npc.npc_id) < date.min_affection:
 		return false
 	for flag in date.required_flags:
 		if not flags.get(flag, false):
@@ -291,9 +295,12 @@ func start_date(date: DateData) -> void:
 	if date.venue_scene == null and location == null:
 		push_warning("No DateLocation '%s' in the world for date %s" % [date.location_id, date.date_id])
 		return
-	var player := get_tree().get_first_node_in_group(&"player") as Node2D
-	if player == null:
+	var player := get_tree().get_first_node_in_group(&"player") as Player
+	if player == null or player.busy:
 		return
+	# Lock land movement and other interactions during the date transition.
+	_date_player = player
+	player.busy = true
 	_active = date
 	_date_score = 0
 	_date_choice_count = 0
@@ -315,7 +322,11 @@ func start_date(date: DateData) -> void:
 		_venue.global_position = date.venue_position
 		venue = _venue
 	_move(player, _spot(venue, &"PlayerSpot"))
-	_move(_find_actor(date.npc.npc_id), _spot(venue, &"NpcSpot"))
+	# Recruited NPCs are data-only residents, not actors in the island world.
+	# Dates and dock cutscenes use the exact same noninteractive land actor.
+	_date_actor = NPCTemporaryActor.spawn(date.npc, player.get_parent(), _spot(venue, &"NpcSpot"))
+	if _date_actor != null:
+		_date_actor.name = "DateGuest_" + String(date.npc.npc_id)
 	await _fade_to(0.0)
 	_in_dialogue = true
 	DialogueManager.request_conversation(date.npc, date.dialogue_json)
@@ -387,9 +398,15 @@ func _finish(completed: bool) -> void:
 		if is_instance_valid(node):
 			node.global_position = entry[1]
 	_restore.clear()
+	if is_instance_valid(_date_actor):
+		_date_actor.queue_free()
+	_date_actor = null
 	if is_instance_valid(_venue):
 		_venue.queue_free()
 	_venue = null
+	if is_instance_valid(_date_player):
+		_date_player.busy = false
+	_date_player = null
 	if completed and date != null:
 		var state: Dictionary = NPCManager.get_npc_state(date.npc.npc_id)
 		var flags: Dictionary = state["flags"]
@@ -402,7 +419,7 @@ func _finish(completed: bool) -> void:
 		# Repeating a date always scores again, but never farms individual
 		# dialogue-choice affection. Successful completion prevents daily decay.
 		AffectionManager.mark_date_completed(date.npc.npc_id, _date_day)
-		var gain: int = int(OUTCOME_AFFECTION[outcome]) if not outcome.is_empty() else date.attraction_change
+		var gain: int = int(OUTCOME_AFFECTION[outcome]) if not outcome.is_empty() else date.affection_change
 		AffectionManager.change(date.npc.npc_id, gain)
 		_use_up_period()
 	_active = null
@@ -435,15 +452,6 @@ func _find_location(location_id: StringName) -> DateLocation:
 		var location := node as DateLocation
 		if location != null and location.location_id == location_id:
 			return location
-	return null
-
-
-# The NPC's body in the world (spawned when caught/recruited), or null.
-func _find_actor(npc_id: StringName) -> NPCInteractable:
-	for node in get_tree().get_nodes_in_group(Interactable.GROUP):
-		var actor := node as NPCInteractable
-		if actor != null and actor.npc != null and actor.npc.npc_id == npc_id and not actor.is_queued_for_deletion():
-			return actor
 	return null
 
 

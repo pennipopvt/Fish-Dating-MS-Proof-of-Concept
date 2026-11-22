@@ -119,3 +119,30 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 color = Color(0, 0, 0, 1)
+
+[node name="OvernightInterlude" type="CenterContainer" parent="FadeLayer"]
+visible = false
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Content" type="VBoxContainer" parent="FadeLayer/OvernightInterlude"]
+layout_mode = 2
+theme_override_constants/separation = 38
+
+[node name="SleepText" type="Label" parent="FadeLayer/OvernightInterlude/Content"]
+custom_minimum_size = Vector2(840, 0)
+layout_mode = 2
+theme_override_font_sizes/font_size = 32
+text = "You drift off to sleep."
+horizontal_alignment = 1
+autowrap_mode = 3
+
+[node name="ContinueButton" type="Button" parent="FadeLayer/OvernightInterlude/Content"]
+custom_minimum_size = Vector2(360, 56)
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_font_sizes/font_size = 25
+text = "Continue"

@@ -20,6 +20,7 @@ func register_member(npc: NPCData, actor: Node2D,
 	if _entries.has(npc.npc_id):
 		return
 	_entries[npc.npc_id] = {"actor": actor, "battle": battle, "behavior": behavior}
+	battle.attack_speed_multiplier = AffectionManager.attack_speed_multiplier(npc.npc_id)
 	_ordered.append(npc.npc_id)
 	_available.append(npc.npc_id)
 	# Silas's permanent battle node survives across dives. The roster can

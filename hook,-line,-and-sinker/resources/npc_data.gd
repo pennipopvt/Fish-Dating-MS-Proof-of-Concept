@@ -6,6 +6,9 @@ extends Resource
 
 @export_group("Appearance")
 @export var portrait: Texture2D
+## Used for temporary land appearances (dates, arrivals and dock scenes).
+## A path rather than a PackedScene avoids an NPCData <-> actor-scene resource cycle.
+@export_file("*.tscn") var land_actor_scene_path: String = ""
 ## Fish-form portrait for conversations while exploring underwater.
 ## Keep the human portrait untouched for scenes on land.
 @export var underwater_sprite: Texture2D
@@ -19,6 +22,13 @@ extends Resource
 ## Must extend CompanionCombatBehavior. Defaults to lethal base behavior;
 ## Silas continues using his editor-authored specialized actor.
 @export var sea_combat_behavior_script: Script
+## Shown in the existing underwater conversation UI after a companion KO.
+@export_file("*.json") var sea_knockout_dialogue_json: String = ""
+## When a companion has never reached shore, Penni takes them back to
+## recover instead of letting them swim away. Authored underwater sendoff.
+@export_file("*.json") var sea_first_land_knockout_dialogue_json: String = ""
+## First dock conversation when Penni brings the injured fish to care for them.
+@export_file("*.json") var sea_first_land_after_knockout_json: String = ""
 
 @export_group("Appearance")
 @export var house: Texture2D
@@ -27,6 +37,23 @@ extends Resource
 ## Shown behind the shared first-person DialogueUI during room visits.
 @export var room_background: Texture2D
 @export var porn_sprite: Texture2D # Optional illustrated adult-scene background.
+
+@export_group("Overnight Romance")
+## The invitation is earned in ordinary dialogue, then acted on by returning at night.
+@export var invitation_accepted_flag: StringName = &""
+## An ID for the same illustrated scene, independent of its dialogue JSON.
+@export var intimacy_scene_id: StringName = &""
+## A short, consent-aware room conversation before the scene warning.
+## Optional: no JSON retains the original direct-entry behavior.
+@export_file("*.json") var overnight_prelude_json: String = ""
+@export_file("*.json") var intimacy_dialogue_json: String = ""
+## Played in the shared room UI the following morning, not outside the room.
+@export_file("*.json") var morning_after_json: String = ""
+## Quiet text between the illustrated encounter and the morning-after scene.
+## Leave empty to use a neutral default line.
+@export_multiline var overnight_transition_text: String = ""
+@export var romance_complete_flag: StringName = &""
+@export var romance_reward_id: StringName = &""
 
 # Scores for bold / playful / reassuring answers at jealousy tiers 0, 1, 2, 3.
 # Edit these arrays on each NPC resource to express their personality.
@@ -48,6 +75,11 @@ func date_score_for_style(style: String, jealousy_tier: int) -> int:
 		_:
 			return 0
 	return scores[clampi(jealousy_tier, 0, scores.size() - 1)] if not scores.is_empty() else 0
+
+@export_group("Relationship Events")
+## Shared event lifecycle per NPC; write their individual responses in JSON.
+@export var relationship_events: Array[RelationshipEventData] = []
+
 
 @export_group("JSON Encounter Rules (first matching rule wins)")
 @export var encounter_rules: Array[EncounterRuleData] = []

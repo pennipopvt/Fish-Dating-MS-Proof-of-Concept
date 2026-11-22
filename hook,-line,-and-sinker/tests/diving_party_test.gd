@@ -43,6 +43,8 @@ func _ready() -> void:
 		"Companions can leave the school without moving any actor")
 	var approach: Marker2D = sea.get_node("Points/SilasSurfaceApproach") as Marker2D
 	var dock_wait: Marker2D = sea.get_node("Points/SilasDockWait") as Marker2D
+	_check(approach.position.y >= DivingWorld.SEA_TOP + 50.0,
+		"Returning fish begin the jump deep underwater rather than pausing at the surface")
 	_check(entrance.surface_approach_position(approach.global_position, 0)
 		== approach.global_position
 		and entrance.surface_approach_position(approach.global_position, 2).x
@@ -96,6 +98,13 @@ func _ready() -> void:
 		and player.swimming and silas.following
 		and sea.get_node_or_null("NPCs/PartyFish_barracuda") != null,
 		"Confirmed dock dive independently summons the school and resumes swimming")
+	var deeper_entry: Marker2D = sea.get_node("Points/Entry") as Marker2D
+	print("[DIVE ENTRY] actual=", player.global_position, " marker=", deeper_entry.global_position, " dock=", dock.global_position)
+	var authored_landing: Vector2 = (sea.get_node("Points/PenniDiveJump") as SeaMotionPath).authored_end()
+	_check(deeper_entry.position.y >= DivingWorld.SEA_TOP + 96.0
+		and player.global_position.distance_to(authored_landing) < 1.0
+		and player.global_position.y > (world.get_node("Water") as ColorRect).global_position.y,
+		"After the splash Penni ends at the author's new single dive-path endpoint")
 	sea.call("_return_to_surface")
 	await get_tree().create_timer(1.15).timeout
 	var first_human: Node2D = world.get_node_or_null("SurfaceGuest_test_npc") as Node2D
@@ -103,6 +112,8 @@ func _ready() -> void:
 		and first_human != null and not first_human.visible
 		and silas.visible,
 		"On regular return, live fish stay until they reach the dock and transform")
+	_check(player.animator.animation == &"idle_r" and player.last_direction > 0.0,
+		"Penni faces inland after surfacing, away from the sea")
 	if first_human != null:
 		var visual: AnimatedSprite2D = first_human.get_node_or_null("Sprite") as AnimatedSprite2D
 		if visual != null:

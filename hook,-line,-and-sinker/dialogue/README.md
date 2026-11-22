@@ -5,7 +5,7 @@ Each JSON file defines ONE encounter's dialogue graph. Nodes link to other nodes
 ## NPC setup (Inspector)
 1. Set NPCData.npc_id, display_name, and optionally portrait as usual.
 2. Under **JSON Encounter Rules**, add EncounterRuleData entries in order from most specific to least specific.
-3. For each entry set json_path, required_flags, forbidden_flags, and optionally use_min_attraction + min_attraction.
+3. For each entry set json_path, required_flags, forbidden_flags, and optionally use_min_affection + min_affection.
 4. For the garden eel, set rules in this order:
    - path: res://dialogue/silas_casual.json ; required_flags: [Recruited]
    - path: res://dialogue/silas.json ; forbidden_flags: [Recruited]
@@ -16,7 +16,7 @@ Each JSON file defines ONE encounter's dialogue graph. Nodes link to other nodes
 The old defined_flags and dialogue_rules fields remain to avoid breaking existing .tres NPCs. The original dialogue_json_path remains as a fallback for NPCData without encounter_rules; it is no longer the recommended field. NPCs with encounter_rules use ONLY those rules, even when no rule matches.
 
 ## JSON format
-A graph has entry and nodes. Nodes have lines (strings as NPC speech, or objects with speaker/text/expression), choices (text, next, optional spoken_text, expression, effects), or next (automatic transition after lines). Choice effects support attraction (integer), set_flags (array of names), and clear_flags (array of names). A response node can return to a menu-only node to loop safely without cyclical resource references. intro_0 and intro_1 implement the two evasive choices in the sample without a counter.
+A graph has entry and nodes. Nodes have lines (strings as NPC speech, or objects with speaker/text/expression), choices (text, next, optional spoken_text, expression, effects), or next (automatic transition after lines). Choice effects support affection (integer), set_flags (array of names), and clear_flags (array of names). A response node can return to a menu-only node to loop safely without cyclical resource references. intro_0 and intro_1 implement the two evasive choices in the sample without a counter.
 
 ## Important limits
 - JSON is loaded at conversation start. It doesn't write new resources to disk.
@@ -33,7 +33,7 @@ A graph has entry and nodes. Nodes have lines (strings as NPC speech, or objects
 
 ## Conditional reminders and random hint encounters (penni branch)
 - Optional `required_flags` and `forbidden_flags` arrays can be added to any JSON choice. DialogueManager filters unavailable choices without changing the choice indices that DialogueUI displays.
-- Optional `effects` can be placed on a JSON node, with the same `set_flags`, `clear_flags`, and `attraction` keys as choice effects. Node effects run **after the last line has been advanced**, once per node visit. This means a hint flag isn't set just because its encounter opened.
+- Optional `effects` can be placed on a JSON node, with the same `set_flags`, `clear_flags`, and `affection` keys as choice effects. Node effects run **after the last line has been advanced**, once per node visit. This means a hint flag isn't set just because its encounter opened.
 - Each `EncounterRuleData` has optional `json_pool`: an array of resource paths. If nonempty, the matching rule picks one file at random and remembers that pick for that NPC and rule (for the current game session). The existing `json_path` is used when the pool is empty.
 - `DialogueManager.request_conversation(npc, path)` accepts an optional JSON override, with the existing one-argument request remaining compatible with DialogueUI. `start_conversation(npc, path)` also accepts an override for scripted triggers.
 - A node whose choices are *all* filtered away will follow its `next` target or end normally; it will not display an empty choice menu.
@@ -57,8 +57,11 @@ Giving the spyglass starts `silas_gift_correct.json`; accepting it consumes the 
 - The future next-day gating can go before the invitation's encounter rule; the current milestone unlocks it immediately after accepting the spyglass.
 - NPC flags remain in-memory until game restart; there is no persistence yet.
 
+## One affection score for dialogue, dates and diving
+Each NPC stores one `affection` number. Dialogue choices, dates, neglect and relationship incidents may change it; companion diving behavior reads that same number. `jealousy` is a separate context modifier, not a second relationship score. Old JSON `effects.attraction` is still read for compatibility; write `effects.affection` in new dialogue.
+
 ## Affection on choices (jerry branch)
-- Add `"tone": "positive"`, `"neutral"` or `"negative"` to a choice for +5 / 0 / -3 affection (AffectionManager.TONE_AMOUNTS). An exact number in `"effects": {"attraction": n}` overrides the tone. No tone = neutral.
+- Add `"tone": "positive"`, `"neutral"` or `"negative"` to a choice for +5 / 0 / -3 affection (AffectionManager.TONE_AMOUNTS). An exact number in `"effects": {"affection": n}` overrides the tone. No tone = neutral.
 - A choice gives affection only the first time it's picked; afterwards DialogueUI shows it grey (still pickable). Add `"grey_when_picked": false` to choices that should never grey (goodbyes, menus you return to).
-- Node-level `"effects": {"attraction": n}` still applies every visit.
+- Node-level `"effects": {"affection": n}` still applies every visit.
 - Example: `dialogue/silas_affection_test.json`.

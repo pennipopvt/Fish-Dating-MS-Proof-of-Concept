@@ -90,7 +90,7 @@ func _ready() -> void:
 	await get_tree().process_frame
 	var sea: DivingWorld = main.get_node("SubViewportContainer/SubViewport/World/Sea") as DivingWorld
 	var real_hud: SeaOxygenHud = sea.get_node("SeaOxygenHud") as SeaOxygenHud
-	var camera: Camera2D = sea.get_parent().get_node("Player/Camera2D") as Camera2D
+	var camera: Camera2D = sea.get_parent().get_node("CameraController/Camera2D") as Camera2D
 	_check(real_hud.get_parent() == sea and not camera.is_ancestor_of(real_hud)
 		and not real_hud.follow_viewport_enabled,
 		"HUD belongs to the sea UI canvas, not the moving player camera")
@@ -132,6 +132,10 @@ func _ready() -> void:
 		"Failed morning dive still advances the clock to afternoon")
 	_check(not sea_o2.enabled,
 		"Blackout hides oxygen until Penni enters the water again")
+	_check(player.animator.animation == &"idle_r" and player.last_direction > 0.0,
+		"Penni faces inland, away from the water, after waking on the dock")
+	_check(not DialogueManager.is_active,
+		"An unaccompanied blackout does not invent fish dialogue")
 	main.queue_free()
 	print("sea_oxygen_test: PASS" if failures == 0 else
 		"sea_oxygen_test: %d FAILED" % failures)
