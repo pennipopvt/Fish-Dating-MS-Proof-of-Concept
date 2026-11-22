@@ -9,6 +9,7 @@ signal first_dive_onboarding_finished
 const FISH_CO_OPERATOR: NPCData = preload("res://resources/npcs/fish_co_operator.tres")
 const DOCK_CONFIRM: NPCData = preload("res://resources/npcs/dock_dive_prompt.tres")
 const FISH_CO_INTRO_SCENE: PackedScene = preload("res://scenes/fish_co_intro.tscn")
+const INTRO_BOAT_SCENE: PackedScene = preload("res://prefabs/intro_boat.tscn")
 
 var _world: Node2D
 var _world_player: Player
@@ -43,15 +44,38 @@ func configure(world: Node2D, player: Player, shop: ShopMenu, transition: SeaDiv
 func start() -> void:
 	if _contract_call_finished:
 		return
-	# The phone call takes place on the REAL east-side boat in World.
-	# It uses the same Sky, Water, Player and CameraController as gameplay.
-	var boat: Node2D = _world.get_node("IntroBoat") as Node2D
-	_world_player.global_position = (boat.get_node("PlayerSpot") as Marker2D).global_position
-	_world_player.animator.play(&"idle_l")
-	_world_player.z_index = 12  # Show Penni above the water/boat during the intro.
-	var camera: WorldCameraController = _world.get_node("CameraController") as WorldCameraController
-	camera.snap_to((boat.get_node("CameraFocus") as Marker2D).global_position)
+	# Stage the existing world-space boat before the phone call.
+	# A Godot editor hot-reload can retain a World instance created before
+	# the new IntroBoat scene was added; recover the SAME authored PackedScene
+	# rather than crashing while accessing a missing PlayerSpot.
+	var boat: Node2D = _ensure_intro_boat()
+	var camera: WorldCameraController = _world.get_node_or_null("CameraController") as WorldCameraController
+	if boat != null:
+		var spot: Marker2D = boat.get_node_or_null("PlayerSpot") as Marker2D
+		var focus: Marker2D = boat.get_node_or_null("CameraFocus") as Marker2D
+		if spot != null:
+			_world_player.global_position = spot.global_position
+			_world_player.animator.play(&"idle_l")
+			_world_player.z_index = 12
+		if camera != null and focus != null:
+			camera.snap_to(focus.global_position)
+	if camera == null:
+		push_error("Fish Co opening requires World/CameraController; reload world.tscn.")
 	_start_contract_call()
+
+
+func _ensure_intro_boat() -> Node2D:
+	var boat: Node2D = _world.get_node_or_null("IntroBoat") as Node2D
+	if boat != null:
+		return boat
+	push_warning("World/IntroBoat missing after reload; restoring the authored boat scene.")
+	boat = INTRO_BOAT_SCENE.instantiate() as Node2D
+	if boat == null:
+		push_error("Could not instantiate the intro boat scene.")
+		return null
+	boat.name = "IntroBoat"
+	_world.add_child(boat)
+	return boat
 
 
 # Existing authored FishCoIntro takes priority; restore that same PackedScene
