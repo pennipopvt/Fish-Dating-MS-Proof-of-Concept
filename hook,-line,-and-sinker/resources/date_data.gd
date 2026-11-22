@@ -27,10 +27,6 @@ enum When {
 # per date in the Inspector without moving the island geometry or changing
 # the shared dock/cutscene actor placement code.
 @export var npc_feet_offset: Vector2 = Vector2.ZERO
-# -1 keeps the normal island draw order. A boat venue can put both
-# characters above its sprite without changing their permanent actor scenes.
-@export_range(-1, 4096, 1) var actors_z_index: int = -1
-
 @export_file("*.json") var dialogue_json: String = ""
 
 @export_group("Room Departure Dialogue")
