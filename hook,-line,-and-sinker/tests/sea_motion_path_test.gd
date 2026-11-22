@@ -73,7 +73,11 @@ func _run() -> void:
 		"Shared animation finishes at precisely the requested endpoint")
 	actor.queue_free()
 
-	var descent: SeaMotionPath = motion_root.get_node("PenniDiveDescent") as SeaMotionPath
+	var descent: SeaMotionPath = motion_root.get_node_or_null("PenniDiveDescent") as SeaMotionPath
+	if descent == null:
+		_check(false, "PenniDiveDescent is unavailable")
+		get_tree().quit(1)
+		return
 	_check(descent.authored_end().y >= DivingWorld.SEA_TOP + 80.0
 		and sea.call("_is_open_water", sea.to_local(descent.authored_end())),
 		"Artist-authored underwater destination is safely deep and in open water")

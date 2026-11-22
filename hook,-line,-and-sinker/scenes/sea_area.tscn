@@ -289,6 +289,10 @@ position = Vector2(101, 112)
 # Editor-editable motion profiles live directly under Points. Select
 # each motion's child Path2D to reshape its trajectory in the 2D view.
 
+# Editor guide separates the authoring block from the original markers.
+[node name="MotionEditingGuide" type="Marker2D" parent="Points"]
+editor_description = "Select a motion's Path child to reshape its Bezier path. On the parent, edit Duration Seconds and Speed Curve."
+
 [node name="PenniDiveDescent" type="Node2D" parent="Points"]
 script = ExtResource("sea_motion_path")
 duration_seconds = 1.1
