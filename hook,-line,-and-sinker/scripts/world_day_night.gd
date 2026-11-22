@@ -29,6 +29,7 @@ const VIEWPORT_SKY_HEIGHT: float = 180.0
 @onready var _moon: ColorRect = $Sky/Moon
 @onready var _moon_glow: ColorRect = $Sky/MoonGlow
 @onready var _sky_region: Control = $Sky
+@onready var _clouds: Node2D = $Sky/Clouds
 @onready var _camera: Camera2D = $CameraController/Camera2D
 @onready var _ambient: CanvasModulate = $DayNightTint
 @onready var _water: ColorRect = $Water
@@ -203,6 +204,9 @@ func _refresh_target() -> void:
 	_transition.tween_property(_sky_mat, "shader_parameter/top_color", state["top"], transition_seconds)
 	_transition.tween_property(_sky_mat, "shader_parameter/horizon_color", state["horizon"], transition_seconds)
 	_transition.tween_property(_ambient, "color", state["ambient"], transition_seconds)
+	# The clouds now draw on a screen-space canvas and no longer inherit the
+	# World CanvasModulate, so apply the SAME clock color here explicitly.
+	_transition.tween_property(_clouds, "modulate", state["ambient"], transition_seconds)
 	_transition.tween_property(_water_mat, "shader_parameter/water_color", state["water"], transition_seconds)
 	_transition.tween_property(_water_mat, "shader_parameter/highlight_color", state["water_highlight"], transition_seconds)
 	_transition.tween_method(_show_discs_at.bind(not day_rollover), _shown_progress, progress, transition_seconds)
@@ -241,6 +245,7 @@ func _apply_immediately(state: Dictionary) -> void:
 	_sky_mat.set_shader_parameter("top_color", state["top"])
 	_sky_mat.set_shader_parameter("horizon_color", state["horizon"])
 	_ambient.color = state["ambient"]
+	_clouds.modulate = state["ambient"]
 	_water_mat.set_shader_parameter("water_color", state["water"])
 	_water_mat.set_shader_parameter("highlight_color", state["water_highlight"])
 	_sun.position = state["sun_position"]
