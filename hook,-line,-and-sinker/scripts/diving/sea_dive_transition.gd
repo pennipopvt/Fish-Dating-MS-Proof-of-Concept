@@ -205,9 +205,10 @@ func _surface_from_dive() -> void:
 	ascent.tween_property(_world_player, "global_position", shore_return_position, 0.85)
 	ascent.tween_property(island_camera, "position", Vector2(0.0, -22.0), 0.85)
 	await ascent.finished
+	_world_player.last_direction = 1.0 # Face inland when returning from the sea.
 	_world_player.set_swimming(false)
 	_world_player.animator.rotation = 0.0
-	_world_player.animator.play(&"idle_l")
+	_world_player.animator.play(&"idle_r")
 	underwater = false
 	_sea.call("_set_camera_bounds", false)
 	_dialogue_ui.set_underwater_mode(false)
@@ -303,9 +304,10 @@ func _blackout_from_oxygen() -> void:
 	(_sea.get_node("SeaDiveInventory") as SeaDiveInventory).lose_catch()
 	(_sea.get_node("SeaOxygen") as SeaOxygen).end_dive()
 	_world_player.global_position = shore_return_position
+	_world_player.last_direction = 1.0 # Inland after being rescued, too.
 	_world_player.set_swimming(false)
 	_world_player.animator.rotation = 0.0
-	_world_player.animator.play(&"idle_l")
+	_world_player.animator.play(&"idle_r")
 	var island_camera: Camera2D = _world_player.get_node("Camera2D") as Camera2D
 	island_camera.position = Vector2(0.0, -22.0)
 	island_camera.reset_smoothing()
