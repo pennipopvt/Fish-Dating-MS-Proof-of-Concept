@@ -7,7 +7,9 @@ extends AudioStreamPlayer2D
 @export_group("Underwater Music Filter")
 @export_range(100.0, 6000.0, 50.0) var underwater_cutoff_hz: float = 900.0
 @export_range(1000.0, 20500.0, 100.0) var above_water_cutoff_hz: float = 20500.0
-@export_range(0.0, 3.0, 0.05) var filter_transition_seconds: float = 0.65
+# The authored PenniDiveJump lasts 0.8s by default. Finish the fade into
+# the underwater mix before its waterline/splash portion.
+@export_range(0.0, 3.0, 0.05) var filter_transition_seconds: float = 0.4
 
 var _low_pass: AudioEffectLowPassFilter
 var _cutoff_tween: Tween
