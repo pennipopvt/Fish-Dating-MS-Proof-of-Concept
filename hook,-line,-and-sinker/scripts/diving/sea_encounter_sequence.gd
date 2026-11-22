@@ -9,7 +9,9 @@ signal fish_remove_requested(fish: DivingWildFish)
 @export_group("First Fish: Focus")
 @export_range(0.0, 240.0, 1.0) var first_fish_focus_range: float = 110.0
 @export_range(0.0, 140.0, 1.0) var min_tutorial_swim_distance: float = 50.0
-@export_range(0.2, 6.0, 0.05) var fish_focus_hold_seconds: float = 1.15
+@export_range(0.05, 2.0, 0.05) var fish_focus_pan_seconds: float = 0.4
+@export_range(0.2, 6.0, 0.05) var fish_focus_hold_seconds: float = 0.55
+@export_range(0.05, 2.0, 0.05) var fish_focus_return_seconds: float = 0.4
 @export_group("First Fish: Reel and Escape")
 @export_range(50.0, 600.0, 1.0) var first_fish_escape_distance: float = 330.0
 @export_range(0.1, 3.0, 0.05) var first_fish_escape_seconds: float = 0.85
@@ -31,6 +33,7 @@ var _silas_surface_scene_running: bool = false
 var _surface_presentation: SeaPartyEntrance
 
 var _player: Player
+var _camera_controller: WorldCameraController
 var _story: SeaStoryDirector
 var _net: DivingNetProjectile
 var _silas: SeaNPC
@@ -41,6 +44,7 @@ var _silas_home: Vector2
 var _tutorial_swim_origin: Vector2
 var _fish_focus_locked: bool = false
 var _fish_focus_timer: float = 0.0
+var _fish_focus_return_started: bool = false
 var _first_fish_escape_finished: bool = false
 var _help_reveal_x: float = -INF
 var _scripted_reel_mode: StringName = &""
@@ -76,6 +80,8 @@ var reel_scrolls: int:
 func configure(player: Player, story: SeaStoryDirector, net: DivingNetProjectile,
 		silas: SeaNPC, cue: SeaTutorialCue) -> void:
 	_player = player
+	_camera_controller = player.get_parent().get_node_or_null(
+		"CameraController") as WorldCameraController
 	_story = story
 	_net = net
 	_silas = silas
@@ -178,6 +184,10 @@ func restore_silas_position() -> void:
 func _check_first_fish_focus(delta: float) -> void:
 	if _fish_focus_locked:
 		_fish_focus_timer -= delta
+		if not _fish_focus_return_started and _fish_focus_timer <= fish_focus_return_seconds:
+			_fish_focus_return_started = true
+			if is_instance_valid(_camera_controller):
+				_camera_controller.return_to_player(fish_focus_return_seconds)
 		if _fish_focus_timer <= 0.0:
 			_release_first_fish_focus()
 		return
@@ -195,8 +205,13 @@ func _check_first_fish_focus(delta: float) -> void:
 	if not _story.on_first_fish_seen():
 		return
 	_fish_focus_locked = true
-	_fish_focus_timer = fish_focus_hold_seconds
+	_fish_focus_return_started = false
+	_fish_focus_timer = fish_focus_pan_seconds + fish_focus_hold_seconds + fish_focus_return_seconds
 	_player.busy = true
+	# Reuse the world camera, and the same existing control lock that this
+	# underwater story beat already owns. No new cutscene or tutorial HUD.
+	if is_instance_valid(_camera_controller):
+		_camera_controller.pan_to(_tutorial_fish.global_position, fish_focus_pan_seconds)
 
 
 func _release_first_fish_focus() -> void:
@@ -204,6 +219,11 @@ func _release_first_fish_focus() -> void:
 		return
 	_fish_focus_locked = false
 	_fish_focus_timer = 0.0
+	_fish_focus_return_started = false
+	# A dive ending or an interrupted tutorial must never strand the camera
+	# on the fish. On normal completion the return tween has already ended.
+	if is_instance_valid(_camera_controller) and not _camera_controller.get("_following"):
+		_camera_controller.snap_to_player()
 	_player.busy = false
 
 
