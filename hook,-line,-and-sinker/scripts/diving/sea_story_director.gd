@@ -95,7 +95,7 @@ func _cue() -> SeaTutorialCue:
 	# Direct node lookup in the SAME SubViewport as the Player and camera.
 	# No dependency on Main's CanvasLayer or cross-viewport group ordering.
 	return get_parent().get_parent().get_node_or_null(
-		"Player/Camera2D/SeaTutorialCue"
+		"CameraController/Camera2D/SeaTutorialCue"
 	) as SeaTutorialCue
 
 
@@ -308,7 +308,7 @@ func on_dive_entered() -> void:
 	if not has_event(&"line_broken") and not has_event(&"help_called"):
 		var cue: SeaTutorialCue = _cue()
 		if cue == null:
-			push_warning("SeaTutorialCue is missing from the Player camera.")
+			push_warning("SeaTutorialCue is missing from the world camera.")
 			return
 		if has_event(&"tutorial_hooked"):
 			cue.show_action(&"reel")
