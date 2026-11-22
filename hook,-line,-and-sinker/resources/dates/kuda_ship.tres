@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" path="res://resources/date_data.gd" id="1_date"]
 [ext_resource type="Resource" path="res://resources/npcs/kuda.tres" id="2_npc"]
-[ext_resource type="PackedScene" path="res://prefabs/ship.tscn" id="3_ship"]
+[ext_resource type="PackedScene" uid="uid://bse8bg1ojq0vr" path="res://prefabs/intro_boat.tscn" id="3_ship"]
 
 [resource]
 script = ExtResource("1_date")
@@ -11,7 +11,9 @@ display_name = "Boat date with Kuda"
 npc = ExtResource("2_npc")
 location_id = &"beach"
 venue_scene = ExtResource("3_ship")
-venue_position = Vector2(2400, 140)
+venue_position = Vector2(2250, 124)
+# Both date participants must render above the boat's z=11 sprite.
+actors_z_index = 12
 dialogue_json = "res://dialogue/kuda_date_ship.json"
 room_departure_prompt = "We still on for today? Want to head out?"
 room_departure_yes = "Good. Let's get moving."
