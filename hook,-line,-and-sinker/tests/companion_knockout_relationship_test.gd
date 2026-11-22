@@ -140,7 +140,6 @@ func _run() -> void:
 		player.position + Vector2(90, 30), 1756, 0.0, 0.0, 0.0) as DivingWildFish
 	if first_dive_battle != null:
 		_knock_out(first_dive_battle, fish3)
-	var queue: SeaWorldDialogueQueue = sea.get_node("WorldDialogueQueue") as SeaWorldDialogueQueue
 	_check(not NPCManager.has_active_relationship_event(KUDA, &"companion_knockout")
 		and party.members().has(KUDA) and queue.pending_count() == 1
 		and not transition.transitioning,
