@@ -18,7 +18,7 @@ func _run() -> void:
 	var solids: TileMapLayer = sea.get_node("Solids") as TileMapLayer
 	var penni: Player = world.get_node("Player") as Player
 	var sprite: AnimatedSprite2D = penni.get_node("AnimatedSprite2D") as AnimatedSprite2D
-	var underwater_tint: ColorRect = penni.get_node("Camera2D/UnderwaterTint") as ColorRect
+	var underwater_tint: ColorRect = world.get_node("CameraController/Camera2D/UnderwaterTint") as ColorRect
 	var water_mat: ShaderMaterial = water.material as ShaderMaterial
 	var solids_mat: ShaderMaterial = solids.material as ShaderMaterial
 	_check(water.z_index > solids.z_index
