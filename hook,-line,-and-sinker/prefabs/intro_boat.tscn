@@ -60,5 +60,8 @@ sprite_sheet = ExtResource("boat_texture")
 [node name="PlayerSpot" type="Marker2D" parent="." unique_id=1091404346]
 position = Vector2(22, -15)
 
+[node name="NpcSpot" type="Marker2D" parent="."]
+position = Vector2(-20, -15)
+
 [node name="CameraFocus" type="Marker2D" parent="." unique_id=1611632989]
 position = Vector2(0, -13)
