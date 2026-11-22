@@ -125,6 +125,10 @@ func _begin_dive(dock: Node2D) -> void:
 	await _party_entrance.call_party_to_dock(members, dock)
 	var jump_path: SeaMotionPath = _motion(&"PenniDiveJump")
 	_dive_has_splashed = false
+	# Let the music become muffled DURING the authored dive jump, so the
+	# underwater mix is established before Penni's water-entry splash.
+	# Swimming state and visual submersion still switch at the actual waterline.
+	underwater_state_changed.emit(true)
 	_world_player.animator.play(&"walk_l")
 	await jump_path.animate(_world_player, _world_player.global_position,
 		Vector2.INF, _update_dive_jump_visual)
@@ -167,7 +171,6 @@ func _on_dive_splash(surface_y: float) -> void:
 	_spawn_splash(Vector2(_world_player.global_position.x, surface_y))
 	_sea.play_sfx(&"dive")
 	underwater = true
-	underwater_state_changed.emit(true)
 	GameManager.diving_session_active = true
 	_dialogue_ui.set_underwater_mode(true)
 	_world_player.set_swimming(true, _sea._sea_bounds())
