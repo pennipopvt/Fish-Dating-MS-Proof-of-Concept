@@ -25,8 +25,6 @@ signal fish_remove_requested(fish: DivingWildFish)
 @export_group("Silas Surface Reveal")
 @export var silas_land_scene: PackedScene = preload("res://prefabs/silas.tscn")
 @export var silas_poof_texture: Texture2D = preload("res://sprites/characters/poof.png")
-@export_range(0.1, 2.0, 0.05) var silas_surface_swim_seconds: float = 0.75
-@export_range(0.1, 1.2, 0.05) var silas_surface_jump_seconds: float = 0.48
 @export_range(0.1, 1.0, 0.05) var townhouse_fade_seconds: float = 0.35
 var _silas_surface_scene_running: bool = false
 # Injected by SeaDiveTransition: the same presentation handles the school.
@@ -387,8 +385,7 @@ func play_silas_surface_reveal(from_first_land_care: bool = false) -> void:
 	var human_center: Vector2 = _surface_presentation.surface_visual_center(land_actor) \
 		if land_actor != null else dock_wait.global_position
 	await _surface_presentation.swim_and_jump_to_surface(
-		_silas, approach.global_position, human_center,
-		silas_surface_swim_seconds, silas_surface_jump_seconds
+		_silas, approach.global_position, human_center
 	)
 
 	_story.start_silas_surface_warning(from_first_land_care)

@@ -6,19 +6,9 @@ signal surface_completed
 # Owns ONLY the physical one-world transitions: iris, dock jump,
 # sea descent and surfacing. FishCoOpeningSequence handles choices.
 const RIPPLE: Texture2D = preload("res://sprites/environment/medium_ripple_a.png")
-const DIVE_DURATION: float = 0.43
 const IRIS_DURATION: float = 0.52
 const IRIS_OPEN_RADIUS: float = 2.6
-# Penni dives facing left: the leap carries her this far forward before the
-# splash, and she drifts a little further forward while sinking.
-const DIVE_FORWARD: float = 18.0
-const SINK_FORWARD: float = 36.0
-
-@export_group("Water Entry")
-# The sloped coastline gets deeper as Penni swims seaward. Find an open
-# spot at the authored Entry marker's depth before accepting shallows.
-@export_range(48.0, 480.0, 12.0) var max_entry_outward_search: float = 384.0
-@export_range(0.7, 1.8, 0.05) var entry_descent_seconds: float = 1.1
+# The editable Sea/MotionPaths nodes own all dive/jump geometry and timing.
 
 @onready var _iris: ColorRect = $Iris
 @onready var _party: DivingParty = $DivingParty
@@ -52,7 +42,7 @@ func configure(world: Node2D, player: Player, sea: DivingWorld,
 	_shop_menu = shop
 	_opening = opening
 	_party.configure(_sea.get_node("StoryDirector") as SeaStoryDirector)
-	_party_entrance.configure(_world, _world_player)
+	_party_entrance.configure(_world, _world_player, _sea)
 	(_sea.get_node("EncounterSequence") as SeaEncounterSequence).set_surface_presentation(_party_entrance)
 	_sea.surface_requested.connect(_on_surface_requested)
 	_sea.oxygen_return_requested.connect(_on_oxygen_return_requested)
@@ -124,35 +114,32 @@ func _begin_dive(dock: Node2D) -> void:
 	# Owns the entire party entrance; no NPCs are fetched from the townhouse.
 	var members: Array[NPCData] = _party.members()
 	await _party_entrance.call_party_to_dock(members, dock)
-	var jump_start: Vector2 = _world_player.global_position
-	# Splash a little ahead of where Penni stands (same waterline as before).
-	var landing := Vector2(jump_start.x - DIVE_FORWARD, dock.global_position.y + 46.0)
+	# Penni and the companions now move along Path2D handles you can
+	# reshape in scenes/sea_area.tscn. No computed jump arcs or hidden
+	# shoreline-search overrides remain.
+	var jump_path := _motion(&"PenniDiveJump")
+	var descent_path := _motion(&"PenniDiveDescent")
 	_world_player.animator.play(&"walk_l")
-	var jump: Tween = create_tween()
-	jump.tween_method(
-		_update_dive_jump.bind(jump_start, landing),
-		0.0, 1.0, DIVE_DURATION
-	).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-	await jump.finished
-	_spawn_splash(landing)
+	await jump_path.animate(_world_player, _world_player.global_position,
+		Vector2.INF, _update_dive_jump_visual)
+	var splash: Vector2 = _world_player.global_position
+	_spawn_splash(splash)
 	_sea.play_sfx(&"dive")
 	await _party_entrance.jump_party_in(dock, _spawn_splash)
 
-	# No second world, teleport or viewport switch. The camera follows
-	# Penni from the dock through the same surface into the ocean.
+	# The original scene and camera remain in place; the editable descent
+	# curve now defines both the animation's bends and its actual destination.
 	underwater = true
 	GameManager.diving_session_active = true
 	_dialogue_ui.set_underwater_mode(true)
-	var entry_marker: Marker2D = _sea.get_node_or_null("Points/Entry") as Marker2D
-	var entry: Vector2 = entry_marker.global_position if entry_marker != null else _sea.to_global(Vector2(55, 256))
-	entry = _dive_target_below(landing + Vector2(-SINK_FORWARD, 0.0), entry.y)
 	var island_camera: Camera2D = _world_player.get_node("Camera2D") as Camera2D
-	var descent: Tween = create_tween().set_parallel(true)
-	descent.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-	descent.tween_property(_world_player, "global_position", entry, entry_descent_seconds)
-	descent.tween_property(island_camera, "position", Vector2.ZERO, entry_descent_seconds)
-	_party_entrance.descend_with_player(entry, entry_descent_seconds)
-	await descent.finished
+	var camera_start: Vector2 = island_camera.position
+	var entry: Vector2 = descent_path.authored_end()
+	_party_entrance.descend_with_player(entry)
+	await descent_path.animate(_world_player, splash, Vector2.INF,
+		func(_time: float, distance_ratio: float) -> void:
+			island_camera.position = camera_start.lerp(Vector2.ZERO, distance_ratio))
+
 	_party_entrance.clear()
 	_world_player.animator.rotation = 0.0
 	_sea.enter_from_dock()
@@ -162,31 +149,13 @@ func _begin_dive(dock: Node2D) -> void:
 	transitioning = false
 
 
-# Find an open landing at the Entry marker's chosen depth. The old version
-# only searched UP at the shoreline X, forcing Penni to stop right at the
-# surface beside the cliff even when the marker was moved deeper.
-func _dive_target_below(splash: Vector2, depth: float) -> Vector2:
-	var top: float = DivingWorld.SEA_TOP + DivingWildFish.EDGE_MARGIN
-	var y: float = maxf(depth, top)
-	for step in range(int(max_entry_outward_search / 12.0) + 1):
-		var candidate := Vector2(splash.x - 12.0 * step, y)
-		if _sea.call("_is_open_water", _sea.to_local(candidate)):
-			return candidate
-	# The authored depth could be entirely blocked by a custom terrain
-	# layout: only then degrade gracefully toward shallower open water.
-	while y > top:
-		y -= 8.0
-		for step in range(int(max_entry_outward_search / 12.0) + 1):
-			var candidate := Vector2(splash.x - 12.0 * step, y)
-			if _sea.call("_is_open_water", _sea.to_local(candidate)):
-				return candidate
-	return Vector2(splash.x, top)
+func _motion(path_name: StringName) -> SeaMotionPath:
+	return _sea.get_node("Points/MotionPaths/" + String(path_name)) as SeaMotionPath
 
 
-func _update_dive_jump(t: float, start: Vector2, landing: Vector2) -> void:
-	# A readable leap above the dock before splashing below its waterline.
-	_world_player.global_position = start.lerp(landing, t) + Vector2(0.0, -29.0 * sin(PI * t))
-	_world_player.animator.rotation = -0.25 * sin(PI * t)
+func _update_dive_jump_visual(_time: float, progress: float) -> void:
+	# Minor pose tilt only; the actual flight trajectory comes from Path2D.
+	_world_player.animator.rotation = -0.25 * sin(PI * progress)
 
 
 func _spawn_splash(at: Vector2) -> void:
@@ -218,11 +187,12 @@ func _surface_from_dive() -> void:
 	# Return through the SAME water surface. Sky stays visible in the camera;
 	# there is no fade-to-black or replacement scene.
 	var island_camera: Camera2D = _world_player.get_node("Camera2D") as Camera2D
-	var ascent: Tween = create_tween().set_parallel(true)
-	ascent.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-	ascent.tween_property(_world_player, "global_position", shore_return_position, 0.85)
-	ascent.tween_property(island_camera, "position", Vector2(0.0, -22.0), 0.85)
-	await ascent.finished
+	var surface_path := _motion(&"PenniSurface")
+	var camera_start: Vector2 = island_camera.position
+	await surface_path.animate(_world_player, _world_player.global_position,
+		shore_return_position,
+		func(_time: float, distance_ratio: float) -> void:
+			island_camera.position = camera_start.lerp(Vector2(0.0, -22.0), distance_ratio))
 	_world_player.last_direction = 1.0 # Face inland when returning from the sea.
 	_world_player.set_swimming(false)
 	_world_player.animator.rotation = 0.0

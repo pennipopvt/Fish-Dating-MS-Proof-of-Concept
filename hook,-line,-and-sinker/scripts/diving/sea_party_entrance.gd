@@ -4,12 +4,8 @@ class_name SeaPartyEntrance
 # Dive presentation only: temporary actors, jumps and fish/human poofs
 # in BOTH directions. Housing, dialogue and story decisions stay elsewhere.
 @export_range(0.1, 1.0, 0.05) var fade_seconds: float = 0.32
-@export_range(0.2, 1.0, 0.05) var jump_seconds: float = 0.46
 @export_range(0.0, 0.5, 0.05) var jump_stagger_seconds: float = 0.14
-@export_range(0.0, 60.0, 1.0) var jump_arc_height: float = 24.0
 @export_group("Returning to Dock")
-@export_range(0.1, 2.0, 0.05) var surface_swim_seconds: float = 0.75
-@export_range(0.1, 1.2, 0.05) var surface_jump_seconds: float = 0.48
 ## Additional distance left into the sea for each successive fish.
 @export_range(0.0, 48.0, 1.0) var surface_approach_spacing: float = 20.0
 ## Separate human landing spots along the dock, away from Penni.
@@ -20,14 +16,20 @@ class_name SeaPartyEntrance
 
 var _world: Node2D
 var _player: Player
+var _sea: DivingWorld
 var _land_scenes: Dictionary = {} # Optional cutscene-specific overrides.
 var _staged: Array[Dictionary] = []
 var _fish_visuals: Array[Sprite2D] = []
 
 
-func configure(world: Node2D, player: Player) -> void:
+func configure(world: Node2D, player: Player, sea: DivingWorld) -> void:
 	_world = world
 	_player = player
+	_sea = sea
+
+
+func _motion(path_name: StringName) -> SeaMotionPath:
+	return _sea.get_node("Points/MotionPaths/" + String(path_name)) as SeaMotionPath
 
 
 # Register additional NPC art directly with the diving system, not housing.
@@ -62,18 +64,17 @@ func call_party_to_dock(party: Array[NPCData], dock: Node2D) -> void:
 
 
 # Guests jump after Penni; each temporary human actor disappears at the poof.
-func jump_party_in(dock: Node2D, splash: Callable) -> void:
+func jump_party_in(_dock: Node2D, splash: Callable) -> void:
+	var jump_path: SeaMotionPath = _motion(&"CompanionDiveJump")
 	for info in _staged:
 		var actor: Node2D = info["actor"] as Node2D
 		if not is_instance_valid(actor):
 			continue
 		var i: int = int(info["index"])
-		var start: Vector2 = actor.global_position
-		var landing: Vector2 = Vector2(dock.global_position.x - 6.0 - i * 8.0, dock.global_position.y + 46.0)
-		var jump: Tween = create_tween()
-		jump.tween_method(_move_jump.bind(actor, start, landing),
-			0.0, 1.0, jump_seconds).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-		await jump.finished
+		# One editable Bézier serves the entire party; the per-slot endpoint
+		# offset keeps fish splashes separated without altering its handles.
+		var landing: Vector2 = jump_path.authored_end() + Vector2(-8.0 * i, 0.0)
+		await jump_path.animate(actor, actor.global_position, landing)
 		splash.call(landing)
 		var poof: AnimatedSprite2D = SeaPoofEffect.spawn(_world, landing)
 		actor.hide()
@@ -95,18 +96,14 @@ func jump_party_in(dock: Node2D, splash: Callable) -> void:
 	_staged.clear()
 
 
-func _move_jump(t: float, actor: Node2D, start: Vector2, landing: Vector2) -> void:
-	if is_instance_valid(actor):
-		actor.global_position = start.lerp(landing, t) + Vector2(0.0, -jump_arc_height * sin(PI * t))
-
-
-func descend_with_player(entry: Vector2, duration: float) -> void:
+func descend_with_player(entry: Vector2) -> void:
+	# Start each fish moving alongside Penni; she awaits her own descent
+	# using the same authored duration, and then clears these sprites.
+	var descent_path: SeaMotionPath = _motion(&"CompanionDiveDescent")
 	for i in range(_fish_visuals.size()):
 		var fish: Sprite2D = _fish_visuals[i]
-		var movement: Tween = create_tween()
-		movement.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-		movement.tween_property(fish, "global_position",
-			entry + Vector2(-20.0 - 18.0 * i, 8.0 + 7.0 * i), duration)
+		var destination: Vector2 = entry + Vector2(-20.0 - 18.0 * i, 8.0 + 7.0 * i)
+		descent_path.animate(fish, fish.global_position, destination)
 
 
 # Dock markers are feet positions. All surface art for a given NPC
@@ -142,21 +139,15 @@ func surface_visual_center(actor: Node2D) -> Vector2:
 # Shared for Silas's first arrival AND every ordinary party return.
 # The jump ends at the human art's visual center, not its scene origin
 # or feet marker (which may differ by half a sprite height).
-func swim_and_jump_to_surface(fish: Node2D, approach: Vector2, human_center: Vector2,
-		swim_seconds: float = 0.75, leap_seconds: float = 0.48) -> void:
+func swim_and_jump_to_surface(fish: Node2D, _approach: Vector2,
+		human_center: Vector2) -> void:
 	if not is_instance_valid(fish):
 		return
-	var swim := create_tween()
-	swim.tween_property(fish, "global_position", approach, swim_seconds).set_trans(Tween.TRANS_SINE)
-	await swim.finished
-	var start: Vector2 = fish.global_position
-	var jump := create_tween()
-	jump.tween_method(_move_jump.bind(fish, start, human_center),
-		0.0, 1.0, leap_seconds
-	).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-	await jump.finished
-	# Do not allow a rounded tween endpoint to move the fish at transformation.
-	fish.global_position = human_center
+	# A single editable path now runs from underwater to the dock, with no
+	# artificial pause at the old approach marker. Start from the fish's
+	# real location and finish exactly at the staged human art's center.
+	await _motion(&"CompanionSurface").animate(
+		fish, fish.global_position, human_center)
 
 
 func transform_surface_fish(fish: Node2D, actor: Node2D) -> void:
@@ -195,7 +186,7 @@ func surface_party(party: Array[NPCData], sea: DivingWorld,
 			continue
 		actors.append(actor)
 		await swim_and_jump_to_surface(fish, surface_approach_position(sea_approach, i),
-			surface_visual_center(actor), surface_swim_seconds, surface_jump_seconds)
+			surface_visual_center(actor))
 		await transform_surface_fish(fish, actor)
 		if i + 1 < party.size() and surface_stagger_seconds > 0.0:
 			await get_tree().create_timer(surface_stagger_seconds).timeout
