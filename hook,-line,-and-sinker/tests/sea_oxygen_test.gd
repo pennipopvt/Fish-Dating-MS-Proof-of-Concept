@@ -132,6 +132,8 @@ func _ready() -> void:
 		"Failed morning dive still advances the clock to afternoon")
 	_check(not sea_o2.enabled,
 		"Blackout hides oxygen until Penni enters the water again")
+	_check(player.animator.animation == &"idle_r" and player.last_direction > 0.0,
+		"Penni faces inland, away from the water, after waking on the dock")
 	_check(not DialogueManager.is_active,
 		"An unaccompanied blackout does not invent fish dialogue")
 	main.queue_free()

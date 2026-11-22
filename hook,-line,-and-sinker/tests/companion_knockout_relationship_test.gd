@@ -112,6 +112,22 @@ func _run() -> void:
 		"Next dive heals returning Kuda while unresolved Silas stays at home")
 	_check(AffectionManager.get_affection(KUDA.npc_id) < before_kuda + 20,
 		"Reconciliation helps but does not erase the knockout affection cost")
+	# Before his first ever landing, Kuda has no room in which to repair an
+	# incident. A KO can exhaust his fight but must not strand his introduction.
+	sea.end_diving_party()
+	NPCManager.get_npc_state(KUDA.npc_id).erase("room_id")
+	AffectionManager.set_affection(KUDA.npc_id, NPCManager.START_AFFECTION)
+	sea.activate_diving_party(party.members())
+	var first_dive_battle: DivingCompanionBattle = commands.battle_for(KUDA.npc_id)
+	_check(first_dive_battle != null and first_dive_battle.can_fight(),
+		"An unhoused companion still has the normal first-dive combat actor")
+	var fish3: DivingWildFish = sea.call("_spawn_wild_fish", MULLET,
+		player.position + Vector2(90, 30), 1756, 0.0, 0.0, 0.0) as DivingWildFish
+	if first_dive_battle != null:
+		_knock_out(first_dive_battle, fish3)
+	_check(not NPCManager.has_active_relationship_event(KUDA, &"companion_knockout")
+		and party.members().has(KUDA),
+		"First-land knockout cannot block the still-pending shore and room introduction")
 	main.queue_free()
 	await get_tree().process_frame
 	NPCManager.npc_states.clear()

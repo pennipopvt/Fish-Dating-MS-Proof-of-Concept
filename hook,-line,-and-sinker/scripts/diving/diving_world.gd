@@ -387,6 +387,10 @@ func end_diving_party() -> void:
 	flags[&"silas_following"] = false
 	for follower in _party_fish:
 		if is_instance_valid(follower):
+			# A new dive can begin before deferred queue_free runs. Remove the
+			# actor's old name immediately so the new follower can spawn.
+			if follower.get_parent() != null:
+				follower.get_parent().remove_child(follower)
 			follower.queue_free()
 	_party_fish.clear()
 
