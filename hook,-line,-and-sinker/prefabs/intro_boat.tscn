@@ -63,5 +63,10 @@ position = Vector2(22, -15)
 [node name="NpcSpot" type="Marker2D" parent="."]
 position = Vector2(-20, -15)
 
+# This marker is the date cast's draw layer, above the animated hull (z=11).
+# Adjust its z_index in the scene Inspector if the boat art changes.
+[node name="DateCastLayer" type="Marker2D" parent="."]
+z_index = 12
+
 [node name="CameraFocus" type="Marker2D" parent="." unique_id=1611632989]
 position = Vector2(0, -13)
