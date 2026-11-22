@@ -1,7 +1,8 @@
 [gd_scene format=3 uid="uid://c0d22ylobcr2s"]
 
-# Intentionally blank until the final townhouse background art is supplied.
-# The four functional doors are placed separately in World.
+[ext_resource type="Texture2D" uid="uid://bbh1na0ox70k3" path="res://sprites/placeholders/placeholdtownhouse.png" id="1_rxf3h"]
+
 [node name="Townhouse" type="Node2D" unique_id=1759623641]
 
 [node name="Sprite2D" type="Sprite2D" parent="." unique_id=754101494]
+texture = ExtResource("1_rxf3h")

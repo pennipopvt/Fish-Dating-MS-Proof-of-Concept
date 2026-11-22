@@ -181,3 +181,19 @@ sprite sheet as a loop of 32x32 cells (row-major), at an editable FPS.
 The right-click animation remains an inspector slot because no dedicated
 right-click texture has been added to `penni-diving` yet. Until one is
 assigned, the legacy vector right-click fallback remains.
+
+## Corrected editor ownership (after texture regression)
+
+Restored `scenes/townhouse.tscn/Sprite2D` with its original authored
+`placeholdtownhouse.png` texture. Penni's door explicitly uses
+`genericopendoor.png` in `prefabs/penni_room_door.tscn/Sprite` with no
+portrait/FacePlaceholder layer. Penni stays at the first of four townhouse doors.
+
+The sea tutorial cue is now an authored `Sprite2D` named
+`World/CameraController/Camera2D/SeaTutorialCue` in
+`prefabs/world.tscn`, not a runtime-created Sprite2D. Its Inspector texture
+slots use `tutorial_wasd.png`, `tutorial_left_click.png`,
+`tutorial_scroll.png` and `tutorial_right_click.png`, each animated
+as 32x32 cells by the shared script. To move it, change its position
+directly in the World scene. DivingWorld merely looks it up. No code-drawn
+mouse or keyboard placeholder remains.

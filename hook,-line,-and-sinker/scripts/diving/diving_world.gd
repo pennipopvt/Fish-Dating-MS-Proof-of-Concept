@@ -17,15 +17,8 @@ const SILAS_FISH: FishData = preload("res://resources/fish/silas.tres")
 const WILD_FISH_SCRIPT = preload("res://scripts/diving/wild_fish.gd")
 const FISH_COMBAT_VISUAL_SCENE: PackedScene = preload("res://prefabs/sea_fish_combat_visual.tscn")
 
-# All tutorial input animations use 32x32 sheet cells, configured in
-# SeaTutorialCue. These defaults are actual art in the repo, not code
-# placeholders. Inspector overrides can use new sheets without script edits.
-@export_group("Tutorial Input Animations (32x32 cells)")
-@export var movement_tutorial_sprite: Texture2D = preload("res://sprites/ui/tutorial_wasd.png")
-@export var cast_tutorial_sprite: Texture2D = preload("res://sprites/ui/tutorial_cast.png")
-@export var reel_tutorial_sprite: Texture2D = preload("res://sprites/ui/tutorial_reel.png")
-# A separate right-click sheet has not been committed to penni-diving yet.
-@export var right_click_tutorial_sprite: Texture2D
+# Tutorial appearance is configured in the authored
+# World/CameraController/Camera2D/SeaTutorialCue node, not in code.
 
 @export_group("Sea Parry Feedback")
 @export_range(0.05, 1.0, 0.05) var perfect_parry_line_flash_seconds: float = 0.35
@@ -172,26 +165,15 @@ func _on_oxygen_depleted() -> void:
 	oxygen_return_requested.emit()
 
 
-# Create exactly one lightweight Sprite2D after the World/Camera nodes exist.
-# This never participates in World scene parsing, so a missing tutorial
-# scene/PNG cannot take down the main game.
+# Find the pre-existing cue in World; never generate or position scene
+# objects here. All visual configuration is editable in world.tscn.
 func _install_tutorial_cue() -> void:
 	if _camera == null:
 		push_warning("Sea tutorial unavailable: World camera is missing.")
 		return
 	_cue = _camera.get_node_or_null("SeaTutorialCue") as SeaTutorialCue
 	if _cue == null:
-		_cue = SeaTutorialCue.new()
-		_cue.name = "SeaTutorialCue"
-		_camera.add_child(_cue)
-		_cue.position = Vector2(0.0, 52.0)
-		_cue.z_as_relative = false
-		_cue.z_index = 110
-		_cue.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	_cue.movement_sprite = movement_tutorial_sprite
-	_cue.cast_sprite = cast_tutorial_sprite
-	_cue.reel_sprite = reel_tutorial_sprite
-	_cue.right_click_sprite = right_click_tutorial_sprite
+		push_warning("Sea tutorial unavailable: add SeaTutorialCue to World/CameraController/Camera2D.")
 
 
 func _spawn_editor_fish() -> void:
