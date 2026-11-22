@@ -3,6 +3,7 @@ extends Node
 # Run: godot --headless --path . res://tests/world_camera_intro_test.tscn
 # The intro boat, water, sky, and camera are all in one persistent World.
 const MAIN: PackedScene = preload("res://scenes/main.tscn")
+const WORLD: PackedScene = preload("res://prefabs/world.tscn")
 var failures: int = 0
 
 
@@ -11,6 +12,14 @@ func _ready() -> void:
 
 
 func _run() -> void:
+	# Ensure the authored boat is present in the original PackedScene.
+	# Runtime recovery must not hide a broken editor hierarchy.
+	var prefab_world: Node2D = WORLD.instantiate() as Node2D
+	_check(prefab_world.has_node("IntroBoat")
+		and prefab_world.has_node("IntroBoat/PlayerSpot")
+		and prefab_world.has_node("IntroBoat/CameraFocus"),
+		"World.tscn retains the authored IntroBoat and markers before startup")
+	prefab_world.free()
 	var main: Control = MAIN.instantiate() as Control
 	add_child(main)
 	await get_tree().process_frame
