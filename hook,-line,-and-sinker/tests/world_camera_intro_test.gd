@@ -44,6 +44,9 @@ func _run() -> void:
 		and sky.get_parent() == sky_layer
 		and sky.position == Vector2.ZERO,
 		"Sky, sun, moon and drifting clouds render in fixed viewport-space")
+	_check((sky.get_node("Clouds") as Node2D).modulate.is_equal_approx(
+		(world.get_node("DayNightTint") as CanvasModulate).color),
+		"Clouds preserve the same day/night coloring as the world")
 	world.call("_process", 0.0)
 	var surface_screen: float = water.get_global_transform_with_canvas().origin.y
 	_check(is_equal_approx(sky.size.y, clampf(ceilf(surface_screen), 0.0, 180.0)),
