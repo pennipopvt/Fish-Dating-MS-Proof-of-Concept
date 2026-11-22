@@ -1,6 +1,6 @@
 # Editing dive, surfacing and companion motion in Godot
 
-Open **scenes/sea_area.tscn** and expand **Sea → Points → MotionPaths**.
+Open **scenes/sea_area.tscn** and expand **Sea → Points**.
 Each named animation has two different controls:
 
 - Select its child **Path** (a Godot **Path2D**) and use the 2D viewport's path tools to move its Bézier points and handles. This determines the **shape** of the movement. The **final point of PenniDiveDescent** is Penni's actual underwater destination. It is no longer replaced by an automatic search or a hidden X offset.

@@ -17,7 +17,7 @@ func _run() -> void:
 	await get_tree().process_frame
 	var world: Node2D = main.get_node("SubViewportContainer/SubViewport/World") as Node2D
 	var sea: DivingWorld = world.get_node("Sea") as DivingWorld
-	var motion_root: Node2D = sea.get_node("Points/MotionPaths") as Node2D
+	var motion_root: Node2D = sea.get_node("Points") as Node2D
 	for name in ["PenniDiveJump", "PenniDiveDescent", "CompanionDiveJump",
 			"CompanionDiveDescent", "PenniSurface", "CompanionSurface"]:
 		var motion: SeaMotionPath = motion_root.get_node(name) as SeaMotionPath

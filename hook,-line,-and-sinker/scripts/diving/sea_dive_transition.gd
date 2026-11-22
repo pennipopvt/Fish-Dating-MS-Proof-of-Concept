@@ -150,7 +150,7 @@ func _begin_dive(dock: Node2D) -> void:
 
 
 func _motion(path_name: StringName) -> SeaMotionPath:
-	return _sea.get_node("Points/MotionPaths/" + String(path_name)) as SeaMotionPath
+	return _sea.get_node("Points/" + String(path_name)) as SeaMotionPath
 
 
 func _update_dive_jump_visual(_time: float, progress: float) -> void:

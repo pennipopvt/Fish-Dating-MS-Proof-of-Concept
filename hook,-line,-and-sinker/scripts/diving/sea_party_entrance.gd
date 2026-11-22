@@ -29,7 +29,7 @@ func configure(world: Node2D, player: Player, sea: DivingWorld) -> void:
 
 
 func _motion(path_name: StringName) -> SeaMotionPath:
-	return _sea.get_node("Points/MotionPaths/" + String(path_name)) as SeaMotionPath
+	return _sea.get_node("Points/" + String(path_name)) as SeaMotionPath
 
 
 # Register additional NPC art directly with the diving system, not housing.
