@@ -78,26 +78,29 @@ func _ready() -> void:
 		and party.members().is_empty() and party.roster_members().size() == 1,
 		"Very low affection causes temporary diving refusal, not dismissal")
 	AffectionManager.call("_on_conversation_finished", SILAS)
-	_check(AffectionManager.get_affection(SILAS.npc_id) == 20
+	_check(AffectionManager.get_affection(SILAS.npc_id) == 8
 		and not AffectionManager.can_join_dive(SILAS.npc_id),
-		"One friendly check-in cannot instantly repair serious hurt")
+		"A friendly check-in prevents neglect but never grants automatic +12")
 	AffectionManager.call("_on_conversation_finished", SILAS)
-	_check(AffectionManager.get_affection(SILAS.npc_id) == 20,
+	_check(AffectionManager.get_affection(SILAS.npc_id) == 8,
 		"Repeating conversations on the same day cannot farm affection")
 
 	for i in range(3):
 		GameManager.rest()
 	AffectionManager.call("_on_conversation_finished", SILAS)
+	# Specific meaningful choices may repair affection; a greeting cannot.
+	AffectionManager.change_affection(SILAS.npc_id, 24)
 	_check(AffectionManager.get_affection(SILAS.npc_id) == 32
 		and not AffectionManager.can_join_dive(SILAS.npc_id),
-		"Refusal persists until the rejoin threshold, even above the initial cutoff")
+		"Refusal persists until the rejoin threshold, even after a meaningful improvement")
 	for i in range(3):
 		GameManager.rest()
 	AffectionManager.call("_on_conversation_finished", SILAS)
+	AffectionManager.change_affection(SILAS.npc_id, 12)
 	_check(AffectionManager.get_affection(SILAS.npc_id) == 44
 		and AffectionManager.can_join_dive(SILAS.npc_id)
 		and party.members().size() == 1,
-		"Repairing affection restores companion participation without re-recruiting")
+		"Explicit relationship repair restores diving without free conversation bonuses")
 
 	# Romance starts passive maintenance early, but creates no second value.
 	var kuda_state: Dictionary = NPCManager.get_npc_state(KUDA.npc_id)
