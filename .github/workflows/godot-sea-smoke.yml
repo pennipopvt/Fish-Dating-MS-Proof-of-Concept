@@ -178,7 +178,13 @@ jobs:
           set -o pipefail
           timeout 120s godot --headless --path "hook,-line,-and-sinker" res://tests/sea_oxygen_test.tscn 2>&1 | tee sea-oxygen-test.log
           ! (grep -E 'SCRIPT ERROR:|Parse Error:|Parser Error:|ERROR:|FAIL ' sea-oxygen-test.log | grep -Ev 'resources still in use at exit|RID allocations.*leaked' | grep -q .)
-      - name: Test KO before first landfall, early shore reunion and retained recruitment
+      - name: Test Silas first-land knockout care during unrostered tutorial
+        shell: bash
+        run: |
+          set -o pipefail
+          timeout 120s godot --headless --path "hook,-line,-and-sinker" res://tests/sea_first_land_silas_care_test.tscn 2>&1 | tee sea-silas-care-test.log
+          ! (grep -E 'SCRIPT ERROR:|Parse Error:|Parser Error:|ERROR:|FAIL ' sea-silas-care-test.log | grep -Ev 'resources still in use at exit|RID allocations.*leaked' | grep -q .)
+      - name: Test KO before first landfall, Penni's emergency care and retained recruitment
         shell: bash
         run: |
           set -o pipefail

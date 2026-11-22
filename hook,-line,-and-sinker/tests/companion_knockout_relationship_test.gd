@@ -140,9 +140,11 @@ func _run() -> void:
 		player.position + Vector2(90, 30), 1756, 0.0, 0.0, 0.0) as DivingWildFish
 	if first_dive_battle != null:
 		_knock_out(first_dive_battle, fish3)
+	var queue: SeaWorldDialogueQueue = sea.get_node("WorldDialogueQueue") as SeaWorldDialogueQueue
 	_check(not NPCManager.has_active_relationship_event(KUDA, &"companion_knockout")
-		and party.members().has(KUDA) and sea.early_returning_companions().has(KUDA),
-		"First-land KO preserves recruitment and records Kuda waiting on shore")
+		and party.members().has(KUDA) and queue.pending_count() == 1
+		and not transition.transitioning,
+		"First-land KO keeps recruitment and queues care instead of retreating")
 	main.queue_free()
 	await get_tree().process_frame
 	NPCManager.npc_states.clear()
@@ -167,7 +169,7 @@ func _finish_ko_dialogue() -> bool:
 		if not DialogueManager.is_active:
 			break
 		var line: DialogueLineData = DialogueManager.get_current_line()
-		if line != null and line.text.contains("heading back"):
+		if line != null and line.text.contains("heading home"):
 			heard_back = true
 		DialogueManager.advance()
 	return heard_back
