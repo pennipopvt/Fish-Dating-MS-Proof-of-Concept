@@ -24,11 +24,7 @@
 [ext_resource type="Shader" uid="uid://2layvi8dplvf" path="res://shaders/underwater_tint.gdshader" id="water_tint_shader"]
 [ext_resource type="Script" uid="uid://cba27f3x60a3r" path="res://scripts/world_day_night.gd" id="world_day_night"]
 [ext_resource type="Script" path="res://scripts/world_camera_controller.gd" id="world_camera_controller"]
-[ext_resource type="Script" path="res://scripts/diving/sea_tutorial_cue.gd" id="tutorial_cue"]
-[ext_resource type="Texture2D" path="res://sprites/ui/tutorial_wasd.png" id="tutorial_move"]
-[ext_resource type="Texture2D" path="res://sprites/ui/tutorial_left_click.png" id="tutorial_left_click"]
-[ext_resource type="Texture2D" path="res://sprites/ui/tutorial_scroll.png" id="tutorial_scroll"]
-[ext_resource type="Texture2D" path="res://sprites/ui/tutorial_right_click.png" id="tutorial_right_click"]
+[ext_resource type="PackedScene" path="res://prefabs/sea_tutorial_cue.tscn" id="tutorial_cue_scene"]
 [ext_resource type="TileSet" uid="uid://chn86lfer37gd" path="res://resources/tilesets/world_tiles.tres" id="world_tiles"]
 
 [sub_resource type="ShaderMaterial" id="UnderwaterTintMaterial"]
@@ -98,22 +94,8 @@ position = Vector2(0, -22)
 editor_draw_limits = true
 editor_draw_drag_margin = true
 
-# Authored in the editor, NOT created by DivingWorld at runtime.
-# Edit this node's position, texture slots, frame size and FPS in Inspector.
-[node name="SeaTutorialCue" type="Sprite2D" parent="CameraController/Camera2D"]
-visible = false
-z_index = 110
-z_as_relative = false
-position = Vector2(0, 52)
-texture_filter = 1
-texture = ExtResource("tutorial_move")
-region_enabled = true
-region_rect = Rect2(0, 0, 32, 32)
-script = ExtResource("tutorial_cue")
-movement_sprite = ExtResource("tutorial_move")
-cast_sprite = ExtResource("tutorial_left_click")
-reel_sprite = ExtResource("tutorial_scroll")
-right_click_sprite = ExtResource("tutorial_right_click")
+# One authored cue scene; the Camera2D itself does not carry the Sprite2D script.
+[node name="SeaTutorialCue" parent="CameraController/Camera2D" instance=ExtResource("tutorial_cue_scene")]
 
 [node name="UnderwaterTint" type="ColorRect" parent="CameraController/Camera2D" unique_id=1560607778]
 z_index = 80
