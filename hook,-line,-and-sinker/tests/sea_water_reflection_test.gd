@@ -36,9 +36,10 @@ func _run() -> void:
 		and solids_mat.get_shader_parameter("surface_screen_y") != null
 		and solids.collision_enabled,
 		"Sea tiles clip at the same screen-space waterline used by the reflection, preserving physics")
-	_check(world.get_node("Sky") is Control
+	_check(world.get_node("SkyLayer/Sky") is Control
+		and world.get_node("SkyLayer") is CanvasLayer
 		and absf(water.position.y - 140.0) < 0.01,
-		"Sky and sea still share the original world-space water surface")
+		"Screen-space sky still clips to the original world-space water surface")
 	world.free()
 	print("FAILED: %d" % failures if failures > 0 else "Sea surface rendering architecture passed")
 	quit(1 if failures > 0 else 0)
