@@ -1,6 +1,10 @@
 [gd_scene format=3 uid="uid://dua3yfus0j5uq"]
 
 [ext_resource type="Script" uid="uid://d3oyn3ofcf70q" path="res://scripts/shop_menu.gd" id="1_shopm"]
+[ext_resource type="AudioStream" path="res://sounds/sfx/terminal-beep.wav" id="audio_beep"]
+[ext_resource type="AudioStream" path="res://sounds/sfx/terminal-close.wav" id="audio_close"]
+[ext_resource type="AudioStream" path="res://sounds/sfx/terminal-submit.wav" id="audio_submit"]
+[ext_resource type="AudioStream" path="res://sounds/sfx/terminal-buy.wav" id="audio_buy"]
 [ext_resource type="Theme" uid="uid://bdrro20rs5qmt" path="res://resources/ui/terminal_theme.tres" id="2_theme"]
 [ext_resource type="StyleBox" path="res://resources/ui/terminal_border.tres" id="3_border"]
 [ext_resource type="Texture2D" uid="uid://dd18egqrlej6b" path="res://sprites/ui/icon_upgrade.png" id="4_upgrade_icon"]
@@ -472,3 +476,19 @@ unique_name_in_owner = true
 custom_minimum_size = Vector2(156, 60)
 layout_mode = 2
 text = "CLOSE"
+
+[node name="TerminalBeep" type="AudioStreamPlayer" parent="."]
+stream = ExtResource("audio_beep")
+volume_db = -6.0
+
+[node name="TerminalClose" type="AudioStreamPlayer" parent="."]
+stream = ExtResource("audio_close")
+volume_db = -6.0
+
+[node name="TerminalSubmit" type="AudioStreamPlayer" parent="."]
+stream = ExtResource("audio_submit")
+volume_db = -6.0
+
+[node name="TerminalBuy" type="AudioStreamPlayer" parent="."]
+stream = ExtResource("audio_buy")
+volume_db = -6.0

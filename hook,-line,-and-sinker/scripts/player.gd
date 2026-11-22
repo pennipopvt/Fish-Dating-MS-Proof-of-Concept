@@ -14,6 +14,11 @@ const SWIM_IDLE_RIGHT_SHEET: Texture2D = preload("res://sprites/characters/penni
 @export_range(1.0, 24.0, 0.5) var swim_frames_per_second: float = 8.0
 @export_range(1.0, 24.0, 0.5) var swim_idle_frames_per_second: float = 5.0
 
+@export_group("Movement Sounds")
+# Reuse step.wav for both walking and swimming, leaving a pause between cues.
+@export_range(0.2, 1.5, 0.05, "suffix:s") var walk_step_interval: float = 0.48
+@export_range(0.2, 2.0, 0.05, "suffix:s") var swim_step_interval: float = 0.8
+
 signal held_item_changed(item: ItemData)
 var held_item: ItemData = null
 var held_item_visual: Sprite2D
@@ -42,8 +47,11 @@ var _pickup_time_left := 0.0
 
 @onready var fishing_controller: Node = $FishingController
 @onready var animator : AnimatedSprite2D = $AnimatedSprite2D
+@onready var _step_sound: AudioStreamPlayer2D = $StepSound
+@onready var _step_timer: Timer = $StepTimer
 
 func _ready() -> void:
+	_step_timer.timeout.connect(_on_step_timer_timeout)
 	_install_swim_animations()
 	_land_collision_mask = collision_mask
 	_read_walk_limits.call_deferred()
@@ -143,6 +151,7 @@ func drop_item() -> void:
 
 
 func set_swimming(enabled: bool, bounds: Rect2 = Rect2()) -> void:
+	_stop_step_audio()
 	swimming = enabled
 	velocity = Vector2.ZERO
 	if enabled:
@@ -166,6 +175,7 @@ func set_swimming(enabled: bool, bounds: Rect2 = Rect2()) -> void:
 
 
 func _swim_physics(delta: float) -> void:
+	var previous_position: Vector2 = global_position
 	var vertical: float = 0.0
 	if Input.is_key_pressed(KEY_S) or Input.is_key_pressed(KEY_DOWN):
 		vertical += 1.0
@@ -183,6 +193,8 @@ func _swim_physics(delta: float) -> void:
 	# Movement plays the directional swim; without input Penni treads water.
 	# Her new idle-swim sheets include the scuba mask, so no extra overlay is needed.
 	_set_swim_animation(direction.length_squared() > 0.01)
+	_update_step_audio(direction.length_squared() > 0.01
+		and global_position.distance_squared_to(previous_position) > 0.0025)
 	animator.rotation = lerpf(animator.rotation, direction.x * 0.13, minf(delta * 6.0, 1.0))
 	animator.position.y = -16.0 + sin(Time.get_ticks_msec() * 0.0026) * 0.8
 
@@ -194,6 +206,7 @@ func _physics_process(delta: float) -> void:
 			_pickup_visual.visible = false
 
 	if busy or GameManager.is_modal_ui_open():
+		_stop_step_audio()
 		velocity = Vector2.ZERO
 		if swimming:
 			_set_swim_animation(false)
@@ -223,6 +236,40 @@ func _physics_process(delta: float) -> void:
 	move_and_slide()
 	_keep_inside_walk_limits(previous_x)
 	_follow_ground_height(delta)
+	_update_step_audio(absf(global_position.x - previous_x) > 0.05)
+
+
+# The single scene-authored sound player is shared by walking and swimming.
+# Do not retrigger a playing clip: footsteps have space between them.
+func _update_step_audio(moving: bool) -> void:
+	if not moving:
+		_stop_step_audio()
+		return
+	var interval: float = swim_step_interval if swimming else walk_step_interval
+	if _step_timer.is_stopped():
+		_play_step()
+		_step_timer.start(interval)
+	elif not is_equal_approx(_step_timer.wait_time, interval):
+		_step_timer.start(interval)
+
+
+func _on_step_timer_timeout() -> void:
+	if busy or GameManager.is_modal_ui_open() or velocity.length_squared() < 1.0:
+		_stop_step_audio()
+		return
+	_play_step()
+
+
+func _play_step() -> void:
+	if not _step_sound.playing:
+		_step_sound.play()
+
+
+func _stop_step_audio() -> void:
+	if not _step_timer.is_stopped():
+		_step_timer.stop()
+	if _step_sound.playing:
+		_step_sound.stop()
 
 
 # Reads the drawn ground (World/Ground tiles) once at start: the walk border
