@@ -268,10 +268,7 @@ func play_first_surface_reveal(surface_actors: Array[Node2D],
 	await travel.fade_to(1.0, townhouse_fade_seconds)
 	_player.global_position = player_spot.global_position
 	_player.animator.play(&"idle_r")
-	var camera: Camera2D = _player.get_node("Camera2D") as Camera2D
-	camera.position = Vector2.ZERO
-	camera.reset_smoothing()
-	camera.force_update_scroll()
+	(world.get_node("CameraController") as WorldCameraController).snap_to_player()
 	NPCTemporaryActor.place_feet(kuda_actor, kuda_spot.global_position)
 	await travel.fade_to(0.0, townhouse_fade_seconds)
 	_story.start_kuda_townhouse_arrival()
