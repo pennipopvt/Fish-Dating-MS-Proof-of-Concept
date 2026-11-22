@@ -132,6 +132,9 @@ func _run() -> void:
 	sea.end_diving_party()
 	NPCManager.get_npc_state(KUDA.npc_id).erase("room_id")
 	AffectionManager.set_affection(KUDA.npc_id, NPCManager.START_AFFECTION)
+	# Simulating a fresh dive must also reset the existing per-dive world
+	# dialogue dedupe, just as DivingWorld.enter_from_dock does in-game.
+	queue.begin_new_dive()
 	sea.activate_diving_party(party.members())
 	var first_dive_battle: DivingCompanionBattle = commands.battle_for(KUDA.npc_id)
 	_check(first_dive_battle != null and first_dive_battle.can_fight(),
