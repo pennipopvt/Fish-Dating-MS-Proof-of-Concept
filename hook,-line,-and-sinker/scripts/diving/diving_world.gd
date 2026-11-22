@@ -63,6 +63,8 @@ var _habitat_fish: Array[DivingWildFish] = []
 var _fish_data: Dictionary = {}
 var _combat_debug_status: String = "No companion command yet"
 var _party_fish: Array[SeaPartyFollower] = []
+# Both Silas and generic party fish follow Penni's sampled swim path.
+var _follow_trail := SeaFollowTrail.new()
 var _party_dive_active: bool = false
 var _world_dialogue_queue: SeaWorldDialogueQueue
 # KO conversations keep their participant until the existing dialogue queue
@@ -314,6 +316,8 @@ func enter_from_dock() -> void:
 		return
 	_set_camera_bounds(true)
 	_player.set_swimming(true, _sea_bounds())
+	_follow_trail.reset(_player.global_position)
+	_silas.follow_trail = _follow_trail
 	_dive_inventory.begin_dive()
 	_world_dialogue_queue.begin_new_dive()
 	_pending_ko_outcomes.clear()
@@ -357,6 +361,7 @@ func add_diving_party_member(npc: NPCData, index: int) -> void:
 		_battle.rest()
 		_silas.modulate.a = 1.0
 		_silas.show()
+		_silas.follow_trail = _follow_trail
 		_silas.following = true
 		_commands.register_member(npc, _silas, _battle, _silas_behavior)
 		return
@@ -366,7 +371,7 @@ func add_diving_party_member(npc: NPCData, index: int) -> void:
 	var follower := SeaPartyFollower.new()
 	follower.name = node_name
 	$NPCs.add_child(follower)
-	follower.setup(npc, _player, index)
+	follower.setup(npc, _player, index, _follow_trail)
 	follower.global_position = _player.global_position + Vector2(-24.0 - index * 16.0, 8.0)
 	_party_fish.append(follower)
 	if follower.battle != null and follower.behavior != null:
@@ -430,6 +435,7 @@ func _process(delta: float) -> void:
 		if _sfx != null:
 			_sfx.set_swimming(false)
 		return
+	_follow_trail.record(_player.global_position)
 	# Oxygen pauses during dialogue and menus so reading is never punished,
 	# but otherwise continues draining during fishing combat.
 	if not DialogueManager.is_active and not GameManager.is_modal_ui_open():
@@ -678,6 +684,7 @@ func _on_combat_finished(won: bool, fish: DivingWildFish) -> void:
 
 
 func _on_silas_following_started() -> void:
+	_silas.follow_trail = _follow_trail
 	_silas.following = true
 	# During the tutorial Silas can fight before the first shore scene
 	# formally creates his DivingParty roster.

@@ -202,7 +202,7 @@ position = Vector2(55, 157)
 position = Vector2(0, -18)
 
 [node name="SilasSurfaceApproach" type="Marker2D" parent="Points" unique_id=519432957]
-position = Vector2(53, 156)
+position = Vector2(53, 212)
 
 [node name="SilasDockWait" type="Marker2D" parent="Points" unique_id=1410168153]
 position = Vector2(101, 112)

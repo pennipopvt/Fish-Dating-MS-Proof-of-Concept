@@ -43,6 +43,8 @@ func _ready() -> void:
 		"Companions can leave the school without moving any actor")
 	var approach: Marker2D = sea.get_node("Points/SilasSurfaceApproach") as Marker2D
 	var dock_wait: Marker2D = sea.get_node("Points/SilasDockWait") as Marker2D
+	_check(approach.position.y >= DivingWorld.SEA_TOP + 50.0,
+		"Returning fish begin the jump deep underwater rather than pausing at the surface")
 	_check(entrance.surface_approach_position(approach.global_position, 0)
 		== approach.global_position
 		and entrance.surface_approach_position(approach.global_position, 2).x

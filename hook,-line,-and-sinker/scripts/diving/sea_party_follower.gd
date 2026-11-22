@@ -8,21 +8,28 @@ class_name SeaPartyFollower
 @export_range(35.0, 220.0, 1.0) var swim_speed: float = 105.0
 @export_range(35.0, 250.0, 1.0) var combat_swim_speed: float = 140.0
 @export_range(8.0, 30.0, 1.0) var combat_attack_range: float = 18.0
+@export_group("Following Penni")
+@export_range(16.0, 90.0, 1.0) var first_follow_distance: float = 30.0
+@export_range(12.0, 50.0, 1.0) var follow_distance_per_slot: float = 22.0
+@export_range(1.0, 12.0, 0.5) var follow_arrival_radius: float = 4.0
 
 var battle: DivingCompanionBattle
 var behavior: CompanionCombatBehavior
 var npc_data: NPCData
 var retreating: bool = false
 var _player: Player
+var _trail: SeaFollowTrail
 var _index: int
 var _sprite: Sprite2D
 var _lunge_time: float = 0.0
 var _hurt_time: float = 0.0
 
 
-func setup(npc: NPCData, player: Player, index: int) -> void:
+func setup(npc: NPCData, player: Player, index: int,
+		trail: SeaFollowTrail = null) -> void:
 	npc_data = npc
 	_player = player
+	_trail = trail
 	_index = index
 	_sprite = Sprite2D.new()
 	_sprite.name = "FishSprite"
@@ -61,6 +68,10 @@ func _process(delta: float) -> void:
 	var side: float = -1.0 if _player.last_direction >= 0.0 else 1.0
 	var destination: Vector2 = _player.global_position + Vector2(
 		side * (26.0 + 17.0 * _index), 10.0 + 9.0 * (_index % 2))
+	if _trail != null:
+		var facing: Vector2 = Vector2.RIGHT if _player.last_direction >= 0.0 else Vector2.LEFT
+		destination = _trail.point_behind(
+			first_follow_distance + follow_distance_per_slot * _index, facing)
 	var speed: float = swim_speed
 	if battle != null and battle.is_active():
 		var fish: DivingWildFish = battle.target
@@ -71,7 +82,8 @@ func _process(delta: float) -> void:
 		destination = fish.global_position + approach * maxf(0.0, combat_attack_range - lunge)
 		speed = combat_swim_speed
 	var before_x: float = global_position.x
-	if global_position.distance_to(destination) > 1.0:
+	var arrival_radius: float = 1.0 if battle != null and battle.is_active() else follow_arrival_radius
+	if global_position.distance_to(destination) > arrival_radius:
 		global_position = global_position.move_toward(destination, speed * delta)
 	if _sprite != null:
 		if global_position.x < before_x - 0.01:
