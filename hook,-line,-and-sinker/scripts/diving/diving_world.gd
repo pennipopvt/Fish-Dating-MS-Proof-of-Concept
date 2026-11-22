@@ -17,11 +17,14 @@ const SILAS_FISH: FishData = preload("res://resources/fish/silas.tres")
 const WILD_FISH_SCRIPT = preload("res://scripts/diving/wild_fish.gd")
 const FISH_COMBAT_VISUAL_SCENE: PackedScene = preload("res://prefabs/sea_fish_combat_visual.tscn")
 
-# Inspector texture slots remain editable even though the small cue is
-# created at runtime. No new PackedScene or imported file is required.
-@export var movement_tutorial_sprite: Texture2D
-@export var cast_tutorial_sprite: Texture2D
-@export var reel_tutorial_sprite: Texture2D
+# All tutorial input animations use 32x32 sheet cells, configured in
+# SeaTutorialCue. These defaults are actual art in the repo, not code
+# placeholders. Inspector overrides can use new sheets without script edits.
+@export_group("Tutorial Input Animations (32x32 cells)")
+@export var movement_tutorial_sprite: Texture2D = preload("res://sprites/ui/tutorial_wasd.png")
+@export var cast_tutorial_sprite: Texture2D = preload("res://sprites/ui/tutorial_cast.png")
+@export var reel_tutorial_sprite: Texture2D = preload("res://sprites/ui/tutorial_reel.png")
+# A separate right-click sheet has not been committed to penni-diving yet.
 @export var right_click_tutorial_sprite: Texture2D
 
 @export_group("Sea Parry Feedback")

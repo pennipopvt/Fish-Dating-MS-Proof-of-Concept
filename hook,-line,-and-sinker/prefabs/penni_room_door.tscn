@@ -1,12 +1,9 @@
 [gd_scene format=3]
 
 [ext_resource type="PackedScene" path="res://prefabs/townhouse_door.tscn" id="1_door"]
-[ext_resource type="Texture2D" path="res://sprites/rooms/genericopendoor.png" id="2_open"]
 
+# Penni uses the same normal door texture until her authored sprite is ready.
+# No extra rectangle, portrait or placeholder art is added here.
 [node name="PenniRoomDoor" instance=ExtResource("1_door")]
 room_id = &"penni_room"
 locked = false
-
-[node name="Sprite" parent="." index="0"]
-texture = ExtResource("2_open")
-

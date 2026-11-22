@@ -166,3 +166,18 @@ Penni's door uses the generic open-door art with no large portrait badge,
 until its dedicated sprite is ready. The large first-person Penni room label
 has also been removed; the normal neutral backdrop stays until room artwork
 is set in `NPCRoomView`.
+
+## Townhouse placeholder removal and sea cue sprites
+
+The oversized `placeholdtownhouse.png` texture is no longer loaded by
+`scenes/townhouse.tscn`; its Sprite2D remains empty and editor-editable for
+future background art. Penni's door no longer overrides the inherited normal
+townhouse door sprite, so no temporary turquoise open-door panel remains.
+
+`DivingWorld` defaults to `sprites/ui/tutorial_wasd.png`,
+`tutorial_cast.png`, and `tutorial_reel.png` for movement, left-click cast
+and scroll reel, respectively. `SeaTutorialCue` plays any provided input
+sprite sheet as a loop of 32x32 cells (row-major), at an editable FPS.
+The right-click animation remains an inspector slot because no dedicated
+right-click texture has been added to `penni-diving` yet. Until one is
+assigned, the legacy vector right-click fallback remains.
