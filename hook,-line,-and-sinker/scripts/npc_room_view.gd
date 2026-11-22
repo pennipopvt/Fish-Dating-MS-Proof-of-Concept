@@ -18,6 +18,7 @@ var _resident: NPCData
 var _inside: bool = false
 var _closing: bool = false
 var _dialogue_exit_requested: bool = false
+var _date_departure: DateData = null
 var _gift_offered_this_visit: bool = false
 var _overnight_active: bool = false
 var _morning_dialogue_active: bool = false
@@ -63,6 +64,7 @@ func open_room(npc: NPCData) -> void:
 		return
 	_resident = npc
 	_dialogue_exit_requested = false
+	_date_departure = null
 	_prelude_active = false
 	_prelude_approved = false
 	_overnight_active = false
@@ -72,7 +74,11 @@ func open_room(npc: NPCData) -> void:
 	_inside = true
 	_player.busy = true
 	await _transition.iris_swap(_show_room)
-	if not _try_start_overnight():
+	# A confirmed appointment takes precedence over an unrelated overnight
+	# scene, gift or ordinary greeting in that same NPC room.
+	if DateManager.get_ready_booking_for_npc(npc.npc_id) != null:
+		_start_conversation()
+	elif not _try_start_overnight():
 		_start_conversation()
 
 
@@ -127,6 +133,19 @@ func _try_start_overnight() -> bool:
 func _start_conversation() -> void:
 	if not _inside or _closing or _overnight_active or DialogueManager.is_active:
 		return
+	var ready_date: DateData = DateManager.get_ready_booking_for_npc(_resident.npc_id)
+	if ready_date != null:
+		# Reuse the ordinary room portrait and dialogue choice UI. A "No"
+		# leaves the appointment intact and exits this visit; a "Yes"
+		# hands control to DateManager AFTER the room iris unlocks Penni.
+		DialogueManager.request_inline_conversation(_resident,
+			["Ready to get going? I'll meet you there."], _resident.display_name,
+			[
+				{"text": "Yes, let's go!", "response": "Okay! Let's go.",
+					"effects": {"request_scene": "room_date_go:" + String(ready_date.date_id)}},
+				{"text": "Not yet.", "response": "Sure. I'll be here when you're ready."}
+			])
+		return
 	# A highest-priority unresolved event may have its own complete follow-up
 	# graph; otherwise let the usual JSON handle active_events conditions.
 	var event_json: String = NPCManager.get_relationship_followup_json(_resident)
@@ -180,6 +199,13 @@ func _on_scene_requested(npc: NPCData, scene_id: String) -> void:
 		return
 	if scene_id == "room_exit":
 		_dialogue_exit_requested = true
+		return
+	if scene_id.begins_with("room_date_go:"):
+		var proposed: DateData = DateManager.get_date(
+			StringName(scene_id.trim_prefix("room_date_go:")))
+		if proposed != null and proposed.npc == _resident and DateManager.is_booking_ready(proposed):
+			_date_departure = proposed
+			_dialogue_exit_requested = true
 		return
 	if scene_id == "room_overnight_ready" and _overnight_active and not _prelude_active:
 		if _illustration != null and _illustration.start_scene(npc):
@@ -278,6 +304,12 @@ func close_room() -> void:
 	_prelude_approved = false
 	_overnight_active = false
 	_overnight_blocked_on_entry = false
+	# The room has fully closed and Penni is unlocked. Now the existing
+	# DateManager can own the venue fade, actor placement and date dialogue.
+	var departure: DateData = _date_departure
+	_date_departure = null
+	if departure != null and DateManager.is_booking_ready(departure):
+		DateManager.start_date(departure)
 
 
 func _hide_room() -> void:
