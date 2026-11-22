@@ -30,6 +30,8 @@ func _run() -> void:
 	var boat: Node2D = world.get_node("IntroBoat") as Node2D
 	var boat_art: IntroBoatSprite = boat.get_node("Sprite") as IntroBoatSprite
 	var water: ColorRect = world.get_node("Water") as ColorRect
+	var sky_layer: CanvasLayer = world.get_node("SkyLayer") as CanvasLayer
+	var sky: Control = sky_layer.get_node("Sky") as Control
 	var opening: FishCoOpeningSequence = main.get_node("IntroLayer") as FishCoOpeningSequence
 	var story: IslandStoryDirector = main.get_node("IslandStoryDirector") as IslandStoryDirector
 	var focus: Marker2D = boat.get_node("CameraFocus") as Marker2D
@@ -38,6 +40,14 @@ func _run() -> void:
 		"Camera belongs to World, never to Penni's rotating sprite")
 	_check(world.get_node("CameraController/Camera2D/UnderwaterTint") is ColorRect,
 		"Same underwater shader stays attached to the world camera")
+	_check(sky_layer.layer < 0 and sky.clip_contents
+		and sky.get_parent() == sky_layer
+		and sky.position == Vector2.ZERO,
+		"Sky, sun, moon and drifting clouds render in fixed viewport-space")
+	world.call("_process", 0.0)
+	var surface_screen: float = water.get_global_transform_with_canvas().origin.y
+	_check(is_equal_approx(sky.size.y, clampf(ceilf(surface_screen), 0.0, 180.0)),
+		"Sky only exposes pixels above the real waterline")
 	_check(player.global_position.distance_to(
 		(boat.get_node("PlayerSpot") as Marker2D).global_position) < 1.0
 		and camera.get_screen_center_position().distance_to(focus.global_position) < 4.0,
@@ -66,6 +76,8 @@ func _run() -> void:
 	_check(controller.global_position.x > old_x
 		and controller.global_position.x < player.global_position.x,
 		"Follow is smoothed rather than teleporting with Penni")
+	_check(sky.position == Vector2.ZERO,
+		"Camera smoothing cannot shake the sky's viewport position")
 	player.animator.rotation = 0.4
 	_check(is_zero_approx(camera.rotation),
 		"Tilting Penni does not rotate the world camera")
