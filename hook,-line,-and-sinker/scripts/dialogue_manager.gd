@@ -315,6 +315,9 @@ func _apply_json_effects(effects: Variant, include_affection: bool = true) -> vo
 		NPCManager.resolve_relationship_event(current_npc, StringName(str(event)))
 	if effects.has("affection_delta"):
 		AffectionManager.change_affection(current_npc.npc_id, int(effects["affection_delta"]))
+	if effects.has("jealousy_delta"):
+		# Incident conversations use the same shared jealousy state as dates.
+		AffectionManager.change_jealousy(current_npc.npc_id, int(effects["jealousy_delta"]))
 
 
 # Conditions are evaluated when the menu becomes visible, using the NPC's current flags.
