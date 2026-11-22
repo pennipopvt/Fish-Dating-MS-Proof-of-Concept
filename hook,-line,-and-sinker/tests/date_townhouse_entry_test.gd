@@ -128,6 +128,11 @@ func _check_date(npc: NPCData, date_id: StringName) -> void:
 				"Kuda date returns to the original intro boat location")
 			_check(player.z_index > boat_art.z_index and guest.z_index > boat_art.z_index,
 				"Penni and Kuda remain visible above the animated boat")
+			var date_camera: WorldCameraController = world.get_node("CameraController") as WorldCameraController
+			var focus: Marker2D = venue.get_node("CameraFocus") as Marker2D
+			_check(not bool(date_camera.get("_following"))
+				and date_camera.camera.get_screen_center_position().distance_to(focus.global_position) < 4.0,
+				"Kuda's boat date uses the same editable camera framing as the introduction")
 		if sprite != null and sprite.sprite_frames != null and spot != null:
 			var frame: Texture2D = sprite.sprite_frames.get_frame_texture(sprite.animation, sprite.frame)
 			var feet_y: float = guest.global_position.y + sprite.position.y + frame.get_height() * sprite.scale.y * 0.5
@@ -157,6 +162,9 @@ func _check_date(npc: NPCData, date_id: StringName) -> void:
 	_check(not player.busy, "Player regains movement after the date")
 	_check(player.z_index == 0, "Date restores Penni's original draw order")
 	_check(DateManager.get("_venue") == null, "Temporary boat is removed when date finishes")
+	if date_id == &"kuda_ship":
+		_check(bool((world.get_node("CameraController") as WorldCameraController).get("_following")),
+			"Date returns WorldCameraController to follow Penni on shore")
 	_check(DateManager.get("_date_actor") == null,
 		"Temporary date actor is cleared on completion")
 	_check(player.global_position.distance_to(original_player_position) < 0.1,
