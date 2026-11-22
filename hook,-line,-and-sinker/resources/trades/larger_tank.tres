@@ -1,0 +1,24 @@
+[gd_resource type="Resource" script_class="TradeData" load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://resources/trade_data.gd" id="trade_script"]
+[ext_resource type="Script" path="res://resources/trade_requirement.gd" id="requirement_script"]
+[ext_resource type="Resource" path="res://resources/items/mullet.tres" id="preview_mullet"]
+[ext_resource type="Texture2D" path="res://sprites/ui/icon_storage.png" id="preview_icon"]
+
+[sub_resource type="Resource" id="PreviewCost"]
+script = ExtResource("requirement_script")
+item = ExtResource("preview_mullet")
+amount = 1
+
+[resource]
+script = ExtResource("trade_script")
+trade_id = &"larger_tank"
+display_name = "Larger Tank"
+description = "Adds 30 seconds of oxygen per dive. Preview price; 1 day delivery."
+one_time_purchase = true
+icon = ExtResource("preview_icon")
+delivery_time = 1
+requirements = Array[ExtResource("requirement_script")]([SubResource("PreviewCost")])
+reward_method = &"shop_reward_larger_tank"
+reward_amount = 30
+delivery_sprite = ExtResource("preview_icon")
