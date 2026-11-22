@@ -70,6 +70,8 @@ func _run() -> void:
 
 	_check(opening.debug_skip_to_dive(), "Debug skip keeps normal dock onboarding")
 	await get_tree().process_frame
+	_check(world.get_node_or_null("IntroBoat") == null,
+		"Intro boat frees after it is no longer used, including when skipping the opening")
 	_check(not player.busy and player.z_index == 0
 		and controller.get("_following"),
 		"Returning to island restores player draw order and camera follow")
