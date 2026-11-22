@@ -55,7 +55,6 @@ func _connect_sources() -> void:
 	for fish in FishingManager.possible_catches:
 		if fish != null and fish.npc_data != null and not _npc_fish.has(fish):
 			_npc_fish.append(fish)
-	DialogueManager.conversation_started.connect(_on_conversation_started)
 	DialogueManager.conversation_finished.connect(_on_conversation_finished)
 	GameManager.day_started.connect(_on_day_started)
 	DateManager.date_missed.connect(_on_date_missed)
