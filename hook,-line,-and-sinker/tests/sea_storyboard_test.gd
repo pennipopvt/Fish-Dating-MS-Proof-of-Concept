@@ -56,14 +56,14 @@ func _run() -> void:
 		"Speech bubble remains bound even when group registration changes")
 	bubble.add_to_group("sea_speech_bubble")
 	var cue: SeaTutorialCue = main.get_node(
-		"SubViewportContainer/SubViewport/World/Player/Camera2D/SeaTutorialCue"
+		"SubViewportContainer/SubViewport/World/CameraController/Camera2D/SeaTutorialCue"
 	) as SeaTutorialCue
 	_check(cue != null and not cue.visible,
 		"Camera has a hidden tutorial sprite before diving")
 	_check(cue is Sprite2D and cue.get_parent() is Camera2D,
-		"Sea controller creates a real Sprite2D under the Player camera")
+		"Sea controller creates a real Sprite2D under the World camera")
 	_check((cue.get_parent() as Camera2D).get_script() == null,
-		"Existing player camera remains unscripted")
+		"World-owned Camera2D remains unscripted")
 	_check(cue.get_parent().get_child_count() >= 2,
 		"Tutorial cue is an ordinary child, not a required PackedScene")
 	_check(cue.z_index > 80 and not cue.z_as_relative,
@@ -76,7 +76,7 @@ func _run() -> void:
 	_check(first_fish.trapped, "First tutorial fish waits in place for a cast")
 	story.on_dive_entered()
 	_check(cue.visible and cue.current_action == &"move",
-		"Entering the sea shows WASD on the Player camera")
+		"Entering the sea shows WASD on the world camera")
 	_check(story.on_first_fish_seen(), "First fish focus is allowed only if the icon is visible")
 	_check(cue.current_action == &"cast" and cue.visible,
 		"Fish discovery replaces WASD with click in the same camera viewport")
