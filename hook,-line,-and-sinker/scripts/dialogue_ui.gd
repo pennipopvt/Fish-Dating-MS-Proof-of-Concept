@@ -42,6 +42,7 @@ const ROOM_PORTRAIT_BASE_SIZE := Vector2(1040.0, 1600.0)
 @onready var _continue_hint: Label = %ContinueHint
 
 var _npc: NPCData = null
+var _portrait_npc: NPCData = null # Current visible speaker, not relationship owner.
 var _opened_frame := -1
 var _illustration_mode := false
 var _room_mode := false
@@ -105,7 +106,8 @@ func set_underwater_mode(enabled: bool) -> void:
 	)
 	# Underwater fish portraits sit to Penni's right. Flip only their fish
 	# form so they're looking toward her; human portraits stay unchanged.
-	_npc_portrait.flip_h = enabled and _npc != null and _npc.underwater_sprite != null
+	var shown: NPCData = _portrait_npc if _portrait_npc != null else _npc
+	_npc_portrait.flip_h = enabled and shown != null and shown.underwater_sprite != null
 	# Keep Penni's real portrait, original placement and filtering everywhere.
 	_restore_portrait_offsets(_player_portrait, _player_land_offsets)
 	if not _room_mode:
@@ -126,9 +128,10 @@ func _apply_npc_portrait_presentation() -> void:
 	if not _room_mode:
 		_restore_portrait_offsets(_npc_portrait, _npc_land_offsets)
 	_npc_portrait.pivot_offset = _npc_portrait.size * 0.5
-	if _room_mode or not _underwater_mode or _npc == null or _npc.sea_visuals == null:
+	var shown: NPCData = _portrait_npc if _portrait_npc != null else _npc
+	if _room_mode or not _underwater_mode or shown == null or shown.sea_visuals == null:
 		return
-	var visuals: SeaCharacterVisuals = _npc.sea_visuals
+	var visuals: SeaCharacterVisuals = shown.sea_visuals
 	_npc_portrait.scale = Vector2.ONE * visuals.portrait_scale
 	_npc_portrait.rotation_degrees = visuals.portrait_angle_degrees
 	_npc_portrait.position += visuals.portrait_offset
@@ -207,6 +210,7 @@ func start(npc: NPCData) -> bool:
 		return false
 
 	_npc = npc
+	_portrait_npc = npc
 	_opened_frame = Engine.get_process_frames()
 	show()
 	# Keep the world running while dialogue captures gameplay input.
@@ -261,6 +265,10 @@ func _refresh() -> void:
 
 func _show_line(line: DialogueLineData) -> void:
 	var is_player := line.speaker == DialogueLineData.Speaker.PLAYER
+	if not is_player:
+		_portrait_npc = DialogueManager.get_speaker_npc(line)
+	elif _portrait_npc == null:
+		_portrait_npc = _npc
 
 	_name_label.text = PLAYER_NAME if is_player else DialogueManager.get_current_speaker_name()
 	_name_label.add_theme_color_override(
@@ -273,7 +281,7 @@ func _show_line(line: DialogueLineData) -> void:
 	# second character, so no NPC portrait (not even the placeholder one).
 	_npc_portrait.visible = not _illustration_mode and not (_npc != null and _npc.npc_id in NO_PORTRAIT_NPCS)
 	_player_portrait.visible = not _illustration_mode and not _room_mode
-	_npc_portrait.flip_h = _underwater_mode and _npc != null and _npc.underwater_sprite != null
+	_npc_portrait.flip_h = _underwater_mode and _portrait_npc != null and _portrait_npc.underwater_sprite != null
 	_apply_npc_portrait_presentation()
 
 	# Light up whoever is speaking; dim the listener.
@@ -309,11 +317,13 @@ func _show_choices() -> void:
 # Expressions are reserved for future portrait sets;
 # every line uses the NPC's base portrait for now.
 func _get_portrait(_line: DialogueLineData) -> Texture2D:
+	var shown: NPCData = _portrait_npc if _portrait_npc != null else _npc
+	if shown == null:
+		return placeholder_portrait
 	if _underwater_mode:
-		return _npc.underwater_sprite if _npc.underwater_sprite != null else placeholder_portrait
-	if _npc.portrait != null:
-		return _npc.portrait
-
+		return shown.underwater_sprite if shown.underwater_sprite != null else placeholder_portrait
+	if shown.portrait != null:
+		return shown.portrait
 	return placeholder_portrait
 
 
@@ -340,6 +350,7 @@ func _close() -> void:
 
 	var npc := _npc
 	_npc = null
+	_portrait_npc = null
 	conversation_ended.emit(npc)
 
 

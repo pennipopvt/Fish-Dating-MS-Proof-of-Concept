@@ -15,6 +15,10 @@ signal choice_resolved(npc: NPCData, choice: Dictionary)
 var _requested_inline_graph: Dictionary = {}
 var _requested_inline_alias: String = ""
 var _current_speaker_alias: String = ""
+# Only presentation uses this cast. Choices, flags and affection still belong
+# to current_npc, so a guest speaker never changes the relationship owner.
+var _requested_cast: Array[NPCData] = []
+var _active_cast: Dictionary = {}
 
 func request_inline_conversation(
 	npc: NPCData, lines: Array[String],
@@ -67,19 +71,54 @@ func request_player_monologue(lines: Array[String]) -> void:
 	_requested_inline_alias = ""
 
 
+# The speaker can vary per line without replacing current_npc. An explicit
+# speaker ID outside the supplied cast is omitted by the graph parser.
+func get_speaker_npc(line: DialogueLineData) -> NPCData:
+	if line == null or line.speaker == DialogueLineData.Speaker.PLAYER:
+		return null
+	if line.speaker_id != &"":
+		return _active_cast.get(line.speaker_id) as NPCData
+	return current_npc
+
+
 func get_current_speaker_name() -> String:
+	var line: DialogueLineData = get_current_line()
+	if line != null and line.speaker_id != &"":
+		var speaker: NPCData = get_speaker_npc(line)
+		if speaker != null:
+			return speaker.display_name
 	if not _current_speaker_alias.is_empty():
 		return _current_speaker_alias
 	return current_npc.display_name if current_npc != null else ""
 
 
-func request_conversation(npc: NPCData, json_override: String = "", gift_player: Player = null) -> void:
+# An event can author a single graph for 0-3 companions. Lines with speaker_id
+# not in cast are skipped; player and default npc lines remain unchanged.
+func request_group_lines(context: NPCData, lines: Array[Dictionary],
+		cast: Array[NPCData]) -> void:
+	if context == null or lines.is_empty() or is_active:
+		return
+	_requested_inline_graph = {
+		"entry": "start", "free_greeting": true,
+		"nodes": {"start": {"lines": lines.duplicate(true)}}
+	}
+	_requested_cast = cast.duplicate()
+	_requested_inline_alias = ""
+	dialogue_requested.emit(context)
+	_requested_inline_graph = {}
+	_requested_cast.clear()
+
+
+func request_conversation(npc: NPCData, json_override: String = "",
+		gift_player: Player = null, cast: Array[NPCData] = []) -> void:
 	if npc != null and not is_active:
 		_requested_json_path = json_override
+		_requested_cast = cast.duplicate()
 		_gift_player = gift_player
 		_expected_gift_item_id = gift_player.held_item.item_id if gift_player != null and gift_player.held_item != null else &""
 		dialogue_requested.emit(npc)
 		_requested_json_path = ""
+		_requested_cast.clear()
 
 # API kept compatible with DialogueUI. JSON graphs are instantiated at runtime.
 var current_npc: NPCData = null
@@ -113,6 +152,11 @@ func start_conversation(npc: NPCData, json_override: String = "") -> void:
 	if is_active or npc == null:
 		return
 	_conversation_rotations.clear()
+	_active_cast.clear()
+	_active_cast[npc.npc_id] = npc
+	for member in _requested_cast:
+		if member != null and member.npc_id != &"":
+			_active_cast[member.npc_id] = member
 	if not _requested_inline_graph.is_empty():
 		current_npc = npc
 		current_dialogue = null
@@ -361,7 +405,17 @@ func _enter_node(id: String, reaction_tier: int = -1, redirects: int = 0) -> voi
 			line.text = _format_date_placeholder(raw_line)
 		elif raw_line is Dictionary:
 			line.text = _format_date_placeholder(str(raw_line.get("text", "")))
-			line.speaker = DialogueLineData.Speaker.PLAYER if raw_line.get("speaker", "npc") == "player" else DialogueLineData.Speaker.NPC
+			var speaker_key: String = str(raw_line.get("speaker", "npc"))
+			line.speaker = (DialogueLineData.Speaker.PLAYER
+				if speaker_key == "player" else DialogueLineData.Speaker.NPC)
+			if line.speaker != DialogueLineData.Speaker.PLAYER:
+				var specific_id: String = str(raw_line.get("speaker_id",
+					"" if speaker_key == "npc" else speaker_key))
+				if not specific_id.is_empty():
+					line.speaker_id = StringName(specific_id)
+					# This same file can be used with different party sizes.
+					if not _active_cast.has(line.speaker_id):
+						continue
 			line.expression = StringName(str(raw_line.get("expression", "neutral")))
 		else:
 			continue
@@ -446,6 +500,7 @@ func end_conversation() -> void:
 	_scene_after_conversation = ""
 	_current_path = ""
 	_current_speaker_alias = ""
+	_active_cast.clear()
 	_choice_greyed.clear()
 	_conversation_rotations.clear()
 	conversation_finished.emit(finished_npc)

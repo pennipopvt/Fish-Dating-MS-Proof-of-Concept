@@ -214,6 +214,15 @@ func complete_kuda_townhouse_arrival() -> void:
 	kuda_townhouse_arrival_finished.emit()
 
 
+# World discoveries can use a shared queue rather than opening DialogueUI
+# over a fight. The event identity and any persistent flags remain story-owned.
+func queue_world_conversation(event_id: StringName, context: NPCData,
+		dialogue_path: String, cast: Array[NPCData] = [], priority: int = 0) -> bool:
+	var sea: DivingWorld = get_parent() as DivingWorld
+	return sea.queue_world_dialogue(event_id, context, dialogue_path, cast, priority) \
+		if sea != null else false
+
+
 func on_dive_entered() -> void:
 	if not has_event(&"line_broken") and not has_event(&"help_called"):
 		var cue: SeaTutorialCue = _cue()

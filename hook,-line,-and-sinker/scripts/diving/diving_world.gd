@@ -57,6 +57,7 @@ var _fish_data: Dictionary = {}
 var _combat_debug_status: String = "No companion command yet"
 var _party_fish: Array[SeaPartyFollower] = []
 var _party_dive_active: bool = false
+var _world_dialogue_queue: SeaWorldDialogueQueue
 var _perfect_parry_line_flash_left: float = 0.0
 # Keeps the hooked fish in open water during the fight (see _is_open_water).
 # Loaded by path (like WILD_FISH_SCRIPT) so it works before the editor has
@@ -90,6 +91,10 @@ func _ready() -> void:
 	add_child(_sfx)
 	_install_tutorial_cue()
 	_install_oxygen_hud()
+	_world_dialogue_queue = SeaWorldDialogueQueue.new()
+	_world_dialogue_queue.name = "WorldDialogueQueue"
+	add_child(_world_dialogue_queue)
+	_world_dialogue_queue.configure(can_start_world_dialogue)
 	_oxygen.oxygen_changed.connect(_update_oxygen_hud)
 	_oxygen.oxygen_depleted.connect(_on_oxygen_depleted)
 	_story.first_companion_catch_completed.connect(_on_first_companion_catch_oxygen)
@@ -273,6 +278,25 @@ func _unregister_encounter_fish(fish: DivingWildFish) -> void:
 	_fish_data.erase(fish)
 
 
+# All queued conversations wait for the ENTIRE party to finish combat, not
+# just the next companion in the command rotation.
+func can_start_world_dialogue() -> bool:
+	if _player == null or not _player.swimming or _player.busy \
+			or DialogueManager.is_active or DateManager.is_active() \
+			or GameManager.is_modal_ui_open() or _combat.is_active() or _net.is_busy():
+		return false
+	for npc_id in _commands.party_order():
+		var battle: DivingCompanionBattle = _commands.battle_for(npc_id)
+		if is_instance_valid(battle) and battle.is_active():
+			return false
+	return true
+
+
+func queue_world_dialogue(event_id: StringName, context: NPCData,
+		json_path: String, cast: Array[NPCData] = [], priority: int = 0) -> bool:
+	return _world_dialogue_queue.enqueue(event_id, context, json_path, cast, priority)
+
+
 func enter_from_dock() -> void:
 	if _player == null:
 		push_warning("Sea needs World/Player to start a dive.")
@@ -280,6 +304,7 @@ func enter_from_dock() -> void:
 	_set_camera_bounds(true)
 	_player.set_swimming(true, _sea_bounds())
 	_dive_inventory.begin_dive()
+	_world_dialogue_queue.begin_new_dive()
 	_oxygen.begin_dive(_story.has_event(&"first_companion_catch"))
 	# The first dive remains scripted until Silas helps with a catch.
 	# Every subsequent period gets a fresh habitat population only on entry,
@@ -340,6 +365,7 @@ func add_diving_party_member(npc: NPCData, index: int) -> void:
 
 func end_diving_party() -> void:
 	# Covers the tutorial's Silas-only party as well as roster-backed dives.
+	_world_dialogue_queue.clear_pending()
 	_commands.clear()
 	if not _party_dive_active:
 		return
