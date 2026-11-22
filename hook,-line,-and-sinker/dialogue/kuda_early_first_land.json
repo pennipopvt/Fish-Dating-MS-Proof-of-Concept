@@ -1,0 +1,30 @@
+{
+  "entry": "dock",
+  "free_greeting": true,
+  "nodes": {
+    "dock": {
+      "lines": [
+        {
+          "speaker": "player",
+          "text": "Kuda?! You made it back... but you have legs?!"
+        },
+        {
+          "speaker": "barracuda",
+          "text": "Yeah, I noticed. Had to drag myself out of the water after that fight, and suddenly—this."
+        },
+        {
+          "speaker": "barracuda",
+          "text": "I was worried you were still down there. Don't pull that on me again."
+        },
+        {
+          "speaker": "player",
+          "text": "You need somewhere to rest. Come on, I'll show you the townhouse."
+        },
+        {
+          "speaker": "barracuda",
+          "text": "Hmph. Fine. But I'm walking there on my own."
+        }
+      ]
+    }
+  }
+}

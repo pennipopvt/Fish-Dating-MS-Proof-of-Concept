@@ -1,0 +1,26 @@
+{
+  "entry": "injured",
+  "free_greeting": true,
+  "nodes": {
+    "injured": {
+      "lines": [
+        {
+          "speaker": "barracuda",
+          "text": "Damn it—! I've taken too many hits."
+        },
+        {
+          "speaker": "player",
+          "text": "Kuda, can you keep going?"
+        },
+        {
+          "speaker": "barracuda",
+          "text": "No. I'm heading back. I can still swim, don't worry about me."
+        },
+        {
+          "speaker": "barracuda",
+          "text": "Just don't get yourself killed out here, got it?"
+        }
+      ]
+    }
+  }
+}

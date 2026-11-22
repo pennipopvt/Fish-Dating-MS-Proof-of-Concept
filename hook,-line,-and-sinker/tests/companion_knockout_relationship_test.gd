@@ -27,6 +27,7 @@ func _run() -> void:
 	var party: DivingParty = transition.get_node("DivingParty") as DivingParty
 	var story: SeaStoryDirector = sea.get_node("StoryDirector") as SeaStoryDirector
 	var commands: SeaPartyCommands = sea.get_node("PartyCommands") as SeaPartyCommands
+	var queue: SeaWorldDialogueQueue = sea.get_node("WorldDialogueQueue") as SeaWorldDialogueQueue
 	for npc in [SILAS, KUDA]:
 		var state: Dictionary = NPCManager.get_npc_state(npc.npc_id)
 		state["room_id"] = &"knockout_test_room"
@@ -63,15 +64,29 @@ func _run() -> void:
 		"KO temporarily blocks dives but never dismisses the resident")
 	_check(commands.next_available_id() == KUDA.npc_id,
 		"Kuda remains available to receive combat orders")
+	_check(queue.pending_count() == 1,
+		"Silas's knockout schedules his immediate underwater sendoff dialogue")
+	queue._process(0.0)
+	_check(DialogueManager.is_active
+		and DialogueManager.get_current_line().speaker_id == SILAS.npc_id,
+		"Silas speaks with his own fish-form identity in the existing dialogue UI")
+	var silas_heading_back := _finish_ko_dialogue()
+	_check(silas_heading_back
+		and not (sea.get_node("NPCs/Silas") as SeaNPC).following,
+		"Silas says he is heading back before retreating from Penni")
 	var count_after_ko: int = AffectionManager.get_affection(SILAS.npc_id)
 	sea.call("_on_battle_companion_knocked_out")
 	_check(AffectionManager.get_affection(SILAS.npc_id) == count_after_ko,
 		"Duplicate knockout signal cannot subtract affection twice")
 
 	_knock_out(kuda_battle, fish2)
-	_check(kuda_battle.exhausted and kuda_actor.retreating
-		and commands.party_order().is_empty(),
-		"Kuda KO retreats and cannot be commanded again that dive")
+	_check(kuda_battle.exhausted and commands.party_order().is_empty()
+		and not kuda_actor.retreating and queue.pending_count() == 1,
+		"Kuda waits to say he is heading back before retreating")
+	queue._process(0.0)
+	var kuda_heading_back := _finish_ko_dialogue()
+	_check(kuda_heading_back and kuda_actor.retreating,
+		"Kuda's own knockout sendoff ends before his retreat")
 	_check(AffectionManager.get_affection(KUDA.npc_id) ==
 		before_kuda - sea.knockout_affection_loss
 		and NPCManager.has_active_relationship_event(KUDA, &"companion_knockout"),
@@ -126,8 +141,8 @@ func _run() -> void:
 	if first_dive_battle != null:
 		_knock_out(first_dive_battle, fish3)
 	_check(not NPCManager.has_active_relationship_event(KUDA, &"companion_knockout")
-		and party.members().has(KUDA),
-		"First-land knockout cannot block the still-pending shore and room introduction")
+		and party.members().has(KUDA) and sea.early_returning_companions().has(KUDA),
+		"First-land KO preserves recruitment and records Kuda waiting on shore")
 	main.queue_free()
 	await get_tree().process_frame
 	NPCManager.npc_states.clear()
@@ -144,6 +159,18 @@ func _knock_out(battle: DivingCompanionBattle, target: DivingWildFish) -> void:
 	battle.set("_companion_timer", 100.0)
 	battle.set("_fish_timer", 0.0)
 	battle.step(0.1, true)
+
+
+func _finish_ko_dialogue() -> bool:
+	var heard_back := false
+	for i in range(30):
+		if not DialogueManager.is_active:
+			break
+		var line: DialogueLineData = DialogueManager.get_current_line()
+		if line != null and line.text.contains("heading back"):
+			heard_back = true
+		DialogueManager.advance()
+	return heard_back
 
 
 func _advance_to_choices() -> void:

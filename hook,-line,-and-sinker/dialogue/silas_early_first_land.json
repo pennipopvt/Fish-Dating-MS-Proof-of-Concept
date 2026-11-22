@@ -1,0 +1,30 @@
+{
+  "entry": "dock",
+  "free_greeting": true,
+  "nodes": {
+    "dock": {
+      "lines": [
+        {
+          "speaker": "player",
+          "text": "Silas? You're already here... and you're human?!"
+        },
+        {
+          "speaker": "test_npc",
+          "text": "I swam back after the fight, but when I climbed out... I changed. I still don't know how!"
+        },
+        {
+          "speaker": "test_npc",
+          "text": "I was scared you wouldn't make it back, too."
+        },
+        {
+          "speaker": "player",
+          "text": "I'm here. Let's get you somewhere safe to recover."
+        },
+        {
+          "speaker": "test_npc",
+          "text": "...Thank you, Penni. I'd like that."
+        }
+      ]
+    }
+  }
+}
