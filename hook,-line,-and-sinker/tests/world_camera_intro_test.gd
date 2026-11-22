@@ -18,7 +18,7 @@ func _run() -> void:
 	var state: SceneState = WORLD.get_state()
 	for index in range(state.get_node_count()):
 		var node_name: String = str(state.get_node_name(index))
-		if node_name == "IntroBoat":
+		if node_name == "IntroBoat" or node_name == "Townhouse" or node_name == "TownhouseArrival" or node_name == "Sky" or node_name == "CameraController":
 			print("[BOAT DEBUG] PackedScene node=", node_name,
 				" parent=", state.get_node_path(index, true),
 				" instance=", state.get_node_instance(index))
