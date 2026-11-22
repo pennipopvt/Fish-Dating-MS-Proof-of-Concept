@@ -6,6 +6,17 @@ extends Node2D
 # visible height follows the world-space waterline; it never chases a camera.
 @export_range(0.0, 4.0, 0.1) var transition_seconds: float = 1.6
 
+# These are the real gameplay colors, not just shader defaults. Editing
+# them on World changes both the surface and its opaque backdrop underwater.
+@export_group("Water Colors")
+@export var water_sunrise_color: Color = Color("#4e7c96")
+@export var water_morning_color: Color = Color("#4a88a7")
+@export var water_afternoon_color: Color = Color("#4289ac")
+@export var water_late_afternoon_color: Color = Color("#3c7c9e")
+@export var water_sunset_color: Color = Color("#58718f")
+@export var water_night_color: Color = Color("#162c4b")
+
+
 const AFTERNOON_START: float = 1.0 / 3.0
 const SUNSET_START: float = 5.0 / 9.0
 const NIGHT_START: float = 2.0 / 3.0
@@ -44,6 +55,7 @@ var _sun_glow_mat: ShaderMaterial
 var _moon_mat: ShaderMaterial
 var _moon_glow_mat: ShaderMaterial
 var _water_mat: ShaderMaterial
+var _underwater_background: ColorRect
 var _sea_clip_mat: ShaderMaterial
 var _tint_mat: ShaderMaterial
 var _transition: Tween
@@ -55,6 +67,21 @@ var _shown_progress: float = 0.0
 
 
 func _ready() -> void:
+	# The water shader is intentionally transparent while Penni swims.
+	# Without a background, that alpha exposes the viewport's near-black
+	# clear color. Add one flat backdrop behind the existing sea and sky;
+	# it uses the SAME palette and day/night clock as the water surface.
+	var underwater_layer := CanvasLayer.new()
+	underwater_layer.name = "UnderwaterBackgroundLayer"
+	underwater_layer.layer = -2
+	add_child(underwater_layer)
+	_underwater_background = ColorRect.new()
+	_underwater_background.name = "UnderwaterBackground"
+	_underwater_background.size = Vector2(320.0, 180.0)
+	_underwater_background.color = water_afternoon_color
+	_underwater_background.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	underwater_layer.add_child(_underwater_background)
+
 	# World/Sky remains a normal editable scene node. We move that SAME
 	# hierarchy into a viewport-locked background layer at runtime so camera
 	# smoothing cannot make the gradient, sun or moon shimmer. Clouds still
@@ -208,6 +235,7 @@ func _refresh_target() -> void:
 	# World CanvasModulate, so apply the SAME clock color here explicitly.
 	_transition.tween_property(_clouds, "modulate", state["ambient"], transition_seconds)
 	_transition.tween_property(_water_mat, "shader_parameter/water_color", state["water"], transition_seconds)
+	_transition.tween_property(_underwater_background, "color", state["water"], transition_seconds)
 	_transition.tween_property(_water_mat, "shader_parameter/highlight_color", state["water_highlight"], transition_seconds)
 	_transition.tween_method(_show_discs_at.bind(not day_rollover), _shown_progress, progress, transition_seconds)
 	_transition.tween_property(_sun_glow_mat, "shader_parameter/intensity", state["sun_glow"], transition_seconds)
@@ -247,6 +275,7 @@ func _apply_immediately(state: Dictionary) -> void:
 	_ambient.color = state["ambient"]
 	_clouds.modulate = state["ambient"]
 	_water_mat.set_shader_parameter("water_color", state["water"])
+	_underwater_background.color = state["water"]
 	_water_mat.set_shader_parameter("highlight_color", state["water_highlight"])
 	_sun.position = state["sun_position"]
 	_sun.modulate = Color.WHITE
@@ -273,8 +302,8 @@ func _visual_state(progress: float) -> Dictionary:
 		Color("#ffe0bd"), Color("#fff0dd"), Color("#f2f8ff"),
 		Color("#f1f6ff"), Color("#ffd0ab"), Color("#394f75"))
 	var water := _day_color(progress,
-		Color("#3c6985"), Color("#33769e"), Color("#317ca0"),
-		Color("#2d7194"), Color("#485f7d"), Color("#102643"))
+		water_sunrise_color, water_morning_color, water_afternoon_color,
+		water_late_afternoon_color, water_sunset_color, water_night_color)
 	var water_highlight := _day_color(progress,
 		Color("#f1b98b"), Color("#d9e4e5"), Color("#b9e6fb"),
 		Color("#b2dbf1"), Color("#ffd0a2"), Color("#6489b7"))
