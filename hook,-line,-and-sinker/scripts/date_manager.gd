@@ -63,6 +63,9 @@ var _venue: Node2D = null
 var _restore: Array = []
 var _fade: ScreenFade
 var _date_player: Player = null
+# Some venues (the original opening boat) author their own camera focus.
+# DateManager borrows the existing World camera, never spawns another.
+var _date_camera: WorldCameraController = null
 
 
 func _ready() -> void:
@@ -322,6 +325,13 @@ func start_date(date: DateData) -> void:
 		_venue.global_position = date.venue_position
 		venue = _venue
 	_move(player, _spot(venue, &"PlayerSpot"))
+	# Match the original intro boat camera composition while we're there.
+	# Only venues with a CameraFocus marker override normal follow mode.
+	var camera_focus: Marker2D = venue.get_node_or_null("CameraFocus") as Marker2D
+	if camera_focus != null:
+		_date_camera = player.get_parent().get_node_or_null("CameraController") as WorldCameraController
+		if _date_camera != null:
+			_date_camera.snap_to(camera_focus.global_position)
 	# An authored date venue may specify a shared foreground layer for its
 	# characters. Keep them in World (no reparenting), and restore Penni's
 	# original draw order along with her position when the date ends.
@@ -408,6 +418,9 @@ func _finish(completed: bool) -> void:
 			node.global_position = entry[1]
 			node.z_index = entry[2]
 	_restore.clear()
+	if is_instance_valid(_date_camera):
+		_date_camera.snap_to_player()
+	_date_camera = null
 	if is_instance_valid(_date_actor):
 		_date_actor.queue_free()
 	_date_actor = null
