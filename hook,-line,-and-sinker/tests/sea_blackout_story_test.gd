@@ -58,6 +58,7 @@ func _run() -> void:
 		"Recovery conversation uses the two returning companions")
 	var saw_silas := false
 	var saw_kuda := false
+	var saw_first_transformation := false
 	for i in range(40):
 		if not DialogueManager.is_active or DialogueManager.current_npc.npc_id != &"oxygen_blackout_story":
 			break
@@ -65,24 +66,24 @@ func _run() -> void:
 		if line != null:
 			saw_silas = saw_silas or line.speaker_id == SILAS.npc_id
 			saw_kuda = saw_kuda or line.speaker_id == KUDA.npc_id
+			saw_first_transformation = saw_first_transformation or line.text.contains(
+				"halfway up")
 		DialogueManager.advance()
 	_check(saw_silas and saw_kuda, "Both companions speak in the recovery scene")
-	for i in range(30):
-		if DialogueManager.is_active:
-			break
-		await get_tree().process_frame
-	_check(DialogueManager.is_active and DialogueManager.current_npc == KUDA,
-		"Kuda's first shore introduction plays after the recovery scene")
-	_check(not RecruitmentHandler.is_resident(KUDA.npc_id),
-		"Kuda is not given a room before his introduction")
-	if DialogueManager.is_active:
-		DialogueManager.end_conversation()
+	_check(saw_first_transformation,
+		"Kuda addresses his new body WHILE recovering Penni on the dock")
 	for i in range(55):
 		if DialogueManager.is_active:
 			break
 		await get_tree().create_timer(0.05).timeout
-	_check(DialogueManager.is_active and DialogueManager.current_npc == KUDA,
-		"Penni still takes Kuda in front of the townhouse after blackout")
+	var house_spot := world.get_node("TownhouseArrival/PlayerSpot") as Marker2D
+	_check(story.has_kuda_flag(&"kuda_surface_introduced"),
+		"Kuda's surface reveal milestone is complete from the rescue dialogue")
+	_check(DialogueManager.is_active and DialogueManager.current_npc == KUDA
+		and player.global_position.distance_to(house_spot.global_position) < 1.0,
+		"Kuda goes directly to his townhouse talk, without a second dock reveal")
+	_check(not RecruitmentHandler.is_resident(KUDA.npc_id),
+		"Kuda receives his room only after the townhouse dialogue")
 	if DialogueManager.is_active:
 		DialogueManager.end_conversation()
 	for i in range(65):

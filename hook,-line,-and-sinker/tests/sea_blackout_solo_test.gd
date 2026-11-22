@@ -45,6 +45,7 @@ func _run() -> void:
 		"Kuda rescues Penni even when Silas is absent")
 	var saw_silas := false
 	var saw_kuda := false
+	var saw_first_transformation := false
 	for i in range(40):
 		if not DialogueManager.is_active or DialogueManager.current_npc.npc_id != &"oxygen_blackout_story":
 			break
@@ -52,21 +53,22 @@ func _run() -> void:
 		if line != null:
 			saw_silas = saw_silas or line.speaker_id == SILAS.npc_id
 			saw_kuda = saw_kuda or line.speaker_id == KUDA.npc_id
+			saw_first_transformation = saw_first_transformation or line.text.contains(
+				"halfway up")
 		DialogueManager.advance()
 	_check(saw_kuda and not saw_silas,
 		"The recovery scene automatically skips all absent Silas lines")
-	for i in range(30):
-		if DialogueManager.is_active:
-			break
-		await get_tree().process_frame
-	_check(DialogueManager.is_active and DialogueManager.current_npc == KUDA,
-		"Kuda's human-form introduction still follows the rescue")
-	if DialogueManager.is_active:
-		DialogueManager.end_conversation()
+	_check(saw_first_transformation,
+		"Kuda mentions suddenly being human without a separate first reveal")
 	for i in range(55):
 		if DialogueManager.is_active:
 			break
 		await get_tree().create_timer(0.05).timeout
+	var house_spot := world.get_node("TownhouseArrival/PlayerSpot") as Marker2D
+	_check(story.has_kuda_flag(&"kuda_surface_introduced")
+		and DialogueManager.is_active and DialogueManager.current_npc == KUDA
+		and player.global_position.distance_to(house_spot.global_position) < 1.0,
+		"Kuda-only blackout skips the ordinary surface reveal and goes to housing")
 	if DialogueManager.is_active:
 		DialogueManager.end_conversation()
 	for i in range(65):
