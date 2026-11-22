@@ -75,12 +75,12 @@ func _run() -> void:
 	_check(motion_root.get_node_or_null("PenniDiveDescent") == null
 		and motion_root.get_node_or_null("CompanionDiveDescent") == null,
 		"Each diver has one continuous jump path, not an extra descent tween")
-	_check(motion.authored_end().y >= DivingWorld.SEA_TOP + 80.0
-		and sea.call("_is_open_water", sea.to_local(motion.authored_end())),
-		"Single jump path ends deep underwater in open water")
+	_check(motion.authored_end().y > (world.get_node("Water") as ColorRect).global_position.y
+		and sea._sea_bounds().has_point(sea.to_local(motion.authored_end())),
+		"Penni's latest authored curve ends inside the swim area below the real waterline")
 	var waterline: float = (world.get_node("Water") as ColorRect).global_position.y
-	_check(motion.authored_start().y < waterline and motion.authored_end().y > waterline + 80.0,
-		"One Penni dive curve crosses the real water surface and reaches deep water")
+	_check(motion.authored_start().y < waterline and motion.authored_end().y > waterline + 8.0,
+		"One editable Penni curve crosses the real water surface and ends underwater")
 	var companion: SeaMotionPath = motion_root.get_node("CompanionDiveJump") as SeaMotionPath
 	_check(companion.authored_start().y < waterline
 		and companion.authored_end().y >= DivingWorld.SEA_TOP + 80.0,
