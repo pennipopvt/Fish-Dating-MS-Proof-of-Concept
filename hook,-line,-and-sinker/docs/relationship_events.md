@@ -104,3 +104,27 @@ everyday conversation. Like other incidents, higher-priority events
 Coverage: `tests/jealousy_relationship_test.tscn`,
 `tests/relationship_dates_test.tscn`,
 `tests/companion_morale_test.tscn`, and the Godot smoke workflow.
+
+## Morning invitation story beats
+
+Silas and Kuda's first invitation is no longer selected by ordinary room
+encounters. After receiving the desired gift and waiting at least one new day,
+an eligible resident approaches Penni as a world actor when she wakes from a
+night's sleep. `IslandStoryDirector` owns eligibility, morning-only scheduling,
+input lock, actor entrance/exit and the fade when both characters are ready.
+The NPC's existing `land_actor_scene_path` is spawned non-interactively using
+`NPCTemporaryActor`; the dialogue is still authored in the existing JSON
+files, and flags still belong to `NPCManager`.
+
+Editor controls: move `World/MorningStoryEntry` to change where guests enter;
+edit `resources/story_events/*_morning_invitation.tres` to change conditions,
+approach distance/speed or retry interval. A declined invitation may be offered
+again no sooner than three days later; accepting its flag ends further offers.
+Only `GameManager.day_started` queues morning events, so receiving a gift
+midday will not trigger the invitation until waking on a later morning.
+
+Manual regression: give both gifts on the same day, sleep overnight, verify
+Silas walks in and initiates his invitation, walks out afterward, then a screen
+fade separates Kuda's own entrance and conversation. Test accept/decline,
+decline again after the cooldown, accepted flags preventing repeats, ordinary
+room dialogue without invitations, and Fish Co daytime events.

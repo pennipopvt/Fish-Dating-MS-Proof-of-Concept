@@ -212,6 +212,10 @@ position = Vector2(195, 96)
 [node name="Bed" parent="." unique_id=1873402519 instance=ExtResource("25_bed")]
 position = Vector2(505, 104)
 
+# Move this marker in the editor to choose where morning visitors appear.
+[node name="MorningStoryEntry" type="Marker2D" parent="."]
+position = Vector2(443, 112)
+
 [node name="Beach" parent="." unique_id=1034296826 instance=ExtResource("26_beach")]
 position = Vector2(860, 112)
 
