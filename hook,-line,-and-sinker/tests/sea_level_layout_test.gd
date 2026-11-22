@@ -120,8 +120,8 @@ func _run() -> void:
 		"Physics ray hits a sea floor tile collider before passing through")
 	guide.map_size = Vector2(1040, 620)
 	sea.call("_set_camera_bounds", true)
-	_check((player.get_node("Camera2D") as Camera2D).limit_left == -832
-		and (player.get_node("Camera2D") as Camera2D).limit_right == 272,
+	_check((world.get_node("CameraController/Camera2D") as Camera2D).limit_left == -832
+		and (world.get_node("CameraController/Camera2D") as Camera2D).limit_right == 272,
 		"Left-hand sea camera limits follow the editor's Map Origin and Map Size")
 	sea.call("_set_camera_bounds", false)
 
