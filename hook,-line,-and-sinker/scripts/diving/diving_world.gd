@@ -96,7 +96,7 @@ const HOOKED_FISH_PROBES: Array[Vector2] = [
 func _ready() -> void:
 	_player = get_parent().get_node_or_null("Player") as Player
 	if _player != null:
-		_camera = _player.get_node_or_null("Camera2D") as Camera2D
+		_camera = get_parent().get_node_or_null("CameraController/Camera2D") as Camera2D
 	_cache_terrain_colliders()
 	_hooked_mover.is_open = _is_open_water
 	_sfx = SEA_SFX_SCENE.instantiate()
@@ -136,7 +136,7 @@ func _ready() -> void:
 
 
 # The tutorial cue stays on the camera, but oxygen is real screen-space UI:
-# a CanvasLayer in the sea's 320x180 SubViewport, never on Penni/Camera2D.
+# a CanvasLayer in the sea's 320x180 SubViewport, never on Player/Camera2D.
 func _install_oxygen_hud() -> void:
 	_oxygen_hud = get_node_or_null("SeaOxygenHud") as SeaOxygenHud
 	if _oxygen_hud == null:
@@ -172,7 +172,7 @@ func _on_oxygen_depleted() -> void:
 # scene/PNG cannot take down the main game.
 func _install_tutorial_cue() -> void:
 	if _camera == null:
-		push_warning("Sea tutorial unavailable: Player Camera2D is missing.")
+		push_warning("Sea tutorial unavailable: World camera is missing.")
 		return
 	_cue = _camera.get_node_or_null("SeaTutorialCue") as SeaTutorialCue
 	if _cue == null:
@@ -416,19 +416,10 @@ func _sea_bounds() -> Rect2:
 
 
 func _set_camera_bounds(in_sea: bool) -> void:
-	if _camera == null:
-		return
-	if in_sea:
-		_camera.limit_left = roundi(_guide.map_origin.x)
-		_camera.limit_top = -90
-		_camera.limit_right = roundi(_guide.map_origin.x + _guide.map_size.x + 64.0)
-		_camera.limit_bottom = roundi(_guide.map_size.y)
-	else:
-		_camera.limit_left = -10000000
-		_camera.limit_top = -10000000
-		_camera.limit_right = 10000000
-		_camera.limit_bottom = 10000000
-
+	var controller: WorldCameraController = get_parent().get_node_or_null(
+		"CameraController") as WorldCameraController
+	if controller != null:
+		controller.set_sea_limits(in_sea, _guide.map_origin, _guide.map_size)
 
 func _process(delta: float) -> void:
 	if _player == null or not _player.swimming:
