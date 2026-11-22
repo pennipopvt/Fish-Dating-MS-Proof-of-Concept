@@ -45,9 +45,9 @@ func start() -> void:
 	if _contract_call_finished:
 		return
 	# Stage the existing world-space boat before the phone call.
-	# A Godot editor hot-reload can retain a World instance created before
-	# the new IntroBoat scene was added; recover the SAME authored PackedScene
-	# rather than crashing while accessing a missing PlayerSpot.
+	# Godot 4.7 silently omitted the authored nested scene instance inside
+	# world.tscn. The existing opening owner places its reusable boat scene
+	# directly into the SAME World instead of relying on that broken nesting.
 	var boat: Node2D = _ensure_intro_boat()
 	var camera: WorldCameraController = _world.get_node_or_null("CameraController") as WorldCameraController
 	if boat != null:
@@ -68,7 +68,7 @@ func _ensure_intro_boat() -> Node2D:
 	var boat: Node2D = _world.get_node_or_null("IntroBoat") as Node2D
 	if boat != null:
 		return boat
-	push_warning("World/IntroBoat missing after reload; restoring the authored boat scene.")
+	# Spawn once in the existing world at the authored scene coordinates.
 	boat = INTRO_BOAT_SCENE.instantiate() as Node2D
 	if boat == null:
 		push_error("Could not instantiate the intro boat scene.")
