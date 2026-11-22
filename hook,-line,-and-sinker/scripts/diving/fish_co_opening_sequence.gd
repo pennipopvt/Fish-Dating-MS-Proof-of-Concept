@@ -78,6 +78,16 @@ func _ensure_intro_boat() -> Node2D:
 	return boat
 
 
+# Only the opening's world actor is temporary. The same packed boat scene
+# can be instantiated separately later as Kuda's date venue.
+func release_intro_boat() -> void:
+	if _world == null:
+		return
+	var boat: Node2D = _world.get_node_or_null("IntroBoat") as Node2D
+	if is_instance_valid(boat):
+		boat.queue_free()
+
+
 # Existing authored FishCoIntro takes priority; restore that same PackedScene
 # if a hot reload dropped only its child, without cloning the world.
 func _ensure_intro_nodes() -> void:
@@ -187,6 +197,7 @@ func debug_skip_to_dive() -> bool:
 	if is_instance_valid(_intro):
 		_intro.end()
 	hide()
+	release_intro_boat()
 	var dock: Node2D = _world.get_node("Dock") as Node2D
 	_world_player.global_position = dock.global_position + Vector2(22.0, 11.0)
 	_world_player.z_index = 0
