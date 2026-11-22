@@ -248,8 +248,30 @@ func _run() -> void:
 	_check(story.has_kuda_flag(&"kuda_surface_introduced")
 		and not story.can_begin_kuda_surface_reveal(),
 		"Finishing the shore dialogue prevents it repeating on later dives")
-	_check(RecruitmentHandler.is_resident(KUDA.npc_id),
-		"KudaEncounter assigns his townhouse room after the introduction")
+	# The dock reveal now leads into a separate townhouse conversation.
+	# Housing must NOT be assigned until Penni has shown Kuda his room.
+	_check(not RecruitmentHandler.is_resident(KUDA.npc_id),
+		"Kuda does not get a room before the townhouse conversation")
+	for i in range(50):
+		if DialogueManager.is_active:
+			break
+		await get_tree().create_timer(0.05).timeout
+	var kuda_house_spot: Marker2D = world.get_node("TownhouseArrival/KudaSpot") as Marker2D
+	_check(DialogueManager.is_active and DialogueManager.current_npc == KUDA
+		and player.global_position.distance_to(
+			(world.get_node("TownhouseArrival/PlayerSpot") as Marker2D).global_position) < 1.0,
+		"After the dock, Penni introduces Kuda to his townhouse room")
+	_check(kuda_actor.global_position.distance_to(kuda_house_spot.global_position) < 35.0,
+		"Kuda is visibly standing at the townhouse")
+	if DialogueManager.is_active:
+		DialogueManager.end_conversation()
+	for i in range(50):
+		if RecruitmentHandler.is_resident(KUDA.npc_id):
+			break
+		await get_tree().create_timer(0.05).timeout
+	_check(RecruitmentHandler.is_resident(KUDA.npc_id)
+		and story.has_kuda_flag(&"kuda_has_home"),
+		"Kuda gets a room only after finishing the townhouse scene")
 	var kuda_only: Array[Node2D] = [kuda_actor]
 	sea.on_party_surfaced(kuda_only)
 	_check(not DialogueManager.is_active,
