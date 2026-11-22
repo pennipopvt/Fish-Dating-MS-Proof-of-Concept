@@ -74,6 +74,7 @@ sea_visuals = ExtResource("sea_visuals")
 sea_battle_stats = ExtResource("kuda_stats")
 sea_combat_behavior_script = ExtResource("kuda_behavior")
 sea_knockout_dialogue_json = "res://dialogue/kuda_sea_knockout.json"
+sea_first_land_knockout_dialogue_json = "res://dialogue/kuda_first_land_knockout.json"
 sea_first_land_after_knockout_json = "res://dialogue/kuda_early_first_land.json"
 house = ExtResource("4_house")
 door = SubResource("TownhouseKudaDoor")

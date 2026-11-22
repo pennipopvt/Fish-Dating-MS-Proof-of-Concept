@@ -24,7 +24,10 @@ extends Resource
 @export var sea_combat_behavior_script: Script
 ## Shown in the existing underwater conversation UI after a companion KO.
 @export_file("*.json") var sea_knockout_dialogue_json: String = ""
-## First dock meeting after they retreated alone before ever receiving a room.
+## When a companion has never reached shore, Penni takes them back to
+## recover instead of letting them swim away. Authored underwater sendoff.
+@export_file("*.json") var sea_first_land_knockout_dialogue_json: String = ""
+## First dock conversation when Penni brings the injured fish to care for them.
 @export_file("*.json") var sea_first_land_after_knockout_json: String = ""
 
 @export_group("Appearance")

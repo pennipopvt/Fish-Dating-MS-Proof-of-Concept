@@ -256,26 +256,24 @@ func mark_silas_surface_rescued() -> void:
 	silas_surface_reveal_finished.emit()
 
 
-# An injured companion who returned ahead of Penni may be standing on
-# land for the first time. Reuse the same NPC-specific JSON and dialogue UI;
-# the temporary owner avoids treating this cutscene as a daily check-in.
-func play_early_shore_reunions(early: Array[NPCData],
+# Penni returns with an injured fish who has never reached land. The
+# normal shore actor and townhouse hooks handle their first transformation
+# and housing; only the words describing WHO rescued whom are different.
+func play_first_land_care_dialogue(npc: NPCData,
 		present_cast: Array[NPCData]) -> void:
-	for npc in early:
-		if RecruitmentHandler.is_resident(npc.npc_id) \
-				or npc.sea_first_land_after_knockout_json.is_empty():
-			continue
-		if DialogueManager.is_active:
-			await DialogueManager.conversation_finished
-		var context := NPCData.new()
-		context.npc_id = StringName("early_shore_%s" % String(npc.npc_id))
-		context.display_name = npc.display_name
-		context.portrait = npc.portrait
-		dialogue_mode_requested.emit(false)
-		DialogueManager.request_conversation(context,
-			npc.sea_first_land_after_knockout_json, null, present_cast)
-		if DialogueManager.is_active and DialogueManager.current_npc == context:
-			await DialogueManager.conversation_finished
+	if npc == null or npc.sea_first_land_after_knockout_json.is_empty():
+		return
+	if DialogueManager.is_active:
+		await DialogueManager.conversation_finished
+	var context := NPCData.new()
+	context.npc_id = StringName("first_land_care_%s" % String(npc.npc_id))
+	context.display_name = npc.display_name
+	context.portrait = npc.portrait
+	dialogue_mode_requested.emit(false)
+	DialogueManager.request_conversation(context,
+		npc.sea_first_land_after_knockout_json, null, present_cast)
+	if DialogueManager.is_active and DialogueManager.current_npc == context:
+		await DialogueManager.conversation_finished
 
 
 # Shared dialogue system and persistent NPC flags; Kuda's physical presentation
