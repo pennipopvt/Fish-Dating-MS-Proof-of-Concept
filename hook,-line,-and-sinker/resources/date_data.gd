@@ -21,6 +21,13 @@ enum When {
 # sea). Needs PlayerSpot and NpcSpot Marker2D children.
 @export var venue_scene: PackedScene
 @export var venue_position: Vector2 = Vector2.ZERO
+
+@export_group("Date Actor Placement")
+# NpcSpot in the date venue is the NPC's FEET position. Offset those feet
+# per date in the Inspector without moving the island geometry or changing
+# the shared dock/cutscene actor placement code.
+@export var npc_feet_offset: Vector2 = Vector2.ZERO
+
 @export_file("*.json") var dialogue_json: String = ""
 
 @export_group("Timing")
