@@ -185,53 +185,31 @@ point_count = 18
 resource_local_to_scene = true
 bake_interval = 2.0
 _data = {
-"points": PackedVector2Array(0, 0, -25, -23, 67, 112, 16, -10, -17, 21, 29, 88, 13, -34, 0, 0, 6, 158)
+"points": PackedVector2Array(0, 0, -25, -23, 67, 112, 16, -10, -17, 21, 29, 88, 13, -34, -27, 20, 6, 158, 20, -17, -27, 23, -51, 207, 24, -21, 0, 0, -119, 256)
 }
-point_count = 3
+point_count = 5
 
 [sub_resource type="Curve" id="Speed_PenniDiveJump"]
 resource_local_to_scene = true
 _data = [Vector2(0.000, 0.35), 0.0, 0.0, 0, 0, Vector2(0.500, 1), 0.0, 0.0, 0, 0, Vector2(1.000, 0.65), 0.0, 0.0, 0, 0]
 point_count = 3
 
-[sub_resource type="Curve2D" id="Motion_PenniDiveDescent"]
-resource_local_to_scene = true
-bake_interval = 2.0
-_data = {
-"points": PackedVector2Array(0, 0, -27, 20, 6, 158, 20, -17, -27, 23, -51, 207, 24, -21, 0, 0, -119, 256)
-}
-point_count = 3
 
-[sub_resource type="Curve" id="Speed_PenniDiveDescent"]
-resource_local_to_scene = true
-_data = [Vector2(0.000, 0.55), 0.0, 0.0, 0, 0, Vector2(0.500, 1), 0.0, 0.0, 0, 0, Vector2(1.000, 0.3), 0.0, 0.0, 0, 0]
-point_count = 3
 
 [sub_resource type="Curve2D" id="Motion_CompanionDiveJump"]
 resource_local_to_scene = true
 bake_interval = 2.0
 _data = {
-"points": PackedVector2Array(0, 0, -20, -24, 88, 112, 12, -11, -25, 18, 55, 88, 16, -34, 0, 0, 12, 158)
+"points": PackedVector2Array(0, 0, -20, -24, 88, 112, 12, -11, -25, 18, 55, 88, 16, -34, -33, 22, 12, 158, 23, -18, -31, 24, -64, 212, 24, -23, 0, 0, -139, 264)
 }
-point_count = 3
+point_count = 5
 
 [sub_resource type="Curve" id="Speed_CompanionDiveJump"]
 resource_local_to_scene = true
 _data = [Vector2(0.000, 0.25), 0.0, 0.0, 0, 0, Vector2(0.500, 1), 0.0, 0.0, 0, 0, Vector2(1.000, 0.55), 0.0, 0.0, 0, 0]
 point_count = 3
 
-[sub_resource type="Curve2D" id="Motion_CompanionDiveDescent"]
-resource_local_to_scene = true
-bake_interval = 2.0
-_data = {
-"points": PackedVector2Array(0, 0, -33, 22, 12, 158, 23, -18, -31, 24, -64, 212, 24, -23, 0, 0, -139, 264)
-}
-point_count = 3
 
-[sub_resource type="Curve" id="Speed_CompanionDiveDescent"]
-resource_local_to_scene = true
-_data = [Vector2(0.000, 0.5), 0.0, 0.0, 0, 0, Vector2(0.500, 1), 0.0, 0.0, 0, 0, Vector2(1.000, 0.3), 0.0, 0.0, 0, 0]
-point_count = 3
 
 [sub_resource type="Curve2D" id="Motion_PenniSurface"]
 resource_local_to_scene = true
@@ -293,29 +271,13 @@ position = Vector2(101, 112)
 [node name="MotionEditingGuide" type="Marker2D" parent="Points"]
 editor_description = "Select a motion's Path child to reshape its Bezier path. On the parent, edit Duration Seconds and Speed Curve."
 
-[node name="PenniDiveDescent" type="Node2D" parent="Points"]
-script = ExtResource("sea_motion_path")
-duration_seconds = 1.1
-speed_curve = SubResource("Speed_PenniDiveDescent")
-
-[node name="Path" type="Path2D" parent="Points/PenniDiveDescent"]
-curve = SubResource("Motion_PenniDiveDescent")
-
 [node name="CompanionDiveJump" type="Node2D" parent="Points"]
 script = ExtResource("sea_motion_path")
-duration_seconds = 0.46
+duration_seconds = 1.56
 speed_curve = SubResource("Speed_CompanionDiveJump")
 
 [node name="Path" type="Path2D" parent="Points/CompanionDiveJump"]
 curve = SubResource("Motion_CompanionDiveJump")
-
-[node name="CompanionDiveDescent" type="Node2D" parent="Points"]
-script = ExtResource("sea_motion_path")
-duration_seconds = 1.1
-speed_curve = SubResource("Speed_CompanionDiveDescent")
-
-[node name="Path" type="Path2D" parent="Points/CompanionDiveDescent"]
-curve = SubResource("Motion_CompanionDiveDescent")
 
 [node name="PenniSurface" type="Node2D" parent="Points"]
 script = ExtResource("sea_motion_path")
@@ -335,7 +297,7 @@ curve = SubResource("Motion_CompanionSurface")
 
 [node name="PenniDiveJump" type="Node2D" parent="Points"]
 script = ExtResource("sea_motion_path")
-duration_seconds = 0.43
+duration_seconds = 1.53
 speed_curve = SubResource("Speed_PenniDiveJump")
 
 [node name="Path" type="Path2D" parent="Points/PenniDiveJump"]
