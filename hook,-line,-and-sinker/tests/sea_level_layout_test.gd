@@ -102,12 +102,14 @@ func _run() -> void:
 	var block_source: TileSetAtlasSource = solids.tile_set.get_source(0) as TileSetAtlasSource
 	_check(block_source.get_tiles_count() == 1 and block_source.texture != null,
 		"One visible 16px block is supplied for sea collision painting")
-	var sky: Control = world.get_node("Sky") as Control
-	_check(sky.get_parent() == world and sky.clip_contents,
-		"Sky belongs to World, not the player camera")
+	var sky: Control = world.get_node("SkyLayer/Sky") as Control
+	var sky_layer: CanvasLayer = sky.get_parent() as CanvasLayer
+	_check(sky_layer != null and sky_layer.layer < 0 and sky.clip_contents,
+		"Sky is viewport-anchored behind gameplay, not parented to Penni")
 	world.call("_process", 0.0)
-	_check(absf(sky.global_position.y + sky.size.y - (world.get_node("Water") as ColorRect).global_position.y) < 0.1,
-		"Sky ends exactly at the world waterline")
+	var surface_screen_y: float = (world.get_node("Water") as ColorRect).get_global_transform_with_canvas().origin.y
+	_check(absf(sky.size.y - clampf(ceilf(surface_screen_y), 0.0, 180.0)) < 0.1,
+		"Stable viewport sky clips at the real screen-space waterline")
 	# Let TileMapLayer upload physics bodies, then trace a real physics ray
 	# through an occupied column, not just the serialized tile metadata.
 	await physics_frame
