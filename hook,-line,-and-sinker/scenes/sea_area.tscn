@@ -275,41 +275,53 @@ z_index = 3
 # 2D viewport; select its Speed Curve resource to graph velocity over time.
 [node name="MotionPaths" type="Node2D" parent="Points"]
 
-[node name="PenniDiveJump" type="Path2D" parent="Points/MotionPaths"]
-curve = SubResource("Motion_PenniDiveJump")
+[node name="PenniDiveJump" type="Node2D" parent="Points/MotionPaths"]
 script = ExtResource("sea_motion_path")
 duration_seconds = 0.43
 speed_curve = SubResource("Speed_PenniDiveJump")
 
-[node name="PenniDiveDescent" type="Path2D" parent="Points/MotionPaths"]
-curve = SubResource("Motion_PenniDiveDescent")
+[node name="Path" type="Path2D" parent="Points/MotionPaths/PenniDiveJump"]
+curve = SubResource("Motion_PenniDiveJump")
+
+[node name="PenniDiveDescent" type="Node2D" parent="Points/MotionPaths"]
 script = ExtResource("sea_motion_path")
 duration_seconds = 1.1
 speed_curve = SubResource("Speed_PenniDiveDescent")
 
-[node name="CompanionDiveJump" type="Path2D" parent="Points/MotionPaths"]
-curve = SubResource("Motion_CompanionDiveJump")
+[node name="Path" type="Path2D" parent="Points/MotionPaths/PenniDiveDescent"]
+curve = SubResource("Motion_PenniDiveDescent")
+
+[node name="CompanionDiveJump" type="Node2D" parent="Points/MotionPaths"]
 script = ExtResource("sea_motion_path")
 duration_seconds = 0.46
 speed_curve = SubResource("Speed_CompanionDiveJump")
 
-[node name="CompanionDiveDescent" type="Path2D" parent="Points/MotionPaths"]
-curve = SubResource("Motion_CompanionDiveDescent")
+[node name="Path" type="Path2D" parent="Points/MotionPaths/CompanionDiveJump"]
+curve = SubResource("Motion_CompanionDiveJump")
+
+[node name="CompanionDiveDescent" type="Node2D" parent="Points/MotionPaths"]
 script = ExtResource("sea_motion_path")
 duration_seconds = 1.1
 speed_curve = SubResource("Speed_CompanionDiveDescent")
 
-[node name="PenniSurface" type="Path2D" parent="Points/MotionPaths"]
-curve = SubResource("Motion_PenniSurface")
+[node name="Path" type="Path2D" parent="Points/MotionPaths/CompanionDiveDescent"]
+curve = SubResource("Motion_CompanionDiveDescent")
+
+[node name="PenniSurface" type="Node2D" parent="Points/MotionPaths"]
 script = ExtResource("sea_motion_path")
 duration_seconds = 0.85
 speed_curve = SubResource("Speed_PenniSurface")
 
-[node name="CompanionSurface" type="Path2D" parent="Points/MotionPaths"]
-curve = SubResource("Motion_CompanionSurface")
+[node name="Path" type="Path2D" parent="Points/MotionPaths/PenniSurface"]
+curve = SubResource("Motion_PenniSurface")
+
+[node name="CompanionSurface" type="Node2D" parent="Points/MotionPaths"]
 script = ExtResource("sea_motion_path")
 duration_seconds = 1.23
 speed_curve = SubResource("Speed_CompanionSurface")
+
+[node name="Path" type="Path2D" parent="Points/MotionPaths/CompanionSurface"]
+curve = SubResource("Motion_CompanionSurface")
 
 [node name="Entry" type="Marker2D" parent="Points" unique_id=876372135]
 position = Vector2(55, 256)

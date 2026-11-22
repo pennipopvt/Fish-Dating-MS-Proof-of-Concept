@@ -1,8 +1,8 @@
 @tool
-extends Path2D
+extends Node2D
 class_name SeaMotionPath
 
-## Edit this Path2D's Curve2D handles in the 2D viewport to change WHERE
+## Edit the child Path2D's Curve2D handles in the 2D viewport to change WHERE
 ## the animation travels. Edit Speed Curve below to change HOW FAST it
 ## moves over time. This is a velocity curve, not a position easing curve:
 ## the area under it is normalized, so the motion always ends on time.
@@ -12,16 +12,26 @@ class_name SeaMotionPath
 const INTEGRATION_STEPS: int = 48
 
 
+func _path() -> Path2D:
+	return get_node_or_null("Path") as Path2D
+
+
+func _curve() -> Curve2D:
+	var path: Path2D = _path()
+	return path.curve if path != null else null
+
+
 func is_valid_motion() -> bool:
-	return curve != null and curve.get_point_count() >= 2
+	var geometry: Curve2D = _curve()
+	return geometry != null and geometry.get_point_count() >= 2
 
 
 func authored_start() -> Vector2:
-	return to_global(curve.get_point_position(0)) if is_valid_motion() else global_position
+	return _path().to_global(_curve().get_point_position(0)) if is_valid_motion() else global_position
 
 
 func authored_end() -> Vector2:
-	return to_global(curve.get_point_position(curve.get_point_count() - 1)) \
+	return _path().to_global(_curve().get_point_position(_curve().get_point_count() - 1)) \
 		if is_valid_motion() else global_position
 
 
@@ -60,8 +70,9 @@ func world_position_at(time_ratio: float,
 	if not is_valid_motion():
 		return global_position
 	var distance_ratio: float = progress_at_time(time_ratio)
-	var shaped: Vector2 = to_global(curve.sample_baked(
-		curve.get_baked_length() * distance_ratio, true))
+	var geometry: Curve2D = _curve()
+	var shaped: Vector2 = _path().to_global(geometry.sample_baked(
+		geometry.get_baked_length() * distance_ratio, true))
 	if from != Vector2.INF:
 		shaped += (from - authored_start()) * (1.0 - distance_ratio)
 	if to != Vector2.INF:
