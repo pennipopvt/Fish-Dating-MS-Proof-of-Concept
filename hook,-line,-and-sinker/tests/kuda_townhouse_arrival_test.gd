@@ -36,8 +36,23 @@ func _run() -> void:
 		"First Kuda human-form conversation opens at the dock")
 	_check(not RecruitmentHandler.is_resident(KUDA.npc_id),
 		"Room is not assigned before the human-form dialogue")
-	if DialogueManager.is_active:
-		DialogueManager.end_conversation()
+	var actual_cast: Dictionary = DialogueManager.get("_active_cast") as Dictionary
+	_check(actual_cast.has(KUDA.npc_id) and not actual_cast.has(&"test_npc"),
+		"Silas does not join the conversation when absent from the returning party")
+	var saw_silas := false
+	var saw_kuda := false
+	for i in range(50):
+		if not DialogueManager.is_active:
+			break
+		var line: DialogueLineData = DialogueManager.get_current_line()
+		if line != null and line.speaker_id == &"test_npc":
+			saw_silas = true
+		if line != null and line.speaker == DialogueLineData.Speaker.NPC:
+			saw_kuda = true
+		DialogueManager.advance()
+	_check(not saw_silas and saw_kuda and not DialogueManager.is_active,
+		"The Kuda-only introduction skips Silas's entire contribution")
+	# Ended dialogue advances the existing Kuda townhouse scene.
 	for i in range(50):
 		if DialogueManager.is_active:
 			break

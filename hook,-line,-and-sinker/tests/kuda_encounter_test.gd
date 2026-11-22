@@ -242,8 +242,31 @@ func _run() -> void:
 	sea.on_party_surfaced(transformed_party)
 	_check(DialogueManager.is_active and DialogueManager.current_npc == KUDA,
 		"KudaEncounter opens the shared dialogue after Kuda transforms")
-	if DialogueManager.is_active:
-		DialogueManager.end_conversation()
+	# Use the real returning actors, not the roster. Silas gets his own lines
+	# and human portrait while Kuda still owns the story introduction.
+	var cast: Dictionary = DialogueManager.get("_active_cast") as Dictionary
+	_check(cast.has(SILAS.npc_id) and cast.has(KUDA.npc_id),
+		"Silas and Kuda are both in the actual shore conversation cast")
+	var saw_silas_line := false
+	var saw_kuda_line := false
+	var dock_ui: DialogueUI = main.get_node("CanvasLayer/DialogueUI") as DialogueUI
+	for i in range(50):
+		if not DialogueManager.is_active:
+			break
+		var line: DialogueLineData = DialogueManager.get_current_line()
+		if line != null and line.speaker_id == SILAS.npc_id:
+			saw_silas_line = true
+			dock_ui.call("_refresh")
+			_check(dock_ui.get_node("%NameLabel").text == SILAS.display_name
+				and (dock_ui.get_node("%NPCPortrait") as TextureRect).texture == SILAS.portrait,
+				"Silas speaks with his own name and human portrait")
+		elif line != null and line.speaker == DialogueLineData.Speaker.NPC:
+			saw_kuda_line = true
+		DialogueManager.advance()
+	_check(saw_silas_line and saw_kuda_line,
+		"First Kuda return includes both characters speaking")
+	_check(not DialogueManager.is_active,
+		"The full multi-character dock introduction can finish normally")
 	await get_tree().process_frame
 	_check(story.has_kuda_flag(&"kuda_surface_introduced")
 		and not story.can_begin_kuda_surface_reveal(),

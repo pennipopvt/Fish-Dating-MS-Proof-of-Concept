@@ -231,16 +231,21 @@ func play_first_surface_reveal(surface_actors: Array[Node2D]) -> void:
 	if _story == null or not _story.can_begin_kuda_surface_reveal():
 		return
 	var kuda_actor: NPCInteractable = null
+	# Only companions physically returned in this scene can speak. Do not use
+	# the school roster: a recruited fish might not be on the current dive.
+	var present_cast: Array[NPCData] = []
 	for actor in surface_actors:
 		var guest: NPCInteractable = actor as NPCInteractable
-		if is_instance_valid(guest) and guest.visible and guest.npc != null \
-				and guest.npc.npc_id == _story.kuda_data.npc_id:
+		if not is_instance_valid(guest) or not guest.visible or guest.npc == null:
+			continue
+		if not present_cast.has(guest.npc):
+			present_cast.append(guest.npc)
+		if guest.npc.npc_id == _story.kuda_data.npc_id:
 			kuda_actor = guest
-			break
 	if kuda_actor == null:
 		return
-	# Keep the visible human actor on the dock until the dialogue ends.
-	if not _story.start_kuda_surface_reveal():
+	# The scene remains Kuda's event; guest speakers never own his story flags.
+	if not _story.start_kuda_surface_reveal(present_cast):
 		return
 	await _story.kuda_surface_reveal_finished
 	# Mirror Silas's first return: after seeing his human form on the dock,

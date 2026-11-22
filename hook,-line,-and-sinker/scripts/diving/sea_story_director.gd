@@ -180,13 +180,15 @@ func can_begin_kuda_surface_reveal() -> bool:
 
 # Kuda is already in the party. His first human-form surprise happens only
 # after the shared surface poof, and uses the normal dialogue UI/JSON.
-func start_kuda_surface_reveal() -> bool:
+func start_kuda_surface_reveal(present_cast: Array[NPCData] = []) -> bool:
 	if not can_begin_kuda_surface_reveal():
 		return false
 	_kuda_dialogue_stage = &"surface_reveal"
 	dialogue_mode_requested.emit(false)
+	# DialogueManager chooses per-line speakers from this actual returning
+	# party, while Kuda remains the owner of the entire introduction.
 	DialogueManager.request_conversation(kuda_data,
-		"res://dialogue/kuda_surface_reveal.json")
+		"res://dialogue/kuda_surface_reveal.json", null, present_cast)
 	if not DialogueManager.is_active:
 		DialogueManager.request_inline_conversation(kuda_data,
 			["Wait, I have LEGS?!", "What just happened to me?!"], "Kuda")
