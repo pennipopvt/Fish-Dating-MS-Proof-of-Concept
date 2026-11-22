@@ -22,13 +22,13 @@ const MOON_ARC_HEIGHT: float = 220.0
 const REFLECTION_AT_SURFACE: float = 0.477
 const VIEWPORT_SKY_HEIGHT: float = 180.0
 
-@onready var _sky: ColorRect = $SkyLayer/Sky/SkyGradient
-@onready var _stars: ColorRect = $SkyLayer/Sky/NightStars
-@onready var _sun: Sprite2D = $SkyLayer/Sky/Sun
-@onready var _sun_glow: ColorRect = $SkyLayer/Sky/SunGlow
-@onready var _moon: ColorRect = $SkyLayer/Sky/Moon
-@onready var _moon_glow: ColorRect = $SkyLayer/Sky/MoonGlow
-@onready var _sky_region: Control = $SkyLayer/Sky
+@onready var _sky: ColorRect = $Sky/SkyGradient
+@onready var _stars: ColorRect = $Sky/NightStars
+@onready var _sun: Sprite2D = $Sky/Sun
+@onready var _sun_glow: ColorRect = $Sky/SunGlow
+@onready var _moon: ColorRect = $Sky/Moon
+@onready var _moon_glow: ColorRect = $Sky/MoonGlow
+@onready var _sky_region: Control = $Sky
 @onready var _camera: Camera2D = $CameraController/Camera2D
 @onready var _ambient: CanvasModulate = $DayNightTint
 @onready var _water: ColorRect = $Water
@@ -54,6 +54,17 @@ var _shown_progress: float = 0.0
 
 
 func _ready() -> void:
+	# World/Sky remains a normal editable scene node. We move that SAME
+	# hierarchy into a viewport-locked background layer at runtime so camera
+	# smoothing cannot make the gradient, sun or moon shimmer. Clouds still
+	# drift using their existing script; there is no duplicate sky.
+	var sky_layer := CanvasLayer.new()
+	sky_layer.name = "SkyLayer"
+	sky_layer.layer = -1
+	add_child(sky_layer)
+	_sky_region.reparent(sky_layer, false)
+	_sky_region.position = Vector2.ZERO
+	_sky_region.size = Vector2(320.0, VIEWPORT_SKY_HEIGHT)
 	# Scene shader subresources may be shared by instances; do not animate the
 	# source assets or affect other World instances / editor previews.
 	_sky_mat = _local_material(_sky)
