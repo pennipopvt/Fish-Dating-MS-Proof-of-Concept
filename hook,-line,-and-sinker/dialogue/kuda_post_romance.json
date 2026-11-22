@@ -105,9 +105,9 @@
     },
     "ship_when": {
       "lines": [
-        "A boat ride, huh?",
-        "Heh. Not a bad idea.",
-        "When?"
+        "You want to take the boat out together?",
+        "Yeah. I could go for that.",
+        "When were you thinking?"
       ],
       "choices": [
         {
