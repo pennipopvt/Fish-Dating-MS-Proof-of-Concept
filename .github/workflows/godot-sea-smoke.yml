@@ -32,6 +32,12 @@ jobs:
             echo "Godot import reported an error."
             exit 1
           fi
+      - name: Test editable sea motion paths and velocity curves
+        shell: bash
+        run: |
+          set -o pipefail
+          timeout 120s godot --headless --path "hook,-line,-and-sinker" res://tests/sea_motion_path_test.tscn 2>&1 | tee sea-motion-path-test.log
+          ! (grep -E 'SCRIPT ERROR:|Parse Error:|Parser Error:|ERROR:|FAIL ' sea-motion-path-test.log | grep -Ev 'resources still in use at exit|RID allocations.*leaked' | grep -q .)
       - name: Start actual game scene
         shell: bash
         run: |
@@ -202,12 +208,6 @@ jobs:
           set -o pipefail
           timeout 120s godot --headless --path "hook,-line,-and-sinker" res://tests/sea_party_commands_test.tscn 2>&1 | tee party-commands-test.log
           ! (grep -E 'SCRIPT ERROR:|Parse Error:|Parser Error:|ERROR:|FAIL ' party-commands-test.log | grep -Ev 'resources still in use at exit|RID allocations.*leaked' | grep -q .)
-      - name: Test editable sea motion paths and velocity curves
-        shell: bash
-        run: |
-          set -o pipefail
-          timeout 120s godot --headless --path "hook,-line,-and-sinker" res://tests/sea_motion_path_test.tscn 2>&1 | tee sea-motion-path-test.log
-          ! (grep -E 'SCRIPT ERROR:|Parse Error:|Parser Error:|ERROR:|FAIL ' sea-motion-path-test.log | grep -Ev 'resources still in use at exit|RID allocations.*leaked' | grep -q .)
       - name: Test swim-path trail follows actual turns and resets on a new dive
         shell: bash
         run: |

@@ -7,7 +7,14 @@ var failures: int = 0
 
 
 func _ready() -> void:
+	_watchdog()
 	_run.call_deferred()
+
+
+func _watchdog() -> void:
+	await get_tree().create_timer(15.0).timeout
+	push_error("Editable sea motion test timed out")
+	get_tree().quit(1)
 
 
 func _run() -> void:
@@ -20,7 +27,10 @@ func _run() -> void:
 	var motion_root: Node2D = sea.get_node("Points") as Node2D
 	for name in ["PenniDiveJump", "PenniDiveDescent", "CompanionDiveJump",
 			"CompanionDiveDescent", "PenniSurface", "CompanionSurface"]:
-		var motion: SeaMotionPath = motion_root.get_node(name) as SeaMotionPath
+		var motion: SeaMotionPath = motion_root.get_node_or_null(name) as SeaMotionPath
+		if motion == null:
+			_check(false, name + " is missing from the sea scene")
+			continue
 		var child_path: Path2D = motion.get_node_or_null("Path") as Path2D
 		_check(motion != null and motion.is_valid_motion()
 			and motion.duration_seconds >= 0.1
