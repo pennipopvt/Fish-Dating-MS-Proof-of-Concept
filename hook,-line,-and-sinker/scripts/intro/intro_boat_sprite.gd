@@ -4,11 +4,31 @@ extends AnimatedSprite2D
 
 # The artist's existing boat.png is the sheet. Change Columns/Rows and
 # Frame Count in the Inspector if the artist rearranges the frames.
-@export var sprite_sheet: Texture2D
-@export_range(1, 16, 1) var columns: int = 4
-@export_range(1, 16, 1) var rows: int = 1
-@export_range(1, 256, 1) var frame_count: int = 4
-@export_range(1.0, 24.0, 0.5) var frames_per_second: float = 5.0
+@export var sprite_sheet: Texture2D:
+	set(value):
+		sprite_sheet = value
+		if is_node_ready():
+			_build_frames()
+@export_range(1, 16, 1) var columns: int = 4:
+	set(value):
+		columns = value
+		if is_node_ready():
+			_build_frames()
+@export_range(1, 16, 1) var rows: int = 1:
+	set(value):
+		rows = value
+		if is_node_ready():
+			_build_frames()
+@export_range(1, 256, 1) var frame_count: int = 4:
+	set(value):
+		frame_count = value
+		if is_node_ready():
+			_build_frames()
+@export_range(1.0, 24.0, 0.5) var frames_per_second: float = 5.0:
+	set(value):
+		frames_per_second = value
+		if is_node_ready():
+			_build_frames()
 
 
 func _ready() -> void:
