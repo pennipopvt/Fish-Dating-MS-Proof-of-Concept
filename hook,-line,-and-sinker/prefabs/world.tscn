@@ -94,7 +94,6 @@ position = Vector2(0, -22)
 editor_draw_limits = true
 editor_draw_drag_margin = true
 
-# One authored cue scene; the Camera2D itself does not carry the Sprite2D script.
 [node name="SeaTutorialCue" parent="CameraController/Camera2D" instance=ExtResource("tutorial_cue_scene")]
 
 [node name="UnderwaterTint" type="ColorRect" parent="CameraController/Camera2D" unique_id=1560607778]
