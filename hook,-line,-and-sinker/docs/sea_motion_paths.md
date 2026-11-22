@@ -14,7 +14,7 @@ Each named motion has two editable controls:
 | PenniSurface | Penni's return from the sea to the dock |
 | CompanionSurface | Companion fish returning from the sea to human-form dock landing, including Silas's first-land reveal |
 
-**There is no separate descent path.** When the player or companion crosses the sea surface (from `DivingWorld.SEA_TOP`), the splash happens. Penni switches to her underwater swim pose and the companion's temporary human sprite is replaced by its fish sprite **without restarting or replacing the movement tween**. The path then continues underwater to its final point. The existing water visuals can respond to world position/depth independently.
+**There is no separate descent path.** When the player or companion crosses the sea surface (from the actual `World/Water` waterline), the splash happens. Penni switches to her underwater swim pose and the companion's temporary human sprite is replaced by its fish sprite **without restarting or replacing the movement tween**. The path then continues underwater to its final point. The existing water visuals can respond to world position/depth independently.
 
 Companions use the same authored path shape with their real starting positions and index-spaced underwater endpoints. Their entry animations run with short overlapping start staggers instead of finishing one at a time. The per-companion surface return remains a separate movement, with individual dock landing positions.
 
