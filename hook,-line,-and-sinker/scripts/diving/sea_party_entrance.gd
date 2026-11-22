@@ -51,9 +51,7 @@ func call_party_to_dock(party: Array[NPCData], dock: Node2D) -> void:
 	await fade.fade_to(1.0, fade_seconds)
 	_player.global_position = dock.global_position + Vector2(21.0, 11.0)
 	_player.animator.play(&"idle_l")
-	var camera: Camera2D = _player.get_node("Camera2D") as Camera2D
-	camera.reset_smoothing()
-	camera.force_update_scroll()
+	(_world.get_node("CameraController") as WorldCameraController).snap_to_player()
 	for i in range(party.size()):
 		var npc: NPCData = party[i]
 		var actor: Node2D = NPCTemporaryActor.spawn(npc, _world,
