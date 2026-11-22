@@ -1,0 +1,21 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/intro/intro_boat_sprite.gd" id="boat_script"]
+[ext_resource type="Texture2D" uid="uid://dmyisdjohnnfg" path="res://sprites/environment/boat.png" id="boat_texture"]
+
+[node name="IntroBoat" type="Node2D"]
+position = Vector2(2250, 124)
+
+[node name="Sprite" type="AnimatedSprite2D" parent="."]
+z_index = 11
+script = ExtResource("boat_script")
+sprite_sheet = ExtResource("boat_texture")
+columns = 4
+rows = 1
+frame_count = 4
+
+[node name="PlayerSpot" type="Marker2D" parent="."]
+position = Vector2(0, -18)
+
+[node name="CameraFocus" type="Marker2D" parent="."]
+position = Vector2(0, -13)
