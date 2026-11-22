@@ -25,8 +25,7 @@ func _run() -> void:
 	var world: Node2D = main.get_node("SubViewportContainer/SubViewport/World") as Node2D
 	var sea: DivingWorld = world.get_node("Sea") as DivingWorld
 	var motion_root: Node2D = sea.get_node("Points") as Node2D
-	for name in ["PenniDiveJump", "PenniDiveDescent", "CompanionDiveJump",
-			"CompanionDiveDescent", "PenniSurface", "CompanionSurface"]:
+	for name in ["PenniDiveJump", "CompanionDiveJump", "PenniSurface", "CompanionSurface"]:
 		var motion: SeaMotionPath = motion_root.get_node_or_null(name) as SeaMotionPath
 		if motion == null:
 			_check(false, name + " is missing from the sea scene")
@@ -73,14 +72,15 @@ func _run() -> void:
 		"Shared animation finishes at precisely the requested endpoint")
 	actor.queue_free()
 
-	var descent: SeaMotionPath = motion_root.get_node_or_null("PenniDiveDescent") as SeaMotionPath
-	if descent == null:
-		_check(false, "PenniDiveDescent is unavailable")
-		get_tree().quit(1)
-		return
-	_check(descent.authored_end().y >= DivingWorld.SEA_TOP + 80.0
-		and sea.call("_is_open_water", sea.to_local(descent.authored_end())),
-		"Artist-authored underwater destination is safely deep and in open water")
+	_check(motion_root.get_node_or_null("PenniDiveDescent") == null
+		and motion_root.get_node_or_null("CompanionDiveDescent") == null,
+		"Each diver has one continuous jump path, not an extra descent tween")
+	_check(motion.authored_end().y >= DivingWorld.SEA_TOP + 80.0
+		and sea.call("_is_open_water", sea.to_local(motion.authored_end())),
+		"Single jump path ends deep underwater in open water")
+	var companion: SeaMotionPath = motion_root.get_node("CompanionDiveJump") as SeaMotionPath
+	_check(companion.authored_end().y >= DivingWorld.SEA_TOP + 80.0,
+		"Companion jump also continues well below the waterline")
 	main.queue_free()
 	await get_tree().process_frame
 	print("sea_motion_path_test: PASS" if failures == 0 else
