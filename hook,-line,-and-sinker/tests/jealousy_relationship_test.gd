@@ -33,6 +33,7 @@ func _run() -> void:
 		"An ordinary chat gives no automatic +12 affection")
 	_check(int(silas_state.get(AffectionManager.LAST_TALK_KEY, -1)) == GameManager.get_day(),
 		"Visiting is still remembered and prevents next-day neglect")
+	silas_state["flags"][&"silas_route_complete"] = true
 	AffectionManager.call("_on_day_started", GameManager.get_day() + 1)
 	_check(AffectionManager.get_affection(SILAS.npc_id) == 60,
 		"A recent check-in prevents next-day decay without increasing affection")
