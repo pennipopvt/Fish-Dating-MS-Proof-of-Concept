@@ -361,7 +361,7 @@ func _cancel_scripted_reel() -> void:
 # Called after SeaDiveTransition has restored walking and land portraits.
 # Silas swims to the same dock, leaps after Penni, then changes actor on poof.
 
-func play_silas_surface_reveal() -> void:
+func play_silas_surface_reveal(from_first_land_care: bool = false) -> void:
 	if _silas_surface_scene_running or not _story.begin_silas_surface_reveal():
 		return
 	_silas_surface_scene_running = true
@@ -391,7 +391,7 @@ func play_silas_surface_reveal() -> void:
 		silas_surface_swim_seconds, silas_surface_jump_seconds
 	)
 
-	_story.start_silas_surface_warning()
+	_story.start_silas_surface_warning(from_first_land_care)
 	await _story.silas_surface_warning_finished
 	if land_actor != null:
 		await _surface_presentation.transform_surface_fish(_silas, land_actor)

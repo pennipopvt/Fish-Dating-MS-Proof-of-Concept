@@ -10,15 +10,19 @@
         },
         {
           "speaker": "player",
-          "text": "Silas! You're hurt. I'm taking you somewhere safe."
+          "text": "Silas! You're hurt. Don't try to move."
         },
         {
           "speaker": "test_npc",
-          "text": "Out of the water? But... I don't know if I can..."
+          "text": "I-I think I just need to rest a little..."
         },
         {
           "speaker": "player",
-          "text": "You don't have to. I'll get you there. Just stay with me."
+          "text": "Stay here. I'll try to find something to help."
+        },
+        {
+          "speaker": "test_npc",
+          "text": "O-okay... Please be careful."
         }
       ]
     }

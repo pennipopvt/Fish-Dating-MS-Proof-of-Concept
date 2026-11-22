@@ -20,6 +20,7 @@ signal kuda_townhouse_arrival_finished
 @export var kuda_data: NPCData = preload("res://resources/npcs/kuda.tres")
 @export_file("*.json") var oxygen_recovery_dialogue: String = "res://dialogue/oxygen_blackout_recovery.json"
 @export_file("*.json") var first_land_rescue_dialogue: String = "res://dialogue/oxygen_first_land_rescue.json"
+@export_file("*.json") var silas_first_land_care_warning_dialogue: String = "res://dialogue/silas_first_land_care_warning.json"
 
 var _events: Dictionary = {}
 var _dialogue_stage: StringName = &""
@@ -592,11 +593,15 @@ func begin_silas_surface_reveal() -> bool:
 	return true
 
 
-func start_silas_surface_warning() -> void:
+func start_silas_surface_warning(from_first_land_care: bool = false) -> void:
 	_dialogue_stage = &"surface_warning"
-	# Silas is still a fish for the warning conversation.
+	# The injured Silas follows Penni up despite her telling him to wait.
+	# Only this warning changes; the transformation, introduction and
+	# townhouse dialogue are EXACTLY the normal first-land scene.
 	dialogue_mode_requested.emit(true)
-	DialogueManager.request_conversation(silas_data, "res://dialogue/silas_surface_warning.json")
+	var dialogue_path: String = silas_first_land_care_warning_dialogue \
+		if from_first_land_care else "res://dialogue/silas_surface_warning.json"
+	DialogueManager.request_conversation(silas_data, dialogue_path)
 	if not DialogueManager.is_active:
 		DialogueManager.request_inline_conversation(
 			silas_data,

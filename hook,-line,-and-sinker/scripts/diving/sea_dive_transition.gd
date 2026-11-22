@@ -12,7 +12,7 @@ const IRIS_OPEN_RADIUS: float = 2.6
 # Penni dives facing left: the leap carries her this far forward before the
 # splash, and she drifts a little further forward while sinking.
 const DIVE_FORWARD: float = 18.0
-const SINK_FORWARD: float = 10.0
+const SINK_FORWARD: float = 36.0
 
 @onready var _iris: ColorRect = $Iris
 @onready var _party: DivingParty = $DivingParty
@@ -138,7 +138,7 @@ func _begin_dive(dock: Node2D) -> void:
 	GameManager.diving_session_active = true
 	_dialogue_ui.set_underwater_mode(true)
 	var entry_marker: Marker2D = _sea.get_node_or_null("Points/Entry") as Marker2D
-	var entry: Vector2 = entry_marker.global_position if entry_marker != null else _sea.to_global(Vector2(55, 182))
+	var entry: Vector2 = entry_marker.global_position if entry_marker != null else _sea.to_global(Vector2(55, 256))
 	entry = _dive_target_below(landing + Vector2(-SINK_FORWARD, 0.0), entry.y)
 	var island_camera: Camera2D = _world_player.get_node("Camera2D") as Camera2D
 	var descent: Tween = create_tween().set_parallel(true)
@@ -294,6 +294,8 @@ func _blackout_from_oxygen(cared_for: NPCData = null) -> void:
 	# The latter NEVER plays the "Penni woke up" rescue dialogue.
 	var returning: Array[NPCData] = _party.members()
 	var story := _sea.get_node("StoryDirector") as SeaStoryDirector
+	var silas_first_land_care: bool = cared_for == story.silas_data \
+		and story.can_begin_silas_surface_reveal()
 	if cared_for != null and not returning.has(cared_for):
 		returning.append(cared_for)
 	var first_land_ids: Array[StringName] = []
@@ -328,19 +330,35 @@ func _blackout_from_oxygen(cared_for: NPCData = null) -> void:
 	var humans: Array[Node2D] = []
 	var dock_wait := _sea.get_node("Points/SilasDockWait") as Marker2D
 	for i in range(returning.size()):
+		var npc: NPCData = returning[i]
+		if silas_first_land_care and npc == story.silas_data:
+			# Silas has NOT transformed yet. Keep his real fish actor on the
+			# sea side so the original shore jump and poof can happen.
+			continue
 		var actor: Node2D = _party_entrance.stage_surface_actor(
-			returning[i], _party_entrance.surface_dock_position(
+			npc, _party_entrance.surface_dock_position(
 				dock_wait.global_position, i))
 		if actor != null:
 			actor.show()
 			humans.append(actor)
-	# Under a covered screen the active fish actors can be removed safely.
-	_sea.end_diving_party()
+	# Usual oxygen/Kuda rescues still stage everyone as human. The special
+	# Silas-care return must not hide his fish before the first-land jump.
+	if not silas_first_land_care:
+		_sea.end_diving_party()
 	await fade.fade_to(0.0, 0.55)
 	fade.queue_free()
+	if silas_first_land_care:
+		# Penni came up to find help, but Silas followed her. Reuse the
+		# entire original entrance-to-land choreography and its dialogue:
+		# approach, jump, warning, poof, introduction and townhouse.
+		await (_sea.get_node("EncounterSequence") as SeaEncounterSequence).play_silas_surface_reveal(true)
+		first_land_ids.erase(story.silas_data.npc_id)
 	if not humans.is_empty():
-		await _resolve_shore_stories(humans, cared_for == null, first_land_ids, cared_for)
+		await _resolve_shore_stories(humans, cared_for == null, first_land_ids,
+			null if silas_first_land_care else cared_for)
 		await _clear_returning_party(humans)
+	elif silas_first_land_care:
+		_sea.end_diving_party()
 	transitioning = false
 	_world_player.busy = false
 	surface_completed.emit()
