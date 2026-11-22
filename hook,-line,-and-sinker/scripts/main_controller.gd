@@ -82,12 +82,9 @@ func _on_townhouse_room_requested(door: TransferDoor) -> void:
 	var resident: NPCData = RecruitmentHandler.get_resident(door.get_room_id())
 	if resident == null:
 		return
-	# Recruited NPCs live in their rooms, not as outdoor NPCInteractables.
-	# Their door is therefore the primary way to meet them for a booked date.
-	var due_date: DateData = DateManager.get_ready_booking_for_npc(resident.npc_id)
-	if due_date != null:
-		DateManager.start_date(due_date)
-		return
+	# The room always opens first; NPCRoomView owns the short Yes/Not yet
+	# invitation when this resident has a booking in the current period.
+	# DateManager starts the outing only AFTER the room iris closes.
 	_room_view.open_room(resident)
 
 
