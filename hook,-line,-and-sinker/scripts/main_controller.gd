@@ -80,7 +80,8 @@ func _on_townhouse_room_requested(door: TransferDoor) -> void:
 	if _transition.transitioning or DateManager.is_active():
 		return
 	if door.get_room_id() == &"penni_room":
-		_room_view.open_player_room()
+		# Penni stays in the world: no room overlay or camera transition.
+		_room_view.start_player_rest_at_door()
 		return
 	var resident: NPCData = RecruitmentHandler.get_resident(door.get_room_id())
 	if resident == null:
