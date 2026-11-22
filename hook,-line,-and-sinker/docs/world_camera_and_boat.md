@@ -10,6 +10,7 @@ Select **CameraController** in the Inspector:
 
 - **Follow Speed**: exponential easing toward Penni's world position.
 - **Offset Speed**: easing between land and underwater camera offsets.
+- **Teleport Snap Distance**: snap across long story/date teleports instead of drifting across the map.
 - **Land Offset**: default `(0, -22)`.
 - **Underwater Offset**: default `(0, 0)`.
 
