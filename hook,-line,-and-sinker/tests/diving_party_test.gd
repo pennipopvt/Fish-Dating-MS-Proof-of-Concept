@@ -99,6 +99,7 @@ func _ready() -> void:
 		and sea.get_node_or_null("NPCs/PartyFish_barracuda") != null,
 		"Confirmed dock dive independently summons the school and resumes swimming")
 	var deeper_entry: Marker2D = sea.get_node("Points/Entry") as Marker2D
+	print("[DIVE ENTRY] actual=", player.global_position, " marker=", deeper_entry.global_position, " dock=", dock.global_position)
 	_check(deeper_entry.position.y >= DivingWorld.SEA_TOP + 96.0
 		and player.global_position.y >= DivingWorld.SEA_TOP + 80.0
 		and player.global_position.x < dock.global_position.x - 24.0,

@@ -14,6 +14,12 @@ const IRIS_OPEN_RADIUS: float = 2.6
 const DIVE_FORWARD: float = 18.0
 const SINK_FORWARD: float = 36.0
 
+@export_group("Water Entry")
+# The sloped coastline gets deeper as Penni swims seaward. Find an open
+# spot at the authored Entry marker's depth before accepting shallows.
+@export_range(48.0, 480.0, 12.0) var max_entry_outward_search: float = 384.0
+@export_range(0.7, 1.8, 0.05) var entry_descent_seconds: float = 1.1
+
 @onready var _iris: ColorRect = $Iris
 @onready var _party: DivingParty = $DivingParty
 @onready var _party_entrance: SeaPartyEntrance = $PartyEntrance
@@ -143,9 +149,9 @@ func _begin_dive(dock: Node2D) -> void:
 	var island_camera: Camera2D = _world_player.get_node("Camera2D") as Camera2D
 	var descent: Tween = create_tween().set_parallel(true)
 	descent.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-	descent.tween_property(_world_player, "global_position", entry, 0.85)
-	descent.tween_property(island_camera, "position", Vector2.ZERO, 0.85)
-	_party_entrance.descend_with_player(entry, 0.85)
+	descent.tween_property(_world_player, "global_position", entry, entry_descent_seconds)
+	descent.tween_property(island_camera, "position", Vector2.ZERO, entry_descent_seconds)
+	_party_entrance.descend_with_player(entry, entry_descent_seconds)
 	await descent.finished
 	_party_entrance.clear()
 	_world_player.animator.rotation = 0.0
@@ -156,14 +162,25 @@ func _begin_dive(dock: Node2D) -> void:
 	transitioning = false
 
 
-# Where Penni sinks to after the splash: down from the given point, as
-# deep as the Entry marker's depth but stopping above any rock under her.
+# Find an open landing at the Entry marker's chosen depth. The old version
+# only searched UP at the shoreline X, forcing Penni to stop right at the
+# surface beside the cliff even when the marker was moved deeper.
 func _dive_target_below(splash: Vector2, depth: float) -> Vector2:
 	var top: float = DivingWorld.SEA_TOP + DivingWildFish.EDGE_MARGIN
 	var y: float = maxf(depth, top)
-	while y > top and not _sea.call("_is_open_water", _sea.to_local(Vector2(splash.x, y))):
-		y -= 2.0
-	return Vector2(splash.x, y)
+	for step in range(int(max_entry_outward_search / 12.0) + 1):
+		var candidate := Vector2(splash.x - 12.0 * step, y)
+		if _sea.call("_is_open_water", _sea.to_local(candidate)):
+			return candidate
+	# The authored depth could be entirely blocked by a custom terrain
+	# layout: only then degrade gracefully toward shallower open water.
+	while y > top:
+		y -= 8.0
+		for step in range(int(max_entry_outward_search / 12.0) + 1):
+			var candidate := Vector2(splash.x - 12.0 * step, y)
+			if _sea.call("_is_open_water", _sea.to_local(candidate)):
+				return candidate
+	return Vector2(splash.x, top)
 
 
 func _update_dive_jump(t: float, start: Vector2, landing: Vector2) -> void:
