@@ -5,6 +5,7 @@ extends Node2D
 # animation, sprite rotation and the diving motion paths.
 @export_range(0.5, 30.0, 0.5) var follow_speed: float = 7.0
 @export_range(0.5, 30.0, 0.5) var offset_speed: float = 7.0
+@export_range(64.0, 1024.0, 16.0) var teleport_snap_distance: float = 240.0
 @export var land_offset: Vector2 = Vector2(0.0, -22.0)
 @export var underwater_offset: Vector2 = Vector2.ZERO
 
@@ -27,8 +28,13 @@ func _ready() -> void:
 
 func _process(delta: float) -> void:
 	if _following and is_instance_valid(_player):
-		var weight: float = 1.0 - exp(-follow_speed * delta)
-		global_position = global_position.lerp(_player.global_position, weight)
+		# Story fades and dates may teleport the existing Player. Snap
+		# across large jumps rather than slowly scrolling an empty world.
+		if global_position.distance_to(_player.global_position) >= teleport_snap_distance:
+			global_position = _player.global_position
+		else:
+			var weight: float = 1.0 - exp(-follow_speed * delta)
+			global_position = global_position.lerp(_player.global_position, weight)
 	var offset_weight: float = 1.0 - exp(-offset_speed * delta)
 	camera.position = camera.position.lerp(_wanted_offset, offset_weight)
 
