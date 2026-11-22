@@ -1,6 +1,8 @@
 extends Node
 class_name SeaPartyEntrance
 
+signal dive_entries_finished
+
 # Dive presentation only: temporary actors, jumps and fish/human poofs
 # in BOTH directions. Housing, dialogue and story decisions stay elsewhere.
 @export_range(0.1, 1.0, 0.05) var fade_seconds: float = 0.32
@@ -20,6 +22,8 @@ var _sea: DivingWorld
 var _land_scenes: Dictionary = {} # Optional cutscene-specific overrides.
 var _staged: Array[Dictionary] = []
 var _fish_visuals: Array[Sprite2D] = []
+var _entry_in_progress: bool = false
+var _entries_remaining: int = 0
 
 
 func configure(world: Node2D, player: Player, sea: DivingWorld) -> void:
@@ -63,47 +67,89 @@ func call_party_to_dock(party: Array[NPCData], dock: Node2D) -> void:
 	fade.queue_free()
 
 
-# Guests jump after Penni; each temporary human actor disappears at the poof.
+# A single continuous dive path per companion. All guests use the same
+# editable curve with separate destinations and short start-time staggers.
+# Their human-to-fish transformation happens at the waterline, mid-flight.
 func jump_party_in(_dock: Node2D, splash: Callable) -> void:
+	_entry_in_progress = true
+	_entries_remaining = 0
 	var jump_path: SeaMotionPath = _motion(&"CompanionDiveJump")
 	for info in _staged:
 		var actor: Node2D = info["actor"] as Node2D
 		if not is_instance_valid(actor):
 			continue
-		var i: int = int(info["index"])
-		# One editable Bézier serves the entire party; the per-slot endpoint
-		# offset keeps fish splashes separated without altering its handles.
-		var landing: Vector2 = jump_path.authored_end() + Vector2(-8.0 * i, 0.0)
-		await jump_path.animate(actor, actor.global_position, landing)
-		splash.call(landing)
-		var poof: AnimatedSprite2D = SeaPoofEffect.spawn(_world, landing)
-		actor.hide()
-		var npc: NPCData = info["npc"] as NPCData
-		if npc != null and npc.underwater_sprite != null:
-			var fish := Sprite2D.new()
-			fish.name = "DiveFish_" + String(npc.npc_id)
-			fish.texture = npc.underwater_sprite
-			fish.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-			fish.z_index = 6
-			var width: float = npc.sea_visuals.follower_width if npc.sea_visuals != null else 24.0
-			fish.scale = Vector2.ONE * (width / maxf(float(fish.texture.get_width()), 1.0))
-			_world.add_child(fish)
-			fish.global_position = landing
-			_fish_visuals.append(fish)
-		await get_tree().create_timer(jump_stagger_seconds).timeout
-		poof.queue_free()
-		actor.queue_free()
+		_entries_remaining += 1
+		_animate_guest_dive(info, jump_path, splash)
+		if jump_stagger_seconds > 0.0:
+			await get_tree().create_timer(jump_stagger_seconds).timeout
+	while _entries_remaining > 0:
+		await get_tree().process_frame
 	_staged.clear()
+	_entry_in_progress = false
+	dive_entries_finished.emit()
 
 
-func descend_with_player(entry: Vector2) -> void:
-	# Start each fish moving alongside Penni; she awaits her own descent
-	# using the same authored duration, and then clears these sprites.
-	var descent_path: SeaMotionPath = _motion(&"CompanionDiveDescent")
-	for i in range(_fish_visuals.size()):
-		var fish: Sprite2D = _fish_visuals[i]
-		var destination: Vector2 = entry + Vector2(-20.0 - 18.0 * i, 8.0 + 7.0 * i)
-		descent_path.animate(fish, fish.global_position, destination)
+func entry_in_progress() -> bool:
+	return _entry_in_progress
+
+
+func _animate_guest_dive(info: Dictionary, jump_path: SeaMotionPath,
+		splash: Callable) -> void:
+	var actor: Node2D = info["actor"] as Node2D
+	var index: int = int(info["index"])
+	var destination: Vector2 = jump_path.authored_end() + Vector2(-18.0 * index, 7.0 * index)
+	var state: Dictionary = {"converted": false, "fish": null}
+	await jump_path.animate(actor, actor.global_position, destination,
+		func(_time: float, _progress: float) -> void:
+			_update_guest_dive(actor, info, state, splash))
+	if not bool(state["converted"]):
+		push_warning("CompanionDiveJump did not cross the sea surface; check its endpoint.")
+		_transform_guest_to_fish(actor, info, state, splash)
+	if is_instance_valid(actor):
+		actor.queue_free()
+	_entries_remaining -= 1
+
+
+func _update_guest_dive(actor: Node2D, info: Dictionary,
+		state: Dictionary, splash: Callable) -> void:
+	if not is_instance_valid(actor):
+		return
+	var fish: Sprite2D = state.get("fish") as Sprite2D
+	if is_instance_valid(fish):
+		# The same tween continues under water, but moves fish art after
+		# the splash instead of showing the human actor twice.
+		fish.global_position = actor.global_position
+	elif not bool(state["converted"]) and actor.global_position.y >= _sea.to_global(
+			Vector2(0.0, DivingWorld.SEA_TOP)).y:
+		_transform_guest_to_fish(actor, info, state, splash)
+
+
+func _transform_guest_to_fish(actor: Node2D, info: Dictionary,
+		state: Dictionary, splash: Callable) -> void:
+	if bool(state["converted"]) or not is_instance_valid(actor):
+		return
+	state["converted"] = true
+	var surface_y: float = _sea.to_global(Vector2(0.0, DivingWorld.SEA_TOP)).y
+	var splash_at := Vector2(actor.global_position.x, surface_y)
+	splash.call(splash_at)
+	var poof: AnimatedSprite2D = SeaPoofEffect.spawn(_world, splash_at)
+	if is_instance_valid(poof):
+		get_tree().create_timer(0.42).timeout.connect(poof.queue_free, CONNECT_ONE_SHOT)
+	actor.hide()
+	var npc: NPCData = info["npc"] as NPCData
+	if npc == null or npc.underwater_sprite == null:
+		return
+	var fish := Sprite2D.new()
+	fish.name = "DiveFish_" + String(npc.npc_id)
+	fish.texture = npc.underwater_sprite
+	fish.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	fish.z_index = 6
+	var width: float = npc.sea_visuals.follower_width if npc.sea_visuals != null else 24.0
+	fish.scale = Vector2.ONE * (width / maxf(float(fish.texture.get_width()), 1.0))
+	_world.add_child(fish)
+	fish.global_position = actor.global_position
+	state["fish"] = fish
+	_fish_visuals.append(fish)
 
 
 # Dock markers are feet positions. All surface art for a given NPC
