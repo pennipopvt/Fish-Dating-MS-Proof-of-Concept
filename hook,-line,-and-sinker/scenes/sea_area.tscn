@@ -293,6 +293,7 @@ position = Vector2(-702, 318)
 script = ExtResource("spawn")
 species = ExtResource("mullet")
 random_seed = 3102
+spawn_after_silas_rescue = true
 preferred_player_distance = 52.0
 alert_distance = 76.0
 flee_speed = 112.0
