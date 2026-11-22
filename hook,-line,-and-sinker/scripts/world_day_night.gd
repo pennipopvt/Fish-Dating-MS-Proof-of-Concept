@@ -213,7 +213,8 @@ func _refresh_target() -> void:
 		_transition.kill()
 
 	var state := _visual_state(progress)
-	if transition_seconds <= 0.0:
+	if transition_seconds <= 0.0 or GameManager.is_rest_clock_update():
+		# Sleep already covers the world with black; don't animate skipped time.
 		_shown_progress = progress
 		_apply_immediately(state)
 		return

@@ -11,6 +11,7 @@ extends Control
 @onready var _debug: SeaDebugPanel = $SeaDebugLayer
 @onready var _water_debug: WaterRenderDebug = $WaterDebugLayer
 @onready var _room_view: NPCRoomView = $NPCRoomView
+@onready var _penni_room_door: TransferDoor = $SubViewportContainer/SubViewport/World/AvailableHomeList/PenniRoomDoor
 var _opening: FishCoOpeningSequence
 
 # Read-only compatibility properties for existing in-engine playtests.
@@ -56,6 +57,10 @@ func _ready() -> void:
 		var door: TransferDoor = node as TransferDoor
 		if door != null:
 			door.room_requested.connect(_on_townhouse_room_requested)
+	# Fish Co only opens housing AFTER the first completed dive, not after
+	# the preparatory phone call. The first return is already signaled here.
+	_penni_room_door.set_room_access_enabled(false)
+	_transition.surface_completed.connect(_on_first_dive_surface_completed)
 	# Main only connects existing story, terminal UI, and world notice signals.
 	# No tutorial flags or shop logic belong in the world transition.
 	var terminal_menu: ShopMenu = $CanvasLayer/ShopMenu
@@ -76,8 +81,15 @@ func _ready() -> void:
 	_opening.start.call_deferred()
 
 
+func _on_first_dive_surface_completed() -> void:
+	_penni_room_door.set_room_access_enabled(true)
+	_transition.surface_completed.disconnect(_on_first_dive_surface_completed)
+
+
 func _on_townhouse_room_requested(door: TransferDoor) -> void:
 	if _transition.transitioning or DateManager.is_active():
+		return
+	if door.get_room_id() == &"penni_room" and door.locked:
 		return
 	if door.get_room_id() == &"penni_room":
 		# Penni stays in the world: no room overlay or camera transition.

@@ -362,9 +362,8 @@ func _begin_player_rest() -> void:
 		return
 	_closing = true
 	var target: GameManager.Times = _player_rest_target as GameManager.Times
-	var target_day: int = GameManager.get_day() + (1 if target == GameManager.Times.MORNING else 0)
 	var completed: bool = await _illustration.play_rest_transition(player_room_sleep_text,
-		Callable(self, "_apply_player_rest_at_black").bind(target_day, target))
+		Callable(self, "_apply_player_rest_at_black").bind(target))
 	if not completed:
 		push_warning("Penni's rest fade could not begin.")
 	_finish_player_rest_at_door()
@@ -381,13 +380,10 @@ func _finish_player_rest_at_door() -> void:
 	_player.busy = false
 
 
-func _apply_player_rest_at_black(target_day: int, target: GameManager.Times) -> void:
-	# GameManager is the sole clock owner. Skip intervening periods without
-	# broadcasting a morning wake-up until the requested morning is reached.
-	for step in range(3):
-		if GameManager.get_day() == target_day and GameManager.get_period() == target:
-			break
-		GameManager.rest()
+func _apply_player_rest_at_black(target: GameManager.Times) -> void:
+	# Apply the destination time ONCE under the existing black screen.
+	# The day/night visuals snap while other clock listeners update normally.
+	GameManager.rest_until(target)
 
 
 func close_room() -> void:

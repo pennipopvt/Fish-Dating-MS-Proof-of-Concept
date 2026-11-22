@@ -8,6 +8,9 @@ signal room_requested(door: TransferDoor)
 @export var room_id: StringName = &""
 @export var locked: bool = true
 @export var locked_texture: Texture2D = preload("res://sprites/rooms/lockeddoor.png")
+# Optional scene-authored art for a door whose access changes via story.
+# Other resident doors continue using their own NPCData.door texture.
+@export var accessible_texture: Texture2D
 @export var prompt: InteractPrompt
 @onready var house: Sprite2D = $Sprite # Original scene node name, retained.
 var resident: NPCData = null
@@ -47,6 +50,16 @@ func _update_prompt() -> void:
 		prompt.pop_in()
 	else:
 		prompt.pop_out()
+
+
+# The first-dive story unlocks Penni's reserved room via this method.
+# Only the access state changes here; textures are authored in the editor.
+func set_room_access_enabled(enabled: bool) -> void:
+	locked = not enabled
+	if is_node_ready():
+		if accessible_texture != null:
+			house.texture = accessible_texture if enabled else locked_texture
+		_update_prompt()
 
 
 func get_room_id() -> StringName:
