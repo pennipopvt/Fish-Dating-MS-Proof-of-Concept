@@ -13,6 +13,8 @@ signal dialogue_mode_requested(underwater_portraits: bool)
 signal kuda_hook_dialogue_finished
 signal kuda_recruited
 signal kuda_surface_reveal_finished
+signal kuda_townhouse_dialogue_finished
+signal kuda_townhouse_arrival_finished
 
 @export var silas_data: NPCData = preload("res://resources/npcs/silas.tres")
 @export var kuda_data: NPCData = preload("res://resources/npcs/kuda.tres")
@@ -194,6 +196,24 @@ func start_kuda_surface_reveal() -> bool:
 	return true
 
 
+# Shared dialogue system and persistent NPC flags; Kuda's physical presentation
+# remains in SeaKudaEncounter, just like Silas's in SeaEncounterSequence.
+func start_kuda_townhouse_arrival() -> void:
+	_kuda_dialogue_stage = &"townhouse_arrival"
+	dialogue_mode_requested.emit(false)
+	DialogueManager.request_conversation(kuda_data,
+		"res://dialogue/kuda_townhouse_arrival.json")
+	if not DialogueManager.is_active:
+		DialogueManager.request_inline_conversation(kuda_data,
+			["This is the townhouse?", "Fine. I'll take a room.", "Thanks, Penni."], "Kuda")
+
+
+func complete_kuda_townhouse_arrival() -> void:
+	var flags: Dictionary = NPCManager.get_npc_state(kuda_data.npc_id)["flags"]
+	flags[&"kuda_has_home"] = true
+	kuda_townhouse_arrival_finished.emit()
+
+
 func on_dive_entered() -> void:
 	if not has_event(&"line_broken") and not has_event(&"help_called"):
 		var cue: SeaTutorialCue = _cue()
@@ -364,6 +384,8 @@ func _on_conversation_finished(finished_npc: NPCData) -> void:
 		elif stage == &"surface_reveal":
 			NPCManager.get_npc_state(kuda_data.npc_id)["flags"][&"kuda_surface_introduced"] = true
 			kuda_surface_reveal_finished.emit()
+		elif stage == &"townhouse_arrival":
+			kuda_townhouse_dialogue_finished.emit()
 		return
 	if finished_npc != silas_data:
 		return

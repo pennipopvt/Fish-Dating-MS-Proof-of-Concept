@@ -142,6 +142,12 @@ jobs:
           set -o pipefail
           timeout 120s godot --headless --path "hook,-line,-and-sinker" res://tests/date_townhouse_entry_test.tscn 2>&1 | tee date-townhouse-entry-test.log
           ! (grep -E 'SCRIPT ERROR:|Parse Error:|Parser Error:|ERROR:|FAIL ' date-townhouse-entry-test.log | grep -Ev 'resources still in use at exit|RID allocations.*leaked' | grep -q .)
+      - name: Test Kuda first townhouse introduction and room assignment
+        shell: bash
+        run: |
+          set -o pipefail
+          timeout 90s godot --headless --path "hook,-line,-and-sinker" res://tests/kuda_townhouse_arrival_test.tscn 2>&1 | tee kuda-townhouse-arrival-test.log
+          ! (grep -E 'SCRIPT ERROR:|Parse Error:|Parser Error:|ERROR:|FAIL ' kuda-townhouse-arrival-test.log | grep -Ev 'resources still in use at exit|RID allocations.*leaked' | grep -q .)
       - name: Test oxygen exhaustion, blackout and carried inventory
         shell: bash
         run: |

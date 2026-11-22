@@ -181,6 +181,9 @@ position = Vector2(377, 112)
 [node name="SilasSpot" type="Marker2D" parent="TownhouseArrival" unique_id=603983256]
 position = Vector2(407, 112)
 
+[node name="KudaSpot" type="Marker2D" parent="TownhouseArrival"]
+position = Vector2(432, 112)
+
 [node name="AvailableHomeList" parent="." unique_id=1246650794 node_paths=PackedStringArray("available_homes") instance=ExtResource("1_u7kri")]
 script = ExtResource("2_n7i1a")
 available_homes = [NodePath("FreeHouseA"), NodePath("FreeHouseB"), NodePath("FreeHouseC"), NodePath("FreeHouseD")]

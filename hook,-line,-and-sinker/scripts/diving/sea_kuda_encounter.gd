@@ -221,6 +221,9 @@ func _on_recruited() -> void:
 	recruited.emit()
 
 
+@export_group("First Townhouse Arrival")
+@export_range(0.1, 1.0, 0.05) var townhouse_fade_seconds: float = 0.35
+
 # Called only after the shared surface presentation has transformed the school.
 # The surface animator supplies temporary human actors; this encounter checks
 # that Kuda ACTUALLY reached shore before starting his one-time conversation.
@@ -240,10 +243,33 @@ func play_first_surface_reveal(surface_actors: Array[Node2D]) -> void:
 	if not _story.start_kuda_surface_reveal():
 		return
 	await _story.kuda_surface_reveal_finished
-	# RecruitmentHandler assigns a room by NPC identity, never by moving
-	# the temporary dock actor or creating another interior scene.
-	if not RecruitmentHandler.assign_home(_story.kuda_data):
-		push_warning("Kuda reached shore, but no townhouse room was available yet.")
+	# Mirror Silas's first return: after seeing his human form on the dock,
+	# Penni shows Kuda the townhouse BEFORE he is assigned a room.
+	var world: Node2D = _player.get_parent() as Node2D
+	var player_spot: Marker2D = world.get_node("TownhouseArrival/PlayerSpot") as Marker2D
+	var kuda_spot: Marker2D = world.get_node("TownhouseArrival/KudaSpot") as Marker2D
+	var travel := ScreenFade.new()
+	get_tree().root.add_child(travel)
+	await travel.fade_to(1.0, townhouse_fade_seconds)
+	_player.global_position = player_spot.global_position
+	_player.animator.play(&"idle_r")
+	var camera: Camera2D = _player.get_node("Camera2D") as Camera2D
+	camera.position = Vector2.ZERO
+	camera.reset_smoothing()
+	camera.force_update_scroll()
+	NPCTemporaryActor.place_feet(kuda_actor, kuda_spot.global_position)
+	await travel.fade_to(0.0, townhouse_fade_seconds)
+	_story.start_kuda_townhouse_arrival()
+	await _story.kuda_townhouse_dialogue_finished
+	await travel.fade_to(1.0, townhouse_fade_seconds)
+	var assigned: bool = RecruitmentHandler.assign_home(_story.kuda_data)
+	if not assigned:
+		push_warning("Kuda accepted the room, but no townhouse door was available.")
+	else:
+		_story.complete_kuda_townhouse_arrival()
+	# The common surface transition owns temporary actor cleanup.
+	await travel.fade_to(0.0, townhouse_fade_seconds)
+	travel.queue_free()
 
 
 func end_dive() -> void:
