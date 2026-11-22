@@ -197,3 +197,15 @@ slots use `tutorial_wasd.png`, `tutorial_left_click.png`,
 as 32x32 cells by the shared script. To move it, change its position
 directly in the World scene. DivingWorld merely looks it up. No code-drawn
 mouse or keyboard placeholder remains.
+
+## Penni door custom-scene rollback
+
+The custom `prefabs/penni_room_door.tscn` was removed after causing a Godot
+"scene invalid/corrupt" error. `World/AvailableHomeList/PenniRoomDoor`
+now instances the **same** pre-existing `prefabs/townhouse_door.tscn`
+scene as the other three doors, with only `room_id = penni_room`
+and `locked = false` overridden in `world.tscn`. The first slot stays
+outside `available_homes`, so resident assignment cannot overwrite Penni.
+No full-size portrait/TextureRect instance is present in the World scene or
+inherited door source. To customize her door art, select its Sprite child
+in World and override its texture in the Godot editor.

@@ -15,7 +15,7 @@
 [ext_resource type="Shader" uid="uid://r4rciq67coeg" path="res://shaders/water.gdshader" id="13_le6xu"]
 [ext_resource type="PackedScene" uid="uid://c0d22ylobcr2s" path="res://scenes/townhouse.tscn" id="23_townhouse"]
 [ext_resource type="PackedScene" path="res://prefabs/townhouse_door.tscn" id="24_xfqyr"]
-[ext_resource type="PackedScene" path="res://prefabs/penni_room_door.tscn" id="25_penni_room"]
+
 [ext_resource type="PackedScene" path="res://prefabs/beach.tscn" id="26_beach"]
 [ext_resource type="Shader" uid="uid://bv2isyw6ln31h" path="res://shaders/moon.gdshader" id="moon_shader"]
 [ext_resource type="Shader" uid="uid://cli6ci0c4km7b" path="res://shaders/night_stars.gdshader" id="night_stars"]
@@ -213,8 +213,10 @@ position = Vector2(432, 112)
 script = ExtResource("2_n7i1a")
 available_homes = [NodePath("FreeHouseB"), NodePath("FreeHouseC"), NodePath("FreeHouseD")]
 
-[node name="PenniRoomDoor" parent="AvailableHomeList" unique_id=852988363 instance=ExtResource("25_penni_room")]
+[node name="PenniRoomDoor" parent="AvailableHomeList" unique_id=852988363 instance=ExtResource("24_xfqyr")]
 position = Vector2(333, 96)
+room_id = &"penni_room"
+locked = false
 
 [node name="FreeHouseB" parent="AvailableHomeList" unique_id=1681937105 instance=ExtResource("24_xfqyr")]
 position = Vector2(458, 96)
