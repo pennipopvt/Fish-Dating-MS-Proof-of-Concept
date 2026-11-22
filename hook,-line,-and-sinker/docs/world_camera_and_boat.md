@@ -111,3 +111,25 @@ Regression coverage: `world_camera_intro_test.tscn` verifies viewport sky,
 waterline clip, cloud tint and normal camera following;
 `first_fish_camera_focus_test.tscn` verifies the one-time focus, input lock,
 return and interruption handling.
+
+## Water color palette
+
+For the visible sea colors, open **prefabs/world.tscn**, select the root
+**World** node, and expand **Water Colors** in the Inspector. Six swatches
+correspond to sunrise, morning, afternoon, late afternoon, sunset and night.
+They are the **runtime** colors, unlike the `Water` ShaderMaterial's initial
+water-color value, which the clock overrides. The default daytime colors are
+now a little lighter.
+
+Underwater, `Water` remains translucent (the original 0.14 deep-water
+alpha), so fish and terrain stay visible. To prevent that transparency
+showing the viewport's nearly black clear color, `WorldDayNight` creates
+one flat `UnderwaterBackgroundLayer` behind the sea and the sky. It uses
+exactly the **same** exported water palette and time-of-day transitions.
+The existing water reflections, sky, separate underwater tint and sea
+collision are unchanged. No duplicate world or second clock is introduced.
+
+To brighten the sea further, edit the **Water Colors** swatches on **World**,
+particularly *Afternoon* and *Morning*. The existing underwater blue haze is
+still separately editable under
+`World/CameraController/Camera2D/UnderwaterTint`.
