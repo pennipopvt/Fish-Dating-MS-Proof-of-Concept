@@ -4,8 +4,9 @@ extends Node
 # each choice there is gated by the flag "date_ok_<date_id>" (refreshed here
 # whenever a conversation starts) and requests the scene "date:<date_id>".
 # Date plans are made with the NPC in dialogue. The terminal calendar only
-# displays booked dates. Meet the NPC at the FIRST action of the booked period
-# (or use the date location), otherwise the appointment is missed.
+# displays booked dates. Visit the NPC's townhouse room (or existing
+# DateLocation) at the FIRST action of the booked period. If several NPCs
+# are booked for the same period, the player chooses whose room to visit.
 # A date: fade out, move Penni and the NPC to the location's spots (or to a
 # venue spawned just for the date, like the ship out at sea), play the
 # date JSON, then fade back and put everyone where they were. A finished date
@@ -161,10 +162,9 @@ func can_book_at(date: DateData, day: int, period: int) -> bool:
 	# Booking in the current period requires time-costing activities unused.
 	if chosen_slot == current_slot and GameManager.get_actions_left() != GameManager.ACTIONS_PER_PERIOD:
 		return false
-	for id in bookings:
-		var slot: Dictionary = bookings[id]
-		if int(slot["day"]) == day and int(slot["period"]) == period:
-			return false
+	# Different NPCs may agree to the same period. Only one can actually
+	# happen, because finishing a date consumes the remainder of the
+	# period and the other bookings correctly become missed.
 	return true
 
 # "Next morning/afternoon/night" means the next occurrence measured from when
@@ -324,7 +324,8 @@ func start_date(date: DateData) -> void:
 	_move(player, _spot(venue, &"PlayerSpot"))
 	# Recruited NPCs are data-only residents, not actors in the island world.
 	# Dates and dock cutscenes use the exact same noninteractive land actor.
-	_date_actor = NPCTemporaryActor.spawn(date.npc, player.get_parent(), _spot(venue, &"NpcSpot"))
+	_date_actor = NPCTemporaryActor.spawn(date.npc, player.get_parent(),
+		_spot(venue, &"NpcSpot") + date.npc_feet_offset)
 	if _date_actor != null:
 		_date_actor.name = "DateGuest_" + String(date.npc.npc_id)
 	await _fade_to(0.0)
