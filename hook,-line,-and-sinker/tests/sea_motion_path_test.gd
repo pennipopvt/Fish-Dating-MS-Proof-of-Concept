@@ -38,7 +38,11 @@ func _run() -> void:
 			and motion.speed_curve.get_point_count() >= 2
 			and child_path != null and child_path.curve.get_point_count() >= 2,
 			name + " has separate editor-editable path, duration and velocity curve")
-	var motion: SeaMotionPath = motion_root.get_node("PenniDiveJump") as SeaMotionPath
+	var motion: SeaMotionPath = motion_root.get_node_or_null("PenniDiveJump") as SeaMotionPath
+	if motion == null:
+		_check(false, "PenniDiveJump is unavailable; stop motion test cleanly")
+		get_tree().quit(1)
+		return
 	var shape: Path2D = motion.get_node("Path") as Path2D
 	var curve: Curve2D = shape.curve
 	var original_mid: Vector2 = curve.get_point_position(1)

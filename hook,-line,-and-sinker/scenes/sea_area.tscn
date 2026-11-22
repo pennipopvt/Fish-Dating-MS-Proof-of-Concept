@@ -289,14 +289,6 @@ position = Vector2(101, 112)
 # Editor-editable motion profiles live directly under Points. Select
 # each motion's child Path2D to reshape its trajectory in the 2D view.
 
-[node name="PenniDiveJump" type="Node2D" parent="Points"]
-script = ExtResource("sea_motion_path")
-duration_seconds = 0.43
-speed_curve = SubResource("Speed_PenniDiveJump")
-
-[node name="Path" type="Path2D" parent="Points/PenniDiveJump"]
-curve = SubResource("Motion_PenniDiveJump")
-
 [node name="PenniDiveDescent" type="Node2D" parent="Points"]
 script = ExtResource("sea_motion_path")
 duration_seconds = 1.1
@@ -336,6 +328,14 @@ speed_curve = SubResource("Speed_CompanionSurface")
 
 [node name="Path" type="Path2D" parent="Points/CompanionSurface"]
 curve = SubResource("Motion_CompanionSurface")
+
+[node name="PenniDiveJump" type="Node2D" parent="Points"]
+script = ExtResource("sea_motion_path")
+duration_seconds = 0.43
+speed_curve = SubResource("Speed_PenniDiveJump")
+
+[node name="Path" type="Path2D" parent="Points/PenniDiveJump"]
+curve = SubResource("Motion_PenniDiveJump")
 
 [node name="FishSpawns" type="Node2D" parent="." unique_id=1684491983]
 
