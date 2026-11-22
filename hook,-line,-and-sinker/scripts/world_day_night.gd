@@ -2,7 +2,8 @@ extends Node2D
 
 # Visuals follow the existing action-based GameManager clock. No second clock:
 # each of the three periods contains three visual steps (one per action).
-# The sky pans horizontally with the camera but stays fixed above the surface.
+# Sky artwork is viewport-anchored through World/SkyLayer. Only its
+# visible height follows the world-space waterline; it never chases a camera.
 @export_range(0.0, 4.0, 0.1) var transition_seconds: float = 1.6
 
 const AFTERNOON_START: float = 1.0 / 3.0
@@ -19,14 +20,15 @@ const MOON_BELOW_SCREEN_Y: float = 240.0
 const MOON_ARC_HEIGHT: float = 220.0
 # The surface is the upper edge of the existing World/Water ColorRect.
 const REFLECTION_AT_SURFACE: float = 0.477
+const VIEWPORT_SKY_HEIGHT: float = 180.0
 
-@onready var _sky: ColorRect = $Sky/SkyGradient
-@onready var _stars: ColorRect = $Sky/NightStars
-@onready var _sun: Sprite2D = $Sky/Sun
-@onready var _sun_glow: ColorRect = $Sky/SunGlow
-@onready var _moon: ColorRect = $Sky/Moon
-@onready var _moon_glow: ColorRect = $Sky/MoonGlow
-@onready var _sky_region: Control = $Sky
+@onready var _sky: ColorRect = $SkyLayer/Sky/SkyGradient
+@onready var _stars: ColorRect = $SkyLayer/Sky/NightStars
+@onready var _sun: Sprite2D = $SkyLayer/Sky/Sun
+@onready var _sun_glow: ColorRect = $SkyLayer/Sky/SunGlow
+@onready var _moon: ColorRect = $SkyLayer/Sky/Moon
+@onready var _moon_glow: ColorRect = $SkyLayer/Sky/MoonGlow
+@onready var _sky_region: Control = $SkyLayer/Sky
 @onready var _camera: Camera2D = $CameraController/Camera2D
 @onready var _ambient: CanvasModulate = $DayNightTint
 @onready var _water: ColorRect = $Water
@@ -95,12 +97,6 @@ func _process(_delta: float) -> void:
 			visible_center - _camera.global_position
 			- _underwater_tint.size * 0.5
 		)
-	# Horizontal parallax follows the camera, but the sky's BOTTOM stays at
-	# the actual world-space waterline. It cannot follow Penni underwater.
-	_sky_region.global_position = Vector2(
-		visible_center.x - 160.0,
-		_water.global_position.y - _sky_region.size.y
-	)
 	# Reflection exists at the surface, but dissolves as the original player
 	# swims below it. No second viewport, water clock or duplicate shader.
 	var surface_y: float = _water.global_position.y
@@ -110,6 +106,9 @@ func _process(_delta: float) -> void:
 		"reflection_strength", REFLECTION_AT_SURFACE * (1.0 - submerged)
 	)
 	var surface_screen_y: float = _water.get_global_transform_with_canvas().origin.y
+	# The sky stays absolutely still in viewport pixels while the camera
+	# smooths or pans. Only the clip bottom follows the true sea surface.
+	_sky_region.size.y = clampf(ceilf(surface_screen_y), 0.0, VIEWPORT_SKY_HEIGHT)
 	_water_mat.set_shader_parameter("waterline_y", surface_screen_y)
 	_water_mat.set_shader_parameter("viewer_submersion", submerged)
 	# The sea's above-surface visual clip and the reflection must use
