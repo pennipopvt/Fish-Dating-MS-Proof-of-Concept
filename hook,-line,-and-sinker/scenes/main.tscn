@@ -22,6 +22,7 @@
 [ext_resource type="Script" uid="uid://byypo0swdykcg" path="res://scripts/diving/sea_debug_panel.gd" id="sea_debug_panel"]
 [ext_resource type="PackedScene" path="res://scenes/sea_speech_bubble.tscn" id="sea_speech_bubble"]
 [ext_resource type="Script" uid="uid://bhtfkxi24nqdu" path="res://scripts/diving/sea_dive_transition.gd" id="transition_script"]
+[ext_resource type="Script" path="res://scripts/audio/underwater_music_player.gd" id="underwater_music_player"]
 [ext_resource type="PackedScene" path="res://scenes/water_render_debug.tscn" id="water_debug"]
 
 [sub_resource type="ShaderMaterial" id="IrisMaterial"]
@@ -120,6 +121,8 @@ mouse_filter = 2
 stream = ExtResource("4_jyhfs")
 volume_db = 6.0
 autoplay = true
+bus = &"Music"
+script = ExtResource("underwater_music_player")
 
 [node name="SeaSpeechBubbleHost" type="Node" parent="." unique_id=1976587968]
 script = ExtResource("bubble_host")

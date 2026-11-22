@@ -11,6 +11,7 @@ extends Control
 @onready var _debug: SeaDebugPanel = $SeaDebugLayer
 @onready var _water_debug: WaterRenderDebug = $WaterDebugLayer
 @onready var _room_view: NPCRoomView = $NPCRoomView
+@onready var _music: UnderwaterMusicPlayer = $AudioStreamPlayer2D
 @onready var _penni_room_door: TransferDoor = $SubViewportContainer/SubViewport/World/AvailableHomeList/PenniRoomDoor
 var _opening: FishCoOpeningSequence
 
@@ -47,6 +48,7 @@ func _ready() -> void:
 		add_child(_opening)
 	_transition.configure(_world, _world_player, _sea,
 		$CanvasLayer/DialogueUI, $CanvasLayer/ShopMenu, _opening)
+	_transition.underwater_state_changed.connect(_music.set_underwater_filter)
 	_opening.configure(_world, _world_player, $CanvasLayer/ShopMenu, _transition)
 	($IslandStoryDirector as IslandStoryDirector).configure(_world_player, _transition, _opening)
 	_opening.dive_confirmed.connect(_transition.start_confirmed_dive)
