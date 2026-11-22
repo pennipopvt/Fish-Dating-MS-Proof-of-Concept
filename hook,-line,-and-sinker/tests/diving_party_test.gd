@@ -100,10 +100,11 @@ func _ready() -> void:
 		"Confirmed dock dive independently summons the school and resumes swimming")
 	var deeper_entry: Marker2D = sea.get_node("Points/Entry") as Marker2D
 	print("[DIVE ENTRY] actual=", player.global_position, " marker=", deeper_entry.global_position, " dock=", dock.global_position)
+	var authored_landing: Vector2 = (sea.get_node("Points/PenniDiveJump") as SeaMotionPath).authored_end()
 	_check(deeper_entry.position.y >= DivingWorld.SEA_TOP + 96.0
-		and player.global_position.y >= DivingWorld.SEA_TOP + 80.0
-		and player.global_position.x < dock.global_position.x - 24.0,
-		"After splash, Penni and her fish descend well below the waterline and away from the dock")
+		and player.global_position.distance_to(authored_landing) < 1.0
+		and player.global_position.y > (world.get_node("Water") as ColorRect).global_position.y,
+		"After the splash Penni ends at the author's new single dive-path endpoint")
 	sea.call("_return_to_surface")
 	await get_tree().create_timer(1.15).timeout
 	var first_human: Node2D = world.get_node_or_null("SurfaceGuest_test_npc") as Node2D
