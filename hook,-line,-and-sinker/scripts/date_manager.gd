@@ -336,16 +336,25 @@ func start_date(date: DateData) -> void:
 	# characters. Keep them in World (no reparenting), and restore Penni's
 	# original draw order along with her position when the date ends.
 	var cast_layer: CanvasItem = venue.get_node_or_null("DateCastLayer") as CanvasItem
+	var date_z_index: int = -1
 	if cast_layer != null:
-		player.z_index = cast_layer.z_index
+		date_z_index = cast_layer.z_index
+	else:
+		# Older cached boat scenes may not carry the optional marker, but
+		# the actual animated hull still specifies its draw order.
+		var boat_art: IntroBoatSprite = venue.get_node_or_null("Sprite") as IntroBoatSprite
+		if boat_art != null:
+			date_z_index = boat_art.z_index + 1
+	if date_z_index >= 0:
+		player.z_index = date_z_index
 	# Recruited NPCs are data-only residents, not actors in the island world.
 	# Dates and dock cutscenes use the exact same noninteractive land actor.
 	_date_actor = NPCTemporaryActor.spawn(date.npc, player.get_parent(),
 		_spot(venue, &"NpcSpot") + date.npc_feet_offset)
 	if _date_actor != null:
 		_date_actor.name = "DateGuest_" + String(date.npc.npc_id)
-		if cast_layer != null:
-			_date_actor.z_index = cast_layer.z_index
+		if date_z_index >= 0:
+			_date_actor.z_index = date_z_index
 	await _fade_to(0.0)
 	_in_dialogue = true
 	DialogueManager.request_conversation(date.npc, date.dialogue_json)
