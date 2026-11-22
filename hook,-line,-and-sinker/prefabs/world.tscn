@@ -179,7 +179,7 @@ texture = ExtResource("7_sxw1y")
 # The intro boat is a real, currently inaccessible location east of the
 # playable beach. Sky and Water are the SAME existing world visuals.
 [node name="IntroBoat" type="Node2D" parent="."]
-position = Vector2(3200, 124)
+position = Vector2(2250, 124)
 
 [node name="Sprite" type="AnimatedSprite2D" parent="IntroBoat"]
 z_index = 11
@@ -256,6 +256,5 @@ offset_top = 140.0
 offset_right = 2800.0
 offset_bottom = 800.0
 script = ExtResource("sea_water_bounds")
-shoreline_right_x = 3800.0
 
 [node name="Sea" parent="." unique_id=557143591 instance=ExtResource("sea_area")]
