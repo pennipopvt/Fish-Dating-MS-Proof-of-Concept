@@ -20,8 +20,8 @@
 [ext_resource type="Script" uid="uid://cev6m8id2o2sk" path="res://scripts/diving/sea_party_commands.gd" id="party_commands"]
 [ext_resource type="Resource" uid="uid://cu4aljcpk40a0" path="res://resources/fish/porgy.tres" id="porgy"]
 [ext_resource type="Script" uid="uid://byp4fou8kyseq" path="res://scripts/diving/diving_world.gd" id="sea"]
-[ext_resource type="Script" path="res://scripts/diving/sea_motion_path.gd" id="sea_motion_path"]
 [ext_resource type="Script" uid="uid://cdph5nai8ag8d" path="res://scripts/diving/sea_dive_inventory.gd" id="sea_dive_inventory"]
+[ext_resource type="Script" uid="uid://cns0gg8nc3rbx" path="res://scripts/diving/sea_motion_path.gd" id="sea_motion_path"]
 [ext_resource type="Script" uid="uid://bpd7lfad1b7ej" path="res://scripts/diving/sea_npc.gd" id="sea_npc"]
 [ext_resource type="Script" uid="uid://bvq84xewvqch0" path="res://scripts/diving/sea_oxygen.gd" id="sea_oxygen"]
 [ext_resource type="Script" uid="uid://pp01g60n8pmh" path="res://scripts/diving/sea_population.gd" id="sea_population"]
@@ -34,6 +34,58 @@
 [ext_resource type="Script" uid="uid://c8tfjwwcdogbg" path="res://scripts/diving/sea_spawn_option.gd" id="spawn_option"]
 [ext_resource type="Script" uid="uid://cicrs5os6sgh8" path="res://scripts/diving/sea_spawn_region.gd" id="spawn_region"]
 [ext_resource type="Script" uid="uid://b11olr4jyp85r" path="res://scripts/diving/sea_story_director.gd" id="story"]
+
+[sub_resource type="Curve" id="Speed_CompanionDiveJump"]
+resource_local_to_scene = true
+_data = [Vector2(0, 0.25), 0.0, 0.0, 0, 0, Vector2(0.5, 1), 0.0, 0.0, 0, 0, Vector2(1, 0.55), 0.0, 0.0, 0, 0]
+point_count = 3
+
+[sub_resource type="Curve2D" id="Motion_CompanionDiveJump"]
+resource_local_to_scene = true
+bake_interval = 2.0
+_data = {
+"points": PackedVector2Array(0, 0, -20, -24, 88, 112, 12, -11, -25, 18, 55, 88, 16, -34, -33, 22, 12, 158, 23, -18, -31, 24, -64, 212, 24, -23, 0, 0, -139, 264)
+}
+point_count = 5
+
+[sub_resource type="Curve" id="Speed_PenniSurface"]
+resource_local_to_scene = true
+_data = [Vector2(0, 0.45), 0.0, 0.0, 0, 0, Vector2(0.5, 1), 0.0, 0.0, 0, 0, Vector2(1, 0.35), 0.0, 0.0, 0, 0]
+point_count = 3
+
+[sub_resource type="Curve2D" id="Motion_PenniSurface"]
+resource_local_to_scene = true
+bake_interval = 2.0
+_data = {
+"points": PackedVector2Array(0, 0, -9, -21, 55, 182, 0, 19, 16, -16, 36, 138, -18, 2, 0, 0, 67, 112)
+}
+point_count = 3
+
+[sub_resource type="Curve" id="Speed_CompanionSurface"]
+resource_local_to_scene = true
+_data = [Vector2(0, 0.35), 0.0, 0.0, 0, 0, Vector2(0.333, 1), 0.0, 0.0, 0, 0, Vector2(0.667, 0.75), 0.0, 0.0, 0, 0, Vector2(1, 0.25), 0.0, 0.0, 0, 0]
+point_count = 4
+
+[sub_resource type="Curve2D" id="Motion_CompanionSurface"]
+resource_local_to_scene = true
+bake_interval = 2.0
+_data = {
+"points": PackedVector2Array(0, 0, -5, -28, 53, 212, 4, 26, -8, -40, 42, 158, -18, 15, 22, -9, 58, 93, -15, -7, 0, 0, 101, 96)
+}
+point_count = 4
+
+[sub_resource type="Curve" id="Speed_PenniDiveJump"]
+resource_local_to_scene = true
+_data = [Vector2(0, 0.5), 0.0, -0.11146592, 0, 1, Vector2(0.5078125, 0.4433962), 0.0, 0.0, 0, 0, Vector2(0.75, 0.514151), 0.2921487, 0.0, 1, 0, Vector2(1, 0.12385321), 0.0, 0.0, 0, 0]
+point_count = 4
+
+[sub_resource type="Curve2D" id="Motion_PenniDiveJump"]
+resource_local_to_scene = true
+bake_interval = 2.0
+_data = {
+"points": PackedVector2Array(17.845291, 28.648455, -17.845291, -28.648455, 101, 88, 21.938114, 7.6695232, -21.938114, -7.6695232, 70, 61, 8.400264, 2.3173146, -8.400264, -2.3173146, 45, 204, 9.690581, 19.031607, -9.690581, -19.031607, 40, 194)
+}
+point_count = 4
 
 [sub_resource type="Resource" id="habitat_shallow_mullet"]
 script = ExtResource("spawn_option")
@@ -85,7 +137,7 @@ species = ExtResource("fish_tuna")
 weight = 2.0
 afternoon_factor = 1.3
 
-[sub_resource type="Curve2D" id="Curve2D_5po06"]
+[sub_resource type="Curve2D" id="Curve2D_vychp"]
 resource_local_to_scene = true
 bake_interval = 2.0
 _data = {
@@ -93,7 +145,7 @@ _data = {
 }
 point_count = 35
 
-[sub_resource type="Curve2D" id="Curve2D_sol7m"]
+[sub_resource type="Curve2D" id="Curve2D_e16em"]
 resource_local_to_scene = true
 bake_interval = 2.0
 _data = {
@@ -101,7 +153,7 @@ _data = {
 }
 point_count = 6
 
-[sub_resource type="Curve2D" id="Curve2D_t40yv"]
+[sub_resource type="Curve2D" id="Curve2D_likg1"]
 resource_local_to_scene = true
 bake_interval = 2.0
 _data = {
@@ -109,7 +161,7 @@ _data = {
 }
 point_count = 10
 
-[sub_resource type="Curve2D" id="Curve2D_vychp"]
+[sub_resource type="Curve2D" id="Curve2D_6u2ss"]
 resource_local_to_scene = true
 bake_interval = 2.0
 _data = {
@@ -117,7 +169,7 @@ _data = {
 }
 point_count = 8
 
-[sub_resource type="Curve2D" id="Curve2D_e16em"]
+[sub_resource type="Curve2D" id="Curve2D_p5res"]
 resource_local_to_scene = true
 bake_interval = 2.0
 _data = {
@@ -125,7 +177,7 @@ _data = {
 }
 point_count = 8
 
-[sub_resource type="Curve2D" id="Curve2D_likg1"]
+[sub_resource type="Curve2D" id="Curve2D_lk0jx"]
 resource_local_to_scene = true
 bake_interval = 2.0
 _data = {
@@ -133,7 +185,7 @@ _data = {
 }
 point_count = 7
 
-[sub_resource type="Curve2D" id="Curve2D_6u2ss"]
+[sub_resource type="Curve2D" id="Curve2D_u5xdw"]
 resource_local_to_scene = true
 bake_interval = 2.0
 _data = {
@@ -141,7 +193,7 @@ _data = {
 }
 point_count = 8
 
-[sub_resource type="Curve2D" id="Curve2D_p5res"]
+[sub_resource type="Curve2D" id="Curve2D_i0sfj"]
 resource_local_to_scene = true
 bake_interval = 2.0
 _data = {
@@ -149,7 +201,7 @@ _data = {
 }
 point_count = 7
 
-[sub_resource type="Curve2D" id="Curve2D_lk0jx"]
+[sub_resource type="Curve2D" id="Curve2D_athtn"]
 resource_local_to_scene = true
 bake_interval = 2.0
 _data = {
@@ -157,7 +209,7 @@ _data = {
 }
 point_count = 6
 
-[sub_resource type="Curve2D" id="Curve2D_u5xdw"]
+[sub_resource type="Curve2D" id="Curve2D_vj1x0"]
 resource_local_to_scene = true
 bake_interval = 2.0
 _data = {
@@ -165,7 +217,7 @@ _data = {
 }
 point_count = 9
 
-[sub_resource type="Curve2D" id="Curve2D_i0sfj"]
+[sub_resource type="Curve2D" id="Curve2D_v7gd1"]
 resource_local_to_scene = true
 bake_interval = 2.0
 _data = {
@@ -173,69 +225,13 @@ _data = {
 }
 point_count = 13
 
-[sub_resource type="Curve2D" id="Curve2D_athtn"]
+[sub_resource type="Curve2D" id="Curve2D_rfcb7"]
 resource_local_to_scene = true
 bake_interval = 2.0
 _data = {
 "points": PackedVector2Array(21.078693, 10.960653, -21.078693, -10.960653, -140, -163, 26.105177, 47.484417, -26.179806, -47.620167, -383, -215, -11.871184, 16.511738, 15.820468, -22.004833, -288, -288, -11.721482, 4.456101, 23.601988, -8.972657, -234, -382, -25.345633, -12.486451, 16.311146, 8.035638, -120, -384, -35.50686, -3.2902107, 30.981977, 2.8709168, -85, -315, -6.165718, 8.1850815, 6.165718, -8.1850815, 25, -358, -23.634043, -20.322266, 16.461035, 14.154392, 130, -282, -14.282678, -2.224906, 14.282678, 2.224906, 182, -223, -43.35668, -9.151805, 43.35668, 9.151805, 274, -199, -8.466246, -48.579872, 8.466246, 48.579872, 245, -113, -6.8431997, -14.249405, 6.8431997, 14.249405, 332, -86, -64.84182, -52.221428, 64.84182, 52.221428, 378, 47, 27, -10, -30, 15, 331, 121, 32, 11, -24, -5, -198, 113, -57.84443, -11.366432, 57.84443, 11.366432, -287, 54, -17.24427, 19.955036, 17.24427, -19.955036, -105, -61, 10.263161, 7.672245, -10.263161, -7.672245, -140, -163)
 }
 point_count = 18
-
-[sub_resource type="Curve2D" id="Motion_PenniDiveJump"]
-resource_local_to_scene = true
-bake_interval = 2.0
-_data = {
-"points": PackedVector2Array(0, 0, -25, -23, 67, 112, 16, -10, -17, 21, 29, 88, 13, -34, -27, 20, 6, 158, 20, -17, -27, 23, -51, 207, 24, -21, 0, 0, -119, 256)
-}
-point_count = 5
-
-[sub_resource type="Curve" id="Speed_PenniDiveJump"]
-resource_local_to_scene = true
-_data = [Vector2(0.000, 0.35), 0.0, 0.0, 0, 0, Vector2(0.500, 1), 0.0, 0.0, 0, 0, Vector2(1.000, 0.65), 0.0, 0.0, 0, 0]
-point_count = 3
-
-
-
-[sub_resource type="Curve2D" id="Motion_CompanionDiveJump"]
-resource_local_to_scene = true
-bake_interval = 2.0
-_data = {
-"points": PackedVector2Array(0, 0, -20, -24, 88, 112, 12, -11, -25, 18, 55, 88, 16, -34, -33, 22, 12, 158, 23, -18, -31, 24, -64, 212, 24, -23, 0, 0, -139, 264)
-}
-point_count = 5
-
-[sub_resource type="Curve" id="Speed_CompanionDiveJump"]
-resource_local_to_scene = true
-_data = [Vector2(0.000, 0.25), 0.0, 0.0, 0, 0, Vector2(0.500, 1), 0.0, 0.0, 0, 0, Vector2(1.000, 0.55), 0.0, 0.0, 0, 0]
-point_count = 3
-
-
-
-[sub_resource type="Curve2D" id="Motion_PenniSurface"]
-resource_local_to_scene = true
-bake_interval = 2.0
-_data = {
-"points": PackedVector2Array(0, 0, -9, -21, 55, 182, 0, 19, 16, -16, 36, 138, -18, 2, 0, 0, 67, 112)
-}
-point_count = 3
-
-[sub_resource type="Curve" id="Speed_PenniSurface"]
-resource_local_to_scene = true
-_data = [Vector2(0.000, 0.45), 0.0, 0.0, 0, 0, Vector2(0.500, 1), 0.0, 0.0, 0, 0, Vector2(1.000, 0.35), 0.0, 0.0, 0, 0]
-point_count = 3
-
-[sub_resource type="Curve2D" id="Motion_CompanionSurface"]
-resource_local_to_scene = true
-bake_interval = 2.0
-_data = {
-"points": PackedVector2Array(0, 0, -5, -28, 53, 212, 4, 26, -8, -40, 42, 158, -18, 15, 22, -9, 58, 93, -15, -7, 0, 0, 101, 96)
-}
-point_count = 4
-
-[sub_resource type="Curve" id="Speed_CompanionSurface"]
-resource_local_to_scene = true
-_data = [Vector2(0.000, 0.35), 0.0, 0.0, 0, 0, Vector2(0.333, 1), 0.0, 0.0, 0, 0, Vector2(0.667, 0.75), 0.0, 0.0, 0, 0, Vector2(1.000, 0.25), 0.0, 0.0, 0, 0]
-point_count = 4
 
 [node name="Sea" type="Node2D" unique_id=907830608]
 script = ExtResource("sea")
@@ -264,43 +260,40 @@ position = Vector2(53, 212)
 [node name="SilasDockWait" type="Marker2D" parent="Points" unique_id=1410168153]
 position = Vector2(101, 112)
 
-# Editor-editable motion profiles live directly under Points. Select
-# each motion's child Path2D to reshape its trajectory in the 2D view.
-
-# Editor guide separates the authoring block from the original markers.
-[node name="MotionEditingGuide" type="Marker2D" parent="Points"]
-editor_description = "Select a motion's Path child to reshape its Bezier path. On the parent, edit Duration Seconds and Speed Curve."
-
-[node name="CompanionDiveJump" type="Node2D" parent="Points"]
+[node name="CompanionDiveJump" type="Node2D" parent="Points" unique_id=896452796]
 script = ExtResource("sea_motion_path")
 duration_seconds = 1.56
 speed_curve = SubResource("Speed_CompanionDiveJump")
 
-[node name="Path" type="Path2D" parent="Points/CompanionDiveJump"]
+[node name="Path" type="Path2D" parent="Points/CompanionDiveJump" unique_id=940534558]
+visible = false
 curve = SubResource("Motion_CompanionDiveJump")
 
-[node name="PenniSurface" type="Node2D" parent="Points"]
+[node name="PenniSurface" type="Node2D" parent="Points" unique_id=230828121]
 script = ExtResource("sea_motion_path")
 duration_seconds = 0.85
 speed_curve = SubResource("Speed_PenniSurface")
 
-[node name="Path" type="Path2D" parent="Points/PenniSurface"]
+[node name="Path" type="Path2D" parent="Points/PenniSurface" unique_id=679119031]
+visible = false
 curve = SubResource("Motion_PenniSurface")
 
-[node name="CompanionSurface" type="Node2D" parent="Points"]
+[node name="CompanionSurface" type="Node2D" parent="Points" unique_id=658650860]
 script = ExtResource("sea_motion_path")
 duration_seconds = 1.23
 speed_curve = SubResource("Speed_CompanionSurface")
 
-[node name="Path" type="Path2D" parent="Points/CompanionSurface"]
+[node name="Path" type="Path2D" parent="Points/CompanionSurface" unique_id=44001432]
+visible = false
 curve = SubResource("Motion_CompanionSurface")
 
-[node name="PenniDiveJump" type="Node2D" parent="Points"]
+[node name="PenniDiveJump" type="Node2D" parent="Points" unique_id=1497873095]
 script = ExtResource("sea_motion_path")
-duration_seconds = 1.53
+duration_seconds = 0.5
 speed_curve = SubResource("Speed_PenniDiveJump")
 
-[node name="Path" type="Path2D" parent="Points/PenniDiveJump"]
+[node name="Path" type="Path2D" parent="Points/PenniDiveJump" unique_id=172864963]
+position = Vector2(-10, -32)
 curve = SubResource("Motion_PenniDiveJump")
 
 [node name="FishSpawns" type="Node2D" parent="." unique_id=1684491983]
@@ -416,39 +409,39 @@ position = Vector2(-1291, 183)
 
 [node name="SeaTerrain" parent="Sea Terrain" unique_id=1054208482 instance=ExtResource("27_qp5f5")]
 position = Vector2(-60, 150)
-curve = SubResource("Curve2D_5po06")
+curve = SubResource("Curve2D_vychp")
 
 [node name="SeaTerrain2" parent="Sea Terrain" unique_id=1727663235 instance=ExtResource("27_qp5f5")]
 position = Vector2(-1165, 659)
-curve = SubResource("Curve2D_sol7m")
+curve = SubResource("Curve2D_e16em")
 
 [node name="SeaTerrain3" parent="Sea Terrain" unique_id=1020171375 instance=ExtResource("27_qp5f5")]
 position = Vector2(-1205, 569)
-curve = SubResource("Curve2D_t40yv")
+curve = SubResource("Curve2D_likg1")
 
 [node name="SeaTerrain4" parent="Sea Terrain" unique_id=1332715503 instance=ExtResource("27_qp5f5")]
 position = Vector2(-1376, 455)
-curve = SubResource("Curve2D_vychp")
+curve = SubResource("Curve2D_6u2ss")
 
 [node name="SeaTerrain5" parent="Sea Terrain" unique_id=866530282 instance=ExtResource("27_qp5f5")]
 position = Vector2(-1318, 312)
-curve = SubResource("Curve2D_e16em")
+curve = SubResource("Curve2D_p5res")
 
 [node name="SeaTerrain6" parent="Sea Terrain" unique_id=328690975 instance=ExtResource("27_qp5f5")]
 position = Vector2(-1516, 222)
-curve = SubResource("Curve2D_likg1")
+curve = SubResource("Curve2D_lk0jx")
 
 [node name="SeaTerrain7" parent="Sea Terrain" unique_id=1832567115 instance=ExtResource("27_qp5f5")]
 position = Vector2(-540, 197)
-curve = SubResource("Curve2D_6u2ss")
+curve = SubResource("Curve2D_u5xdw")
 
 [node name="SeaTerrain8" parent="Sea Terrain" unique_id=410987106 instance=ExtResource("27_qp5f5")]
 position = Vector2(-511, 315)
-curve = SubResource("Curve2D_p5res")
+curve = SubResource("Curve2D_i0sfj")
 
 [node name="SeaTerrain9" parent="Sea Terrain" unique_id=1330212167 instance=ExtResource("27_qp5f5")]
 position = Vector2(-768, 240)
-curve = SubResource("Curve2D_lk0jx")
+curve = SubResource("Curve2D_athtn")
 
 [node name="Decoration" type="Node2D" parent="." unique_id=58592729]
 
@@ -456,98 +449,98 @@ curve = SubResource("Curve2D_lk0jx")
 z_index = -1
 position = Vector2(-688, 378)
 animation = &"seaweed_tall"
-frame_progress = 0.6553789
+frame_progress = 0.31445774
 
 [node name="SeaDecoration11" parent="Decoration" unique_id=1528132304 instance=ExtResource("26_binbi")]
 z_index = -1
 position = Vector2(-707, 377)
 animation = &"seaweed_tall"
-frame_progress = 0.6553789
+frame_progress = 0.31445774
 
 [node name="SeaDecoration12" parent="Decoration" unique_id=1649882772 instance=ExtResource("26_binbi")]
 z_index = -1
 position = Vector2(-336, 310)
 animation = &"seaweed_tall"
-frame_progress = 0.6553789
+frame_progress = 0.31445774
 
 [node name="SeaDecoration17" parent="Decoration" unique_id=731368793 instance=ExtResource("26_binbi")]
 z_index = -1
 position = Vector2(-871, 666)
 animation = &"seaweed_tall"
-frame_progress = 0.6553789
+frame_progress = 0.31445774
 
 [node name="SeaDecoration18" parent="Decoration" unique_id=92810640 instance=ExtResource("26_binbi")]
 z_index = -1
 position = Vector2(-854, 689)
 animation = &"seaweed_tall"
-frame_progress = 0.6553789
+frame_progress = 0.31445774
 
 [node name="SeaDecoration19" parent="Decoration" unique_id=1634407419 instance=ExtResource("26_binbi")]
 z_index = -1
 position = Vector2(-888, 662)
 animation = &"seaweed_tall"
-frame_progress = 0.6553789
+frame_progress = 0.31445774
 
 [node name="SeaDecoration20" parent="Decoration" unique_id=389673235 instance=ExtResource("26_binbi")]
 z_index = -1
 position = Vector2(-880, 698)
-frame_progress = 0.98175186
+frame_progress = 0.64081734
 
 [node name="SeaDecoration37" parent="Decoration" unique_id=159269402 instance=ExtResource("26_binbi")]
 z_index = -1
 position = Vector2(-971, 465)
 animation = &"rock"
-frame_progress = 0.5392449
+frame_progress = 0.1983215
 
 [node name="SeaDecoration38" parent="Decoration" unique_id=101655648 instance=ExtResource("26_binbi")]
 z_index = -1
 position = Vector2(-737, 390)
 rotation = -0.2546894
 animation = &"coral_pink"
-frame_progress = 0.12189024
+frame_progress = 0.7809596
 
 [node name="SeaDecoration39" parent="Decoration" unique_id=344053878 instance=ExtResource("26_binbi")]
 z_index = -1
 position = Vector2(-713, 658)
 animation = &"coral_pink"
-frame_progress = 0.12189024
+frame_progress = 0.7809596
 
 [node name="SeaDecoration40" parent="Decoration" unique_id=1907205515 instance=ExtResource("26_binbi")]
 z_index = -1
 position = Vector2(-1374, 247)
 animation = &"rock_s"
-frame_progress = 0.49135086
+frame_progress = 0.15042616
 
 [node name="SeaDecoration45" parent="Decoration" unique_id=750607216 instance=ExtResource("26_binbi")]
 z_index = -1
 position = Vector2(-1374, 247)
 animation = &"rock_s"
-frame_progress = 0.49135086
+frame_progress = 0.15042616
 
 [node name="SeaDecoration46" parent="Decoration" unique_id=1401027250 instance=ExtResource("26_binbi")]
 z_index = -1
 position = Vector2(-1099, 349)
 animation = &"rock_s"
-frame_progress = 0.49135086
+frame_progress = 0.15042616
 
 [node name="SeaDecoration47" parent="Decoration" unique_id=832773667 instance=ExtResource("26_binbi")]
 z_index = -1
 position = Vector2(-1366, 519)
 animation = &"rock_s"
-frame_progress = 0.49135086
+frame_progress = 0.15042616
 
 [node name="SeaDecoration41" parent="Decoration" unique_id=1391928493 instance=ExtResource("26_binbi")]
 z_index = -1
 position = Vector2(-931, 387)
 animation = &"coral_orange"
-frame_progress = 0.49135086
+frame_progress = 0.15042616
 
 [node name="SeaDecoration42" parent="Decoration" unique_id=1656045334 instance=ExtResource("26_binbi")]
 z_index = -1
 position = Vector2(-1050, 458)
 rotation = -0.44302756
 animation = &"brain_coral"
-frame_progress = 0.49135086
+frame_progress = 0.15042616
 
 [node name="SeaDecoration43" parent="Decoration" unique_id=2110025294 instance=ExtResource("26_binbi")]
 z_index = -1
@@ -555,168 +548,168 @@ position = Vector2(-712, 381.00003)
 rotation = -0.319579
 scale = Vector2(0.99999994, 0.99999994)
 animation = &"brain_coral"
-frame_progress = 0.27922562
+frame_progress = 0.9382931
 
 [node name="SeaDecoration21" parent="Decoration" unique_id=898436296 instance=ExtResource("26_binbi")]
 z_index = -1
 position = Vector2(-868, 703)
-frame_progress = 0.98175186
+frame_progress = 0.64081734
 
 [node name="SeaDecoration44" parent="Decoration" unique_id=308223989 instance=ExtResource("26_binbi")]
 z_index = -1
 position = Vector2(-1619.0001, 351.99997)
 rotation = 0.30994707
 animation = &"coral_orange"
-frame_progress = 0.5740201
+frame_progress = 0.23309949
 
 [node name="SeaDecoration22" parent="Decoration" unique_id=190717281 instance=ExtResource("26_binbi")]
 z_index = -1
 position = Vector2(-916, 689)
-frame_progress = 0.98175186
+frame_progress = 0.64081734
 
 [node name="SeaDecoration23" parent="Decoration" unique_id=543523021 instance=ExtResource("26_binbi")]
 z_index = -1
 position = Vector2(-972, 460)
-frame_progress = 0.98175186
+frame_progress = 0.64081734
 
 [node name="SeaDecoration24" parent="Decoration" unique_id=750931916 instance=ExtResource("26_binbi")]
 z_index = -1
 position = Vector2(-956, 454)
-frame_progress = 0.98175186
+frame_progress = 0.64081734
 
 [node name="SeaDecoration25" parent="Decoration" unique_id=1482441574 instance=ExtResource("26_binbi")]
 z_index = -1
 position = Vector2(-942, 463)
-frame_progress = 0.98175186
+frame_progress = 0.64081734
 
 [node name="SeaDecoration26" parent="Decoration" unique_id=334659372 instance=ExtResource("26_binbi")]
 z_index = -1
 position = Vector2(-965, 435)
 animation = &"seaweed_tall"
-frame_progress = 0.98045367
+frame_progress = 0.63951856
 
 [node name="SeaDecoration27" parent="Decoration" unique_id=1058032125 instance=ExtResource("26_binbi")]
 z_index = -1
 position = Vector2(-949, 436)
 animation = &"seaweed_tall"
-frame_progress = 0.98045367
+frame_progress = 0.63951856
 
 [node name="SeaDecoration28" parent="Decoration" unique_id=969837708 instance=ExtResource("26_binbi")]
 z_index = -1
 position = Vector2(-1098, 359)
 animation = &"seaweed_tall"
-frame_progress = 0.98045367
+frame_progress = 0.63951856
 
 [node name="SeaDecoration29" parent="Decoration" unique_id=582496545 instance=ExtResource("26_binbi")]
 z_index = -1
 position = Vector2(-1081, 366)
 animation = &"seaweed_tall"
-frame_progress = 0.98045367
+frame_progress = 0.63951856
 
 [node name="SeaDecoration30" parent="Decoration" unique_id=1144962308 instance=ExtResource("26_binbi")]
 z_index = -1
 position = Vector2(-1113, 383)
 animation = &"seaweed_tall"
-frame_progress = 0.98045367
+frame_progress = 0.63951856
 
 [node name="SeaDecoration31" parent="Decoration" unique_id=795514565 instance=ExtResource("26_binbi")]
 z_index = -1
 position = Vector2(-1105, 400)
-frame_progress = 0.48623595
+frame_progress = 0.1453106
 
 [node name="SeaDecoration32" parent="Decoration" unique_id=2002554121 instance=ExtResource("26_binbi")]
 z_index = -1
 position = Vector2(-1094, 394)
-frame_progress = 0.48623595
+frame_progress = 0.1453106
 
 [node name="SeaDecoration33" parent="Decoration" unique_id=2069029199 instance=ExtResource("26_binbi")]
 z_index = -1
 position = Vector2(-1077, 405)
-frame_progress = 0.48623595
+frame_progress = 0.1453106
 
 [node name="SeaDecoration34" parent="Decoration" unique_id=999959006 instance=ExtResource("26_binbi")]
 z_index = -1
 position = Vector2(-1221, 297)
-frame_progress = 0.48623595
+frame_progress = 0.1453106
 
 [node name="SeaDecoration36" parent="Decoration" unique_id=476393158 instance=ExtResource("26_binbi")]
 z_index = -1
 position = Vector2(-266, 269)
 animation = &"rock"
-frame_progress = 0.94603163
+frame_progress = 0.60509574
 
 [node name="SeaDecoration35" parent="Decoration" unique_id=1752032626 instance=ExtResource("26_binbi")]
 z_index = -1
 position = Vector2(-1236, 289)
-frame_progress = 0.48623595
+frame_progress = 0.1453106
 
 [node name="SeaDecoration13" parent="Decoration" unique_id=1573509962 instance=ExtResource("26_binbi")]
 z_index = -1
 position = Vector2(-324, 279)
 animation = &"seaweed_tall"
-frame_progress = 0.6553789
+frame_progress = 0.31445774
 
 [node name="SeaDecoration14" parent="Decoration" unique_id=1432454040 instance=ExtResource("26_binbi")]
 z_index = -1
 position = Vector2(-216, 250)
 animation = &"seaweed_tall"
-frame_progress = 0.6553789
+frame_progress = 0.31445774
 
 [node name="SeaDecoration15" parent="Decoration" unique_id=665070656 instance=ExtResource("26_binbi")]
 z_index = -1
 position = Vector2(-22, 208)
 animation = &"seaweed_tall"
-frame_progress = 0.6553789
+frame_progress = 0.31445774
 
 [node name="SeaDecoration16" parent="Decoration" unique_id=1585667924 instance=ExtResource("26_binbi")]
 z_index = -1
 position = Vector2(-17, 189)
-frame_progress = 0.37938744
+frame_progress = 0.03845845
 
 [node name="SeaDecoration" parent="Decoration" unique_id=741281606 instance=ExtResource("26_binbi")]
 z_index = -1
 position = Vector2(-213, 248)
-frame_progress = 0.32571098
+frame_progress = 0.98477954
 
 [node name="SeaDecoration2" parent="Decoration" unique_id=534969801 instance=ExtResource("26_binbi")]
 z_index = -1
 position = Vector2(-224, 261)
-frame_progress = 0.32571098
+frame_progress = 0.98477954
 
 [node name="SeaDecoration3" parent="Decoration" unique_id=512251259 instance=ExtResource("26_binbi")]
 z_index = -1
 position = Vector2(-206, 245)
-frame_progress = 0.32571098
+frame_progress = 0.98477954
 
 [node name="SeaDecoration4" parent="Decoration" unique_id=1315933029 instance=ExtResource("26_binbi")]
 z_index = -1
 position = Vector2(-471, 171)
-frame_progress = 0.32571098
+frame_progress = 0.98477954
 
 [node name="SeaDecoration5" parent="Decoration" unique_id=1627492546 instance=ExtResource("26_binbi")]
 z_index = -1
 position = Vector2(-477, 190)
-frame_progress = 0.32571098
+frame_progress = 0.98477954
 
 [node name="SeaDecoration6" parent="Decoration" unique_id=1590693950 instance=ExtResource("26_binbi")]
 z_index = -1
 position = Vector2(-463, 184)
-frame_progress = 0.32571098
+frame_progress = 0.98477954
 
 [node name="SeaDecoration7" parent="Decoration" unique_id=1553108910 instance=ExtResource("26_binbi")]
 z_index = -1
 position = Vector2(-694, 410)
-frame_progress = 0.32571098
+frame_progress = 0.98477954
 
 [node name="SeaDecoration8" parent="Decoration" unique_id=1880796303 instance=ExtResource("26_binbi")]
 z_index = -1
 position = Vector2(-701, 426)
-frame_progress = 0.32571098
+frame_progress = 0.98477954
 
 [node name="SeaDecoration9" parent="Decoration" unique_id=1916777453 instance=ExtResource("26_binbi")]
 z_index = -1
 position = Vector2(-680, 399)
-frame_progress = 0.32571098
+frame_progress = 0.98477954
 
 [node name="SeaSunbeam2" parent="Decoration" unique_id=1350797347 instance=ExtResource("27_7yqkl")]
 position = Vector2(-868, 59)
@@ -774,7 +767,7 @@ strength = 0.17
 [node name="SeaTerrain10" parent="Background Terrain" unique_id=1751636914 instance=ExtResource("27_qp5f5")]
 z_index = -2
 position = Vector2(-349, 633)
-curve = SubResource("Curve2D_u5xdw")
+curve = SubResource("Curve2D_vj1x0")
 fill_texture = ExtResource("26_qp5f5")
 edge_texture = ExtResource("27_binbi")
 collision_enabled = false
@@ -782,7 +775,7 @@ collision_enabled = false
 [node name="SeaTerrain11" parent="Background Terrain" unique_id=2080305478 instance=ExtResource("27_qp5f5")]
 z_index = -2
 position = Vector2(-676, 375)
-curve = SubResource("Curve2D_i0sfj")
+curve = SubResource("Curve2D_v7gd1")
 fill_texture = ExtResource("26_qp5f5")
 edge_texture = ExtResource("27_binbi")
 collision_enabled = false
@@ -790,7 +783,7 @@ collision_enabled = false
 [node name="SeaTerrain12" parent="Background Terrain" unique_id=1291018217 instance=ExtResource("27_qp5f5")]
 z_index = -2
 position = Vector2(-1336, 632)
-curve = SubResource("Curve2D_athtn")
+curve = SubResource("Curve2D_rfcb7")
 fill_texture = ExtResource("26_qp5f5")
 edge_texture = ExtResource("27_binbi")
 collision_enabled = false
