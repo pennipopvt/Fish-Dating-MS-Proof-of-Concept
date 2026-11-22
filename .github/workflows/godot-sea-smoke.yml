@@ -52,6 +52,12 @@ jobs:
           set -o pipefail
           timeout 120s godot --headless --path "hook,-line,-and-sinker" res://tests/world_camera_intro_test.tscn 2>&1 | tee world-camera-intro-test.log
           ! (grep -E 'SCRIPT ERROR:|Parse Error:|Parser Error:|ERROR:|FAIL ' world-camera-intro-test.log | grep -Ev 'resources still in use at exit|RID allocations.*leaked' | grep -q .)
+      - name: Test first fish story camera focus and return
+        shell: bash
+        run: |
+          set -o pipefail
+          timeout 90s godot --headless --path "hook,-line,-and-sinker" res://tests/first_fish_camera_focus_test.tscn 2>&1 | tee first-fish-camera-test.log
+          ! (grep -E 'SCRIPT ERROR:|Parse Error:|Parser Error:|ERROR:|FAIL ' first-fish-camera-test.log | grep -Ev 'resources still in use at exit|RID allocations.*leaked' | grep -q .)
       - name: Test isolated spline terrain preview, textures and collision
         shell: bash
         run: |
