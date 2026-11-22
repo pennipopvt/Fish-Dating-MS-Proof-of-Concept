@@ -67,7 +67,7 @@ func _run() -> void:
 	await get_tree().process_frame
 	var world: Node2D = main.get_node("SubViewportContainer/SubViewport/World") as Node2D
 	var water: ColorRect = world.get_node("Water") as ColorRect
-	var underwater: ColorRect = world.get_node("Player/Camera2D/UnderwaterTint") as ColorRect
+	var underwater: ColorRect = world.get_node("CameraController/Camera2D/UnderwaterTint") as ColorRect
 	var tint_color: Color = (underwater.material as ShaderMaterial).get_shader_parameter("tint_color")
 	var deep_alpha: float = float((water.material as ShaderMaterial).get_shader_parameter("deep_water_alpha"))
 	_check(tint_color.a < 0.35 and deep_alpha <= 0.15,
