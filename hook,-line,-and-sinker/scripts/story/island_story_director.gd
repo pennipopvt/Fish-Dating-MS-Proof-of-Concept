@@ -12,6 +12,8 @@ signal story_event_completed(event_id: StringName)
 var _player: Player
 var _transition: SeaDiveTransition
 var _opening: FishCoOpeningSequence
+var _camera: WorldCameraController
+var _camera_moment_active: bool = false
 
 var _completed: Dictionary = {}
 var _pending: Array[StringName] = []
@@ -27,11 +29,32 @@ func configure(player: Player, transition: SeaDiveTransition,
 	_player = player
 	_transition = transition
 	_opening = opening
+	_camera = player.get_parent().get_node("CameraController") as WorldCameraController
 	GameManager.day_started.connect(_on_day_started)
 	RecruitmentHandler.resident_assigned.connect(_on_resident_assigned)
 	_opening.first_dive_onboarding_finished.connect(_refresh_eligible_events)
 	DialogueManager.conversation_finished.connect(_on_conversation_finished)
 	_refresh_eligible_events()
+
+
+# A story beat can call this with any authored Marker2D or world actor.
+# Story owns the input lock; the camera controller only animates framing.
+# No new cutscene player, camera or timeline is created.
+func play_camera_pan(target: Node2D, seconds: float = 0.8,
+		hold_seconds: float = 0.0, return_seconds: float = 0.8) -> void:
+	if not is_instance_valid(target) or not is_instance_valid(_player) \
+			or not is_instance_valid(_camera) or _camera_moment_active:
+		return
+	_camera_moment_active = true
+	var was_busy: bool = _player.busy
+	_player.busy = true
+	await _camera.pan_to(target.global_position, seconds)
+	if hold_seconds > 0.0:
+		await get_tree().create_timer(hold_seconds).timeout
+	await _camera.return_to_player(return_seconds)
+	if is_instance_valid(_player):
+		_player.busy = was_busy
+	_camera_moment_active = false
 
 
 func has_completed(event_id: StringName) -> bool:
