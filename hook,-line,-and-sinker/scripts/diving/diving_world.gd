@@ -620,7 +620,7 @@ func _begin_fish_combat(fish: DivingWildFish) -> void:
 	_commands.recall_target(fish)
 	_combat.record_lost_fish = fish != _encounter.silas_trap and fish != _kuda.kuda
 	if _combat.begin(fish, data, _player.position.distance_to(fish.position),
-			_net.max_range, fish.health_ratio()):
+			_net.effective_max_range(), fish.health_ratio()):
 		# Presentation belongs to the fish actor; it reads existing combat
 		# phases and doesn't introduce new timers into DivingCombat.
 		var visuals: SeaFishCombatVisual = fish.get_node_or_null("CombatVisual") as SeaFishCombatVisual

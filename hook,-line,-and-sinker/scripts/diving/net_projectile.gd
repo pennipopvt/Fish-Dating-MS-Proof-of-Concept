@@ -14,6 +14,10 @@ enum State { IDLE, OUTBOUND, RETURNING, LATCHED }
 @export_range(60.0, 800.0, 10.0) var retract_speed: float = 370.0
 @export_range(3.0, 20.0, 1.0) var hit_radius: float = 11.0
 
+@export_group("Net Sprite Line Attachment")
+# Tweak the one-pixel cord endpoint relative to the far rim of net.png.
+@export_range(-16.0, 16.0, 1.0, "suffix:px") var cord_attachment_inset: float = 0.0
+
 # The visuals live in Sea/NetProjectile: the Sprite2D divides the authored
 # four-frame sheet equally and AnimationPlayer owns contact timing.
 @onready var _net_sprite: Sprite2D = get_node_or_null("NetSprite") as Sprite2D
@@ -72,6 +76,11 @@ func is_latched() -> bool:
 	return state == State.LATCHED
 
 
+# Inspector max_range stays the base value. Apply any equipment bonus on read.
+func effective_max_range() -> float:
+	return max_range + FishingManager.net_range_bonus_pixels
+
+
 func cast_net(origin: Node2D, aim_position: Vector2, fish_in_water: Array[DivingWildFish]) -> bool:
 	if is_busy() or origin == null:
 		return false
@@ -94,6 +103,7 @@ func cast_net(origin: Node2D, aim_position: Vector2, fish_in_water: Array[Diving
 		_net_animation.stop()
 	if _net_sprite != null:
 		_net_sprite.frame = 0
+		_net_sprite.flip_h = direction.x < 0.0
 		_net_sprite.position = tip.round()
 	visible = true
 	set_process(true)
@@ -108,7 +118,7 @@ func _process(delta: float) -> void:
 	match state:
 		State.OUTBOUND:
 			var previous: Vector2 = tip
-			_travelled = minf(max_range, _travelled + throw_speed * delta)
+			_travelled = minf(effective_max_range(), _travelled + throw_speed * delta)
 			var next_position: Vector2 = _start + direction * _travelled
 			# Physics layer 2 contains only the lagoon's painted solid tiles.
 			# Shorten this segment at a wall so a fish behind a cave wall
@@ -129,7 +139,7 @@ func _process(delta: float) -> void:
 				fish_hit.emit(collided)
 			else:
 				tip = unobstructed_end
-				if not wall_hit.is_empty() or _travelled >= max_range:
+				if not wall_hit.is_empty() or _travelled >= effective_max_range():
 					state = State.RETURNING
 		State.RETURNING:
 			tip = tip.move_toward(_get_anchor(), retract_speed * delta)
@@ -197,9 +207,19 @@ func _get_anchor() -> Vector2:
 	return _origin.position + Vector2(0.0, -7.0) if is_instance_valid(_origin) else _start
 
 
+# The frame is centered on the collision tip. Connect at the far-right
+# edge when facing right, or the mirrored far-left edge when facing left.
+# The sprite rect and transform respect Inspector-edited scale/offset.
+func _cord_endpoint() -> Vector2:
+	if _net_sprite == null or _net_sprite.texture == null:
+		return tip.round()
+	var bounds: Rect2 = _net_sprite.get_rect()
+	var edge_x: float = bounds.position.x + cord_attachment_inset if direction.x < 0.0 \
+		else bounds.end.x - cord_attachment_inset
+	return (_net_sprite.transform * Vector2(edge_x, bounds.get_center().y)).round()
+
+
 func _draw() -> void:
 	if state == State.IDLE:
 		return
-	# One un-antialiased pixel-wide cord; the editor-authored Sprite2D shows
-	# open / closing / latched frames instead of procedural net geometry.
-	draw_line(_get_anchor(), tip.round(), get_line_color(), 1.0, false)
+	draw_line(_get_anchor(), _cord_endpoint(), get_line_color(), 1.0, false)
