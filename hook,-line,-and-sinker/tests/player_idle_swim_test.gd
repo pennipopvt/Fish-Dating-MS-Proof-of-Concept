@@ -25,6 +25,17 @@ func _run() -> void:
 	_check(is_equal_approx(step_timer.wait_time, 0.93) and not step_timer.is_stopped(),
 		"Walking uses the editor-authored StepTimer Wait Time without overwriting it")
 	player._stop_step_audio()
+	# The 2s WAV has a very short impact and a long silent tail. A new
+	# step must still trigger even if the preceding audio is still playing.
+	# Use the actual editor-timer timeout callback with an active walk.
+	player.velocity = Vector2(100.0, 0.0)
+	player._play_step()
+	_check((player.get_node("StepSound") as AudioStreamPlayer).playing,
+		"Footstep starts before the next timer tick")
+	player._on_step_timer_timeout()
+	_check((player.get_node("StepSound") as AudioStreamPlayer).playing,
+		"Another timer tick can retrigger a still-active footstep stream")
+	player._stop_step_audio()
 	var frames: SpriteFrames = player.animator.sprite_frames
 	for animation_name in [&"swim_l", &"swim_r", &"swim_idle_l", &"swim_idle_r"]:
 		_check(frames.has_animation(animation_name)

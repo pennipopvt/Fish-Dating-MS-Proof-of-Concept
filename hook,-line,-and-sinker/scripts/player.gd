@@ -262,8 +262,12 @@ func _on_step_timer_timeout() -> void:
 
 
 func _play_step() -> void:
-	if not _step_sound.playing:
-		_step_sound.play()
+	# step.wav has a short footfall followed by nearly two seconds of
+	# silence. Its playing flag therefore stays true long after the audible
+	# step ends. The StepTimer must control cadence, not the WAV duration.
+	# Restart on each timer tick; the sample's quiet tail creates a gap.
+	_step_sound.stop()
+	_step_sound.play()
 
 
 func _stop_step_audio() -> void:
