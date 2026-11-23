@@ -192,8 +192,12 @@ Debug builds only (not in exports):
   sideways and scrolls sideways at half the camera speed (`parallax` 0.5), so it reads
   as farther away. Anything above the water surface is cut off, so it never shows over
   the sky or land. It's darkened with the node's `modulate` (0.45, 0.52, 0.62) and sits
-  at z_index -3, in front of the shadow fish and behind the terrain. `raise` moves it
-  up from the screen bottom.
+  at z_index -3, in front of the shadow fish and behind the terrain. Its height follows
+  the camera's depth: at the surface it sits `sink_at_surface` (55px) below the screen
+  edge so only the coral tops peek in, and by the bottom of the sea it rises
+  `rise_at_floor` (16px) above it, with a band of the strip's own bottom sand filling
+  the space underneath. That gives a gentle vertical parallax (about 15% of the camera's
+  travel) while swimming up or down; `rise_curve` changes how early it rises.
 - **Fishing rod (visual only):** `prefabs/fishing_rod.tscn` on the player. When you
   start fishing, the player faces the water and pulls out the rod. Every cast swings
   the rod back and flicks it forward, and the equipped bait's icon flies out on the
