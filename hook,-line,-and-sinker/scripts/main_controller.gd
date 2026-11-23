@@ -35,6 +35,34 @@ var _sea_bubble_source: String:
 	get: return _bubble_host.source
 
 
+func _enter_tree() -> void:
+	# The local Audio panel can have only Master after an editor/import
+	# refresh even though the committed bus layout has Music and Ambience.
+	# Install the authored layout before child audio nodes initialize.
+	if AudioServer.get_bus_index(&"Music") >= 0 and AudioServer.get_bus_index(&"Ambience") >= 0:
+		return
+	var layout: AudioBusLayout = load("res://default_bus_layout.tres") as AudioBusLayout
+	if layout != null:
+		AudioServer.set_bus_layout(layout)
+	# If Godot has cached an old one-bus layout, keep both audio paths
+	# functional until the editor layout is reloaded from disk.
+	if AudioServer.get_bus_index(&"Music") < 0:
+		AudioServer.add_bus()
+		var music_bus: int = AudioServer.get_bus_index(&"Music")
+		if music_bus < 0:
+			music_bus = AudioServer.get_bus_count() - 1
+			AudioServer.set_bus_name(music_bus, &"Music")
+		AudioServer.set_bus_send(music_bus, &"Master")
+		var lowpass: AudioEffectLowPassFilter = AudioEffectLowPassFilter.new()
+		lowpass.cutoff_hz = 20500.0
+		AudioServer.add_bus_effect(music_bus, lowpass)
+	if AudioServer.get_bus_index(&"Ambience") < 0:
+		AudioServer.add_bus()
+		var ambient_bus: int = AudioServer.get_bus_count() - 1
+		AudioServer.set_bus_name(ambient_bus, &"Ambience")
+		AudioServer.set_bus_send(ambient_bus, &"Master")
+
+
 func _ready() -> void:
 	_opening = get_node_or_null("IntroLayer") as FishCoOpeningSequence
 	if _opening == null:

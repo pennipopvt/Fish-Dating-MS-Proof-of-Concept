@@ -26,6 +26,9 @@ func _run() -> void:
 
 	_check(title.visible and not music.playing and not DialogueManager.is_active,
 		"Startup displays title without music or Fish Co dialogue")
+	_check(AudioServer.get_bus_index(&"Music") >= 0
+		and AudioServer.get_bus_index(&"Ambience") >= 0,
+		"Audio buses are ready before the title, even if editor loaded Master only")
 	_check(ocean.autoplay and below.autoplay,
 		"Ambience stream players start even if controller initialization fails")
 	_check(ocean.stream == OCEAN_AUDIO and below.stream == UNDERWATER_AUDIO,
