@@ -38,23 +38,23 @@ enum Kind { SMALL, MID, BIG }
 
 @export_group("Vents (floor and rocks)")
 ## Seconds between new vent streams somewhere in view.
-@export var vent_interval: Vector2 = Vector2(0.6, 1.4)
+@export var vent_interval: Vector2 = Vector2(1.2, 2.8)
 @export var vent_stream_size: Vector2i = Vector2i(3, 7)
 @export var vent_bubble_gap: float = 0.18
 
 @export_group("Drift")
-@export var drift_interval: Vector2 = Vector2(0.35, 0.9)
+@export var drift_interval: Vector2 = Vector2(0.7, 1.8)
 
 @export_group("Breath")
 ## Seconds between breath clusters while still, and while swimming.
-@export var breath_interval_idle: Vector2 = Vector2(2.5, 4.0)
-@export var breath_interval_moving: Vector2 = Vector2(1.1, 1.8)
+@export var breath_interval_idle: Vector2 = Vector2(5.0, 8.0)
+@export var breath_interval_moving: Vector2 = Vector2(2.2, 3.6)
 @export var breath_cluster: Vector2i = Vector2i(2, 4)
 ## Head position relative to Penni's origin (feet), facing right.
 @export var head_offset: Vector2 = Vector2(3.0, -26.0)
 
 @export_group("Splash")
-@export var splash_count: Vector2i = Vector2i(14, 20)
+@export var splash_count: Vector2i = Vector2i(7, 10)
 @export var splash_spread: Vector2 = Vector2(14.0, 10.0)
 
 ## Visible water surface y in the parent's space, used only when the World's

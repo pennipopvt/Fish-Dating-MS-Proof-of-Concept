@@ -182,7 +182,7 @@ Debug builds only (not in exports):
   short streams from the sea floor and rocks (a downward ray against terrain
   collision, so background walls never vent), loose bubbles drifting up across the
   view, breath clusters from Penni's head while she swims (more often while moving),
-  and a burst when she goes under the surface. Big bubbles pop at the surface, and
+  and a burst when she goes under the surface (7–10 bubbles). Big bubbles pop at the surface, and
   some pop early mid-water; small and mid ones fade out at the surface. Rates, sizes,
   speeds and opacity are Inspector exports.
 - **Fishing rod (visual only):** `prefabs/fishing_rod.tscn` on the player. When you
