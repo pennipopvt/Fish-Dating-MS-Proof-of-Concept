@@ -63,3 +63,149 @@ return. The event mechanics and flags are identical; their reactions are
 individually authored. The event architecture does not automatically change affection. Add an
 authored `affection_delta` effect when an incident should affect the single
 relationship score. Jealousy remains independent for context-specific reactions.
+
+
+## Affection, jealousy, and time together
+
+There is **no automatic +12 affection on conversation completion**. A visit
+records `last_talk_day` and can prevent the next day's passive neglect,
+but a hello or goodbye does not raise affection. Only authored dialogue
+choices, date outcomes and other explicit events can do that. The existing
+five-day grace for unrecruited/early companions and affection-based diving
+refusal thresholds are unchanged.
+
+Jealousy is not a synonym for low affection:
+- Completing another romance adds 45 jealousy and costs 12 affection for
+  existing recruited romantic partners.
+- Completing a date with one partner adds 15 jealousy to each **other**
+  recruited romantic partner; the person on the date is unaffected.
+- Missing an appointment costs its NPC 18 affection, not jealousy.
+- Dates retain their existing jealousy-tier-dependent reactions and
+  reassurance/playful/bold choices.
+
+The first jealousy incident starts the reusable `other_romance` relationship
+event defined on each NPC's `Relationship Events` Inspector array. The
+priority follow-ups are `dialogue/silas_other_romance.json` and
+`dialogue/kuda_other_romance.json`, each with the NPC's own voice and
+choices. They use standard `DialogueManager` and may be edited without
+editing the manager code. The authored `jealousy_delta` effect changes
+the shared jealousy score; `affection_delta` changes affection.
+Reassurance reduces jealousy by 25 and resolves the incident after the
+response has been read. Dismissal raises jealousy, hurts affection, and
+leaves the issue active; asking to talk later leaves it unresolved.
+When another partner-date happens, a previously resolved incident can start
+again, and reconciliation can work again too.
+
+The ordinary post-romance dialogue now recognizes jealousy from 25 onward,
+rather than waiting for 50, and the incident dialogue has priority over
+everyday conversation. Like other incidents, higher-priority events
+(e.g. a companion knockout) may take precedence.
+
+Coverage: `tests/jealousy_relationship_test.tscn`,
+`tests/relationship_dates_test.tscn`,
+`tests/companion_morale_test.tscn`, and the Godot smoke workflow.
+
+## Morning invitation story beats
+
+Silas and Kuda's first invitation is no longer selected by ordinary room
+encounters. After receiving the desired gift and waiting at least one new day,
+an eligible resident approaches Penni as a world actor when she wakes from a
+night's sleep. `IslandStoryDirector` owns eligibility, morning-only scheduling,
+input lock, actor entrance/exit and the fade when both characters are ready.
+The NPC's existing `land_actor_scene_path` is spawned non-interactively using
+`NPCTemporaryActor`; the dialogue is still authored in the existing JSON
+files, and flags still belong to `NPCManager`.
+
+Editor controls: move `World/MorningStoryEntry` to change where guests enter;
+edit `resources/story_events/*_morning_invitation.tres` to change conditions,
+approach distance/speed or retry interval. A declined invitation may be offered
+again no sooner than three days later; accepting its flag ends further offers.
+Only `GameManager.day_started` queues morning events, so receiving a gift
+midday will not trigger the invitation until waking on a later morning.
+
+Manual regression: give both gifts on the same day, sleep overnight, verify
+Silas walks in and initiates his invitation, walks out afterward, then a screen
+fade separates Kuda's own entrance and conversation. Test accept/decline,
+decline again after the cooldown, accepted flags preventing repeats, ordinary
+room dialogue without invitations, and Fish Co daytime events.
+
+## Penni's room and resting
+
+The former white world Bed has been replaced by a permanent `PenniRoomDoor`
+using the existing `TransferDoor` and `InteractPrompt` behaviors. Other
+townhouse door prompts appear only while a resident is assigned and Penni
+can interact. The Penni door uses `prefabs/penni_room_door.tscn`, a generic
+door texture and a replaceable portrait badge.
+
+`NPCRoomView.open_player_room()` opens the existing first-person room overlay.
+Set its `Player Room > Player Room Background` export to replace the placeholder
+and `Player Room Sleep Text` to change its line. Penni asks where to rest until
+via `DialogueManager`; choices only include later periods and an exit.
+`GameManager.rest()` remains the sole time owner. Skips are applied while
+`IllustrationSceneController.play_rest_transition()` displays the same fade,
+black-screen sleep text and Continue button as an NPC overnight. New-day
+morning events only begin once the room/fade releases the player.
+
+Morning invitation guests now appear stationary beside Penni using a per-event
+`guest_offset`, with no arrival or departure movement. The previously added
+MorningStoryEntry marker is no longer needed.
+
+Manual regression: check four ordinary townhouse doors (locked/unlocked
+prompts), Penni's door and badge, morning/afternoon/night available choices,
+"I'm not tired", same-day skips and next-morning day increments, and
+simultaneous invitation dialogues after wake. NPC romance overnights should
+still show their authored sleep lines without using Penni's room logic.
+
+## Four-door townhouse layout
+
+Penni's permanent room now occupies the leftmost former `FreeHouseA` position
+inside `AvailableHomeList`. Only `FreeHouseB`, `FreeHouseC`, and `FreeHouseD`
+are registered with `RecruitmentHandler` as assignable resident housing.
+There are exactly four exterior doors; no fifth bed/door exists on the right.
+Penni's door uses the generic open-door art with no large portrait badge,
+until its dedicated sprite is ready. The large first-person Penni room label
+has also been removed; the normal neutral backdrop stays until room artwork
+is set in `NPCRoomView`.
+
+## Townhouse placeholder removal and sea cue sprites
+
+The oversized `placeholdtownhouse.png` texture is no longer loaded by
+`scenes/townhouse.tscn`; its Sprite2D remains empty and editor-editable for
+future background art. Penni's door no longer overrides the inherited normal
+townhouse door sprite, so no temporary turquoise open-door panel remains.
+
+`DivingWorld` defaults to `sprites/ui/tutorial_wasd.png`,
+`tutorial_cast.png`, and `tutorial_reel.png` for movement, left-click cast
+and scroll reel, respectively. `SeaTutorialCue` plays any provided input
+sprite sheet as a loop of 32x32 cells (row-major), at an editable FPS.
+The right-click animation remains an inspector slot because no dedicated
+right-click texture has been added to `penni-diving` yet. Until one is
+assigned, the legacy vector right-click fallback remains.
+
+## Corrected editor ownership (after texture regression)
+
+Restored `scenes/townhouse.tscn/Sprite2D` with its original authored
+`placeholdtownhouse.png` texture. Penni's door explicitly uses
+`genericopendoor.png` in `prefabs/penni_room_door.tscn/Sprite` with no
+portrait/FacePlaceholder layer. Penni stays at the first of four townhouse doors.
+
+The sea tutorial cue is now an authored `Sprite2D` named
+`World/CameraController/Camera2D/SeaTutorialCue` in
+`prefabs/world.tscn`, not a runtime-created Sprite2D. Its Inspector texture
+slots use `tutorial_wasd.png`, `tutorial_left_click.png`,
+`tutorial_scroll.png` and `tutorial_right_click.png`, each animated
+as 32x32 cells by the shared script. To move it, change its position
+directly in the World scene. DivingWorld merely looks it up. No code-drawn
+mouse or keyboard placeholder remains.
+
+## Penni door custom-scene rollback
+
+The custom `prefabs/penni_room_door.tscn` was removed after causing a Godot
+"scene invalid/corrupt" error. `World/AvailableHomeList/PenniRoomDoor`
+now instances the **same** pre-existing `prefabs/townhouse_door.tscn`
+scene as the other three doors, with only `room_id = penni_room`
+and `locked = false` overridden in `world.tscn`. The first slot stays
+outside `available_homes`, so resident assignment cannot overwrite Penni.
+No full-size portrait/TextureRect instance is present in the World scene or
+inherited door source. To customize her door art, select its Sprite child
+in World and override its texture in the Godot editor.

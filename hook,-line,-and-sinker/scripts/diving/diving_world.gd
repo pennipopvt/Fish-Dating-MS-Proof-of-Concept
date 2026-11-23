@@ -17,12 +17,8 @@ const SILAS_FISH: FishData = preload("res://resources/fish/silas.tres")
 const WILD_FISH_SCRIPT = preload("res://scripts/diving/wild_fish.gd")
 const FISH_COMBAT_VISUAL_SCENE: PackedScene = preload("res://prefabs/sea_fish_combat_visual.tscn")
 
-# Inspector texture slots remain editable even though the small cue is
-# created at runtime. No new PackedScene or imported file is required.
-@export var movement_tutorial_sprite: Texture2D
-@export var cast_tutorial_sprite: Texture2D
-@export var reel_tutorial_sprite: Texture2D
-@export var right_click_tutorial_sprite: Texture2D
+# Tutorial appearance is configured in the authored
+# World/CameraController/Camera2D/SeaTutorialCue node, not in code.
 
 @export_group("Sea Parry Feedback")
 @export_range(0.05, 1.0, 0.05) var perfect_parry_line_flash_seconds: float = 0.35
@@ -60,6 +56,8 @@ var _wild_fish: Array[DivingWildFish] = []
 # Only fish spawned by editable habitat regions are replaced each period.
 # Authored tutorial actors and Silas's hidden encounter stay untouched.
 var _habitat_fish: Array[DivingWildFish] = []
+# Rescue-gated editor spawns are dormant until Silas is freed.
+var _pending_silas_rescue_spawns: Array[DivingFishSpawn] = []
 var _fish_data: Dictionary = {}
 var _combat_debug_status: String = "No companion command yet"
 var _party_fish: Array[SeaPartyFollower] = []
@@ -167,26 +165,15 @@ func _on_oxygen_depleted() -> void:
 	oxygen_return_requested.emit()
 
 
-# Create exactly one lightweight Sprite2D after the World/Camera nodes exist.
-# This never participates in World scene parsing, so a missing tutorial
-# scene/PNG cannot take down the main game.
+# Find the pre-existing cue in World; never generate or position scene
+# objects here. All visual configuration is editable in world.tscn.
 func _install_tutorial_cue() -> void:
 	if _camera == null:
 		push_warning("Sea tutorial unavailable: World camera is missing.")
 		return
 	_cue = _camera.get_node_or_null("SeaTutorialCue") as SeaTutorialCue
 	if _cue == null:
-		_cue = SeaTutorialCue.new()
-		_cue.name = "SeaTutorialCue"
-		_camera.add_child(_cue)
-		_cue.position = Vector2(0.0, 52.0)
-		_cue.z_as_relative = false
-		_cue.z_index = 110
-		_cue.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	_cue.movement_sprite = movement_tutorial_sprite
-	_cue.cast_sprite = cast_tutorial_sprite
-	_cue.reel_sprite = reel_tutorial_sprite
-	_cue.right_click_sprite = right_click_tutorial_sprite
+		push_warning("Sea tutorial unavailable: add SeaTutorialCue to World/CameraController/Camera2D.")
 
 
 func _spawn_editor_fish() -> void:
@@ -194,17 +181,35 @@ func _spawn_editor_fish() -> void:
 		if not marker is DivingFishSpawn:
 			continue
 		var spawn: DivingFishSpawn = marker as DivingFishSpawn
-		var data: FishData = spawn.species
-		if data == null or data.item_data == null or data.item_data.sprite == null:
+		if spawn.spawn_after_silas_rescue and not _story.has_silas_flag(&"silas_freed"):
+			_pending_silas_rescue_spawns.append(spawn)
 			continue
-		var fish: DivingWildFish = _spawn_wild_fish(data, spawn.position,
-			spawn.random_seed, spawn.preferred_player_distance, spawn.alert_distance,
-			spawn.flee_speed)
-		if spawn.is_first_dive_fish:
-			if _encounter.tutorial_fish != null:
-				push_warning("[SEA STORY] Multiple fish spawns marked as first-dive fish.")
-			else:
-				_encounter.register_tutorial_fish(fish)
+		_spawn_authored_fish(spawn)
+
+
+func _spawn_authored_fish(spawn: DivingFishSpawn) -> void:
+	if spawn == null:
+		return
+	var data: FishData = spawn.species
+	if data == null or data.item_data == null or data.item_data.sprite == null:
+		return
+	var fish: DivingWildFish = _spawn_wild_fish(data, spawn.position,
+		spawn.random_seed, spawn.preferred_player_distance, spawn.alert_distance,
+		spawn.flee_speed)
+	if spawn.is_first_dive_fish:
+		if _encounter.tutorial_fish != null:
+			push_warning("[SEA STORY] Multiple fish spawns marked as first-dive fish.")
+		else:
+			_encounter.register_tutorial_fish(fish)
+
+
+func _spawn_rescue_unlocked_fish() -> void:
+	if not _story.has_silas_flag(&"silas_freed"):
+		return
+	for spawn in _pending_silas_rescue_spawns:
+		if is_instance_valid(spawn):
+			_spawn_authored_fish(spawn)
+	_pending_silas_rescue_spawns.clear()
 
 
 # Both authored tutorial spawns and procedural habitats use this ONE normal
@@ -615,7 +620,7 @@ func _begin_fish_combat(fish: DivingWildFish) -> void:
 	_commands.recall_target(fish)
 	_combat.record_lost_fish = fish != _encounter.silas_trap and fish != _kuda.kuda
 	if _combat.begin(fish, data, _player.position.distance_to(fish.position),
-			_net.max_range, fish.health_ratio()):
+			_net.effective_max_range(), fish.health_ratio()):
 		# Presentation belongs to the fish actor; it reads existing combat
 		# phases and doesn't introduce new timers into DivingCombat.
 		var visuals: SeaFishCombatVisual = fish.get_node_or_null("CombatVisual") as SeaFishCombatVisual
@@ -675,6 +680,7 @@ func _on_combat_finished(won: bool, fish: DivingWildFish) -> void:
 
 
 func _on_silas_following_started() -> void:
+	_spawn_rescue_unlocked_fish()
 	_silas.follow_trail = _follow_trail
 	_silas.following = true
 	# During the tutorial Silas can fight before the first shore scene

@@ -205,16 +205,14 @@ func _apply_rewards(trade: TradeData) -> void:
 		FishingManager.add_to_storage(trade.reward_item, trade.reward_item_amount)
 
 
-# Trades rewarded by an incomplete challenge are locked.
+# Challenge achievements still track separately, but no shop trade is
+# gated behind claiming a challenge. Ownership and daily limits remain.
 func is_trade_locked(trade: TradeData) -> bool:
-	
-	if(trade.one_time_purchase and upgrades_today >= max_daily_upgrades):
+	if trade == null:
+		return false
+	if trade.one_time_purchase and upgrades_today >= max_daily_upgrades:
 		return true
-	
-	if(is_upgrade_owned(trade)):
-		return true
-	
-	return ChallengeManager.is_trade_locked(trade)
+	return is_upgrade_owned(trade) or is_upgrade_ordered(trade)
 
 
 # Total amount needed per item_id, combining repeated requirements.

@@ -16,6 +16,9 @@ const YELLOW_BAIT_ID: StringName = &"bait_yellow"
 const BASIC_BAIT_ID: StringName = &"bait_a"
 const STRONGER_REEL_ID: StringName = &"stronger_reel"
 const REINFORCED_LINE_ID: StringName = &"reinforced_line"
+const LARGER_TANK_ID: StringName = &"larger_tank"
+const EXTENDED_NET_ID: StringName = &"extended_net"
+const PRESSURE_REGULATOR_ID: StringName = &"pressure_regulator"
 const HARD_BAIT_UPGRADE_ID: StringName = &"hard_fish_bait"
 const YELLOW_BAIT_UPGRADE_ID: StringName = &"yellow_bait"
 const EXTRA_CAST_UPGRADE_ID: StringName = &"increase_casts"
@@ -36,6 +39,10 @@ var owned_upgrade_ids: Array[StringName] = []
 var reel_progress_bonus: float = 0.0
 var reel_tension_reduction: float = 0.0
 var miss_tension_reduction: float = 0.0
+# Session-only bonuses; SeaOxygen and NetProjectile read these values.
+var oxygen_capacity_bonus_seconds: float = 0.0
+var net_range_bonus_pixels: float = 0.0
+var depth_drain_reduction_fraction: float = 0.0
 
 @export_category("Fishing Stats")
 # A fishing session is exactly one action, with this many consecutive casts.
@@ -56,6 +63,9 @@ func reset_session_upgrades() -> void:
 	reel_progress_bonus = 0.0
 	reel_tension_reduction = 0.0
 	miss_tension_reduction = 0.0
+	oxygen_capacity_bonus_seconds = 0.0
+	net_range_bonus_pixels = 0.0
+	depth_drain_reduction_fraction = 0.0
 	casts_per_action = _starting_casts_per_action
 	equipped_bait = _find_bait(BASIC_BAIT_ID)
 	bait_changed.emit(equipped_bait)
@@ -122,6 +132,34 @@ func shop_reward_reinforced_line(amount: int) -> void:
 	owned_upgrade_ids.append(REINFORCED_LINE_ID)
 	reel_tension_reduction = 0.005  # -0.5 percentage points per reel scroll
 	miss_tension_reduction = 0.04  # -4 percentage points per missed dash
+	upgrades_changed.emit()
+
+
+# These values are controlled by each upgrade's TradeData.reward_amount.
+# One-time ownership is tracked here, not in oxygen or net scripts.
+func shop_reward_larger_tank(amount: int) -> void:
+	if amount <= 0 or has_upgrade(LARGER_TANK_ID):
+		return
+	owned_upgrade_ids.append(LARGER_TANK_ID)
+	oxygen_capacity_bonus_seconds = float(amount)
+	upgrades_changed.emit()
+
+
+func shop_reward_extended_net(amount: int) -> void:
+	if amount <= 0 or has_upgrade(EXTENDED_NET_ID):
+		return
+	owned_upgrade_ids.append(EXTENDED_NET_ID)
+	net_range_bonus_pixels = float(amount)
+	upgrades_changed.emit()
+
+
+func shop_reward_pressure_regulator(amount: int) -> void:
+	if amount <= 0 or has_upgrade(PRESSURE_REGULATOR_ID):
+		return
+	owned_upgrade_ids.append(PRESSURE_REGULATOR_ID)
+	# 25 = a 25% reduction in the additional drain caused by depth.
+	# Surface oxygen use stays 1x.
+	depth_drain_reduction_fraction = clampf(float(amount) / 100.0, 0.0, 0.95)
 	upgrades_changed.emit()
 
 

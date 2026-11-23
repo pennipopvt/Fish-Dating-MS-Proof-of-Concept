@@ -2,14 +2,16 @@
 
 [ext_resource type="Texture2D" uid="uid://kk5gdwmwejaw" path="res://sprites/rooms/lockeddoor.png" id="1_bvrww"]
 [ext_resource type="Script" uid="uid://cdpiige5hjear" path="res://scripts/transfer_door.gd" id="2_cp2wk"]
+[ext_resource type="PackedScene" path="res://prefabs/interact_prompt.tscn" id="3_prompt"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_iu4st"]
 size = Vector2(20, 31)
 
-[node name="TownhouseDoor" type="Area2D"]
+[node name="TownhouseDoor" type="Area2D" node_paths=PackedStringArray("prompt")]
 z_index = -1
 position = Vector2(0, -16)
 script = ExtResource("2_cp2wk")
+prompt = NodePath("InteractPrompt")
 
 [node name="Sprite" type="Sprite2D" parent="."]
 texture = ExtResource("1_bvrww")
@@ -17,3 +19,6 @@ texture = ExtResource("1_bvrww")
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 position = Vector2(0, 0.5)
 shape = SubResource("RectangleShape2D_iu4st")
+
+[node name="InteractPrompt" parent="." instance=ExtResource("3_prompt")]
+position = Vector2(0, -25)

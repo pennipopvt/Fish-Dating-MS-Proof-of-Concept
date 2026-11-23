@@ -21,7 +21,20 @@ enum When {
 # sea). Needs PlayerSpot and NpcSpot Marker2D children.
 @export var venue_scene: PackedScene
 @export var venue_position: Vector2 = Vector2.ZERO
+
+@export_group("Date Actor Placement")
+# NpcSpot in the date venue is the NPC's FEET position. Offset those feet
+# per date in the Inspector without moving the island geometry or changing
+# the shared dock/cutscene actor placement code.
+@export var npc_feet_offset: Vector2 = Vector2.ZERO
 @export_file("*.json") var dialogue_json: String = ""
+
+@export_group("Room Departure Dialogue")
+# The shared NPCRoomView uses these lines for this NPC's booked-date
+# confirmation instead of generic dialogue hard-coded in the room script.
+@export_multiline var room_departure_prompt: String = "Ready to head out for our date?"
+@export_multiline var room_departure_yes: String = "Let's go!"
+@export_multiline var room_departure_no: String = "Okay, let me know when you're ready."
 
 @export_group("Timing")
 # Periods the date can happen in. None ticked = any time.

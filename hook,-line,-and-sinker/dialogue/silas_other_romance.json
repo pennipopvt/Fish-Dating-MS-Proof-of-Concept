@@ -1,0 +1,64 @@
+{
+  "entry": "opening",
+  "free_greeting": true,
+  "nodes": {
+    "opening": {
+      "lines": [
+        "Penni... could we talk for a moment?",
+        "I know you've been getting closer to someone else. I don't want to tell you who you can spend time with.",
+        "I just... wasn't expecting it to hurt this much."
+      ],
+      "choices": [
+        {
+          "text": "You matter to me. I should have talked to you.",
+          "next": "reassure",
+          "tone": "neutral",
+          "spends_action": false,
+          "effects": {
+            "jealousy_delta": -25
+          }
+        },
+        {
+          "text": "You're making a big deal out of nothing.",
+          "next": "dismiss",
+          "tone": "neutral",
+          "spends_action": false,
+          "effects": {
+            "jealousy_delta": 10,
+            "affection_delta": -4
+          }
+        },
+        {
+          "text": "I need some time to think about this.",
+          "next": "later",
+          "tone": "neutral",
+          "spends_action": false
+        }
+      ]
+    },
+    "reassure": {
+      "lines": [
+        "Thank you for saying that.",
+        "I don't need you to promise something you can't. I just want to know where we stand.",
+        "I feel a little better now."
+      ],
+      "effects": {
+        "resolve_relationship_events": [
+          "other_romance"
+        ]
+      }
+    },
+    "dismiss": {
+      "lines": [
+        "I wasn't asking you to stop seeing anyone.",
+        "I just wanted to be honest about how I felt."
+      ]
+    },
+    "later": {
+      "lines": [
+        "Oh... okay.",
+        "We can talk when you're ready. I'd rather not pretend nothing happened."
+      ]
+    }
+  }
+}

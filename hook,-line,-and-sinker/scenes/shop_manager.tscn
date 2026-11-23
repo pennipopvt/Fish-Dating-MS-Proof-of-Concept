@@ -10,6 +10,10 @@
 [ext_resource type="Resource" path="res://resources/trades/kuda_scarf.tres" id="10_barracuda"]
 
 
+[ext_resource type="Resource" path="res://resources/trades/larger_tank.tres" id="tank_trade"]
+[ext_resource type="Resource" path="res://resources/trades/extended_net.tres" id="net_trade"]
+[ext_resource type="Resource" path="res://resources/trades/pressure_regulator.tres" id="pressure_trade"]
+
 [node name="ShopManager" type="Node2D" unique_id=1244899988]
 script = ExtResource("1_gx78v")
-trades = Array[ExtResource("2_mv7ed")]([ExtResource("4_trade"), ExtResource("7_trade"), ExtResource("5_gift"), ExtResource("6_spyglass"), ExtResource("9_statue"), ExtResource("10_barracuda")])
+trades = Array[ExtResource("2_mv7ed")]([ExtResource("tank_trade"), ExtResource("net_trade"), ExtResource("4_trade"), ExtResource("7_trade"), ExtResource("pressure_trade"), ExtResource("5_gift"), ExtResource("6_spyglass"), ExtResource("9_statue"), ExtResource("10_barracuda")])

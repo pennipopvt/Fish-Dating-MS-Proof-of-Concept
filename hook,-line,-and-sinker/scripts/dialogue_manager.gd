@@ -22,18 +22,23 @@ var _active_cast: Dictionary = {}
 
 func request_inline_conversation(
 	npc: NPCData, lines: Array[String],
-	speaker_alias: String = "", choices: Array[Dictionary] = []
+	speaker_alias: String = "", choices: Array[Dictionary] = [],
+	as_player: bool = false
 ) -> void:
 	if npc == null or is_active or lines.is_empty():
 		return
-	var nodes: Dictionary = {"start": {"lines": lines.duplicate()}}
+	var opening_lines: Array = []
+	for message in lines:
+		opening_lines.append({"speaker": "player", "text": message} if as_player else message)
+	var nodes: Dictionary = {"start": {"lines": opening_lines}}
 	if not choices.is_empty():
 		var choice_defs: Array[Dictionary] = []
 		for i in range(choices.size()):
 			var incoming: Dictionary = choices[i]
 			var choice: Dictionary = incoming.duplicate(true)
 			var target: String = "response_%d" % i
-			nodes[target] = {"lines": [str(choice.get("response", ""))]}
+			var response: String = str(choice.get("response", ""))
+			nodes[target] = {"lines": [{"speaker": "player", "text": response} if as_player else response]}
 			choice.erase("response")
 			choice["next"] = target
 			choice["spends_action"] = false
@@ -315,6 +320,9 @@ func _apply_json_effects(effects: Variant, include_affection: bool = true) -> vo
 		NPCManager.resolve_relationship_event(current_npc, StringName(str(event)))
 	if effects.has("affection_delta"):
 		AffectionManager.change_affection(current_npc.npc_id, int(effects["affection_delta"]))
+	if effects.has("jealousy_delta"):
+		# Incident conversations use the same shared jealousy state as dates.
+		AffectionManager.change_jealousy(current_npc.npc_id, int(effects["jealousy_delta"]))
 
 
 # Conditions are evaluated when the menu becomes visible, using the NPC's current flags.

@@ -16,7 +16,7 @@
 [ext_resource type="Shader" uid="uid://r4rciq67coeg" path="res://shaders/water.gdshader" id="13_le6xu"]
 [ext_resource type="PackedScene" uid="uid://c0d22ylobcr2s" path="res://scenes/townhouse.tscn" id="23_townhouse"]
 [ext_resource type="PackedScene" path="res://prefabs/townhouse_door.tscn" id="24_xfqyr"]
-[ext_resource type="PackedScene" path="res://prefabs/bed.tscn" id="25_bed"]
+
 [ext_resource type="PackedScene" path="res://prefabs/beach.tscn" id="26_beach"]
 [ext_resource type="Shader" uid="uid://bv2isyw6ln31h" path="res://shaders/moon.gdshader" id="moon_shader"]
 [ext_resource type="Shader" uid="uid://cli6ci0c4km7b" path="res://shaders/night_stars.gdshader" id="night_stars"]
@@ -25,6 +25,8 @@
 [ext_resource type="Shader" uid="uid://2layvi8dplvf" path="res://shaders/underwater_tint.gdshader" id="water_tint_shader"]
 [ext_resource type="Script" uid="uid://cba27f3x60a3r" path="res://scripts/world_day_night.gd" id="world_day_night"]
 [ext_resource type="Script" path="res://scripts/world_camera_controller.gd" id="world_camera_controller"]
+[ext_resource type="PackedScene" path="res://prefabs/sea_tutorial_cue.tscn" id="tutorial_cue_scene"]
+[ext_resource type="Texture2D" path="res://sprites/rooms/genericopendoor.png" id="penni_room_open_door"]
 [ext_resource type="TileSet" uid="uid://chn86lfer37gd" path="res://resources/tilesets/world_tiles.tres" id="world_tiles"]
 
 [sub_resource type="ShaderMaterial" id="UnderwaterTintMaterial"]
@@ -65,7 +67,7 @@ shader_parameter/visibility = 0.0
 shader = ExtResource("13_le6xu")
 shader_parameter/water_color = Color(0.12, 0.32, 0.48, 1)
 shader_parameter/highlight_color = Color(0.75, 0.9, 1, 1)
-shader_parameter/reflection_strength = 0.4770000226575
+shader_parameter/reflection_strength = 0.65
 shader_parameter/reflection_squish = 1.348000052155
 shader_parameter/ripple_strength = 0.5750000273125
 shader_parameter/ripple_speed = 0.954000045315
@@ -94,6 +96,8 @@ position = Vector2(0, -22)
 editor_draw_limits = true
 editor_draw_drag_margin = true
 script = ExtResource("3_u7kri")
+
+[node name="SeaTutorialCue" parent="CameraController/Camera2D" instance=ExtResource("tutorial_cue_scene")]
 
 [node name="UnderwaterTint" type="ColorRect" parent="CameraController/Camera2D" unique_id=1560607778]
 z_index = 80
@@ -191,10 +195,13 @@ position = Vector2(432, 112)
 
 [node name="AvailableHomeList" parent="." unique_id=1246650794 node_paths=PackedStringArray("available_homes") instance=ExtResource("1_u7kri")]
 script = ExtResource("2_n7i1a")
-available_homes = [NodePath("FreeHouseA"), NodePath("FreeHouseB"), NodePath("FreeHouseC"), NodePath("FreeHouseD")]
+available_homes = [NodePath("FreeHouseB"), NodePath("FreeHouseC"), NodePath("FreeHouseD")]
 
-[node name="FreeHouseA" parent="AvailableHomeList" unique_id=852988363 instance=ExtResource("24_xfqyr")]
+[node name="PenniRoomDoor" parent="AvailableHomeList" unique_id=852988363 instance=ExtResource("24_xfqyr")]
 position = Vector2(333, 96)
+room_id = &"penni_room"
+locked = true
+accessible_texture = ExtResource("penni_room_open_door")
 
 [node name="FreeHouseB" parent="AvailableHomeList" unique_id=1681937105 instance=ExtResource("24_xfqyr")]
 position = Vector2(458, 96)
@@ -211,8 +218,6 @@ position = Vector2(46, 101)
 [node name="Shop" parent="." unique_id=1156017474 instance=ExtResource("3_07nuu")]
 position = Vector2(195, 96)
 
-[node name="Bed" parent="." unique_id=1873402519 instance=ExtResource("25_bed")]
-position = Vector2(505, 104)
 
 [node name="Beach" parent="." unique_id=1034296826 instance=ExtResource("26_beach")]
 position = Vector2(860, 112)

@@ -25,6 +25,8 @@ const ACTIONS_PER_PERIOD: int = 3
 var day: int = 1
 var time_of_day : Times = Times.MORNING
 var player_actions : int = ACTIONS_PER_PERIOD
+# True only while rest emits its existing synchronous time/period signals.
+var _rest_clock_update: bool = false
 # Casts in the current (not yet charged) fishing action.
 var _casts_in_action: int = 0
 # Dive catches are recorded normally. A full period is spent on surfacing.
@@ -133,13 +135,24 @@ func spend_actions(amount: int = 1) -> void:
 		actions_exhausted.emit()
 
 
-# Bed: skip to the next period with fresh actions. Night rolls over to the next
-# day's morning. Free, and allowed any time.
+# Sleep can skip multiple periods in a single clock change. All clock
+# listeners receive their usual signals, but visuals can snap while black.
+func is_rest_clock_update() -> bool:
+	return _rest_clock_update
+
+
+# Next-period rest, also used by the existing overnight romance sequence.
 func rest() -> void:
-	if time_of_day == Times.NIGHT:
-		_set_clock(day + 1, Times.MORNING, ACTIONS_PER_PERIOD)
-	else:
-		_set_clock(day, (time_of_day + 1) as Times, ACTIONS_PER_PERIOD)
+	var next: Times = Times.MORNING if time_of_day == Times.NIGHT else (time_of_day + 1) as Times
+	rest_until(next)
+
+
+# A rest never animates intermediate periods or emits extra day-start events.
+func rest_until(target: Times) -> void:
+	var target_day: int = day + (1 if target <= time_of_day else 0)
+	_rest_clock_update = true
+	_set_clock(target_day, target, ACTIONS_PER_PERIOD)
+	_rest_clock_update = false
 
 
 # Back to day 1 morning (dev reset); nothing is stored across launches.

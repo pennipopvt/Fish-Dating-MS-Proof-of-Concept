@@ -69,6 +69,12 @@ const TABS_HIDDEN_X_OFFSET := 12.0
 @onready var _page_indicator: Label = %PageIndicator
 @onready var _close_button: Button = %CloseButton
 
+# Audio players are editable children of ShopMenu (not constructed in code).
+@onready var _beep_sound: AudioStreamPlayer = $TerminalBeep
+@onready var _close_sound: AudioStreamPlayer = $TerminalClose
+@onready var _submit_sound: AudioStreamPlayer = $TerminalSubmit
+@onready var _buy_sound: AudioStreamPlayer = $TerminalBuy
+
 var _nav_buttons: Array[Button] = []
 var _page: int = Page.QUOTA
 var _selected_quota_fish: StringName = &""
@@ -338,6 +344,9 @@ func open() -> void:
 	_last_order_message = ""
 	_delivery_status.text = "NO DELIVERIES"
 	show()
+	# This is the one real open event, not a tab change or a frame update.
+	# Reuse the existing TerminalBeep player and its editor-authored volume.
+	_beep_sound.play()
 	ShopManager.set_shop_open(true)
 	_refresh_page()
 	_update_nav_tabs(false)
@@ -347,6 +356,7 @@ func open() -> void:
 func close() -> void:
 	if not visible:
 		return
+	_close_sound.play()
 	_cancel_open_animation()
 	_terminal_panel.hide()
 	_nav_tabs.hide()
@@ -433,6 +443,7 @@ func _has_recruited_npc() -> bool:
 func _select_shop_section(section: int) -> void:
 	if section == 1 and not _has_recruited_npc():
 		return
+	_beep_sound.play()
 	_shop_section = section
 	if section == 1:
 		_gifts_seen = true
@@ -444,6 +455,7 @@ func _select_shop_section(section: int) -> void:
 func _select_page(page: int) -> void:
 	if not is_page_unlocked(page):
 		return
+	_beep_sound.play()
 	_page = page
 	if page == Page.STORAGE:
 		_storage_seen = true
@@ -673,12 +685,14 @@ func _refresh_challenges_page() -> void:
 
 
 func _select_challenge(index: int) -> void:
+	_beep_sound.play()
 	_selected_index = index
 	_show_details()
 
 
 func _claim_challenge(challenge: ChallengeData) -> void:
 	if ChallengeManager.claim(challenge):
+		_beep_sound.play()
 		_last_order_message = "CLAIMED: %s" % challenge.display_name
 		# challenge_claimed already queues the page refresh; avoid rebuilding twice.
 
@@ -811,6 +825,7 @@ func _quota_fish_sprite(item_id: StringName) -> Texture2D:
 
 
 func _select_quota_fish(item_id: StringName) -> void:
+	_beep_sound.play()
 	_selected_quota_fish = item_id
 	_update_quota_fish_preview()
 
@@ -826,6 +841,7 @@ func _submit_quota_fish(item_id: StringName) -> void:
 	if sent == 0:
 		_status.text = "NO ELIGIBLE FISH TO SUBMIT"
 	else:
+		_submit_sound.play()
 		_last_order_message = "DELIVERED %d FISH TO FISH CO." % sent
 		# Stock removal also signals the shared inventory; rebuild after it.
 		_refresh_quota_page.call_deferred()
@@ -867,6 +883,7 @@ func _get_schedule_booking(day: int, period: int) -> DateData:
 
 
 func _select_schedule_slot(day: int, period: int, action: int) -> void:
+	_beep_sound.play()
 	_schedule_day = day
 	_schedule_period = period
 	_schedule_action = action
@@ -1256,6 +1273,7 @@ func _new_fish_silhouette_material() -> ShaderMaterial:
 
 
 func _choose_tile(index: int) -> void:
+	_beep_sound.play()
 	_selected_index = index
 	for i in range(_entry_buttons.size()):
 		_entry_buttons[i].set_pressed_no_signal(i == index)
@@ -1319,19 +1337,13 @@ func _show_trade_details(trade: TradeData) -> void:
 	_order_button.show()
 	_order_button.self_modulate = Color.WHITE
 	_order_button.text = "ORDER"
-	var locking: ChallengeData = ChallengeManager.get_locking_challenge(trade)
-	_order_button.disabled = locking != null or not ShopManager.can_trade(trade)
+	_order_button.disabled = not ShopManager.can_trade(trade)
 	if ShopManager.is_upgrade_owned(trade):
 		_status.text = "OWNED"
 		_order_button.text = "OWNED"
 	elif ShopManager.is_upgrade_ordered(trade):
 		_status.text = "DELIVERY ORDERED"
 		_order_button.text = "ORDERED"
-	elif locking != null:
-		_status.text = ("CLAIM CHALLENGE: " if locking.completed else "LOCKED: ") + (
-			"Hidden challenge" if locking.hidden and not locking.completed else locking.display_name
-		)
-		_order_button.self_modulate = UNAFFORD_TINT
 	elif _order_button.disabled:
 		_status.text = "Not enough items to trade."
 		if trade.one_time_purchase and ShopManager.upgrades_today >= ShopManager.max_daily_upgrades:
@@ -1440,6 +1452,7 @@ func _on_order_pressed() -> void:
 		return
 	var trade: TradeData = _entries[_selected_index].get("ref") as TradeData
 	if trade == null or not ShopManager.make_trade(trade):
+		_beep_sound.play()
 		_refresh_page()
 		_status.text = "Unable to place order."
 
@@ -1452,6 +1465,7 @@ func _on_upgrade_state_changed(_trade: TradeData) -> void:
 func _on_trade_completed(trade: TradeData) -> void:
 	if not visible:
 		return
+	_buy_sound.play()
 	var delivered_later: bool = bool(ShopManager.has_delivery_point())
 	_delivery_status.text = "DELIVERY ORDERED" if delivered_later else "ORDER COMPLETE"
 	_last_order_message = "ORDER PLACED: %s" % trade.display_name

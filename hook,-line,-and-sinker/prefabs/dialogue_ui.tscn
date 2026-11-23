@@ -4,7 +4,8 @@
 [ext_resource type="Texture2D" uid="uid://b4koaria87fbv" path="res://sprites/placeholders/portrait.svg" id="2_portrait"]
 [ext_resource type="Texture2D" uid="uid://ca1xd1qpk4ajr" path="res://sprites/placeholders/portrait_player.svg" id="3_player"]
 [ext_resource type="Texture2D" uid="uid://vu47883rgrp5" path="res://sprites/characters/penni/penni_portrait.png" id="4_ln1m7"]
-[ext_resource type="Texture2D" uid="uid://j2t1f35vluti" path="res://sprites/characters/kuda_portrait.png" id="5_ln1m7"]
+[ext_resource type="Texture2D" uid="uid://j2t1f35vluti" path="res://sprites/characters/kuda/kuda_portrait.png" id="5_ln1m7"]
+[ext_resource type="AudioStream" uid="uid://c8daimeqwy41i" path="res://sounds/sfx/penni-speak.wav" id="penni_speak"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_choice_focus"]
 draw_center = false
@@ -75,6 +76,7 @@ layer = 10
 script = ExtResource("1_dlg")
 placeholder_portrait = ExtResource("2_portrait")
 player_portrait = ExtResource("3_player")
+default_voice_sound = ExtResource("penni_speak")
 
 [node name="PlayerPortrait" type="TextureRect" parent="." unique_id=1677767363]
 unique_name_in_owner = true
@@ -116,7 +118,7 @@ anchor_left = 0.18
 anchor_top = 1.0
 anchor_right = 0.82
 anchor_bottom = 1.0
-offset_top = -300.0
+offset_top = -390.0
 offset_bottom = -40.0
 grow_horizontal = 2
 grow_vertical = 0
@@ -125,9 +127,9 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_box")
 
 [node name="Margin" type="MarginContainer" parent="Box" unique_id=848527417]
 layout_mode = 2
-theme_override_constants/margin_left = 200
+theme_override_constants/margin_left = 68
 theme_override_constants/margin_top = 24
-theme_override_constants/margin_right = 200
+theme_override_constants/margin_right = 68
 theme_override_constants/margin_bottom = 20
 
 [node name="Content" type="VBoxContainer" parent="Box/Margin" unique_id=1332541444]
@@ -139,11 +141,13 @@ unique_name_in_owner = true
 layout_mode = 2
 theme_override_font_sizes/font_size = 40
 
-[node name="TextLabel" type="Label" parent="Box/Margin/Content" unique_id=1867715179]
+[node name="TextLabel" type="RichTextLabel" parent="Box/Margin/Content" unique_id=1867715179]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_vertical = 3
-autowrap_mode = 3
+bbcode_enabled = true
+scroll_following = true
+scroll_following_visible_characters = true
 
 [node name="ContinueHint" type="Label" parent="Box/Margin/Content" unique_id=1620925180]
 unique_name_in_owner = true
@@ -167,3 +171,10 @@ grow_vertical = 0
 theme = SubResource("Theme_dlg")
 theme_override_constants/separation = 12
 alignment = 2
+
+[node name="DialogueVoice" type="AudioStreamPlayer" parent="." unique_id=300917380]
+pitch_scale = 1.2
+max_polyphony = 4
+
+[node name="VoicePlayback" type="AudioStreamPlayer" parent="."]
+max_polyphony = 4
