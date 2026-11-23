@@ -46,11 +46,11 @@ animations = [{
 }]
 
 [node name="IntroBoat" type="Node2D" unique_id=1549051682]
-position = Vector2(2250, 144)
+position = Vector2(2250, 132)
 script = ExtResource("boat_rock_script")
 
 [node name="Sprite" type="AnimatedSprite2D" parent="." unique_id=1070137628]
-z_index = 11
+z_index = 5
 texture_filter = 1
 position = Vector2(1, -47)
 sprite_frames = SubResource("SpriteFrames_n1q85")

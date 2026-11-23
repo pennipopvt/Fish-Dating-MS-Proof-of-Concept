@@ -67,8 +67,14 @@ func _run() -> void:
 		"Both ambience tracks continuously play on their shared ambience bus")
 	var rock: IntroBoatRock = boat as IntroBoatRock
 	_check(rock != null and rock.rocking_period_seconds > 0.0
-		and is_zero_approx(boat.rotation) and boat.position.y > 124.0,
-		"Boat sits lower and its authored bob does not rotate it")
+		and is_zero_approx(boat.rotation) and absf(boat.position.y - 132.0) <= 3.0,
+		"Intro boat is raised to its authored waterline and bobs without rotation")
+	_check(boat_art.z_index < water.z_index
+		and player.z_index + player.animator.z_index < water.z_index
+		and boat_art.z_index < player.z_index + player.animator.z_index,
+		"Boat and Penni are drawn behind the existing water reflection pass")
+	_check(opening.title_camera_offset.y < -6.0,
+		"Intro camera framing is raised from its previous position")
 	opening.title_pan_seconds = 0.05
 	title.call("_on_play")
 	await get_tree().create_timer(0.12).timeout

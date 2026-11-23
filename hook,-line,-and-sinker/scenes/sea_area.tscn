@@ -400,7 +400,7 @@ script = ExtResource("story")
 script = ExtResource("encounter")
 
 [node name="NetProjectile" type="Node2D" parent="." unique_id=110294830]
-z_index = 9
+z_index = 7
 script = ExtResource("net")
 
 [node name="NetSprite" type="Sprite2D" parent="NetProjectile" unique_id=821458468]

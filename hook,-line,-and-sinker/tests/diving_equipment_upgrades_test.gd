@@ -55,14 +55,14 @@ func _ready() -> void:
 
 	net.tip = Vector2(100.0, 50.0)
 	sprite.position = net.tip
-	net.direction = Vector2.RIGHT
-	sprite.flip_h = false
-	_check(net._cord_endpoint().x < net.tip.x,
-		"Cord attaches at the handle-side left edge for rightward throws")
 	net.direction = Vector2.LEFT
-	sprite.flip_h = true
+	sprite.flip_h = false
 	_check(net._cord_endpoint().x > net.tip.x,
-		"Cord attaches at the handle-side right edge for leftward throws")
+		"Default unflipped net faces left with cord attached on the right edge")
+	net.direction = Vector2.RIGHT
+	sprite.flip_h = true
+	_check(net._cord_endpoint().x < net.tip.x,
+		"Rightward net mirrors the sprite and connects on its left edge")
 
 	FishingManager.shop_reward_larger_tank(999)
 	FishingManager.shop_reward_extended_net(999)

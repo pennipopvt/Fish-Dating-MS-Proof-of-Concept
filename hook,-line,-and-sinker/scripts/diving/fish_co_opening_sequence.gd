@@ -30,7 +30,7 @@ var _contract_call_started: bool = false
 
 @export_group("Title Camera")
 # Title shot still contains Penni on the boat; Play pans to CameraFocus.
-@export var title_camera_offset: Vector2 = Vector2(-62.0, -6.0)
+@export var title_camera_offset: Vector2 = Vector2(-62.0, -16.0)
 @export_range(0.0, 4.0, 0.05, "suffix:s") var title_pan_seconds: float = 1.4
 
 
@@ -70,7 +70,10 @@ func start() -> void:
 		if spot != null:
 			_world_player.global_position = spot.global_position
 			_world_player.animator.play(&"idle_l")
-			_world_player.z_index = 12
+			# The existing Water shader samples pixels behind Water (z=10).
+			# Keep Penni above the boat visually, but below the water pass so
+			# her sprite is present in the reflected screen texture.
+			_world_player.z_index = 6
 		if camera != null and focus != null:
 			camera.snap_to(focus.global_position + title_camera_offset)
 	if camera == null:

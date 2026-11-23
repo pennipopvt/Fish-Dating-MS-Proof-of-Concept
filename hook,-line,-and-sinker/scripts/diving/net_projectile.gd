@@ -63,7 +63,9 @@ var _age: float = 0.0
 
 
 func _ready() -> void:
-	z_index = 9
+	# Keep both the sprite and its one-pixel cord below the world water
+	# reflection/tint pass (Water z=10), not in front of the sea overlay.
+	z_index = 7
 	visible = false
 	set_process(false)
 
@@ -103,7 +105,9 @@ func cast_net(origin: Node2D, aim_position: Vector2, fish_in_water: Array[Diving
 		_net_animation.stop()
 	if _net_sprite != null:
 		_net_sprite.frame = 0
-		_net_sprite.flip_h = direction.x < 0.0
+		# The sheet's default orientation is for Penni facing LEFT.
+		# Only mirror it for a rightward throw.
+		_net_sprite.flip_h = direction.x > 0.0
 		_net_sprite.position = tip.round()
 	visible = true
 	set_process(true)
@@ -207,9 +211,9 @@ func _get_anchor() -> Vector2:
 	return _origin.position + Vector2(0.0, -7.0) if is_instance_valid(_origin) else _start
 
 
-# The sprite's net opening points toward the cast. The rope attaches
-# at the opposite HANDLE edge nearest Penni, never the leading rim.
-# Use the Sprite2D frame rect/transform so scaling and offset remain editable.
+# Unflipped when Penni throws left: attach at the sprite's RIGHT edge.
+# A rightward throw mirrors the image and attaches at the LEFT edge.
+# Respect the Sprite2D frame rectangle, scale and editor-defined offset.
 func _cord_endpoint() -> Vector2:
 	if _net_sprite == null or _net_sprite.texture == null:
 		return tip.round()

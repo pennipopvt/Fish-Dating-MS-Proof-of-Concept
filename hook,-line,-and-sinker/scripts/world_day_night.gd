@@ -30,7 +30,8 @@ const SUN_ARC_HEIGHT: float = 205.0
 const MOON_BELOW_SCREEN_Y: float = 240.0
 const MOON_ARC_HEIGHT: float = 220.0
 # The surface is the upper edge of the existing World/Water ColorRect.
-const REFLECTION_AT_SURFACE: float = 0.477
+@export_group("Water Reflection")
+@export_range(0.0, 1.0, 0.01) var surface_reflection_strength: float = 0.65
 const VIEWPORT_SKY_HEIGHT: float = 180.0
 
 @onready var _sky: ColorRect = $Sky/SkyGradient
@@ -142,7 +143,7 @@ func _process(_delta: float) -> void:
 	var depth: float = maxf(0.0, _diver.global_position.y - surface_y)
 	var submerged: float = smoothstep(0.0, 42.0, depth)
 	_water_mat.set_shader_parameter(
-		"reflection_strength", REFLECTION_AT_SURFACE * (1.0 - submerged)
+		"reflection_strength", surface_reflection_strength * (1.0 - submerged)
 	)
 	var surface_screen_y: float = _water.get_global_transform_with_canvas().origin.y
 	# The sky stays absolutely still in viewport pixels while the camera
