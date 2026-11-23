@@ -1,117 +1,158 @@
 {
   "entry": "greeting",
+  "free_greeting": true,
   "nodes": {
     "greeting": {
       "lines": [
-        "Oh, hello again."
+        "Oh! Penni, hi!"
+      ],
+      "line_variants": [
+        {
+          "when": {
+            "required_flags": [
+              "house_invitation_accepted"
+            ],
+            "forbidden_flags": [
+              "silas_route_complete"
+            ]
+          },
+          "lines": [
+            "Oh! Penni, hi!",
+            "Um... you're still coming over tonight, right?",
+            "I've been trying to get everything ready, hehe."
+          ]
+        },
+        {
+          "when": {
+            "min_days_since_talk": 3
+          },
+          "lines": [
+            "Oh! Penni...",
+            "It's been a little while. I missed talking to you."
+          ]
+        }
       ],
       "choices": [
         {
-          "text": "Could we talk about the other night?",
-          "next": "prelude_concern",
-          "when": {
-            "active_events": [
-              "prelude_boundary"
-            ]
-          },
-          "priority": 30,
+          "text": "Let's talk!",
+          "next": "daily_topics",
+          "spends_action": false,
           "grey_when_picked": false
         },
         {
-          "text": "Is something bothering you?",
-          "next": "morale_check",
-          "when": {
-            "max_affection": 45
-          },
-          "priority": 15,
+          "text": "Wanna go on a date?",
+          "next": "beach_when",
+          "required_flags": [
+            "date_ok_silas_beach"
+          ],
+          "spends_action": false,
           "grey_when_picked": false
         },
+        {
+          "text": "Goodbye!",
+          "next": "goodbye",
+          "spends_action": false,
+          "grey_when_picked": false
+        }
+      ]
+    },
+    "daily_topics": {
+      "lines": [],
+      "daily_topic_pool": [
         {
           "text": "How are you liking it here?",
-          "next": "curiosity"
+          "next": "curiosity",
+          "daily_topic": true,
+          "grey_when_picked": true
         },
         {
           "text": "Have you gone exploring at all?",
-          "next": "exploring"
+          "next": "exploring",
+          "daily_topic": true,
+          "grey_when_picked": true
         },
         {
           "text": "Can you remind me about something?",
           "next": "reminder_intro",
+          "daily_topic": true,
+          "grey_when_picked": true,
           "required_flags": [
             "gift_attempted"
-          ],
-          "forbidden_flags": [
+          ]
+        },
+        {
+          "text": "How's the spyglass working out?",
+          "next": "spyglass_chat",
+          "daily_topic": true,
+          "grey_when_picked": true,
+          "required_flags": [
             "spyglass_complete"
+          ]
+        },
+        {
+          "text": "How have you been feeling at home?",
+          "next": "check_in_home",
+          "daily_topic": true,
+          "grey_when_picked": true,
+          "required_flags": [
+            "silas_route_complete"
+          ]
+        },
+        {
+          "text": "Have you been watching those birds?",
+          "next": "check_in_birds",
+          "daily_topic": true,
+          "grey_when_picked": true,
+          "required_flags": [
+            "silas_route_complete"
+          ]
+        },
+        {
+          "text": "What do you want to know about me?",
+          "next": "check_in_you",
+          "daily_topic": true,
+          "grey_when_picked": true,
+          "required_flags": [
+            "silas_route_complete"
+          ]
+        },
+        {
+          "text": "How's your room been treating you?",
+          "next": "check_in_burrow",
+          "daily_topic": true,
+          "grey_when_picked": true,
+          "required_flags": [
+            "silas_route_complete"
           ]
         },
         {
           "text": "You said we could explore together someday...",
           "next": "explore_followup",
+          "daily_topic": true,
+          "grey_when_picked": true,
           "when": {
             "active_events": [
               "explore_together"
             ]
-          },
-          "priority": 4,
-          "grey_when_picked": false
-        },
-        {
-          "text": "How's the spyglass working out?",
-          "next": "spyglass_chat",
-          "required_flags": [
-            "spyglass_complete"
-          ],
-          "grey_when_picked": false
-        },
-        {
-          "text": "See you later!",
-          "next": "goodbye",
-          "spends_action": false,
-          "grey_when_picked": false
+          }
         }
       ],
-      "line_variants": [
-        {
-          "when": {
-            "active_events": [
-              "prelude_boundary"
-            ]
-          },
-          "lines": [
-            "Oh... Penni.",
-            "I wasn't sure if you'd want to talk after the other night."
-          ]
-        },
-        {
-          "when": {
-            "required_flags": [
-              "refuses_diving"
-            ]
-          },
-          "lines": [
-            "Oh... Penni.",
-            "I don't want to go diving right now. Can we talk instead?"
-          ]
-        },
-        {
-          "when": {
-            "max_affection": 25
-          },
-          "lines": [
-            "Oh. Hello again.",
-            "I've been feeling a little left out lately."
-          ]
-        },
-        {
-          "when": {
-            "max_affection": 45
-          },
-          "lines": [
-            "Oh... hi.",
-            "I was starting to wonder when we'd talk again."
-          ]
-        }
+      "daily_boundary": "daily_boundary"
+    },
+    "daily_boundary": {
+      "lines": [
+        "Oh, um... didn't we already talk about everything?",
+        "You don't have to keep talking to me, you know, hehe.",
+        "I'll see you later!"
       ]
+    },
+    "goodbye": {
+      "lines": [
+        "Oh! See you."
+      ],
+      "effects": {
+        "request_scene": "room_exit"
+      }
     },
     "curiosity": {
       "lines": [
@@ -136,19 +177,17 @@
       "lines": [
         "O-oh. You think so?",
         "...Thank you."
-      ],
-      "next": "topics"
+      ]
     },
     "curiosity_glad": {
       "lines": [
         "Me too!",
         "I'm glad you convinced me to stay."
-      ],
-      "next": "topics"
+      ]
     },
     "exploring": {
       "lines": [
-        "Well, I would, but—",
+        "Well, I would, but-",
         "I just keep getting this weird feeling in my legs?",
         "I'm not used to moving around on my own like this.",
         "And who knows what could happen if I did?"
@@ -168,15 +207,13 @@
       "lines": [
         "I guess you're right.",
         "...Thank you."
-      ],
-      "next": "topics"
+      ]
     },
     "exploring_together": {
       "lines": [
         "T-together?",
         "Oh... I'd like that."
       ],
-      "next": "topics",
       "effects": {
         "start_relationship_events": [
           "explore_together"
@@ -213,188 +250,17 @@
       "lines": [
         "Oh, I was wondering what the other shore looks like.",
         "It's a bit far to go see for myself."
-      ],
-      "next": "topics"
+      ]
     },
     "distant_reminder": {
       "lines": [
         "Not yet. Whatever it was, I still can't make it out from here."
-      ],
-      "next": "topics"
+      ]
     },
     "reminder_cancel": {
       "lines": [
         "Oh, okay!"
-      ],
-      "next": "topics"
-    },
-    "goodbye": {
-      "lines": [
-        "Oh! See you."
-      ],
-      "effects": {
-        "request_scene": "room_exit"
-      }
-    },
-    "topics": {
-      "lines": [],
-      "choices": [
-        {
-          "text": "Could we talk about the other night?",
-          "next": "prelude_concern",
-          "when": {
-            "active_events": [
-              "prelude_boundary"
-            ]
-          },
-          "priority": 30,
-          "grey_when_picked": false
-        },
-        {
-          "text": "Is something bothering you?",
-          "next": "morale_check",
-          "when": {
-            "max_affection": 45
-          },
-          "priority": 15,
-          "grey_when_picked": false
-        },
-        {
-          "text": "How are you liking it here?",
-          "next": "curiosity"
-        },
-        {
-          "text": "Have you gone exploring at all?",
-          "next": "exploring"
-        },
-        {
-          "text": "Can you remind me about something?",
-          "next": "reminder_intro",
-          "required_flags": [
-            "gift_attempted"
-          ],
-          "forbidden_flags": [
-            "spyglass_complete"
-          ]
-        },
-        {
-          "text": "You said we could explore together someday...",
-          "next": "explore_followup",
-          "when": {
-            "active_events": [
-              "explore_together"
-            ]
-          },
-          "priority": 4,
-          "grey_when_picked": false
-        },
-        {
-          "text": "How's the spyglass working out?",
-          "next": "spyglass_chat",
-          "required_flags": [
-            "spyglass_complete"
-          ],
-          "grey_when_picked": false
-        },
-        {
-          "text": "See you later!",
-          "next": "goodbye",
-          "spends_action": false,
-          "grey_when_picked": false
-        }
       ]
-    },
-    "morale_check": {
-      "lines": [],
-      "conditional_next": [
-        {
-          "next": "morale_refusing",
-          "when": {
-            "required_flags": [
-              "refuses_diving"
-            ]
-          }
-        },
-        {
-          "next": "morale_hurt",
-          "when": {
-            "max_affection": 25
-          }
-        },
-        {
-          "next": "morale_neglected",
-          "when": {
-            "max_affection": 45
-          }
-        }
-      ],
-      "rotating_next": [
-        "morale_fine"
-      ]
-    },
-    "morale_fine": {
-      "lines": [
-        "I'm alright, thanks for asking."
-      ],
-      "next": "topics"
-    },
-    "morale_refusing": {
-      "lines": [
-        "I can't keep pretending everything's okay when we dive.",
-        "I need some time together that isn't about catching fish."
-      ],
-      "next": "topics"
-    },
-    "morale_hurt": {
-      "lines": [
-        "I know you have work to do...",
-        "Sometimes I wish you'd visit just to see me."
-      ],
-      "next": "topics"
-    },
-    "morale_neglected": {
-      "lines": [
-        "I've been fine! Just... a little lonely, I guess.",
-        "I was hoping we could talk more."
-      ],
-      "next": "topics"
-    },
-    "prelude_concern": {
-      "lines": [
-        "I was really looking forward to spending time with you.",
-        "But when you wanted me to hurry, I felt like I was doing something wrong.",
-        "I don't want to feel rushed when I'm with you."
-      ],
-      "choices": [
-        {
-          "text": "I was pushing you. I'm sorry.",
-          "next": "prelude_reassurance"
-        },
-        {
-          "text": "I don't think I did anything wrong.",
-          "next": "prelude_unresolved"
-        }
-      ]
-    },
-    "prelude_reassurance": {
-      "lines": [
-        "Oh... thank you.",
-        "I still want to spend time together. Just... can we go at our own pace?",
-        "That would mean a lot to me."
-      ],
-      "effects": {
-        "resolve_relationship_events": [
-          "prelude_boundary"
-        ]
-      },
-      "next": "topics"
-    },
-    "prelude_unresolved": {
-      "lines": [
-        "I understand if you don't see it the same way.",
-        "But I was uncomfortable. That should matter too."
-      ],
-      "next": "topics"
     },
     "explore_followup": {
       "lines": [
@@ -402,17 +268,81 @@
         "I have been thinking about it, actually.",
         "Maybe when I feel a little steadier on these legs, we can find somewhere new to look around together.",
         "I'd really like that."
-      ],
-      "next": "topics"
+      ]
     },
     "spyglass_chat": {
       "lines": [
         "All the time!",
         "I can see those birds much more clearly now.",
         "Sometimes I spot something new and think I should show you."
+      ]
+    },
+    "check_in_home": {
+      "lines": [
+        "Honestly, I've been really happy lately.",
+        "I'm still getting used to everything, but... it's nice having you around."
+      ]
+    },
+    "check_in_birds": {
+      "lines": [
+        "I tried watching those things flying over the island again.",
+        "I think they might be birds?",
+        "I'm getting a little braver about looking outside."
+      ]
+    },
+    "check_in_you": {
+      "lines": [
+        "You know, I never really asked what you like doing when you're not fishing.",
+        "I want to know more about you, too."
+      ]
+    },
+    "beach_when": {
+      "lines": [
+        "A date? Oh! I'd like that.",
+        "The beach sounds nice! When should we go?"
       ],
-      "next": "topics"
+      "choices": [
+        {
+          "text": "Next morning",
+          "spoken_text": "How about next morning?",
+          "next": "confirmed",
+          "effects": {
+            "request_scene": "date:silas_beach:0"
+          }
+        },
+        {
+          "text": "Next afternoon",
+          "spoken_text": "How about next afternoon?",
+          "next": "confirmed",
+          "effects": {
+            "request_scene": "date:silas_beach:1"
+          }
+        },
+        {
+          "text": "Next night",
+          "spoken_text": "How about next night?",
+          "next": "confirmed",
+          "effects": {
+            "request_scene": "date:silas_beach:2"
+          }
+        },
+        {
+          "text": "Maybe another time.",
+          "next": "goodbye"
+        }
+      ]
+    },
+    "confirmed": {
+      "lines": [
+        "Okay! I'll be there.",
+        "I'm looking forward to it!"
+      ]
+    },
+    "check_in_burrow": {
+      "lines": [
+        "I've been popping my head out of my room every now and then.",
+        "It kind of reminds me of the burrow down there, hehe."
+      ]
     }
-  },
-  "free_greeting": true
+  }
 }

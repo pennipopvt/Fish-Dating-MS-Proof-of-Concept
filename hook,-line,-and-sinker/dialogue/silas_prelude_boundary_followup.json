@@ -1,0 +1,41 @@
+{
+  "entry": "prelude_concern",
+  "free_greeting": true,
+  "nodes": {
+    "prelude_concern": {
+      "lines": [
+        "I was really looking forward to spending time with you.",
+        "But when you wanted me to hurry, I felt like I was doing something wrong.",
+        "I don't want to feel rushed when I'm with you."
+      ],
+      "choices": [
+        {
+          "text": "I was pushing you. I'm sorry.",
+          "next": "prelude_reassurance"
+        },
+        {
+          "text": "I don't think I did anything wrong.",
+          "next": "prelude_unresolved"
+        }
+      ]
+    },
+    "prelude_reassurance": {
+      "lines": [
+        "Oh... thank you.",
+        "I still want to spend time together. Just... can we go at our own pace?",
+        "That would mean a lot to me."
+      ],
+      "effects": {
+        "resolve_relationship_events": [
+          "prelude_boundary"
+        ]
+      }
+    },
+    "prelude_unresolved": {
+      "lines": [
+        "I understand if you don't see it the same way.",
+        "But I was uncomfortable. That should matter too."
+      ]
+    }
+  }
+}

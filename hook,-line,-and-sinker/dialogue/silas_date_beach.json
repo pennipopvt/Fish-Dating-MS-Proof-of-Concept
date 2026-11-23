@@ -38,21 +38,7 @@
         "O-oh! Um... thank you.",
         "I guess having legs isn't so bad..."
       ],
-      "next": "choice_2",
-      "jealousy_lines": {
-        "1": [
-          "O-oh, um... thank you.",
-          "You still think so?"
-        ],
-        "2": [
-          "You don't have to say that just to make me feel better...",
-          "Sorry. I know you're trying to be nice."
-        ],
-        "3": [
-          "Penni... are you serious?",
-          "I don't know what to believe right now."
-        ]
-      }
+      "next": "choice_2"
     },
     "reaction_1_playful": {
       "lines": [
@@ -60,42 +46,14 @@
         "I'm usually in the sand, not standing on it!",
         "And I didn't have feet before..."
       ],
-      "next": "choice_2",
-      "jealousy_lines": {
-        "1": [
-          "Th-that's different!",
-          "Okay... I guess you got me there."
-        ],
-        "2": [
-          "I know, but...",
-          "I don't really feel like being teased right now."
-        ],
-        "3": [
-          "Could you please not make fun of me today?",
-          "I just wanted us to have a nice time."
-        ]
-      }
+      "next": "choice_2"
     },
     "reaction_1_reassure": {
       "lines": [
         "No, it's okay!",
         "I want to see more of it."
       ],
-      "next": "choice_2",
-      "jealousy_lines": {
-        "1": [
-          "Oh... thanks for asking.",
-          "I think I want to try a little longer."
-        ],
-        "2": [
-          "Would you mind staying close to me?",
-          "I think I'd feel better that way."
-        ],
-        "3": [
-          "You'd really do that for me?",
-          "I... appreciate it, Penni."
-        ]
-      }
+      "next": "choice_2"
     },
     "choice_2": {
       "lines": [
@@ -130,63 +88,21 @@
         "Really?",
         "Then... I think I want one too."
       ],
-      "next": "choice_3",
-      "jealousy_lines": {
-        "1": [
-          "Oh... for our date?",
-          "I hope it's a good memory."
-        ],
-        "2": [
-          "You mean you'd want to remember today?",
-          "I wasn't sure you would."
-        ],
-        "3": [
-          "I don't know why you'd want to remember this...",
-          "Sorry. That's not fair to you."
-        ]
-      }
+      "next": "choice_3"
     },
     "reaction_2_playful": {
       "lines": [
         "W-what? Really?",
         "...You're messing with me, aren't you?"
       ],
-      "next": "choice_3",
-      "jealousy_lines": {
-        "1": [
-          "W-wait, really?",
-          "Oh. You're teasing me again."
-        ],
-        "2": [
-          "I can't tell when you're being serious lately.",
-          "Sorry, I know it's just a joke."
-        ],
-        "3": [
-          "Please don't trick me right now.",
-          "I wanted to show you something I liked."
-        ]
-      }
+      "next": "choice_3"
     },
     "reaction_2_reassure": {
       "lines": [
         "I think I will!",
         "Maybe I'll put it by my window."
       ],
-      "next": "choice_3",
-      "jealousy_lines": {
-        "1": [
-          "I think I will...",
-          "It'll be nice to have something from today."
-        ],
-        "2": [
-          "Maybe I could keep it on my shelf.",
-          "So I can remember we did this together."
-        ],
-        "3": [
-          "I'd... really like that.",
-          "I'd like something to remind me of today."
-        ]
-      }
+      "next": "choice_3"
     },
     "choice_3": {
       "lines": [
@@ -222,42 +138,14 @@
         "Hehe... yeah.",
         "I'm glad I stayed too."
       ],
-      "next": "choice_4",
-      "jealousy_lines": {
-        "1": [
-          "Y-yeah. I guess that's one good reason.",
-          "I hope it's still a good reason for you."
-        ],
-        "2": [
-          "Do you... still want to take me on dates?",
-          "I can't really tell anymore."
-        ],
-        "3": [
-          "I'm not sure it feels easy anymore.",
-          "Sorry... I didn't mean to say that."
-        ]
-      }
+      "next": "choice_4"
     },
     "reaction_3_playful": {
       "lines": [
         "Well, the spyglass is pretty great...",
         "But I guess there are some other reasons too."
       ],
-      "next": "choice_4",
-      "jealousy_lines": {
-        "1": [
-          "Well, it is a pretty great spyglass!",
-          "But... that's not the only reason. You know that, right?"
-        ],
-        "2": [
-          "It's not just the spyglass...",
-          "I wish I knew if you were joking about that."
-        ],
-        "3": [
-          "Do you really think that's why I'm here?",
-          "Penni, I stayed because of you."
-        ]
-      }
+      "next": "choice_4"
     },
     "reaction_3_reassure": {
       "lines": [
@@ -265,21 +153,7 @@
         "That means a lot, Penni.",
         "I'm really happy too."
       ],
-      "next": "choice_4",
-      "jealousy_lines": {
-        "1": [
-          "Oh...",
-          "I'm really happy you still feel that way."
-        ],
-        "2": [
-          "You have no idea how much I needed to hear that.",
-          "I was starting to worry."
-        ],
-        "3": [
-          "Really? Even now?",
-          "I... want to believe you."
-        ]
-      }
+      "next": "choice_4"
     },
     "choice_4": {
       "lines": [
@@ -315,21 +189,7 @@
         "Um... okay.",
         "This is nice..."
       ],
-      "next": "ending",
-      "jealousy_lines": {
-        "1": [
-          "O-oh...",
-          "Okay. Just for a little while?"
-        ],
-        "2": [
-          "Are you sure?",
-          "I'm worried I'll make things awkward."
-        ],
-        "3": [
-          "I don't know if I can do that right now.",
-          "But... thank you for asking."
-        ]
-      }
+      "next": "ending"
     },
     "reaction_4_playful": {
       "lines": [
@@ -337,21 +197,7 @@
         "Hehe... I guess I am!",
         "That's a little weird to think about."
       ],
-      "next": "ending",
-      "jealousy_lines": {
-        "1": [
-          "A beach person? Hehe...",
-          "Maybe. I'm still getting used to it."
-        ],
-        "2": [
-          "I don't know...",
-          "I don't feel very good at this today."
-        ],
-        "3": [
-          "Can we not joke about me for a minute?",
-          "I just want to sit with you."
-        ]
-      }
+      "next": "ending"
     },
     "reaction_4_reassure": {
       "lines": [
@@ -359,21 +205,7 @@
         "I think I like that.",
         "Especially when I'm not alone."
       ],
-      "next": "ending",
-      "jealousy_lines": {
-        "1": [
-          "Yeah...",
-          "It's easier to relax when you're here."
-        ],
-        "2": [
-          "I'd like that.",
-          "Can we sit together for a little longer?"
-        ],
-        "3": [
-          "I really want things to feel like that again.",
-          "Could you stay with me a while?"
-        ]
-      }
+      "next": "ending"
     },
     "ending": {
       "lines": [

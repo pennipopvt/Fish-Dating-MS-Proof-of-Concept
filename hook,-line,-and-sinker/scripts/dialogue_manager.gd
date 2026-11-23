@@ -292,6 +292,8 @@ func _complete_pending_choice() -> void:
 	if not choice.has("date_style"):
 		AffectionManager.on_choice_picked(current_npc, str(choice.get("_key", "")), choice)
 	_apply_json_effects(choice.get("effects", {}), false)
+	if bool(choice.get("daily_topic", false)):
+		NPCManager.mark_daily_topic_discussed(current_npc.npc_id, str(choice.get("next", "")))
 	choice_resolved.emit(current_npc, choice)
 	_enter_node(str(choice["next"]), reaction_tier)
 
@@ -383,6 +385,13 @@ func _enter_node(id: String, reaction_tier: int = -1, redirects: int = 0) -> voi
 		end_conversation()
 		return
 	var node: Dictionary = nodes[id]
+	if node.has("daily_topic_pool"):
+		var topics: Array = NPCManager.get_daily_topic_choices(current_npc, node["daily_topic_pool"])
+		if topics.is_empty():
+			_enter_node(str(node.get("daily_boundary", "daily_boundary")), reaction_tier, redirects + 1)
+			return
+		node = node.duplicate(true)
+		node["choices"] = topics
 	for route in node.get("conditional_next", []):
 		if NPCManager.dialogue_conditions_match(current_npc.npc_id, route.get("when", {}), reaction_tier):
 			_enter_node(str(route["next"]), reaction_tier, redirects + 1)

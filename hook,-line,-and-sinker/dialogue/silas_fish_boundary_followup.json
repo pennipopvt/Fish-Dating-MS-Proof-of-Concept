@@ -35,8 +35,7 @@
       "effects": {
         "resolve_relationship_events": [
           "fish_hurt_pressure"
-        ],
-        "affection_delta": 8
+        ]
       }
     },
     "defensive": {

@@ -13,20 +13,13 @@
           "text": "You matter to me. I should have talked to you.",
           "next": "reassure",
           "tone": "neutral",
-          "spends_action": false,
-          "effects": {
-            "jealousy_delta": -25
-          }
+          "spends_action": false
         },
         {
           "text": "You're making a big deal out of nothing.",
           "next": "dismiss",
           "tone": "neutral",
-          "spends_action": false,
-          "effects": {
-            "jealousy_delta": 10,
-            "affection_delta": -4
-          }
+          "spends_action": false
         },
         {
           "text": "I need some time to think about this.",

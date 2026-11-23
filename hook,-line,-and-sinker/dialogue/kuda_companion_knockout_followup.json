@@ -28,7 +28,6 @@
         "I'm willing to give it another shot. Just don't forget what you said."
       ],
       "effects": {
-        "affection_delta": 12,
         "resolve_relationship_events": [
           "companion_knockout"
         ]
@@ -38,10 +37,7 @@
       "lines": [
         "Tch. Then you can go diving without me.",
         "Come back when you're ready to take it seriously."
-      ],
-      "effects": {
-        "affection_delta": -5
-      }
+      ]
     }
   }
 }

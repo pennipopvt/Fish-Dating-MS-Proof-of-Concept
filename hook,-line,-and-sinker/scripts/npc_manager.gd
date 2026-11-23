@@ -23,6 +23,69 @@ func get_npc_state(npc_id: StringName) -> Dictionary:
 	return npc_states[npc_id]
 
 
+
+# Shared daily topic bag. Familiar topics stay grey but selectable on later days.
+func get_daily_topic_choices(npc: NPCData, pool: Array) -> Array:
+	if npc == null:
+		return []
+	var state: Dictionary = get_npc_state(npc.npc_id)
+	var eligible: Array = []
+	for entry in pool:
+		if not entry is Dictionary:
+			continue
+		var allowed: bool = true
+		for flag in entry.get("required_flags", []):
+			if not state.get("flags", {}).get(StringName(str(flag)), false):
+				allowed = false
+				break
+		for flag in entry.get("forbidden_flags", []):
+			if state.get("flags", {}).get(StringName(str(flag)), false):
+				allowed = false
+				break
+		if allowed and dialogue_conditions_match(npc.npc_id, entry.get("when", {})):
+			eligible.append(entry)
+	if int(state.get("daily_topic_day", -1)) != GameManager.get_day():
+		var bag: Array = state.get("daily_topic_bag", []).duplicate()
+		var candidates: Array = []
+		for entry in eligible:
+			candidates.append(str(entry.get("next", "")))
+		var draw: Array = []
+		for slot in range(mini(2, candidates.size())):
+			var options: Array = []
+			for id in candidates:
+				if bag.has(id):
+					options.append(id)
+			if options.is_empty():
+				bag = candidates.duplicate()
+				options = candidates.duplicate()
+			var chosen: String = str(options.pick_random())
+			draw.append(chosen)
+			bag.erase(chosen)
+			candidates.erase(chosen)
+		state["daily_topic_day"] = GameManager.get_day()
+		state["daily_topic_selected"] = draw
+		state["daily_topic_done"] = []
+		state["daily_topic_bag"] = bag
+	var selected: Array = state.get("daily_topic_selected", [])
+	var done: Array = state.get("daily_topic_done", [])
+	var result: Array = []
+	for entry in eligible:
+		var id: String = str(entry.get("next", ""))
+		if selected.has(id) and not done.has(id):
+			result.append(entry.duplicate(true))
+	return result
+
+
+func mark_daily_topic_discussed(npc_id: StringName, topic_id: String) -> void:
+	var state: Dictionary = get_npc_state(npc_id)
+	if int(state.get("daily_topic_day", -1)) != GameManager.get_day():
+		return
+	var done: Array = state.get("daily_topic_done", [])
+	if not done.has(topic_id):
+		done.append(topic_id)
+		state["daily_topic_done"] = done
+
+
 # Find the first dialogue whose conditions are met.
 func get_dialogue(npc: NPCData) -> DialogueData:
 	if npc == null:
