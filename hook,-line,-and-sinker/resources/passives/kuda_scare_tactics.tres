@@ -1,8 +1,7 @@
-[gd_resource type="Resource" script_class="KudaScareTacticsPassive" format=3]
+[gd_resource type="Resource" script_class="KudaScareTacticsPassive" format=3 uid="uid://cllaymk4sras2"]
 
-[ext_resource type="Script" path="res://scripts/diving/passives/kuda_scare_tactics_passive.gd" id="script"]
+[ext_resource type="Script" uid="uid://ch4kdq6au74li" path="res://scripts/diving/passives/kuda_scare_tactics_passive.gd" id="script"]
 
 [resource]
 script = ExtResource("script")
 display_name = "Scare Tactics"
-opening_stun_fraction = 0.5

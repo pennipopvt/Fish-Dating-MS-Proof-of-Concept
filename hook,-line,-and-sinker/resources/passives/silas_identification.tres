@@ -1,6 +1,6 @@
-[gd_resource type="Resource" script_class="SilasIdentificationPassive" format=3]
+[gd_resource type="Resource" script_class="SilasIdentificationPassive" format=3 uid="uid://df3td8138l5y1"]
 
-[ext_resource type="Script" path="res://scripts/diving/passives/silas_identification_passive.gd" id="script"]
+[ext_resource type="Script" uid="uid://c10djhb0gfkk4" path="res://scripts/diving/passives/silas_identification_passive.gd" id="script"]
 
 [resource]
 script = ExtResource("script")

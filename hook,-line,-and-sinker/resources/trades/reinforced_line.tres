@@ -3,8 +3,8 @@
 [ext_resource type="Script" uid="uid://co23u2dkxgpsq" path="res://resources/trade_data.gd" id="1"]
 [ext_resource type="Script" uid="uid://dou1ei8c0alhj" path="res://resources/trade_requirement.gd" id="2"]
 [ext_resource type="Resource" uid="uid://c18cl4fy3efxo" path="res://resources/items/tuna.tres" id="3"]
-[ext_resource type="Resource" path="res://resources/items/needlefish.tres" id="extra_needlefish"]
 [ext_resource type="Texture2D" uid="uid://dx6r6ffe73rw4" path="res://sprites/upgrades/icon_upgrade_tension_1.png" id="4"]
+[ext_resource type="Resource" path="res://resources/items/needlefish.tres" id="extra_needlefish"]
 
 [sub_resource type="Resource" id="cost"]
 script = ExtResource("2")

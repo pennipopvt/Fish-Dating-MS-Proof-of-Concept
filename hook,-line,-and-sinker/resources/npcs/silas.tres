@@ -10,10 +10,10 @@
 [ext_resource type="Texture2D" uid="uid://c4v1axr8aete3" path="res://sprites/porn/silas.png" id="6_porn"]
 [ext_resource type="Texture2D" uid="uid://cjesho2sc0f1v" path="res://sprites/characters/silas/room_silas.png" id="10_ku7b7"]
 [ext_resource type="Script" uid="uid://chpwa10g4jhyo" path="res://resources/relationship_event_data.gd" id="relationship_event_script"]
+[ext_resource type="Resource" uid="uid://df3td8138l5y1" path="res://resources/passives/silas_identification.tres" id="sea_passive"]
 [ext_resource type="Script" uid="uid://cxebrk0uj1pk8" path="res://resources/door_info.gd" id="townhouse_door_info"]
 [ext_resource type="Texture2D" uid="uid://djh5r2k63hmc3" path="res://sprites/rooms/silasdoor.png" id="townhouse_silas_door"]
 [ext_resource type="Texture2D" uid="uid://fur256i6ik5n" path="res://sprites/fish/silas_eel.png" id="underwater_eel"]
-[ext_resource type="Resource" path="res://resources/passives/silas_identification.tres" id="sea_passive"]
 
 [sub_resource type="Resource" id="TownhouseSilasDoor"]
 script = ExtResource("townhouse_door_info")
@@ -46,8 +46,8 @@ script = ExtResource("relationship_event_script")
 event_id = &"other_romance"
 followup_dialogue_json = "res://dialogue/silas_other_romance.json"
 priority = 40
-
 blocks_actions = Array[StringName]([&"dive", &"overnight", &"date"])
+
 [sub_resource type="Resource" id="ExploreTogetherEvent"]
 script = ExtResource("relationship_event_script")
 event_id = &"explore_together"
@@ -58,8 +58,8 @@ script = ExtResource("relationship_event_script")
 event_id = &"fish_hurt_pressure"
 followup_dialogue_json = "res://dialogue/silas_fish_boundary_followup.json"
 priority = 45
-
 blocks_actions = Array[StringName]([&"dive", &"overnight", &"date"])
+
 [sub_resource type="Resource" id="CompanionKnockoutEvent"]
 script = ExtResource("relationship_event_script")
 event_id = &"companion_knockout"
@@ -75,9 +75,9 @@ voice_pitch_scale = 0.9
 portrait = ExtResource("4_a4wu8")
 land_actor_scene_path = "res://prefabs/silas.tscn"
 underwater_sprite = ExtResource("underwater_eel")
-sea_passive = ExtResource("sea_passive")
 sea_knockout_dialogue_json = "res://dialogue/silas_sea_knockout.json"
 sea_first_land_knockout_dialogue_json = "res://dialogue/silas_first_land_knockout.json"
+sea_passive = ExtResource("sea_passive")
 house = ExtResource("5_816r6")
 door = SubResource("TownhouseSilasDoor")
 room_background = ExtResource("10_ku7b7")

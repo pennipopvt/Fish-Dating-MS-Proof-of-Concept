@@ -8,6 +8,7 @@
 [ext_resource type="PackedScene" uid="uid://bt2iu4iois2sb" path="res://prefabs/illustration_scene.tscn" id="10_illustration"]
 [ext_resource type="Script" uid="uid://cpd0iodpkxy8s" path="res://resources/story_events/island_story_event_data.gd" id="13_yq6so"]
 [ext_resource type="AudioStream" uid="uid://2pva56bfy4v1" path="res://sounds/sfx/753223__pblzr__ambience-exterior-night-mindelo-beach-waves-medium-ms-4824.ogg" id="25_yq6so"]
+[ext_resource type="AudioStream" uid="uid://de7qest1un0cj" path="res://sounds/sfx/504641__fission9__underwater-ambience.ogg" id="26_yq6so"]
 [ext_resource type="Script" uid="uid://sw20trtxk6am" path="res://scripts/diving/sea_speech_bubble_host.gd" id="bubble_host"]
 [ext_resource type="Script" uid="uid://bo3sftqvuyeyx" path="res://scripts/main_controller.gd" id="dive_entry"]
 [ext_resource type="Script" uid="uid://ckavoo6kn226c" path="res://scripts/diving/diving_party.gd" id="diving_party"]
@@ -24,9 +25,8 @@
 [ext_resource type="Script" uid="uid://byypo0swdykcg" path="res://scripts/diving/sea_debug_panel.gd" id="sea_debug_panel"]
 [ext_resource type="PackedScene" path="res://scenes/sea_speech_bubble.tscn" id="sea_speech_bubble"]
 [ext_resource type="Resource" path="res://resources/story_events/silas_morning_invitation.tres" id="silas_morning_event"]
-[ext_resource type="PackedScene" path="res://scenes/title_screen.tscn" id="title_screen"]
+[ext_resource type="PackedScene" uid="uid://dl2qlxjy220bh" path="res://scenes/title_screen.tscn" id="title_screen"]
 [ext_resource type="Script" uid="uid://bhtfkxi24nqdu" path="res://scripts/diving/sea_dive_transition.gd" id="transition_script"]
-[ext_resource type="AudioStream" uid="uid://dhq2gj5gtdqig" path="res://sounds/sfx/504641__fission9__underwater-ambience.wav" id="underwater_ambience"]
 [ext_resource type="Script" uid="uid://c2mqig4lbslwt" path="res://scripts/audio/underwater_music_player.gd" id="underwater_music_player"]
 [ext_resource type="PackedScene" path="res://scenes/water_render_debug.tscn" id="water_debug"]
 
@@ -140,8 +140,7 @@ autoplay = true
 bus = &"Ambience"
 
 [node name="Underwater" type="AudioStreamPlayer" parent="SeaAmbience" unique_id=831741247]
-stream = ExtResource("underwater_ambience")
-volume_db = -80.0
+stream = ExtResource("26_yq6so")
 autoplay = true
 bus = &"Ambience"
 
