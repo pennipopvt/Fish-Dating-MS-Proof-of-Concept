@@ -1,0 +1,126 @@
+[gd_scene format=3 uid="uid://dl2qlxjy220bh"]
+
+[ext_resource type="Texture2D" uid="uid://bkp0bi7jcxhvu" path="res://sprites/ui/logo.png" id="game_logo"]
+[ext_resource type="Script" uid="uid://bumlcwxeypy8r" path="res://scripts/ui/title_image_button.gd" id="image_button_script"]
+[ext_resource type="Texture2D" uid="uid://dsc4or2iksd7f" path="res://sprites/ui/button_options.png" id="options_image"]
+[ext_resource type="Texture2D" uid="uid://pnw0lyyulp5g" path="res://sprites/ui/button_play.png" id="play_image"]
+[ext_resource type="Texture2D" uid="uid://c1gtfvtuc8l7y" path="res://sprites/ui/button_quit.png" id="quit_image"]
+[ext_resource type="Script" uid="uid://daate4fy5wkmq" path="res://scripts/ui/game_title_screen.gd" id="title_script"]
+
+[sub_resource type="StyleBoxFlat" id="MenuPanel"]
+content_margin_left = 30.0
+content_margin_top = 24.0
+content_margin_right = 30.0
+content_margin_bottom = 24.0
+bg_color = Color(0.6, 0.6, 0.6, 0)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+
+[node name="TitleScreen" type="CanvasLayer" unique_id=737331384]
+process_mode = 3
+layer = 70
+script = ExtResource("title_script")
+
+[node name="Menu" type="PanelContainer" parent="." unique_id=1964462537]
+anchors_preset = -1
+anchor_left = 0.04
+anchor_top = 0.12
+anchor_right = 0.45
+anchor_bottom = 0.88
+offset_left = -23.799995
+offset_top = -155.59999
+offset_right = 141.20001
+offset_bottom = -71.400024
+theme_override_styles/panel = SubResource("MenuPanel")
+
+[node name="Contents" type="VBoxContainer" parent="Menu" unique_id=1817339734]
+layout_mode = 2
+theme_override_constants/separation = 15
+alignment = 1
+
+[node name="Title" type="TextureRect" parent="Menu/Contents" unique_id=1538604778]
+custom_minimum_size = Vector2(0, 500)
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 2
+texture = ExtResource("game_logo")
+expand_mode = 1
+stretch_mode = 4
+
+[node name="Play" type="TextureButton" parent="Menu/Contents" unique_id=187970714]
+custom_minimum_size = Vector2(300, 104)
+layout_mode = 2
+size_flags_horizontal = 4
+texture_normal = ExtResource("play_image")
+ignore_texture_size = true
+stretch_mode = 5
+script = ExtResource("image_button_script")
+
+[node name="Options" type="TextureButton" parent="Menu/Contents" unique_id=1456326918]
+custom_minimum_size = Vector2(300, 104)
+layout_mode = 2
+size_flags_horizontal = 4
+texture_normal = ExtResource("options_image")
+ignore_texture_size = true
+stretch_mode = 5
+script = ExtResource("image_button_script")
+
+[node name="Quit" type="TextureButton" parent="Menu/Contents" unique_id=594800290]
+custom_minimum_size = Vector2(300, 104)
+layout_mode = 2
+size_flags_horizontal = 4
+texture_normal = ExtResource("quit_image")
+ignore_texture_size = true
+stretch_mode = 5
+script = ExtResource("image_button_script")
+
+[node name="Options" type="PanelContainer" parent="." unique_id=279527233]
+visible = false
+anchors_preset = -1
+anchor_left = 0.05
+anchor_top = 0.19
+anchor_right = 0.5
+anchor_bottom = 0.81
+theme_override_styles/panel = SubResource("MenuPanel")
+
+[node name="Contents" type="VBoxContainer" parent="Options" unique_id=1907651814]
+layout_mode = 2
+theme_override_constants/separation = 14
+alignment = 1
+
+[node name="Heading" type="Label" parent="Options/Contents" unique_id=823985263]
+layout_mode = 2
+theme_override_font_sizes/font_size = 42
+text = "SOUND"
+
+[node name="MusicLabel" type="Label" parent="Options/Contents" unique_id=1729659439]
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "Music"
+
+[node name="MusicVolume" type="HSlider" parent="Options/Contents" unique_id=240546124]
+custom_minimum_size = Vector2(0, 30)
+layout_mode = 2
+max_value = 1.0
+step = 0.01
+value = 1.0
+
+[node name="AmbienceLabel" type="Label" parent="Options/Contents" unique_id=623409000]
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "Ambience"
+
+[node name="AmbienceVolume" type="HSlider" parent="Options/Contents" unique_id=1765907477]
+custom_minimum_size = Vector2(0, 30)
+layout_mode = 2
+max_value = 1.0
+step = 0.01
+value = 1.0
+
+[node name="Back" type="Button" parent="Options/Contents" unique_id=1917678019]
+custom_minimum_size = Vector2(0, 60)
+layout_mode = 2
+theme_override_font_sizes/font_size = 28
+text = "BACK"

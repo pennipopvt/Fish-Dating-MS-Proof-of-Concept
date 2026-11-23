@@ -38,18 +38,26 @@ func _ready() -> void:
 		"NPC can schedule the next afternoon")
 	_expect(DateManager.describe_booking(beach) == "Day 1 Afternoon",
 		"Calendar shows the day and period chosen in conversation")
-	_expect(not DateManager.can_book_at(boat, 1, GameManager.Times.AFTERNOON),
-		"Different NPCs cannot be booked in the same period")
-	_expect(DateManager.can_book_at(boat, 1, GameManager.Times.NIGHT),
-		"Kuda can book a different free period while Silas has a date")
+	_expect(DateManager.can_book_at(boat, 1, GameManager.Times.AFTERNOON),
+		"Two different NPCs can agree to dates in the same period")
+	_expect(DateManager.book_next_period(boat, GameManager.Times.AFTERNOON, 1,
+		GameManager.Times.MORNING), "Kuda books the same afternoon as Silas")
+	_expect(not DateManager.can_ask(beach) and not DateManager.can_ask(boat),
+		"Each NPC can have only one booking while overlapping dates are allowed")
 
 	GameManager.rest()
-	_expect(DateManager.is_booking_ready(beach), "Date becomes ready at first afternoon action")
-	_expect(DateManager.get_ready_booking_for_npc(&"test_npc") == beach,
-		"Talking to the NPC can start their planned date")
+	_expect(DateManager.is_booking_ready(beach) and DateManager.is_booking_ready(boat),
+		"Both dates are ready at the first afternoon action")
+	_expect(DateManager.get_ready_booking_for_npc(beach.npc.npc_id) == beach,
+		"Visiting Silas's room selects Silas's own scheduled date")
+	_expect(DateManager.get_ready_booking_for_npc(boat.npc.npc_id) == boat,
+		"Visiting Kuda's room selects Kuda's own scheduled date")
 	GameManager.spend_actions(1)
-	_expect(not DateManager.is_booked(beach), "Using the first action misses the date")
-	_expect(bool(flags.get(beach.get_missed_flag(), false)), "Missed flag is recorded")
+	_expect(not DateManager.is_booked(beach) and not DateManager.is_booked(boat),
+		"Spending the first action misses both unattended appointments")
+	_expect(bool(flags.get(beach.get_missed_flag(), false))
+		and bool(kuda_flags.get(boat.get_missed_flag(), false)),
+		"Both missed dates set their own NPC flags")
 
 	GameManager.reset_clock()
 	_expect(DateManager.book_next_period(beach, GameManager.Times.MORNING, 1, GameManager.Times.MORNING),

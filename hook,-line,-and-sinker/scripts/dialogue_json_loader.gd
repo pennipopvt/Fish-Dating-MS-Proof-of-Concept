@@ -161,6 +161,8 @@ static func _valid_effects(value: Variant) -> bool:
 			return false
 	if value.has("affection_delta") and not _json_number(value["affection_delta"]):
 		return false
+	if value.has("jealousy_delta") and not _json_number(value["jealousy_delta"]):
+		return false
 	if value.has("give_held_item") and not value["give_held_item"] is bool:
 		return false
 	if value.has("request_scene") and (not value["request_scene"] is String or value["request_scene"].is_empty()):

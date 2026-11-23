@@ -15,6 +15,9 @@ const BAIT_TRADE: TradeData = preload("res://resources/trades/hard_fish_bait.tre
 const YELLOW_TRADE: TradeData = preload("res://resources/trades/yellow_bait.tres")
 const REEL_TRADE: TradeData = preload("res://resources/trades/stronger_reel.tres")
 const LINE_TRADE: TradeData = preload("res://resources/trades/reinforced_line.tres")
+const TANK_TRADE: TradeData = preload("res://resources/trades/larger_tank.tres")
+const NET_TRADE: TradeData = preload("res://resources/trades/extended_net.tres")
+const PRESSURE_TRADE: TradeData = preload("res://resources/trades/pressure_regulator.tres")
 const PARRY_CHALLENGE: ChallengeData = preload("res://resources/challenges/perfect_parry_streak.tres")
 const CATCH_CHALLENGE: ChallengeData = preload("res://resources/challenges/hot_streak.tres")
 
@@ -92,6 +95,29 @@ func _run() -> void:
 	fish.shop_reward_reinforced_line(1)
 	_expect(is_equal_approx(fish.reel_progress_bonus, 0.01) and is_equal_approx(fish.reel_tension_reduction, 0.005) and is_equal_approx(fish.miss_tension_reduction, 0.04), "upgrade methods cannot stack rewards")
 
+	for trade in [TANK_TRADE, NET_TRADE, PRESSURE_TRADE]:
+		_expect(trade.one_time_purchase and trade.icon != null
+			and trade.requirements.size() == 1 and trade.requirements[0].amount == 1,
+			"New equipment has an editable one-time, one-fish preview order")
+		_expect(fish.has_method(trade.reward_method),
+			"New equipment reward is a valid FishingManager method")
+	fish.shop_reward_larger_tank(TANK_TRADE.reward_amount)
+	fish.shop_reward_extended_net(NET_TRADE.reward_amount)
+	fish.shop_reward_pressure_regulator(PRESSURE_TRADE.reward_amount)
+	_expect(is_equal_approx(fish.oxygen_capacity_bonus_seconds, 30.0),
+		"Tank adds 30 seconds to oxygen capacity")
+	_expect(is_equal_approx(fish.net_range_bonus_pixels, 20.0),
+		"Extended net increases cast range by 20 pixels")
+	_expect(is_equal_approx(fish.depth_drain_reduction_fraction, 0.25),
+		"Regulator reduces depth-only oxygen penalty by 25%")
+	fish.shop_reward_larger_tank(100)
+	fish.shop_reward_extended_net(100)
+	fish.shop_reward_pressure_regulator(100)
+	_expect(is_equal_approx(fish.oxygen_capacity_bonus_seconds, 30.0)
+		and is_equal_approx(fish.net_range_bonus_pixels, 20.0)
+		and is_equal_approx(fish.depth_drain_reduction_fraction, 0.25),
+		"Equipment cannot be awarded twice")
+
 	# The same reset API is used by the F9 developer panel. Verify that
 	# resetting ownership also removes every bonus and restores default bait.
 	fish.shop_reward_add_casts(2)
@@ -101,6 +127,10 @@ func _run() -> void:
 	_expect(fish.owned_upgrade_ids.is_empty(), "reset clears upgrade ownership")
 	_expect(fish.get_unlocked_baits().size() == 1 and fish.equipped_bait == BASIC, "reset restores basic bait")
 	_expect(is_zero_approx(fish.reel_progress_bonus) and is_zero_approx(fish.reel_tension_reduction) and is_zero_approx(fish.miss_tension_reduction), "reset removes all flat combat bonuses")
+	_expect(is_zero_approx(fish.oxygen_capacity_bonus_seconds)
+		and is_zero_approx(fish.net_range_bonus_pixels)
+		and is_zero_approx(fish.depth_drain_reduction_fraction),
+		"session reset also clears tank, net and pressure bonuses")
 
 	# A fresh manager represents a new game launch. All upgrades and bait
 	# choices must reset, even if the previous session owned everything.

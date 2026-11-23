@@ -129,9 +129,14 @@ func step(delta: float) -> void:
 # True means this was an encounter-specific net hit; false means
 # DivingWorld should continue with ordinary DivingCombat.
 func handle_fish_hit(fish: DivingWildFish) -> bool:
-	if _story.wants_scripted_hook(fish, _tutorial_fish):
-		_start_tutorial_reel(fish)
-		_story.on_scripted_hook()
+	if fish == _tutorial_fish:
+		if _story.wants_scripted_hook(fish, _tutorial_fish):
+			_start_tutorial_reel(fish)
+			_story.on_scripted_hook()
+		else:
+			# An out-of-order cast must never turn the scripted fish
+			# into an ordinary catch before Penni rescues Silas.
+			_net.retract()
 		return true
 	if fish == _silas_trap:
 		if not _story.can_net_silas():

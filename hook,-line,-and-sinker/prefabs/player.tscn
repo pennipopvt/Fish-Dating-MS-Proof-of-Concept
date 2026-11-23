@@ -11,6 +11,9 @@
 [ext_resource type="Texture2D" uid="uid://dt6uqdm5wursr" path="res://sprites/characters/penni/penni_carry_r.png" id="carry_carry_r"]
 [ext_resource type="Texture2D" uid="uid://2ueodgqmjd2l" path="res://sprites/characters/penni/penni_idle_carry_L.png" id="carry_idle_carry_l"]
 [ext_resource type="Texture2D" uid="uid://b0wp3n2vn0dna" path="res://sprites/characters/penni/penni_idle_carry_R.png" id="carry_idle_carry_r"]
+[ext_resource type="AudioStream" uid="uid://c7lc2stux0mah" path="res://sounds/sfx/step.wav" id="step_sound"]
+[ext_resource type="Script" uid="uid://dwmq208wwveff" path="res://scripts/audio/swim_sound_fader.gd" id="swim_fader"]
+[ext_resource type="AudioStream" uid="uid://ducnr70r6rx2v" path="res://sounds/sfx/swim.wav" id="swim_sound"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_yd4fr"]
 size = Vector2(12, 26)
@@ -348,7 +351,7 @@ shape = SubResource("RectangleShape2D_yd4fr")
 [node name="FishingController" parent="." unique_id=104125951 instance=ExtResource("2_4dohe")]
 position = Vector2(-0.25, -16)
 
-[node name="FishingRod" parent="." instance=ExtResource("2_fishrod")]
+[node name="FishingRod" parent="." unique_id=92648860 instance=ExtResource("2_fishrod")]
 position = Vector2(-5, -9)
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=489744351]
@@ -357,3 +360,16 @@ position = Vector2(0, -16)
 sprite_frames = SubResource("SpriteFrames_yd4fr")
 animation = &"walk_carry_l"
 autoplay = "idle_r"
+
+[node name="StepSound" type="AudioStreamPlayer" parent="." unique_id=38506283]
+stream = ExtResource("step_sound")
+volume_db = -6.0
+
+[node name="SwimSound" type="AudioStreamPlayer" parent="." unique_id=206134632]
+stream = ExtResource("swim_sound")
+volume_db = -8.0
+pitch_scale = 0.7
+script = ExtResource("swim_fader")
+
+[node name="StepTimer" type="Timer" parent="." unique_id=1138794996]
+wait_time = 0.48

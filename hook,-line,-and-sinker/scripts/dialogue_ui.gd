@@ -14,12 +14,29 @@ const PLAYER_NAME_COLOR := Color(0.6, 0.85, 1.0)
 const SPEAKING_MODULATE := Color.WHITE
 const LISTENING_MODULATE := Color(0.5, 0.5, 0.55)
 const ADVANCE_ACTION := &"Interact"
+const LETTER_POP_EFFECT = preload("res://scripts/ui/dialogue_letter_pop.gd")
 # Choices picked before (no more affection from them): grey, still pickable.
 const PICKED_CHOICE_COLOR := Color(0.55, 0.55, 0.6)
 
 # Shown when an NPC has no portrait assigned yet.
 @export var placeholder_portrait: Texture2D
 @export var player_portrait: Texture2D
+
+@export_group("Dialogue Typing")
+@export var typewriter_enabled: bool = true
+@export_range(8.0, 120.0, 1.0, "suffix:chars/s") var characters_per_second: float = 36.0
+@export_range(0.0, 0.6, 0.01, "suffix:s") var letter_bounce_seconds: float = 0.18
+@export_range(0.0, 0.6, 0.01) var letter_scale_boost: float = 0.16
+@export_range(0.0, 8.0, 0.25, "suffix:px") var letter_jitter_pixels: float = 2.0
+
+@export_group("Dialogue Voice")
+# All speakers use the Penni speak audio unless their NPCData overrides it.
+# If this resource is blank, find the new Penni speak file by its name at
+# runtime (useful when the audio was added locally but not pushed yet).
+@export var default_voice_sound: AudioStream
+# Penni's base pitch and volume belong to the DialogueVoice node, not
+# duplicate exports here. Only the random pitch variation is on DialogueUI.
+@export_range(0.0, 0.5, 0.01) var penni_pitch_variation: float = 0.08
 
 # At scale 1, this reproduces the existing 1040x1600 room layout.
 # Keep the portrait rectangle's proportions fixed; TextureRect's
@@ -37,9 +54,14 @@ const ROOM_PORTRAIT_BASE_SIZE := Vector2(1040.0, 1600.0)
 @onready var _player_portrait: TextureRect = %PlayerPortrait
 @onready var _npc_portrait: TextureRect = %NPCPortrait
 @onready var _name_label: Label = %NameLabel
-@onready var _text_label: Label = %TextLabel
+@onready var _text_label: RichTextLabel = %TextLabel
 @onready var _choice_list: VBoxContainer = %ChoiceList
 @onready var _continue_hint: Label = %ContinueHint
+# Scene-authored sound settings are always read from DialogueVoice.
+# The second player receives per-letter pitch variation and NPC overrides;
+# the editor-authored DialogueVoice node is never overwritten by playback.
+@onready var _voice: AudioStreamPlayer = $DialogueVoice
+@onready var _voice_playback: AudioStreamPlayer = $VoicePlayback
 
 var _npc: NPCData = null
 var _portrait_npc: NPCData = null # Current visible speaker, not relationship owner.
@@ -51,6 +73,13 @@ var _land_layer: int = 10
 var _npc_land_offsets: Vector4
 var _npc_land_anchors: Vector4
 var _player_land_offsets: Vector4
+var _displayed_line: DialogueLineData
+var _typewriting: bool = false
+var _type_elapsed: float = 0.0
+var _type_total: int = 0
+var _spoken_text: String = ""
+var _current_voice_npc: NPCData
+var _current_line_player: bool = false
 
 # The exact same dialogue box, choice buttons, and conversation manager are
 # used on land and underwater. Only the art and portrait framing change.
@@ -153,6 +182,12 @@ func set_illustration_mode(enabled: bool) -> void:
 
 
 func _ready() -> void:
+	_find_default_voice()
+	# DialogueVoice holds Penni's real editor-authored pitch, volume and bus.
+	# VoicePlayback receives the actual per-letter sound so those properties
+	# never get overwritten, even while the game is running.
+	_text_label.bbcode_enabled = true
+	_text_label.install_effect(LETTER_POP_EFFECT.new())
 	_land_layer = layer
 	_player_land_offsets = Vector4(
 		_player_portrait.offset_left, _player_portrait.offset_top,
@@ -180,10 +215,22 @@ func _on_manager_conversation_finished(npc: NPCData) -> void:
 		_close()
 
 
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
 	# Close if the conversation was ended from somewhere else.
 	if visible and not DialogueManager.is_active:
 		_close()
+		return
+	if visible and _typewriting:
+		_type_elapsed += delta
+		var previous_count: int = maxi(_text_label.visible_characters, 0)
+		var next_count: int = mini(
+			int(_type_elapsed * maxf(characters_per_second, 1.0)), _type_total
+		)
+		_text_label.visible_characters = next_count
+		for index in range(previous_count, next_count):
+			_play_letter_sound(index)
+		if next_count >= _type_total:
+			_finish_typing()
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -211,6 +258,8 @@ func start(npc: NPCData) -> bool:
 
 	_npc = npc
 	_portrait_npc = npc
+	_displayed_line = null
+	_typewriting = false
 	_opened_frame = Engine.get_process_frames()
 	show()
 	# Keep the world running while dialogue captures gameplay input.
@@ -221,6 +270,12 @@ func start(npc: NPCData) -> bool:
 func _advance() -> void:
 	# Ignore the same key press that opened the dialogue.
 	if Engine.get_process_frames() == _opened_frame:
+		return
+
+	if _typewriting:
+		# A press during typing reveals the whole line; the next press
+		# advances DialogueManager, preserving one action per dialogue beat.
+		_finish_typing()
 		return
 
 	if DialogueManager.is_awaiting_choice():
@@ -251,8 +306,10 @@ func _refresh() -> void:
 	_clear_choices()
 
 	var awaiting_choice = DialogueManager.is_awaiting_choice()
+	if awaiting_choice:
+		_finish_typing()
 	_choice_list.visible = awaiting_choice
-	_continue_hint.visible = not awaiting_choice
+	_continue_hint.visible = not awaiting_choice and not _typewriting
 
 	if awaiting_choice:
 		_show_choices()
@@ -291,7 +348,81 @@ func _show_line(line: DialogueLineData) -> void:
 	_npc_portrait.modulate = (
 		LISTENING_MODULATE if is_player else SPEAKING_MODULATE
 	)
-	_text_label.text = line.text
+	if line != _displayed_line:
+		_displayed_line = line
+		_current_line_player = is_player
+		_current_voice_npc = null if is_player else _portrait_npc
+		_begin_typing(line.text)
+
+
+# Keep the complete line in a RichTextLabel, then reveal its shaped
+# characters without reflowing or replacing text every frame.
+func _begin_typing(value: String) -> void:
+	_spoken_text = value
+	_type_elapsed = 0.0
+	var safe_text: String = value.replace("[", "[lb]")
+	_text_label.text = ("[letterpop speed=%.2f duration=%.2f scale=%.2f jitter=%.2f]%s[/letterpop]" % [
+		characters_per_second, letter_bounce_seconds, letter_scale_boost,
+		letter_jitter_pixels, safe_text
+	]) if typewriter_enabled else value
+	_type_total = _text_label.get_total_character_count()
+	_typewriting = typewriter_enabled and _type_total > 0
+	_text_label.visible_characters = 0 if _typewriting else -1
+
+
+func _finish_typing() -> void:
+	_typewriting = false
+	_text_label.visible_characters = -1
+	_continue_hint.visible = not DialogueManager.is_awaiting_choice()
+
+
+# Letters and digits get voice cues; punctuation, spaces and newlines stay silent.
+func _play_letter_sound(index: int) -> void:
+	if index >= _spoken_text.length():
+		return
+	var letter: String = _spoken_text.substr(index, 1)
+	if letter.to_lower() == letter.to_upper() and not letter.is_valid_int():
+		return
+	var sound: AudioStream = default_voice_sound
+	# Read Penni's actual Pitch Scale from the scene's DialogueVoice node
+	# each time, so Inspector changes are effective without restarting.
+	var base_pitch: float = _voice.pitch_scale
+	var variance: float = penni_pitch_variation
+	if not _current_line_player and _current_voice_npc != null:
+		if _current_voice_npc.dialogue_voice_sound != null:
+			sound = _current_voice_npc.dialogue_voice_sound
+		base_pitch = _current_voice_npc.voice_pitch_scale
+		variance = _current_voice_npc.voice_pitch_variation
+	if sound == null:
+		return
+	# Copy, never mutate, the original DialogueVoice's loudness and bus.
+	# Only the dedicated playback node receives randomized or NPC pitch.
+	_voice_playback.volume_db = _voice.volume_db
+	_voice_playback.bus = _voice.bus
+	_voice_playback.max_polyphony = _voice.max_polyphony
+	if _voice_playback.stream != sound:
+		_voice_playback.stream = sound
+	_voice_playback.pitch_scale = maxf(0.1, base_pitch + randf_range(-variance, variance))
+	_voice_playback.play()
+
+
+# When a new local file named Penni Speak is available, use it for every
+# character automatically, with character-specific pitch in NPCData.
+func _find_default_voice() -> void:
+	if default_voice_sound != null:
+		return
+	for folder in ["res://sounds/sfx", "res://sounds"]:
+		for file_name in DirAccess.get_files_at(folder):
+			var lowercase: String = file_name.to_lower()
+			if not lowercase.contains("penni") or not (
+					lowercase.contains("speak") or lowercase.contains("voice")):
+				continue
+			if not (lowercase.ends_with(".wav") or lowercase.ends_with(".mp3")
+					or lowercase.ends_with(".ogg")):
+				continue
+			default_voice_sound = load(folder.path_join(file_name)) as AudioStream
+			if default_voice_sound != null:
+				return
 
 
 func _show_choices() -> void:
@@ -346,6 +477,11 @@ func _close() -> void:
 
 	hide()
 	_clear_choices()
+	_typewriting = false
+	_displayed_line = null
+	_spoken_text = ""
+	_current_voice_npc = null
+	_text_label.visible_characters = -1
 	# Gameplay input resumes automatically once the dialogue closes.
 
 	var npc := _npc

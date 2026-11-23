@@ -23,12 +23,17 @@ var _exhausted: bool = false
 var _paused: bool = false
 
 
+# This Inspector-edited capacity is the base tank, not the upgrade itself.
+func effective_capacity_seconds() -> float:
+	return maxf(capacity_seconds + FishingManager.oxygen_capacity_bonus_seconds, 0.01)
+
+
 func ratio() -> float:
-	return clampf(remaining_seconds / maxf(capacity_seconds, 0.01), 0.0, 1.0)
+	return clampf(remaining_seconds / effective_capacity_seconds(), 0.0, 1.0)
 
 
 func begin_dive(unlocked: bool) -> void:
-	remaining_seconds = capacity_seconds
+	remaining_seconds = effective_capacity_seconds()
 	_exhausted = false
 	_paused = false
 	enabled = unlocked
@@ -42,7 +47,7 @@ func activate() -> void:
 	enabled = true
 	_paused = false
 	_exhausted = false
-	remaining_seconds = capacity_seconds
+	remaining_seconds = effective_capacity_seconds()
 	oxygen_changed.emit(ratio(), true)
 
 
@@ -51,7 +56,9 @@ func activate() -> void:
 func drain_multiplier_at_depth(world_y: float) -> float:
 	var depth_fraction: float = clampf(
 		(world_y - waterline_y) / maxf(depth_ramp_pixels, 1.0), 0.0, 1.0)
-	return lerpf(1.0, maxf(1.0, deepest_drain_multiplier), depth_fraction)
+	var deep_extra_drain: float = maxf(0.0, deepest_drain_multiplier - 1.0)
+	deep_extra_drain *= 1.0 - FishingManager.depth_drain_reduction_fraction
+	return lerpf(1.0, 1.0 + deep_extra_drain, depth_fraction)
 
 
 func step(delta: float, world_y: float = 154.0) -> void:
@@ -73,5 +80,5 @@ func end_dive() -> void:
 	enabled = false
 	_paused = false
 	_exhausted = false
-	remaining_seconds = capacity_seconds
+	remaining_seconds = effective_capacity_seconds()
 	oxygen_changed.emit(1.0, false)

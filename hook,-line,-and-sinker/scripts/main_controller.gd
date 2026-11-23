@@ -11,6 +11,10 @@ extends Control
 @onready var _debug: SeaDebugPanel = $SeaDebugLayer
 @onready var _water_debug: WaterRenderDebug = $WaterDebugLayer
 @onready var _room_view: NPCRoomView = $NPCRoomView
+@onready var _music: UnderwaterMusicPlayer = $AudioStreamPlayer2D
+@onready var _ambience: SeaAmbienceController = $SeaAmbience
+@onready var _title: GameTitleScreen = $TitleScreen
+@onready var _penni_room_door: TransferDoor = $SubViewportContainer/SubViewport/World/AvailableHomeList/PenniRoomDoor
 var _opening: FishCoOpeningSequence
 
 # Read-only compatibility properties for existing in-engine playtests.
@@ -31,6 +35,44 @@ var _sea_bubble_source: String:
 	get: return _bubble_host.source
 
 
+func _enter_tree() -> void:
+	# The local Audio panel can have only Master after an editor/import
+	# refresh even though the committed bus layout has Music and Ambience.
+	# Install the authored layout before child audio nodes initialize.
+	if (AudioServer.get_bus_index(&"Music") >= 0
+		and AudioServer.get_bus_index(&"Ambience") >= 0
+		and AudioServer.get_bus_index(&"UnderwaterSFX") >= 0):
+		return
+	var layout: AudioBusLayout = load("res://default_bus_layout.tres") as AudioBusLayout
+	if layout != null:
+		AudioServer.set_bus_layout(layout)
+	# If Godot has cached an old one-bus layout, keep both audio paths
+	# functional until the editor layout is reloaded from disk.
+	if AudioServer.get_bus_index(&"Music") < 0:
+		AudioServer.add_bus()
+		var music_bus: int = AudioServer.get_bus_index(&"Music")
+		if music_bus < 0:
+			music_bus = AudioServer.get_bus_count() - 1
+			AudioServer.set_bus_name(music_bus, &"Music")
+		AudioServer.set_bus_send(music_bus, &"Master")
+		var lowpass: AudioEffectLowPassFilter = AudioEffectLowPassFilter.new()
+		lowpass.cutoff_hz = 20500.0
+		AudioServer.add_bus_effect(music_bus, lowpass)
+	if AudioServer.get_bus_index(&"Ambience") < 0:
+		AudioServer.add_bus()
+		var ambient_bus: int = AudioServer.get_bus_count() - 1
+		AudioServer.set_bus_name(ambient_bus, &"Ambience")
+		AudioServer.set_bus_send(ambient_bus, &"Master")
+	if AudioServer.get_bus_index(&"UnderwaterSFX") < 0:
+		AudioServer.add_bus()
+		var swim_bus: int = AudioServer.get_bus_count() - 1
+		AudioServer.set_bus_name(swim_bus, &"UnderwaterSFX")
+		AudioServer.set_bus_send(swim_bus, &"Master")
+		var swim_filter := AudioEffectLowPassFilter.new()
+		swim_filter.cutoff_hz = 1300.0
+		AudioServer.add_bus_effect(swim_bus, swim_filter)
+
+
 func _ready() -> void:
 	_opening = get_node_or_null("IntroLayer") as FishCoOpeningSequence
 	if _opening == null:
@@ -46,6 +88,11 @@ func _ready() -> void:
 		add_child(_opening)
 	_transition.configure(_world, _world_player, _sea,
 		$CanvasLayer/DialogueUI, $CanvasLayer/ShopMenu, _opening)
+	_transition.underwater_state_changed.connect(_music.set_underwater_filter)
+	_transition.waterline_crossed.connect(_ambience.set_underwater)
+	_transition.intro_dock_reached.connect(_on_island_reached)
+	_opening.debug_island_arrived.connect(_on_island_reached)
+	_title.play_requested.connect(_opening.begin_from_title)
 	_opening.configure(_world, _world_player, $CanvasLayer/ShopMenu, _transition)
 	($IslandStoryDirector as IslandStoryDirector).configure(_world_player, _transition, _opening)
 	_opening.dive_confirmed.connect(_transition.start_confirmed_dive)
@@ -56,6 +103,10 @@ func _ready() -> void:
 		var door: TransferDoor = node as TransferDoor
 		if door != null:
 			door.room_requested.connect(_on_townhouse_room_requested)
+	# Fish Co only opens housing AFTER the first completed dive, not after
+	# the preparatory phone call. The first return is already signaled here.
+	_penni_room_door.set_room_access_enabled(false)
+	_transition.surface_completed.connect(_on_first_dive_surface_completed)
 	# Main only connects existing story, terminal UI, and world notice signals.
 	# No tutorial flags or shop logic belong in the world transition.
 	var terminal_menu: ShopMenu = $CanvasLayer/ShopMenu
@@ -76,18 +127,36 @@ func _ready() -> void:
 	_opening.start.call_deferred()
 
 
+# Music begins only once Penni reaches the island, never on the title/boat.
+func _on_island_reached() -> void:
+	# Debug F3 can skip straight from the title; never leave that menu
+	# visible over the island when the opening is bypassed.
+	if _title.visible:
+		_title.hide()
+	if not _music.playing:
+		_music.play()
+
+
+func _on_first_dive_surface_completed() -> void:
+	_penni_room_door.set_room_access_enabled(true)
+	_transition.surface_completed.disconnect(_on_first_dive_surface_completed)
+
+
 func _on_townhouse_room_requested(door: TransferDoor) -> void:
 	if _transition.transitioning or DateManager.is_active():
+		return
+	if door.get_room_id() == &"penni_room" and door.locked:
+		return
+	if door.get_room_id() == &"penni_room":
+		# Penni stays in the world: no room overlay or camera transition.
+		_room_view.start_player_rest_at_door()
 		return
 	var resident: NPCData = RecruitmentHandler.get_resident(door.get_room_id())
 	if resident == null:
 		return
-	# Recruited NPCs live in their rooms, not as outdoor NPCInteractables.
-	# Their door is therefore the primary way to meet them for a booked date.
-	var due_date: DateData = DateManager.get_ready_booking_for_npc(resident.npc_id)
-	if due_date != null:
-		DateManager.start_date(due_date)
-		return
+	# The room always opens first; NPCRoomView owns the short Yes/Not yet
+	# invitation when this resident has a booking in the current period.
+	# DateManager starts the outing only AFTER the room iris closes.
 	_room_view.open_room(resident)
 
 

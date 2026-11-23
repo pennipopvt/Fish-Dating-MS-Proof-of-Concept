@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="IslandStoryEventData" format=3]
+
+[ext_resource type="Script" path="res://resources/story_events/island_story_event_data.gd" id="1_event"]
+[ext_resource type="Resource" path="res://resources/npcs/kuda.tres" id="2_npc"]
+
+[resource]
+script = ExtResource("1_event")
+event_id = &"kuda_morning_invitation"
+speaker = ExtResource("2_npc")
+dialogue_json = "res://dialogue/kuda_invitation.json"
+speaker_must_be_resident = true
+required_flags = Array[StringName]([&"Recruited", &"barracuda_scarf_complete"])
+forbidden_flags = Array[StringName]([&"barracuda_invitation_accepted", &"barracuda_route_complete"])
+min_days_after_gift = 1
+respect_overnight_boundaries = true
+morning_only = true
+stage_land_actor = true
+retry_after_days = 3

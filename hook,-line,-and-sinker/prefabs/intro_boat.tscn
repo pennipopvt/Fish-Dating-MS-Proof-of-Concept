@@ -1,6 +1,7 @@
 [gd_scene format=3 uid="uid://bse8bg1ojq0vr"]
 
 [ext_resource type="Script" uid="uid://3ef3eejeyb0e" path="res://scripts/intro/intro_boat_sprite.gd" id="boat_script"]
+[ext_resource type="Script" path="res://scripts/intro/intro_boat_rock.gd" id="boat_rock_script"]
 [ext_resource type="Texture2D" uid="uid://dmyisdjohnnfg" path="res://sprites/environment/boat.png" id="boat_texture"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_rrvsc"]
@@ -45,20 +46,24 @@ animations = [{
 }]
 
 [node name="IntroBoat" type="Node2D" unique_id=1549051682]
-position = Vector2(2250, 124)
+position = Vector2(2250, 132)
+script = ExtResource("boat_rock_script")
 
 [node name="Sprite" type="AnimatedSprite2D" parent="." unique_id=1070137628]
-z_index = 11
+z_index = 5
 texture_filter = 1
 position = Vector2(1, -47)
 sprite_frames = SubResource("SpriteFrames_n1q85")
 animation = &"sail"
-frame_progress = 0.12398763
+frame_progress = 0.75304633
 script = ExtResource("boat_script")
 sprite_sheet = ExtResource("boat_texture")
 
 [node name="PlayerSpot" type="Marker2D" parent="." unique_id=1091404346]
 position = Vector2(22, -15)
+
+[node name="NpcSpot" type="Marker2D" parent="." unique_id=6374087]
+position = Vector2(-20, -15)
 
 [node name="CameraFocus" type="Marker2D" parent="." unique_id=1611632989]
 position = Vector2(0, -13)

@@ -4,6 +4,14 @@ extends Resource
 @export var npc_id: StringName
 @export var display_name: String = ""
 
+@export_group("Dialogue Voice")
+## Defaults to DialogueUI's Penni voice clip when left empty.
+@export var dialogue_voice_sound: AudioStream
+## A multiplier on the speaker's default pitch.
+@export_range(0.5, 2.0, 0.01) var voice_pitch_scale: float = 1.0
+## Random +/- pitch on each spoken letter, 0.0 means a fixed pitch.
+@export_range(0.0, 0.5, 0.01) var voice_pitch_variation: float = 0.08
+
 @export_group("Appearance")
 @export var portrait: Texture2D
 ## Used for temporary land appearances (dates, arrivals and dock scenes).
