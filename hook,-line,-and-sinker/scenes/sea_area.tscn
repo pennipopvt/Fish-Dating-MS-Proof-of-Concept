@@ -406,7 +406,6 @@ script = ExtResource("net")
 [node name="NetSprite" type="Sprite2D" parent="NetProjectile" unique_id=821458468]
 texture_filter = 1
 texture = ExtResource("net_sheet")
-flip_h = true
 hframes = 4
 
 [node name="AnimationPlayer" type="AnimationPlayer" parent="NetProjectile" unique_id=969373777]

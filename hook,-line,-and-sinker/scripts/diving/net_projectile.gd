@@ -15,7 +15,7 @@ enum State { IDLE, OUTBOUND, RETURNING, LATCHED }
 @export_range(3.0, 20.0, 1.0) var hit_radius: float = 11.0
 
 @export_group("Net Sprite Line Attachment")
-# Tweak the one-pixel cord endpoint relative to the far rim of net.png.
+# Tweak the one-pixel cord endpoint relative to the handle-side rim.
 @export_range(-16.0, 16.0, 1.0, "suffix:px") var cord_attachment_inset: float = 0.0
 
 # The visuals live in Sea/NetProjectile: the Sprite2D divides the authored
@@ -103,7 +103,7 @@ func cast_net(origin: Node2D, aim_position: Vector2, fish_in_water: Array[Diving
 		_net_animation.stop()
 	if _net_sprite != null:
 		_net_sprite.frame = 0
-		_net_sprite.flip_h = direction.x > 0.0
+		_net_sprite.flip_h = direction.x < 0.0
 		_net_sprite.position = tip.round()
 	visible = true
 	set_process(true)
@@ -207,15 +207,15 @@ func _get_anchor() -> Vector2:
 	return _origin.position + Vector2(0.0, -7.0) if is_instance_valid(_origin) else _start
 
 
-# The frame is centered on the collision tip. Connect at the far-right
-# edge when facing right, or the mirrored far-left edge when facing left.
-# The sprite rect and transform respect Inspector-edited scale/offset.
+# The sprite's net opening points toward the cast. The rope attaches
+# at the opposite HANDLE edge nearest Penni, never the leading rim.
+# Use the Sprite2D frame rect/transform so scaling and offset remain editable.
 func _cord_endpoint() -> Vector2:
 	if _net_sprite == null or _net_sprite.texture == null:
 		return tip.round()
 	var bounds: Rect2 = _net_sprite.get_rect()
-	var edge_x: float = bounds.position.x + cord_attachment_inset if direction.x < 0.0 \
-		else bounds.end.x - cord_attachment_inset
+	var edge_x: float = bounds.end.x - cord_attachment_inset if direction.x < 0.0 \
+		else bounds.position.x + cord_attachment_inset
 	return (_net_sprite.transform * Vector2(edge_x, bounds.get_center().y)).round()
 
 

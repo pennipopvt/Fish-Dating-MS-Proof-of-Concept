@@ -116,7 +116,7 @@ anchor_left = 0.18
 anchor_top = 1.0
 anchor_right = 0.82
 anchor_bottom = 1.0
-offset_top = -300.0
+offset_top = -390.0
 offset_bottom = -40.0
 grow_horizontal = 2
 grow_vertical = 0
@@ -125,9 +125,9 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_box")
 
 [node name="Margin" type="MarginContainer" parent="Box" unique_id=848527417]
 layout_mode = 2
-theme_override_constants/margin_left = 200
+theme_override_constants/margin_left = 68
 theme_override_constants/margin_top = 24
-theme_override_constants/margin_right = 200
+theme_override_constants/margin_right = 68
 theme_override_constants/margin_bottom = 20
 
 [node name="Content" type="VBoxContainer" parent="Box/Margin" unique_id=1332541444]
@@ -144,7 +144,8 @@ unique_name_in_owner = true
 layout_mode = 2
 size_flags_vertical = 3
 bbcode_enabled = true
-scroll_active = false
+scroll_active = true
+scroll_following = true
 autowrap_mode = 3
 
 [node name="ContinueHint" type="Label" parent="Box/Margin/Content" unique_id=1620925180]
