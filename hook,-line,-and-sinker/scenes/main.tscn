@@ -7,6 +7,7 @@
 [ext_resource type="PackedScene" uid="uid://dgsl8ux5hh1tt" path="res://prefabs/dialogue_ui.tscn" id="8_trceg"]
 [ext_resource type="PackedScene" uid="uid://bt2iu4iois2sb" path="res://prefabs/illustration_scene.tscn" id="10_illustration"]
 [ext_resource type="Script" uid="uid://cpd0iodpkxy8s" path="res://resources/story_events/island_story_event_data.gd" id="13_yq6so"]
+[ext_resource type="AudioStream" uid="uid://2pva56bfy4v1" path="res://sounds/sfx/753223__pblzr__ambience-exterior-night-mindelo-beach-waves-medium-ms-4824.ogg" id="25_yq6so"]
 [ext_resource type="Script" uid="uid://sw20trtxk6am" path="res://scripts/diving/sea_speech_bubble_host.gd" id="bubble_host"]
 [ext_resource type="Script" uid="uid://bo3sftqvuyeyx" path="res://scripts/main_controller.gd" id="dive_entry"]
 [ext_resource type="Script" uid="uid://ckavoo6kn226c" path="res://scripts/diving/diving_party.gd" id="diving_party"]
@@ -17,7 +18,6 @@
 [ext_resource type="Script" uid="uid://cookak47fv2es" path="res://scripts/story/island_story_director.gd" id="island_story_director"]
 [ext_resource type="Resource" path="res://resources/story_events/kuda_morning_invitation.tres" id="kuda_morning_event"]
 [ext_resource type="PackedScene" path="res://scenes/npc_room_view.tscn" id="npc_room_view"]
-[ext_resource type="AudioStream" uid="uid://cioy7grycysmh" path="res://sounds/sfx/207553__bone666138__ocean-ambience-costal-with-foghorn.wav" id="ocean_ambience"]
 [ext_resource type="Script" uid="uid://51ktq42upmq2" path="res://scripts/diving/fish_co_opening_sequence.gd" id="opening_script"]
 [ext_resource type="Script" uid="uid://dtqeioibs884x" path="res://scripts/diving/sea_party_entrance.gd" id="party_entrance"]
 [ext_resource type="Script" uid="uid://bd80cwnjgjjco" path="res://scripts/audio/sea_ambience_controller.gd" id="sea_ambience"]
@@ -134,7 +134,7 @@ script = ExtResource("underwater_music_player")
 script = ExtResource("sea_ambience")
 
 [node name="Ocean" type="AudioStreamPlayer" parent="SeaAmbience" unique_id=787458748]
-stream = ExtResource("ocean_ambience")
+stream = ExtResource("25_yq6so")
 volume_db = -2.0
 autoplay = true
 bus = &"Ambience"
