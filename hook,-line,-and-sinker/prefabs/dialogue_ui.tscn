@@ -5,6 +5,7 @@
 [ext_resource type="Texture2D" uid="uid://ca1xd1qpk4ajr" path="res://sprites/placeholders/portrait_player.svg" id="3_player"]
 [ext_resource type="Texture2D" uid="uid://vu47883rgrp5" path="res://sprites/characters/penni/penni_portrait.png" id="4_ln1m7"]
 [ext_resource type="Texture2D" uid="uid://j2t1f35vluti" path="res://sprites/characters/kuda_portrait.png" id="5_ln1m7"]
+[ext_resource type="AudioStream" path="res://sounds/sfx/penni-speak.wav" id="penni_speak"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_choice_focus"]
 draw_center = false
@@ -75,6 +76,7 @@ layer = 10
 script = ExtResource("1_dlg")
 placeholder_portrait = ExtResource("2_portrait")
 player_portrait = ExtResource("3_player")
+default_voice_sound = ExtResource("penni_speak")
 
 [node name="PlayerPortrait" type="TextureRect" parent="." unique_id=1677767363]
 unique_name_in_owner = true
