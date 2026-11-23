@@ -8,6 +8,7 @@
 [ext_resource type="PackedScene" path="res://prefabs/sea_backdrop.tscn" id="backdrop"]
 [ext_resource type="PackedScene" path="res://prefabs/sea_shadow_fish.tscn" id="shadow_fish"]
 [ext_resource type="PackedScene" path="res://prefabs/sea_bubbles.tscn" id="bubbles"]
+[ext_resource type="PackedScene" path="res://prefabs/sea_reef_background.tscn" id="reef_background"]
 [ext_resource type="Script" uid="uid://cuo1eyo7ijqpj" path="res://scripts/diving/companion_battle.gd" id="battle"]
 [ext_resource type="Script" uid="uid://cctrjxxlon5uu" path="res://scripts/diving/diving_combat.gd" id="combat"]
 [ext_resource type="Script" uid="uid://0oeedp8oe8vl" path="res://scripts/diving/sea_encounter_sequence.gd" id="encounter"]
@@ -808,3 +809,5 @@ collision_enabled = false
 [node name="Backdrop" parent="." instance=ExtResource("backdrop")]
 
 [node name="Bubbles" parent="." instance=ExtResource("bubbles")]
+
+[node name="ReefBackground" parent="." instance=ExtResource("reef_background")]

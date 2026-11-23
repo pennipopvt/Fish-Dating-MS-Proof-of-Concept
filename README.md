@@ -185,6 +185,15 @@ Debug builds only (not in exports):
   and a burst when she goes under the surface (7–10 bubbles). Big bubbles pop at the surface, and
   some pop early mid-water; small and mid ones fade out at the surface. Rates, sizes,
   speeds and opacity are Inspector exports.
+  **Reef background:** `prefabs/sea_reef_background.tscn` (node `ReefBackground` in
+  `scenes/sea_area.tscn`) is a `Parallax2D` with Jerry's 640x100 reef strip
+  (`sprites/environment/oceanJerry/OceanBackground/background.png`). It repeats
+  sideways and scrolls at half the camera speed (`scroll_scale` (0.5, 1)), so it
+  reads as farther away. It's pinned to the sea floor (the strip's sand at y 672) and
+  has a sand fill below it (`SandBelow`), so pockets where the floor dips lower don't
+  show water under it. It sits at z_index -3, in front of the shadow fish and behind
+  the terrain. To move it up or down, change the `Reef` and `SandBelow` y; to make it
+  sit further back, lower `scroll_scale.x` or tint it with `modulate`.
 - **Fishing rod (visual only):** `prefabs/fishing_rod.tscn` on the player. When you
   start fishing, the player faces the water and pulls out the rod. Every cast swings
   the rod back and flicks it forward, and the equipped bait's icon flies out on the
