@@ -33,6 +33,9 @@ func _run() -> void:
 	var sky_layer: CanvasLayer = world.get_node("SkyLayer") as CanvasLayer
 	var sky: Control = sky_layer.get_node("Sky") as Control
 	var opening: FishCoOpeningSequence = main.get_node("IntroLayer") as FishCoOpeningSequence
+	var title: GameTitleScreen = main.get_node("TitleScreen") as GameTitleScreen
+	var music: UnderwaterMusicPlayer = main.get_node("AudioStreamPlayer2D") as UnderwaterMusicPlayer
+	var ambience: SeaAmbienceController = main.get_node("SeaAmbience") as SeaAmbienceController
 	var story: IslandStoryDirector = main.get_node("IslandStoryDirector") as IslandStoryDirector
 	var focus: Marker2D = boat.get_node("CameraFocus") as Marker2D
 
@@ -53,15 +56,29 @@ func _run() -> void:
 		"Sky only exposes pixels above the real waterline")
 	_check(player.global_position.distance_to(
 		(boat.get_node("PlayerSpot") as Marker2D).global_position) < 1.0
-		and camera.get_screen_center_position().distance_to(focus.global_position) < 4.0,
-		"The opening starts at the editable real boat/camera markers")
-	_check(not (opening.get_node("FishCoIntro") as FishCoIntro).visible
-		and DialogueManager.is_active and player.busy,
-		"Original Fish Co phone dialogue runs without an illustrated overlay")
+		and camera.get_screen_center_position().distance_to(
+			focus.global_position + opening.title_camera_offset) < 5.0,
+		"The title starts on the actual boat with an editable establishing shot")
+	_check(title.visible and not DialogueManager.is_active and player.busy
+		and not music.playing,
+		"Title locks gameplay, shows the live boat, and plays no music")
+	_check((ambience.get_node("Ocean") as AudioStreamPlayer).playing
+		and (ambience.get_node("Underwater") as AudioStreamPlayer).playing,
+		"Both ambience tracks continuously play on their shared ambience bus")
+	var rock: IntroBoatRock = boat as IntroBoatRock
+	_check(rock != null and rock.rocking_period_seconds > 0.0,
+		"Boat rocking is authored on the reusable boat root")
+	opening.title_pan_seconds = 0.05
+	title.call("_on_play")
+	await get_tree().create_timer(0.12).timeout
+	_check(not title.visible and DialogueManager.is_active and player.busy
+		and not (opening.get_node("FishCoIntro") as FishCoIntro).visible,
+		"Play pans to the boat before starting the original Fish Co dialogue")
 	_check(boat.global_position.x > (world.get_node("Beach") as Node2D).global_position.x
 		and water.get_global_rect().has_point(Vector2(boat.global_position.x,
 			water.global_position.y + 10.0)),
 		"Boat sits right of the playable beach inside the existing Water")
+	_check(not music.playing, "Music remains silent until the arrival on the island")
 	_check(boat_art.sprite_sheet == load("res://sprites/environment/boat.png")
 		and boat_art.sprite_frames != null
 		and boat_art.sprite_frames.has_animation(&"sail")
@@ -73,8 +90,8 @@ func _run() -> void:
 	_check(world.get_node_or_null("IntroBoat") == null,
 		"Intro boat frees after it is no longer used, including when skipping the opening")
 	_check(not player.busy and player.z_index == 0
-		and controller.get("_following"),
-		"Returning to island restores player draw order and camera follow")
+		and controller.get("_following") and music.playing,
+		"Returning to island restores camera follow and starts background music")
 	var old_x: float = controller.global_position.x
 	player.global_position.x += 90.0
 	await get_tree().create_timer(0.15).timeout

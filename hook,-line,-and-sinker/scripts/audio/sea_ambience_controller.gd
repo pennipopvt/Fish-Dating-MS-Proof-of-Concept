@@ -18,7 +18,7 @@ func _ready() -> void:
 	for player in [_ocean, _underwater]:
 		if player.stream is AudioStreamWAV:
 			# Duplicate the imported stream rather than modifying shared source.
-			var looping: AudioStreamWAV = (player.stream as AudioStreamWAV).duplicate()
+			var looping: AudioStreamWAV = (player.stream as AudioStreamWAV).duplicate() as AudioStreamWAV
 			looping.loop_mode = AudioStreamWAV.LOOP_FORWARD
 			player.stream = looping
 		player.play()
