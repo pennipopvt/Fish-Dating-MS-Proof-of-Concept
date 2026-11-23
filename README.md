@@ -161,6 +161,13 @@ Debug builds only (not in exports):
   swim loop, hook, windup, attack, counter, reel, catch, lose, Silas battle hit). The
   fight slots reuse `sounds/sfx/`; dive, surface and swim are empty (silent) until
   someone adds sounds.
+  **Background fish shadows:** `prefabs/sea_shadow_fish.tscn` (node `ShadowFish` in
+  `scenes/sea_area.tscn`) draws small grey silhouettes of the real fish sprites
+  drifting far behind the play layer, alone or in small schools. Purely visual (no
+  collision, can't be caught). Farther shadows are smaller, fainter, slower and follow
+  the camera more (parallax); they wrap around the view, fade near the surface and
+  sea floor, and sit at z_index -3, behind the Background Terrain (-2). Count, size,
+  opacity, speed, parallax and color are Inspector exports.
 - **Fishing rod (visual only):** `prefabs/fishing_rod.tscn` on the player. When you
   start fishing, the player faces the water and pulls out the rod. Every cast swings
   the rod back and flicks it forward, and the equipped bait's icon flies out on the
