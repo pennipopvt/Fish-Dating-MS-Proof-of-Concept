@@ -6,28 +6,29 @@
 [ext_resource type="PackedScene" uid="uid://dua3yfus0j5uq" path="res://prefabs/shop_menu.tscn" id="5_choun"]
 [ext_resource type="PackedScene" uid="uid://dgsl8ux5hh1tt" path="res://prefabs/dialogue_ui.tscn" id="8_trceg"]
 [ext_resource type="PackedScene" uid="uid://bt2iu4iois2sb" path="res://prefabs/illustration_scene.tscn" id="10_illustration"]
+[ext_resource type="Script" uid="uid://cpd0iodpkxy8s" path="res://resources/story_events/island_story_event_data.gd" id="13_yq6so"]
 [ext_resource type="Script" uid="uid://sw20trtxk6am" path="res://scripts/diving/sea_speech_bubble_host.gd" id="bubble_host"]
 [ext_resource type="Script" uid="uid://bo3sftqvuyeyx" path="res://scripts/main_controller.gd" id="dive_entry"]
 [ext_resource type="Script" uid="uid://ckavoo6kn226c" path="res://scripts/diving/diving_party.gd" id="diving_party"]
-[ext_resource type="PackedScene" path="res://scenes/fish_co_intro.tscn" id="fish_co_intro"]
-[ext_resource type="Shader" uid="uid://b0nd45xrk2mwd" path="res://shaders/iris_transition.gdshader" id="iris_shader"]
-[ext_resource type="PackedScene" path="res://scenes/npc_room_view.tscn" id="npc_room_view"]
-[ext_resource type="Script" uid="uid://51ktq42upmq2" path="res://scripts/diving/fish_co_opening_sequence.gd" id="opening_script"]
-[ext_resource type="Script" path="res://scripts/story/island_story_director.gd" id="island_story_director"]
 [ext_resource type="Resource" path="res://resources/story_events/fish_co_gifts.tres" id="fish_co_gifts_event"]
+[ext_resource type="PackedScene" uid="uid://d1x4yl86i5h5j" path="res://scenes/fish_co_intro.tscn" id="fish_co_intro"]
 [ext_resource type="Resource" path="res://resources/story_events/fish_co_morale.tres" id="fish_co_morale_event"]
-[ext_resource type="Resource" path="res://resources/story_events/silas_morning_invitation.tres" id="silas_morning_event"]
+[ext_resource type="Shader" uid="uid://b0nd45xrk2mwd" path="res://shaders/iris_transition.gdshader" id="iris_shader"]
+[ext_resource type="Script" uid="uid://cookak47fv2es" path="res://scripts/story/island_story_director.gd" id="island_story_director"]
 [ext_resource type="Resource" path="res://resources/story_events/kuda_morning_invitation.tres" id="kuda_morning_event"]
+[ext_resource type="PackedScene" path="res://scenes/npc_room_view.tscn" id="npc_room_view"]
+[ext_resource type="AudioStream" uid="uid://cioy7grycysmh" path="res://sounds/sfx/207553__bone666138__ocean-ambience-costal-with-foghorn.wav" id="ocean_ambience"]
+[ext_resource type="Script" uid="uid://51ktq42upmq2" path="res://scripts/diving/fish_co_opening_sequence.gd" id="opening_script"]
 [ext_resource type="Script" uid="uid://dtqeioibs884x" path="res://scripts/diving/sea_party_entrance.gd" id="party_entrance"]
+[ext_resource type="Script" uid="uid://bd80cwnjgjjco" path="res://scripts/audio/sea_ambience_controller.gd" id="sea_ambience"]
 [ext_resource type="Script" uid="uid://byypo0swdykcg" path="res://scripts/diving/sea_debug_panel.gd" id="sea_debug_panel"]
 [ext_resource type="PackedScene" path="res://scenes/sea_speech_bubble.tscn" id="sea_speech_bubble"]
-[ext_resource type="Script" uid="uid://bhtfkxi24nqdu" path="res://scripts/diving/sea_dive_transition.gd" id="transition_script"]
-[ext_resource type="Script" path="res://scripts/audio/underwater_music_player.gd" id="underwater_music_player"]
-[ext_resource type="PackedScene" path="res://scenes/water_render_debug.tscn" id="water_debug"]
+[ext_resource type="Resource" path="res://resources/story_events/silas_morning_invitation.tres" id="silas_morning_event"]
 [ext_resource type="PackedScene" path="res://scenes/title_screen.tscn" id="title_screen"]
-[ext_resource type="Script" path="res://scripts/audio/sea_ambience_controller.gd" id="sea_ambience"]
-[ext_resource type="AudioStream" path="res://sounds/sfx/207553__bone666138__ocean-ambience-costal-with-foghorn.wav" id="ocean_ambience"]
-[ext_resource type="AudioStream" path="res://sounds/sfx/504641__fission9__underwater-ambience.wav" id="underwater_ambience"]
+[ext_resource type="Script" uid="uid://bhtfkxi24nqdu" path="res://scripts/diving/sea_dive_transition.gd" id="transition_script"]
+[ext_resource type="AudioStream" uid="uid://dhq2gj5gtdqig" path="res://sounds/sfx/504641__fission9__underwater-ambience.wav" id="underwater_ambience"]
+[ext_resource type="Script" uid="uid://c2mqig4lbslwt" path="res://scripts/audio/underwater_music_player.gd" id="underwater_music_player"]
+[ext_resource type="PackedScene" path="res://scenes/water_render_debug.tscn" id="water_debug"]
 
 [sub_resource type="ShaderMaterial" id="IrisMaterial"]
 shader = ExtResource("iris_shader")
@@ -84,7 +85,7 @@ visible = false
 visible = false
 player_portrait = ExtResource("4_tbgi4")
 room_portrait_position = Vector2(0, 0)
-room_portrait_scale = 1.4000000000000001
+room_portrait_scale = 1.4
 
 [node name="IllustrationScene" parent="." unique_id=1979018197 instance=ExtResource("10_illustration")]
 
@@ -97,11 +98,11 @@ script = ExtResource("opening_script")
 
 [node name="FishCoIntro" parent="IntroLayer" unique_id=1423428245 instance=ExtResource("fish_co_intro")]
 
-[node name="TitleScreen" parent="." instance=ExtResource("title_screen")]
+[node name="TitleScreen" parent="." unique_id=1625145557 instance=ExtResource("title_screen")]
 
-[node name="IslandStoryDirector" type="Node" parent="."]
+[node name="IslandStoryDirector" type="Node" parent="." unique_id=1624309309]
 script = ExtResource("island_story_director")
-events = Array[Resource]([ExtResource("fish_co_gifts_event"), ExtResource("fish_co_morale_event"), ExtResource("silas_morning_event"), ExtResource("kuda_morning_event")])
+events = Array[ExtResource("13_yq6so")]([ExtResource("fish_co_gifts_event"), ExtResource("fish_co_morale_event"), ExtResource("silas_morning_event"), ExtResource("kuda_morning_event")])
 
 [node name="TransitionLayer" type="CanvasLayer" parent="." unique_id=603682694]
 layer = 100
@@ -126,24 +127,20 @@ mouse_filter = 2
 [node name="AudioStreamPlayer2D" type="AudioStreamPlayer2D" parent="." unique_id=1332507421]
 stream = ExtResource("4_jyhfs")
 volume_db = 6.0
-autoplay = false
-bus = &"Music"
 script = ExtResource("underwater_music_player")
 
-[node name="SeaAmbience" type="Node" parent="."]
+[node name="SeaAmbience" type="Node" parent="." unique_id=855282289]
 script = ExtResource("sea_ambience")
 
-[node name="Ocean" type="AudioStreamPlayer" parent="SeaAmbience"]
+[node name="Ocean" type="AudioStreamPlayer" parent="SeaAmbience" unique_id=787458748]
 stream = ExtResource("ocean_ambience")
 volume_db = -2.0
 autoplay = true
-bus = &"Ambience"
 
-[node name="Underwater" type="AudioStreamPlayer" parent="SeaAmbience"]
+[node name="Underwater" type="AudioStreamPlayer" parent="SeaAmbience" unique_id=831741247]
 stream = ExtResource("underwater_ambience")
 volume_db = -80.0
 autoplay = true
-bus = &"Ambience"
 
 [node name="SeaSpeechBubbleHost" type="Node" parent="." unique_id=1976587968]
 script = ExtResource("bubble_host")
