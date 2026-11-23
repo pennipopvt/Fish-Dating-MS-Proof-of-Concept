@@ -148,6 +148,11 @@ Debug builds only (not in exports):
   stairs, along the sand and slope), and she can't walk past the drawn ends: the pier
   tip on the left, and on the right where the sand meets the water. If the ground art
   changes, both follow automatically. Off the ground (the ship date) nothing is clamped.
+  **Camera on the beach:** `scripts/land_camera.gd` (on `Player/Camera2D`) follows Penni
+  exactly, except on the beach: past the bottom of the stairs (`beach_start_x` 682 to
+  `beach_end_x` 976, Inspector exports) it holds the height she had when she stepped
+  onto the sand, and only Penni moves up and down. It only writes the camera's `offset`,
+  and is off while swimming or in scripted scenes.
 - **Diving extras:** the dive splashes and sinks straight down from where Penni stands
   on the dock. A hooked fish stays on the line length around Penni but can't go above
   the waterline or into rock/ground (left and right are open); when it's pinned in a
@@ -156,6 +161,30 @@ Debug builds only (not in exports):
   swim loop, hook, windup, attack, counter, reel, catch, lose, Silas battle hit). The
   fight slots reuse `sounds/sfx/`; dive, surface and swim are empty (silent) until
   someone adds sounds.
+  **Background fish shadows:** `prefabs/sea_shadow_fish.tscn` (node `ShadowFish` in
+  `scenes/sea_area.tscn`) draws small grey silhouettes of the real fish sprites
+  drifting far behind the play layer, alone or in small schools. Purely visual (no
+  collision, can't be caught). Farther shadows are smaller, fainter, slower and follow
+  the camera more (parallax); they wrap around the view, fade near the surface and
+  sea floor, and sit at z_index -3, behind the Background Terrain (-2). Count, size,
+  opacity, speed, parallax and color are Inspector exports. `tilt_by_fish` rotates a
+  fish's shadow (the goby's sprite is drawn tilted, so it gets 45° clockwise).
+  **Underwater backdrop:** `prefabs/sea_backdrop.tscn` (node `Backdrop` in
+  `scenes/sea_area.tscn`) is a gradient that follows the camera: lighter at the top of
+  the screen, darker at the bottom, the same at every depth. It never draws above the
+  sea surface, and it replaces the plain grey that used to show behind deep water. It
+  sits at z_index -4, behind the shadow fish. `top_color`, `bottom_color`, `curve` and
+  `bands` (flat color steps) are Inspector exports. The default top color matches the
+  original underwater color once the water and underwater tints draw over it.
+  **Bubbles:** `prefabs/sea_bubbles.tscn` (node `Bubbles` in `scenes/sea_area.tscn`,
+  z_index 5) with Jerry's art in `sprites/environment/oceanJerry/` (small 2px, mid
+  4px, big 5px with a 3-frame pop). Visual only. Sources, all around the camera view:
+  short streams from the sea floor and rocks (a downward ray against terrain
+  collision, so background walls never vent), loose bubbles drifting up across the
+  view, breath clusters from Penni's head while she swims (more often while moving),
+  and a burst when she goes under the surface (7–10 bubbles). Big bubbles pop at the surface, and
+  some pop early mid-water; small and mid ones fade out at the surface. Rates, sizes,
+  speeds and opacity are Inspector exports.
 - **Fishing rod (visual only):** `prefabs/fishing_rod.tscn` on the player. When you
   start fishing, the player faces the water and pulls out the rod. Every cast swings
   the rod back and flicks it forward, and the equipped bait's icon flies out on the

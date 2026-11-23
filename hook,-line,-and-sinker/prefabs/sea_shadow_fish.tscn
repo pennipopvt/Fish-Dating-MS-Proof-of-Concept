@@ -1,0 +1,14 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/diving/sea_shadow_fish.gd" id="1_shadow"]
+[ext_resource type="Resource" uid="uid://bad7evmwitdpl" path="res://resources/fish/mullet.tres" id="2_mullet"]
+[ext_resource type="Resource" uid="uid://cu4aljcpk40a0" path="res://resources/fish/porgy.tres" id="3_porgy"]
+[ext_resource type="Resource" uid="uid://bb7avevjoob3x" path="res://resources/fish/goby.tres" id="4_goby"]
+[ext_resource type="Resource" uid="uid://c07358p6v641e" path="res://resources/fish/flounder.tres" id="5_flounder"]
+[ext_resource type="Resource" uid="uid://dxqe8b75m583" path="res://resources/fish/needlefish.tres" id="6_needle"]
+[ext_resource type="Resource" uid="uid://c2argebsm6uyk" path="res://resources/fish/tuna.tres" id="7_tuna"]
+
+[node name="SeaShadowFish" type="Node2D"]
+z_index = -3
+script = ExtResource("1_shadow")
+species = Array[Resource]([ExtResource("2_mullet"), ExtResource("3_porgy"), ExtResource("4_goby"), ExtResource("5_flounder"), ExtResource("6_needle"), ExtResource("7_tuna")])
