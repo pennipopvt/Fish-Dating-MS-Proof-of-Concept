@@ -8,12 +8,13 @@
 [sub_resource type="Resource" id="PreviewCost"]
 script = ExtResource("requirement_script")
 item = ExtResource("preview_mullet")
+amount = 2
 
 [resource]
 script = ExtResource("trade_script")
 trade_id = &"larger_tank"
 display_name = "Larger Tank"
-description = "Adds 30 seconds of oxygen per dive. Preview price; 1 day delivery."
+description = "Adds 30 seconds of oxygen per dive. 1 day delivery."
 one_time_purchase = true
 icon = ExtResource("preview_icon")
 delivery_time = 1

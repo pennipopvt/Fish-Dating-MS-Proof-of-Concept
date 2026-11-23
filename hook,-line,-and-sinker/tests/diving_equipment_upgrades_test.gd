@@ -15,12 +15,19 @@ func _ready() -> void:
 	await get_tree().process_frame
 	FishingManager.reset_session_upgrades()
 
+	var prices: Dictionary = {
+		&"larger_tank": {&"mullet": 2},
+		&"extended_net": {&"mullet": 1, &"porgy": 1},
+		&"pressure_regulator": {&"goby": 1, &"flounder": 1},
+	}
 	for trade in [TANK, EXTENDED, REGULATOR]:
-		_check(ShopManager.trades.has(trade), "Preview upgrade is offered in the actual terminal shop")
+		_check(ShopManager.trades.has(trade), "Equipment upgrade is in the actual shop")
 		_check(trade.one_time_purchase and trade.delivery_time == 1,
-			"Upgrade uses the existing one-time next-day delivery workflow")
-		_check(trade.requirements.size() == 1 and trade.requirements[0].item.item_id == &"mullet"
-			and trade.requirements[0].amount == 1, "Preview price is one mullet")
+			"Equipment keeps one-time next-day delivery")
+		var cost: Dictionary = {}
+		for requirement in trade.requirements:
+			cost[requirement.item.item_id] = requirement.amount
+		_check(cost == prices[trade.trade_id], "Equipment uses the agreed barter price")
 
 	var oxygen := SeaOxygen.new()
 	add_child(oxygen)
