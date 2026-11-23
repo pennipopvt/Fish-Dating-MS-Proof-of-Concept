@@ -39,7 +39,9 @@ func _enter_tree() -> void:
 	# The local Audio panel can have only Master after an editor/import
 	# refresh even though the committed bus layout has Music and Ambience.
 	# Install the authored layout before child audio nodes initialize.
-	if AudioServer.get_bus_index(&"Music") >= 0 and AudioServer.get_bus_index(&"Ambience") >= 0:
+	if (AudioServer.get_bus_index(&"Music") >= 0
+		and AudioServer.get_bus_index(&"Ambience") >= 0
+		and AudioServer.get_bus_index(&"UnderwaterSFX") >= 0):
 		return
 	var layout: AudioBusLayout = load("res://default_bus_layout.tres") as AudioBusLayout
 	if layout != null:
@@ -61,6 +63,14 @@ func _enter_tree() -> void:
 		var ambient_bus: int = AudioServer.get_bus_count() - 1
 		AudioServer.set_bus_name(ambient_bus, &"Ambience")
 		AudioServer.set_bus_send(ambient_bus, &"Master")
+	if AudioServer.get_bus_index(&"UnderwaterSFX") < 0:
+		AudioServer.add_bus()
+		var swim_bus: int = AudioServer.get_bus_count() - 1
+		AudioServer.set_bus_name(swim_bus, &"UnderwaterSFX")
+		AudioServer.set_bus_send(swim_bus, &"Master")
+		var swim_filter := AudioEffectLowPassFilter.new()
+		swim_filter.cutoff_hz = 1300.0
+		AudioServer.add_bus_effect(swim_bus, swim_filter)
 
 
 func _ready() -> void:

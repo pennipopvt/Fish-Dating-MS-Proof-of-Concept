@@ -15,9 +15,11 @@ const SWIM_IDLE_RIGHT_SHEET: Texture2D = preload("res://sprites/characters/penni
 @export_range(1.0, 24.0, 0.5) var swim_idle_frames_per_second: float = 5.0
 
 @export_group("Movement Sounds")
-# Reuse step.wav for both walking and swimming, leaving a pause between cues.
+# Footsteps are spaced while walking; swimming uses its own looping sound.
 @export_range(0.2, 1.5, 0.05, "suffix:s") var walk_step_interval: float = 0.48
-@export_range(0.2, 2.0, 0.05, "suffix:s") var swim_step_interval: float = 0.8
+@export_range(0.5, 1.5, 0.05) var swim_sound_pitch_scale: float = 0.8
+@export_range(-40.0, 6.0, 0.5, "suffix:dB") var swim_sound_volume_db: float = -8.0
+@export var play_swim_sound_while_idle: bool = false
 
 signal held_item_changed(item: ItemData)
 var held_item: ItemData = null
@@ -48,10 +50,13 @@ var _pickup_time_left := 0.0
 @onready var fishing_controller: Node = $FishingController
 @onready var animator : AnimatedSprite2D = $AnimatedSprite2D
 @onready var _step_sound: AudioStreamPlayer = $StepSound
+@onready var _swim_sound: AudioStreamPlayer = $SwimSound
 @onready var _step_timer: Timer = $StepTimer
 
 func _ready() -> void:
 	_step_timer.timeout.connect(_on_step_timer_timeout)
+	_swim_sound.pitch_scale = swim_sound_pitch_scale
+	_swim_sound.volume_db = swim_sound_volume_db
 	_install_swim_animations()
 	_land_collision_mask = collision_mask
 	_read_walk_limits.call_deferred()
@@ -152,6 +157,7 @@ func drop_item() -> void:
 
 func set_swimming(enabled: bool, bounds: Rect2 = Rect2()) -> void:
 	_stop_step_audio()
+	_stop_swim_audio()
 	swimming = enabled
 	velocity = Vector2.ZERO
 	if enabled:
@@ -193,7 +199,7 @@ func _swim_physics(delta: float) -> void:
 	# Movement plays the directional swim; without input Penni treads water.
 	# Her new idle-swim sheets include the scuba mask, so no extra overlay is needed.
 	_set_swim_animation(direction.length_squared() > 0.01)
-	_update_step_audio(direction.length_squared() > 0.01
+	_update_swim_audio(direction.length_squared() > 0.01
 		and global_position.distance_squared_to(previous_position) > 0.0025)
 	animator.rotation = lerpf(animator.rotation, direction.x * 0.13, minf(delta * 6.0, 1.0))
 	animator.position.y = -16.0 + sin(Time.get_ticks_msec() * 0.0026) * 0.8
@@ -207,6 +213,7 @@ func _physics_process(delta: float) -> void:
 
 	if busy or GameManager.is_modal_ui_open():
 		_stop_step_audio()
+		_stop_swim_audio()
 		velocity = Vector2.ZERO
 		if swimming:
 			_set_swim_animation(false)
@@ -239,13 +246,12 @@ func _physics_process(delta: float) -> void:
 	_update_step_audio(absf(global_position.x - previous_x) > 0.05)
 
 
-# The single scene-authored sound player is shared by walking and swimming.
-# Do not retrigger a playing clip: footsteps have space between them.
+# Spaced walking footsteps only; the separate swim loop is below.
 func _update_step_audio(moving: bool) -> void:
 	if not moving:
 		_stop_step_audio()
 		return
-	var interval: float = swim_step_interval if swimming else walk_step_interval
+	var interval: float = walk_step_interval
 	if _step_timer.is_stopped():
 		_play_step()
 		_step_timer.start(interval)
@@ -254,7 +260,7 @@ func _update_step_audio(moving: bool) -> void:
 
 
 func _on_step_timer_timeout() -> void:
-	if busy or GameManager.is_modal_ui_open() or velocity.length_squared() < 1.0:
+	if swimming or busy or GameManager.is_modal_ui_open() or velocity.length_squared() < 1.0:
 		_stop_step_audio()
 		return
 	_play_step()
@@ -270,6 +276,22 @@ func _stop_step_audio() -> void:
 		_step_timer.stop()
 	if _step_sound.playing:
 		_step_sound.stop()
+
+
+func _update_swim_audio(moving: bool) -> void:
+	if not swimming or not (moving or play_swim_sound_while_idle):
+		_stop_swim_audio()
+		return
+	# PCM swim.wav loops via its import settings. Don't restart it each frame.
+	if not _swim_sound.playing:
+		_swim_sound.pitch_scale = swim_sound_pitch_scale
+		_swim_sound.volume_db = swim_sound_volume_db
+		_swim_sound.play()
+
+
+func _stop_swim_audio() -> void:
+	if _swim_sound.playing:
+		_swim_sound.stop()
 
 
 # Reads the drawn ground (World/Ground tiles) once at start: the walk border

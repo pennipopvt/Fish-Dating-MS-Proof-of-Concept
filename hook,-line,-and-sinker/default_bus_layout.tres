@@ -5,6 +5,11 @@ resource_name = "Underwater Low-Pass"
 cutoff_hz = 20500.0
 db = 1
 
+[sub_resource type="AudioEffectLowPassFilter" id="SwimLowPass"]
+resource_name = "Swimming Low-Pass"
+cutoff_hz = 1300.0
+db = 1
+
 [resource]
 bus/1/name = &"Music"
 bus/1/solo = false
@@ -20,3 +25,11 @@ bus/2/mute = false
 bus/2/bypass_fx = false
 bus/2/volume_db = 0.0
 bus/2/send = &"Master"
+bus/3/name = &"UnderwaterSFX"
+bus/3/solo = false
+bus/3/mute = false
+bus/3/bypass_fx = false
+bus/3/volume_db = 0.0
+bus/3/send = &"Master"
+bus/3/effect/0/effect = SubResource("SwimLowPass")
+bus/3/effect/0/enabled = true
