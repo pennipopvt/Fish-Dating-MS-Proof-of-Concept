@@ -29,8 +29,10 @@ anchor_left = 0.04
 anchor_top = 0.12
 anchor_right = 0.45
 anchor_bottom = 0.88
-offset_right = 165.0
-offset_bottom = 84.19995
+offset_left = -23.799995
+offset_top = -155.59999
+offset_right = 141.20001
+offset_bottom = -71.400024
 theme_override_styles/panel = SubResource("MenuPanel")
 
 [node name="Contents" type="VBoxContainer" parent="Menu" unique_id=1817339734]
