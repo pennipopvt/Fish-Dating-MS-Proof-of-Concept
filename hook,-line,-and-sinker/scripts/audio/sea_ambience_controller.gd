@@ -29,9 +29,13 @@ func _ready() -> void:
 			push_warning("Missing ambience stream on " + String(player.name))
 			continue
 		if player.stream is AudioStreamWAV:
-			var looping: AudioStreamWAV = (player.stream as AudioStreamWAV).duplicate() as AudioStreamWAV
-			looping.loop_mode = AudioStreamWAV.LOOP_FORWARD
-			player.stream = looping
+			# Both WAV imports are already configured to loop. Only adjust the
+			# resource in place if an older local import still has looping off.
+			# NEVER replace player.stream after scene autoplay has begun:
+			# doing so can silence the player while its playing flag stays true.
+			var wav: AudioStreamWAV = player.stream as AudioStreamWAV
+			if wav.loop_mode != AudioStreamWAV.LOOP_FORWARD:
+				wav.loop_mode = AudioStreamWAV.LOOP_FORWARD
 		if not player.playing:
 			player.play()
 	# Retry on the first ready frame: some imports initialize their stream
