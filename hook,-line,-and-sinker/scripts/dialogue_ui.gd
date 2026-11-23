@@ -34,7 +34,8 @@ const PICKED_CHOICE_COLOR := Color(0.55, 0.55, 0.6)
 # If this resource is blank, find the new Penni speak file by its name at
 # runtime (useful when the audio was added locally but not pushed yet).
 @export var default_voice_sound: AudioStream
-@export_range(0.5, 2.0, 0.01) var penni_pitch_scale: float = 1.0
+# Penni's base pitch and volume belong to the DialogueVoice node, not
+# duplicate exports here. Only the random pitch variation is on DialogueUI.
 @export_range(0.0, 0.5, 0.01) var penni_pitch_variation: float = 0.08
 
 # At scale 1, this reproduces the existing 1040x1600 room layout.
@@ -56,7 +57,11 @@ const ROOM_PORTRAIT_BASE_SIZE := Vector2(1040.0, 1600.0)
 @onready var _text_label: RichTextLabel = %TextLabel
 @onready var _choice_list: VBoxContainer = %ChoiceList
 @onready var _continue_hint: Label = %ContinueHint
+# Scene-authored sound settings are always read from DialogueVoice.
+# The second player receives per-letter pitch variation and NPC overrides;
+# the editor-authored DialogueVoice node is never overwritten by playback.
 @onready var _voice: AudioStreamPlayer = $DialogueVoice
+@onready var _voice_playback: AudioStreamPlayer = $VoicePlayback
 
 var _npc: NPCData = null
 var _portrait_npc: NPCData = null # Current visible speaker, not relationship owner.
@@ -178,8 +183,9 @@ func set_illustration_mode(enabled: bool) -> void:
 
 func _ready() -> void:
 	_find_default_voice()
-	# The DialogueVoice AudioStreamPlayer owns its editor-authored volume.
-	# This script sets only the speaker's per-letter pitch.
+	# DialogueVoice holds Penni's real editor-authored pitch, volume and bus.
+	# VoicePlayback receives the actual per-letter sound so those properties
+	# never get overwritten, even while the game is running.
 	_text_label.bbcode_enabled = true
 	_text_label.install_effect(LETTER_POP_EFFECT.new())
 	_land_layer = layer
@@ -378,7 +384,9 @@ func _play_letter_sound(index: int) -> void:
 	if letter.to_lower() == letter.to_upper():
 		return
 	var sound: AudioStream = default_voice_sound
-	var base_pitch: float = penni_pitch_scale
+	# Read Penni's actual Pitch Scale from the scene's DialogueVoice node
+	# each time, so Inspector changes are effective without restarting.
+	var base_pitch: float = _voice.pitch_scale
 	var variance: float = penni_pitch_variation
 	if not _current_line_player and _current_voice_npc != null:
 		if _current_voice_npc.dialogue_voice_sound != null:
@@ -387,12 +395,15 @@ func _play_letter_sound(index: int) -> void:
 		variance = _current_voice_npc.voice_pitch_variation
 	if sound == null:
 		return
-	# Don't reassign the same AudioStream on every letter; changing the
-	# stream would interrupt the previous chirp before polyphony can work.
-	if _voice.stream != sound:
-		_voice.stream = sound
-	_voice.pitch_scale = maxf(0.1, base_pitch + randf_range(-variance, variance))
-	_voice.play()
+	# Copy, never mutate, the original DialogueVoice's loudness and bus.
+	# Only the dedicated playback node receives randomized or NPC pitch.
+	_voice_playback.volume_db = _voice.volume_db
+	_voice_playback.bus = _voice.bus
+	_voice_playback.max_polyphony = _voice.max_polyphony
+	if _voice_playback.stream != sound:
+		_voice_playback.stream = sound
+	_voice_playback.pitch_scale = maxf(0.1, base_pitch + randf_range(-variance, variance))
+	_voice_playback.play()
 
 
 # When a new local file named Penni Speak is available, use it for every

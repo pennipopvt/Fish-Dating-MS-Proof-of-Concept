@@ -77,24 +77,43 @@ func _run() -> void:
 	_check(rich_label.scroll_active and rich_label.scroll_following_visible_characters,
 		"Long dialogue scrolls with the revealed letters instead of clipping")
 	_check(ui.get_node_or_null("DialogueVoice") is AudioStreamPlayer
-		and is_equal_approx(ui.penni_pitch_scale, 1.0)
+		and ui.get_node_or_null("VoicePlayback") is AudioStreamPlayer
 		and is_equal_approx(ui.penni_pitch_variation, 0.08),
-		"One dialogue voice player and editor pitch controls are available")
-	# Simulate the exact user-facing setting: changing the DialogueVoice
-	# AudioStreamPlayer volume should survive a letter playback.
+		"DialogueVoice owns Penni's pitch and a separate player applies speaker variation")
+	# Regression: changing the INSPECTOR Pitch Scale must affect real playback.
+	# Prior code set DialogueVoice.pitch_scale to an unrelated root export
+	# every letter, silently discarding the editor's 1.2.
 	var voice_node: AudioStreamPlayer = ui.get_node("DialogueVoice") as AudioStreamPlayer
+	var playback: AudioStreamPlayer = ui.get_node("VoicePlayback") as AudioStreamPlayer
 	voice_node.volume_db = -2.0
+	voice_node.pitch_scale = 0.65
+	ui.penni_pitch_variation = 0.0
 	ui.set("_spoken_text", "A")
 	ui.set("_current_line_player", true)
 	ui.call("_play_letter_sound", 0)
-	_check(is_equal_approx(voice_node.volume_db, -2.0),
-		"Typing cannot overwrite DialogueVoice Volume dB from its Inspector")
+	_check(is_equal_approx(voice_node.volume_db, -2.0)
+		and is_equal_approx(voice_node.pitch_scale, 0.65),
+		"Typing never overwrites DialogueVoice's editor volume or pitch")
+	_check(is_equal_approx(playback.pitch_scale, 0.65)
+		and is_equal_approx(playback.volume_db, -2.0)
+		and playback.playing,
+		"Actual Penni playback uses the edited DialogueVoice pitch and volume")
+	voice_node.pitch_scale = 1.4
+	ui.call("_play_letter_sound", 0)
+	_check(is_equal_approx(playback.pitch_scale, 1.4),
+		"Changing the authored pitch while running affects the next letter")
 	var voice_config: NPCData = NPCData.new()
 	voice_config.voice_pitch_scale = 1.3
-	voice_config.voice_pitch_variation = 0.15
-	_check(is_equal_approx(voice_config.voice_pitch_scale, 1.3)
-		and is_equal_approx(voice_config.voice_pitch_variation, 0.15),
-		"NPC resources carry their own editable voice pitch and variation")
+	voice_config.voice_pitch_variation = 0.0
+	ui.set("_current_line_player", false)
+	ui.set("_current_voice_npc", voice_config)
+	ui.call("_play_letter_sound", 0)
+	_check(is_equal_approx(playback.pitch_scale, 1.3),
+		"NPCData pitch overrides remain independent of Penni's pitch")
+	ui.set("_current_line_player", true)
+	ui.call("_play_letter_sound", 0)
+	_check(is_equal_approx(playback.pitch_scale, 1.4),
+		"Penni returns to her own Inspector pitch after an NPC speaks")
 	ui.call("_advance")
 	_check(DialogueManager.get_current_line() == line
 		and not bool(ui.get("_typewriting")),

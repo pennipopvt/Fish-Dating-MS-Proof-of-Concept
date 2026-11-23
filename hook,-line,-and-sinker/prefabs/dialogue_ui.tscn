@@ -175,3 +175,6 @@ alignment = 2
 [node name="DialogueVoice" type="AudioStreamPlayer" parent="." unique_id=300917380]
 pitch_scale = 1.2
 max_polyphony = 4
+
+[node name="VoicePlayback" type="AudioStreamPlayer" parent="."]
+max_polyphony = 4
