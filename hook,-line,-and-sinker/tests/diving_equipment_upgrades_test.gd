@@ -56,13 +56,29 @@ func _ready() -> void:
 	net.tip = Vector2(100.0, 50.0)
 	sprite.position = net.tip
 	net.direction = Vector2.LEFT
-	sprite.flip_h = false
-	_check(net._cord_endpoint().x > net.tip.x,
-		"Default unflipped net faces left with cord attached on the right edge")
+	net._orient_net_sprite()
+	_check(not sprite.flip_h and is_zero_approx(sprite.rotation)
+		and net._cord_endpoint().x > net.tip.x,
+		"Leftward cast uses unflipped artwork and its original right-side handle")
 	net.direction = Vector2.RIGHT
-	sprite.flip_h = true
-	_check(net._cord_endpoint().x < net.tip.x,
-		"Rightward net mirrors the sprite and connects on its left edge")
+	net._orient_net_sprite()
+	_check(not sprite.flip_h and absf(absf(sprite.rotation) - PI) < 0.01
+		and net._cord_endpoint().x < net.tip.x,
+		"Rightward cast rotates a half turn and keeps its handle attached")
+	net.direction = Vector2.UP
+	net._orient_net_sprite()
+	_check(not sprite.flip_h and net._cord_endpoint().y > net.tip.y,
+		"Upward cast rotates the net with its handle trailing downward")
+	net.direction = Vector2.DOWN
+	net._orient_net_sprite()
+	_check(not sprite.flip_h and net._cord_endpoint().y < net.tip.y,
+		"Downward cast rotates the net with its handle trailing upward")
+	net.direction = Vector2(-1.0, -1.0).normalized()
+	net._orient_net_sprite()
+	var handle_offset: Vector2 = net._cord_endpoint() - net.tip
+	_check(is_equal_approx(sprite.rotation, PI / 4.0)
+		and handle_offset.x > 0.0 and handle_offset.y > 0.0,
+		"Diagonal cast rotates the sprite and preserves the same handle location")
 
 	FishingManager.shop_reward_larger_tank(999)
 	FishingManager.shop_reward_extended_net(999)

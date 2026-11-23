@@ -17,6 +17,8 @@ enum State { IDLE, OUTBOUND, RETURNING, LATCHED }
 @export_group("Net Sprite Line Attachment")
 # Tweak the one-pixel cord endpoint relative to the handle-side rim.
 @export_range(-16.0, 16.0, 1.0, "suffix:px") var cord_attachment_inset: float = 0.0
+# Unflipped artwork faces left. Zero keeps left throws horizontal.
+@export_range(-180.0, 180.0, 1.0, "suffix:deg") var sprite_angle_offset_degrees: float = 0.0
 
 # The visuals live in Sea/NetProjectile: the Sprite2D divides the authored
 # four-frame sheet equally and AnimationPlayer owns contact timing.
@@ -105,10 +107,8 @@ func cast_net(origin: Node2D, aim_position: Vector2, fish_in_water: Array[Diving
 		_net_animation.stop()
 	if _net_sprite != null:
 		_net_sprite.frame = 0
-		# The sheet's default orientation is for Penni facing LEFT.
-		# Only mirror it for a rightward throw.
-		_net_sprite.flip_h = direction.x > 0.0
 		_net_sprite.position = tip.round()
+		_orient_net_sprite()
 	visible = true
 	set_process(true)
 	queue_redraw()
@@ -202,6 +202,8 @@ func reset_net() -> void:
 		_net_animation.stop()
 	if _net_sprite != null:
 		_net_sprite.frame = 0
+		_net_sprite.flip_h = false
+		_net_sprite.rotation = 0.0
 	visible = false
 	set_process(false)
 	queue_redraw()
@@ -211,16 +213,28 @@ func _get_anchor() -> Vector2:
 	return _origin.position + Vector2(0.0, -7.0) if is_instance_valid(_origin) else _start
 
 
-# Unflipped when Penni throws left: attach at the sprite's RIGHT edge.
-# A rightward throw mirrors the image and attaches at the LEFT edge.
-# Respect the Sprite2D frame rectangle, scale and editor-defined offset.
+# The original net artwork faces left, with its handle on the right.
+# Rotate (not mirror) the Sprite2D to align with any casting direction.
+# This keeps exactly the same physical handle pixel for every angle.
+func _orient_net_sprite() -> void:
+	if _net_sprite == null:
+		return
+	_net_sprite.flip_h = false
+	_net_sprite.rotation = wrapf(
+		direction.angle() - PI + deg_to_rad(sprite_angle_offset_degrees),
+		-PI, PI
+	)
+
+
+# The line endpoint is the original right-hand handle location in the
+# unrotated sprite. Transform it with the Sprite2D so the cord follows
+# the rotating artwork instead of attaching to its center.
 func _cord_endpoint() -> Vector2:
 	if _net_sprite == null or _net_sprite.texture == null:
 		return tip.round()
 	var bounds: Rect2 = _net_sprite.get_rect()
-	var edge_x: float = bounds.end.x - cord_attachment_inset if direction.x < 0.0 \
-		else bounds.position.x + cord_attachment_inset
-	return (_net_sprite.transform * Vector2(edge_x, bounds.get_center().y)).round()
+	var handle: Vector2 = Vector2(bounds.end.x - cord_attachment_inset, bounds.get_center().y)
+	return (_net_sprite.transform * handle).round()
 
 
 func _draw() -> void:
