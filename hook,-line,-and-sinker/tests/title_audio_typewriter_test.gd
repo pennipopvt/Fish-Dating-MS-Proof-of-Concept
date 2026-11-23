@@ -31,6 +31,8 @@ func _run() -> void:
 		"Audio buses are ready before the title, even if editor loaded Master only")
 	_check(ocean.autoplay and below.autoplay,
 		"Ambience stream players start even if controller initialization fails")
+	_check(ocean.bus == &"Ambience" and below.bus == &"Ambience",
+		"Runtime ambience players route to Ambience instead of falling back to Master")
 	_check(ocean.stream == OCEAN_AUDIO and below.stream == UNDERWATER_AUDIO,
 		"Ambience controller leaves autoplay streams attached instead of interrupting them")
 	_check(ocean.playing and below.playing and ocean.stream is AudioStreamWAV
@@ -38,6 +40,13 @@ func _run() -> void:
 		and (below.stream as AudioStreamWAV).loop_mode == AudioStreamWAV.LOOP_FORWARD,
 		"Both ambience WAVs loop while playback continues")
 
+	# Reproduce the actual Remote Inspector screenshot: a stopped player on
+	# the Master bus even though Autoplay is enabled.
+	ocean.stop()
+	ocean.bus = &"Master"
+	ambience.call("_ensure_playing")
+	_check(ocean.playing and ocean.bus == &"Ambience",
+		"Ambience controller revives stopped playback and fixes its bus")
 	ambience.crossfade_seconds = 0.0
 	ambience.set_underwater(true)
 	_check(is_equal_approx(ocean.volume_db, ambience.silent_volume_db)
