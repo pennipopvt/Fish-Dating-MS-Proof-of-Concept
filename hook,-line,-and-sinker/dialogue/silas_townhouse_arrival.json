@@ -4,17 +4,24 @@
   "nodes": {
     "arrival": {
       "lines": [
-        "This is where I'm going to stay?",
+        "This is where I'm staying?",
         {
           "speaker": "player",
-          "text": "Yeah! Fish Co. said they were opening the townhouse for new residents."
+          "text": "Yeah!"
         },
-        "A whole room? Just for me?",
         {
           "speaker": "player",
-          "text": "I think so! You can make it yours."
+          "text": "Um... it's probably fine."
         },
-        "Oh... That sounds really nice.",
+        "This whole place is just for me?",
+        "It's a bit large.",
+        {
+          "speaker": "player",
+          "text": "No! Just the one room."
+        },
+        "Oh! That's a relief, hehe.",
+        "Still... a whole room to myself?",
+        "That's really nice.",
         "Thank you, Penni.",
         {
           "speaker": "player",

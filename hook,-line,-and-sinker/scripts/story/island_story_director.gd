@@ -181,7 +181,16 @@ func _process(_delta: float) -> void:
 
 
 func _begin_event(event: IslandStoryEventData) -> void:
-	if event.stage_land_actor:
+	# Stage morning guests while a fresh black screen covers the world,
+	# never after the morning rest fade has already revealed Penni alone.
+	if event.morning_only and event.stage_land_actor:
+		var fade := ScreenFade.new()
+		get_tree().root.add_child(fade)
+		await fade.fade_to(1.0, 0.35)
+		_present_guest(event)
+		await fade.fade_to(0.0, 0.35)
+		fade.queue_free()
+	elif event.stage_land_actor:
 		_present_guest(event)
 	DialogueManager.request_conversation(event.speaker, event.dialogue_json)
 	if not DialogueManager.is_active:
@@ -201,6 +210,11 @@ func _present_guest(event: IslandStoryEventData) -> void:
 		push_warning("Cannot stage morning story guest: %s" % event.event_id)
 		return
 	_guest_actor.name = "MorningStoryGuest_" + String(event.speaker.npc_id)
+	# Both invitation guests look toward Penni, regardless of which side they
+	# were placed on. The original land sprite faces right when unflipped.
+	var art: AnimatedSprite2D = _guest_actor.get_node_or_null("Sprite") as AnimatedSprite2D
+	if art != null:
+		art.flip_h = _guest_actor.global_position.x > _player.global_position.x
 	var face: StringName = &"idle_l" if event.guest_offset.x < 0.0 else &"idle_r"
 	if _player.animator.sprite_frames.has_animation(face):
 		_player.animator.play(face)

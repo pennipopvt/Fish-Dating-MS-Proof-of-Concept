@@ -4,66 +4,45 @@
   "nodes": {
     "freed": {
       "lines": [
-        "Ah—I'm free!",
-        "Thank you... I thought I was going to be stuck there forever.",
+        "AH! Thank you, I'm free!!",
         {
           "speaker": "player",
-          "text": "Are you okay? How did you end up in that net?"
+          "text": "Are you okay?"
         },
-        "I... got curious.",
-        "I usually stay in my burrow, but something shiny went past and I followed it.",
-        "I didn't even notice the net until I couldn't move.",
+        "Yeah... I just got too close.",
+        "I saw something interesting. I wanted to see what it was.",
+        "B-but you saw how it turned out...",
         {
           "speaker": "player",
-          "text": "Wait. You have a burrow?"
+          "text": "Be more careful next time!"
         },
-        "Oh! Right. I'm a garden eel. I don't usually swim this far from home.",
-        "I'm Silas, by the way. Sorry, I should've said that sooner.",
+        "Yeah, I know... but I am curious about one more thing.",
+        "Um. Who are you? I didn't know humans could talk.",
         {
           "speaker": "player",
-          "text": "I'm Penni. Nice to meet you, Silas."
+          "text": "I'm Penni!"
         },
-        "Penni... it's nice to meet you, too.",
         {
           "speaker": "player",
-          "text": "I came down here to catch fish for my quota. This wasn't exactly what I had in mind."
+          "text": "I just came down here to get some fish."
         },
-        "A quota...? Oh. Well, I know these waters pretty well.",
-        "Maybe I could help you find the fish you're looking for?"
-      ],
-      "choices": [
-        {
-          "text": "I'd appreciate the help.",
-          "next": "glad",
-          "spends_action": false
-        },
-        {
-          "text": "Only if you're feeling up to it.",
-          "next": "reassured",
-          "spends_action": false
-        }
-      ]
-    },
-    "glad": {
-      "lines": [
-        "Really? Oh! Okay. I know where some of the fish like to hide."
-      ],
-      "next": "join"
-    },
-    "reassured": {
-      "lines": [
-        "I think so. Actually... it'd be nice to see more than just my burrow for once."
-      ],
-      "next": "join"
-    },
-    "join": {
-      "lines": [
-        "Um... would it be all right if I swam with you for a while?",
         {
           "speaker": "player",
-          "text": "Sure. Just stay out of my net this time, okay?"
+          "text": "You... were not what I was expecting."
         },
-        "Heh... I'll do my best."
+        "Oh- well, since you helped me, I could try to help you...",
+        "If you'd want that...",
+        {
+          "speaker": "player",
+          "text": "Really? That'd be great!"
+        },
+        "S-sure thing... Um. Oh, I'm Silas...",
+        "By the way.",
+        {
+          "speaker": "player",
+          "text": "It's nice to meet you!"
+        },
+        "Y-yeah! Let's get going then."
       ]
     }
   }

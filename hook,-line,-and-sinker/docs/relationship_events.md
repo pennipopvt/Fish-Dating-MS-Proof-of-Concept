@@ -209,3 +209,24 @@ outside `available_homes`, so resident assignment cannot overwrite Penni.
 No full-size portrait/TextureRect instance is present in the World scene or
 inherited door source. To customize her door art, select its Sprite child
 in World and override its texture in the Godot editor.
+
+
+## Incident cooldowns (2026-11)
+
+NPCManager now retains a per-NPC, per-event `incident_count` across reconciliations.
+The first offense can be discussed on the next room visit; each repeat adds
+one day before the affected NPC answers the door (second = one day, third = two,
+and so on). An incorrect answer defers the active incident until the next day
+without incrementing the incident count. While unresolved, authored event
+`blocks_actions` prevent diving, dates, and overnights. No numeric affection
+or jealousy changes result from conversations, date choices or passive neglect.
+
+The `other_romance` incident is triggered only by completing an undisclosed
+invited overnight, never by a date. `I'm seeing another person...` appears in
+an existing partner's normal room greeting when a different NPC has an accepted,
+unconsummated invitation. The name in the disclosure lines is resolved from the
+actual invited NPC. Disclosure is stored per recipient and invitation serial,
+so it protects that invitation, not all future overnights.
+
+Silas's unused early-land-care JSON reference was removed; the first-land KO
+continues into his existing jump, transformation and townhouse sequence.

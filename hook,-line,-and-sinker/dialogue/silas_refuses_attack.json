@@ -4,14 +4,7 @@
   "nodes": {
     "refusal": {
       "lines": [
-        "Penni? N-no, not that one...",
-        {
-          "speaker": "player",
-          "text": "Silas, can you keep going?"
-        },
-        "It's already hurt. Can't you see how it's struggling?",
-        "I'm scared that if I hit it again, it won't get back up.",
-        "I want to help you... I really do. But I can't do that."
+        "Penni? N-no, not that one..."
       ],
       "choices": [
         {
@@ -20,13 +13,8 @@
           "spends_action": false
         },
         {
-          "text": "Just one more hit?",
+          "text": "I need to get it weaker.",
           "next": "insist",
-          "spends_action": false
-        },
-        {
-          "text": "I didn't realize it was that hurt.",
-          "next": "realize",
           "spends_action": false
         }
       ]
@@ -38,21 +26,15 @@
     },
     "insist": {
       "lines": [
-        "No, Penni. I'm sorry, but I won't.",
+        "It's already weak enough...",
+        "Sorry, but I won't do this.",
         "Please don't ask me to."
       ],
       "effects": {
         "start_relationship_events": [
           "fish_hurt_pressure"
-        ],
-        "affection_delta": -10
+        ]
       }
-    },
-    "realize": {
-      "lines": [
-        "I know. That's why I stopped.",
-        "I think you can take it from here."
-      ]
     }
   }
 }

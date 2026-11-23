@@ -36,7 +36,12 @@
         "Well, I did.",
         "If you're not in the mood, just say so. Don't make me feel like I'm wasting your time.",
         "That's all I'm asking."
-      ]
+      ],
+      "effects": {
+        "defer_relationship_events": [
+          "prelude_boundary"
+        ]
+      }
     }
   }
 }

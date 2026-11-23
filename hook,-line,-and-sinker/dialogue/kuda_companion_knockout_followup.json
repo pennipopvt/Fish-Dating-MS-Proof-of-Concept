@@ -37,7 +37,12 @@
       "lines": [
         "Tch. Then you can go diving without me.",
         "Come back when you're ready to take it seriously."
-      ]
+      ],
+      "effects": {
+        "defer_relationship_events": [
+          "companion_knockout"
+        ]
+      }
     }
   }
 }

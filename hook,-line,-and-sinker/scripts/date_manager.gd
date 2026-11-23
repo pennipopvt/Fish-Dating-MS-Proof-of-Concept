@@ -444,9 +444,9 @@ func _finish(completed: bool) -> void:
 		flags[date.get_completed_flag()] = true
 		for flag in date.flags_to_set:
 			flags[flag] = true
-		var outcome := outcome_for_score(_date_score) if _date_choice_count > 0 else ""
-		last_date_score = _date_score
-		last_date_outcome = outcome
+		# Dates are authored scenes, not a scored affection minigame.
+		last_date_score = 0
+		last_date_outcome = "completed"
 		# Repeating a date always scores again, but never farms individual
 		# dialogue-choice affection. Successful completion prevents daily decay.
 		AffectionManager.mark_date_completed(date.npc.npc_id, _date_day)

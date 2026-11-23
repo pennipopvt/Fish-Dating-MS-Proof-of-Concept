@@ -44,13 +44,23 @@
       "lines": [
         "Maybe not.",
         "But if we're close, don't act like it means nothing to me."
-      ]
+      ],
+      "effects": {
+        "defer_relationship_events": [
+          "other_romance"
+        ]
+      }
     },
     "later": {
       "lines": [
         "Sure. I'm not going anywhere.",
         "Just don't leave it hanging forever."
-      ]
+      ],
+      "effects": {
+        "defer_relationship_events": [
+          "other_romance"
+        ]
+      }
     }
   }
 }

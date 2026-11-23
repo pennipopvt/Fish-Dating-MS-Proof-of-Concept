@@ -14,8 +14,14 @@
           "speaker": "player",
           "text": "You... have legs?"
         },
-        "I HAVE WHAT?",
-        "Oh. ...Is that normal?",
+        "WHAT?",
+        "What are legs?",
+        {
+          "speaker": "player",
+          "text": "Oh. Um, like mine."
+        },
+        "Oh... these?",
+        "I-is that normal?",
         {
           "speaker": "player",
           "text": "I have absolutely no idea."
