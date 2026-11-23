@@ -45,7 +45,12 @@ const SILHOUETTE_SHADER: Shader = preload("res://shaders/fish_catalog_silhouette
 @export var wrap_margin: float = 40.0
 @export var random_seed: int = 4242
 
+## Extra rotation (degrees, clockwise) per fish_id, for sprites drawn tilted.
+## Only the shadows rotate; the real sprite files are untouched.
+@export var tilt_by_fish: Dictionary = {&"goby": 45.0}
+
 var _rng := RandomNumberGenerator.new()
+var _texture_tilt: Dictionary = {}
 var _groups: Array[Dictionary] = []
 var _material: ShaderMaterial
 
@@ -102,6 +107,8 @@ func _process(delta: float) -> void:
 			var pos: Vector2 = world_pos + member.offset + Vector2(0.0, bob)
 			sprite.position = (pos - position).round()
 			sprite.flip_h = heading < 0.0
+			# Mirror the tilt too, so a flipped fish leans the same way.
+			sprite.rotation = deg_to_rad(member.tilt) * (-1.0 if sprite.flip_h else 1.0)
 			sprite.modulate.a = group.alpha * _edge_fade(pos.y)
 
 
@@ -111,7 +118,16 @@ func _usable_textures() -> Array[Texture2D]:
 		var data: FishData = resource as FishData
 		if data != null and data.item_data != null and data.item_data.sprite != null:
 			result.append(data.item_data.sprite)
+			_texture_tilt[data.item_data.sprite] = _tilt_for(data.fish_id)
 	return result
+
+
+# Keys typed in the Inspector may be String or StringName; match either.
+func _tilt_for(fish_id: StringName) -> float:
+	for key in tilt_by_fish:
+		if String(key) == String(fish_id):
+			return float(tilt_by_fish[key])
+	return 0.0
 
 
 func _add_group(textures: Array[Texture2D], size: int) -> void:
@@ -147,6 +163,7 @@ func _add_group(textures: Array[Texture2D], size: int) -> void:
 			"offset": offset,
 			"phase": _rng.randf_range(0.0, TAU),
 			"bob_speed": _rng.randf_range(1.2, 2.2),
+			"tilt": float(_texture_tilt.get(texture, 0.0)),
 		})
 	_groups.append(group)
 
