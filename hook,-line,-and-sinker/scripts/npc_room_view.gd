@@ -9,15 +9,21 @@ extends Control
 @export_group("Room Lighting")
 @export var lighting_profile: RoomLightingProfile
 
+@export_group("Rest at Penni's Door")
+@export_multiline var player_room_sleep_text: String = "You drift off to sleep."
+
 @onready var _background: TextureRect = $Background
 var _dialogue: DialogueUI
 var _transition: SeaDiveTransition
 var _illustration: IllustrationSceneController
 var _player: Player
 var _resident: NPCData
+var _player_rest_active: bool = false
+var _player_rest_target: int = -1
 var _inside: bool = false
 var _closing: bool = false
 var _dialogue_exit_requested: bool = false
+var _date_departure: DateData = null
 var _gift_offered_this_visit: bool = false
 var _overnight_active: bool = false
 var _morning_dialogue_active: bool = false
@@ -62,7 +68,10 @@ func open_room(npc: NPCData) -> void:
 	if npc == null or _inside or _closing or _transition.transitioning or DialogueManager.is_active:
 		return
 	_resident = npc
+	_player_rest_active = false
+	_player_rest_target = -1
 	_dialogue_exit_requested = false
+	_date_departure = null
 	_prelude_active = false
 	_prelude_approved = false
 	_overnight_active = false
@@ -72,8 +81,50 @@ func open_room(npc: NPCData) -> void:
 	_inside = true
 	_player.busy = true
 	await _transition.iris_swap(_show_room)
-	if not _try_start_overnight():
+	# A confirmed appointment takes precedence over an unrelated overnight
+	# scene, gift or ordinary greeting in that same NPC room.
+	if DateManager.get_ready_booking_for_npc(npc.npc_id) != null:
 		_start_conversation()
+	elif not _try_start_overnight():
+		_start_conversation()
+
+
+# Penni remains in front of her door. Reuse normal world DialogueUI
+# and the existing sleep-interlude presenter without opening a room scene.
+# This transient context keeps the choice dialogue out of NPC relationship state.
+func start_player_rest_at_door() -> void:
+	if _inside or _closing or _transition.transitioning or DialogueManager.is_active:
+		return
+	_resident = NPCData.new()
+	_resident.npc_id = &"penni_monologue"
+	_resident.display_name = "Penni"
+	_player_rest_active = true
+	_player_rest_target = -1
+	_inside = true
+	_player.busy = true
+	_dialogue.set_room_mode(false)
+	_start_player_rest_prompt()
+
+
+func _start_player_rest_prompt() -> void:
+	if not _inside or not _player_rest_active or DialogueManager.is_active:
+		return
+	var choices: Array[Dictionary] = []
+	var period: GameManager.Times = GameManager.get_period()
+	if period == GameManager.Times.MORNING:
+		choices.append({"text": "Afternoon", "response": "I'll rest until the afternoon.",
+			"effects": {"request_scene": "player_room_rest:afternoon"}})
+	if period != GameManager.Times.NIGHT:
+		choices.append({"text": "Night", "response": "I'll rest until tonight.",
+			"effects": {"request_scene": "player_room_rest:night"}})
+	choices.append({"text": "Next morning", "response": "I'll sleep until tomorrow morning.",
+		"effects": {"request_scene": "player_room_rest:morning"}})
+	choices.append({"text": "I'm not tired.", "response": "Maybe later.",
+		"effects": {"request_scene": "player_room_exit"}})
+	DialogueManager.request_inline_conversation(_resident,
+		["When should I rest until?"], "", choices, true)
+	if not DialogueManager.is_active:
+		_finish_player_rest_at_door()
 
 
 func _show_room() -> void:
@@ -127,6 +178,19 @@ func _try_start_overnight() -> bool:
 func _start_conversation() -> void:
 	if not _inside or _closing or _overnight_active or DialogueManager.is_active:
 		return
+	var ready_date: DateData = DateManager.get_ready_booking_for_npc(_resident.npc_id)
+	if ready_date != null:
+		# Reuse the ordinary room portrait and dialogue choice UI. A "No"
+		# leaves the appointment intact and exits this visit; a "Yes"
+		# hands control to DateManager AFTER the room iris unlocks Penni.
+		DialogueManager.request_inline_conversation(_resident,
+			[ready_date.room_departure_prompt], _resident.display_name,
+			[
+				{"text": "Yes, let's go!", "response": ready_date.room_departure_yes,
+					"effects": {"request_scene": "room_date_go:" + String(ready_date.date_id)}},
+				{"text": "Not yet.", "response": ready_date.room_departure_no}
+			])
+		return
 	# A highest-priority unresolved event may have its own complete follow-up
 	# graph; otherwise let the usual JSON handle active_events conditions.
 	var event_json: String = NPCManager.get_relationship_followup_json(_resident)
@@ -148,6 +212,10 @@ func _start_conversation() -> void:
 
 func _on_conversation_finished(npc: NPCData) -> void:
 	if not _inside or _closing or npc != _resident:
+		return
+	if _player_rest_active:
+		# The selected rest target arrives after conversation_finished.
+		call_deferred("_resume_or_exit")
 		return
 	if _prelude_active:
 		_prelude_active = false
@@ -178,8 +246,24 @@ func _on_conversation_finished(npc: NPCData) -> void:
 func _on_scene_requested(npc: NPCData, scene_id: String) -> void:
 	if not _inside or npc != _resident:
 		return
+	if _player_rest_active:
+		match scene_id:
+			"player_room_rest:afternoon":
+				_player_rest_target = GameManager.Times.AFTERNOON
+			"player_room_rest:night":
+				_player_rest_target = GameManager.Times.NIGHT
+			"player_room_rest:morning":
+				_player_rest_target = GameManager.Times.MORNING
+		return
 	if scene_id == "room_exit":
 		_dialogue_exit_requested = true
+		return
+	if scene_id.begins_with("room_date_go:"):
+		var proposed: DateData = DateManager.get_date(
+			StringName(scene_id.trim_prefix("room_date_go:")))
+		if proposed != null and proposed.npc == _resident and DateManager.is_booking_ready(proposed):
+			_date_departure = proposed
+			_dialogue_exit_requested = true
 		return
 	if scene_id == "room_overnight_ready" and _overnight_active and not _prelude_active:
 		if _illustration != null and _illustration.start_scene(npc):
@@ -257,18 +341,63 @@ func _complete_romance_route(npc: NPCData) -> void:
 func _resume_or_exit() -> void:
 	if not _inside or _closing or _overnight_active or DialogueManager.is_active:
 		return
+	if _player_rest_active:
+		if _player_rest_target >= 0:
+			_begin_player_rest()
+		else:
+			_finish_player_rest_at_door()
+		return
 	# A fresh visit starts a fresh greeting. Continuing to talk in the SAME
 	# visit uses authored "Something else..." / topics nodes instead.
 	close_room()
 
 
+# Resting uses the same fade, sleep text and Continue as romance overnights,
+# but leaves Penni at her door throughout the entire interaction.
+func _begin_player_rest() -> void:
+	if _closing or not _player_rest_active:
+		return
+	if _illustration == null:
+		_finish_player_rest_at_door()
+		return
+	_closing = true
+	var target: GameManager.Times = _player_rest_target as GameManager.Times
+	var completed: bool = await _illustration.play_rest_transition(player_room_sleep_text,
+		Callable(self, "_apply_player_rest_at_black").bind(target))
+	if not completed:
+		push_warning("Penni's rest fade could not begin.")
+	_finish_player_rest_at_door()
+
+
+func _finish_player_rest_at_door() -> void:
+	# No iris, no room overlay. Both "I'm not tired" and completed rest
+	# release input here, after their respective dialogue/transition ends.
+	_inside = false
+	_closing = false
+	_player_rest_active = false
+	_player_rest_target = -1
+	_resident = null
+	_player.busy = false
+
+
+func _apply_player_rest_at_black(target: GameManager.Times) -> void:
+	# Apply the destination time ONCE under the existing black screen.
+	# The day/night visuals snap while other clock listeners update normally.
+	GameManager.rest_until(target)
+
+
 func close_room() -> void:
+	if _player_rest_active and not _closing:
+		_finish_player_rest_at_door()
+		return
 	if not _inside or _closing or _overnight_active:
 		return
 	_closing = true
 	await _transition.iris_swap(_hide_room)
 	_player.busy = false
 	_inside = false
+	_player_rest_active = false
+	_player_rest_target = -1
 	_closing = false
 	_dialogue_exit_requested = false
 	_resident = null
@@ -278,6 +407,12 @@ func close_room() -> void:
 	_prelude_approved = false
 	_overnight_active = false
 	_overnight_blocked_on_entry = false
+	# The room has fully closed and Penni is unlocked. Now the existing
+	# DateManager can own the venue fade, actor placement and date dialogue.
+	var departure: DateData = _date_departure
+	_date_departure = null
+	if departure != null and DateManager.is_booking_ready(departure):
+		DateManager.start_date(departure)
 
 
 func _hide_room() -> void:

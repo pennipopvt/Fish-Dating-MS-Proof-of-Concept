@@ -16,7 +16,6 @@ const TONE_AMOUNTS := {"positive": 5, "neutral": 0, "negative": -3}
 # A new companion starts friendly, with room for the relationship to grow.
 const AFFECTION_GRACE_DAYS := 5
 const DAILY_AFFECTION_DECAY := 8
-const TALK_AFFECTION_RECOVERY := 12
 const MISSED_DATE_AFFECTION_LOSS := 18
 const OTHER_ROMANCE_AFFECTION_LOSS := 12
 const AFFECTION_NEGLECTED_AT := 45
@@ -27,7 +26,8 @@ const REFUSAL_FLAG := &"refuses_diving"
 const REFUSAL_NOTICE_KEY := "affection_refusal_noticed"
 const ATTACK_SPEED_BY_STAGE := [1.0, 0.82, 0.60, 0.0]
 const OTHER_ROMANCE_JEALOUSY := 45
-const MISSED_DATE_JEALOUSY := 15
+const OTHER_PARTNER_DATE_JEALOUSY := 15
+const OTHER_ROMANCE_EVENT := &"other_romance"
 
 enum AffectionStage { HAPPY, NEGLECTED, HURT, REFUSING }
 const RECRUITED_DAY_KEY := "recruited_day"
@@ -45,7 +45,6 @@ var _npc_fish: Array[FishData] = []
 var _leaving_checks_pending := false
 var _messages: Array[Dictionary] = []
 var _showing_message := false
-var _negative_choice_in_conversation: bool = false
 
 
 func _ready() -> void:
@@ -56,10 +55,10 @@ func _connect_sources() -> void:
 	for fish in FishingManager.possible_catches:
 		if fish != null and fish.npc_data != null and not _npc_fish.has(fish):
 			_npc_fish.append(fish)
-	DialogueManager.conversation_started.connect(_on_conversation_started)
 	DialogueManager.conversation_finished.connect(_on_conversation_finished)
 	GameManager.day_started.connect(_on_day_started)
 	DateManager.date_missed.connect(_on_date_missed)
+	DateManager.date_finished.connect(_on_date_finished)
 
 
 # --- Single shared affection score ---
@@ -76,12 +75,6 @@ func change(npc_id: StringName, delta: int) -> void:
 func change_affection(npc_id: StringName, delta: int) -> void:
 	if npc_id == &"" or delta == 0:
 		return
-	# Do not grant an unrelated daily +12 bonus for an intentionally hurtful
-	# conversation (including the first time a boundary is crossed).
-	if delta < 0 and DialogueManager.is_active \
-			and DialogueManager.current_npc != null \
-			and DialogueManager.current_npc.npc_id == npc_id:
-		_negative_choice_in_conversation = true
 	var state: Dictionary = NPCManager.get_npc_state(npc_id)
 	var previous: int = get_affection(npc_id)
 	var updated: int = clampi(previous + delta, 0, MAX_AFFECTION)
@@ -172,9 +165,10 @@ func on_romance_completed(npc_id: StringName) -> void:
 		return
 	# Existing romantic partners become jealous, not the new partner.
 	for other_id: StringName in NPCManager.npc_states.keys():
-		if other_id != npc_id and NPCManager.npc_states[other_id].get("flags", {}).get(RECRUITED_FLAG, false) and has_completed_romance(other_id):
+		if _is_other_partner(other_id, npc_id):
 			change_jealousy(other_id, OTHER_ROMANCE_JEALOUSY)
 			change_affection(other_id, -OTHER_ROMANCE_AFFECTION_LOSS)
+			_start_other_romance_event(other_id)
 	flags[ROMANCE_KEY] = true
 	# Starting a romance counts as meaningful time together today.
 	state[LAST_TALK_KEY] = GameManager.get_day()
@@ -193,8 +187,36 @@ func mark_date_completed(npc_id: StringName, day: int) -> void:
 
 func _on_date_missed(date: DateData) -> void:
 	if date != null and date.npc != null and has_completed_romance(date.npc.npc_id):
-		change_jealousy(date.npc.npc_id, MISSED_DATE_JEALOUSY)
+		# Missing an appointment is hurtful, but not evidence of jealousy.
 		change_affection(date.npc.npc_id, -MISSED_DATE_AFFECTION_LOSS)
+
+
+# A date with one romantic partner may unsettle OTHER existing partners.
+# The date's affection reward still belongs only to the partner who attended.
+func _on_date_finished(date: DateData) -> void:
+	if date == null or date.npc == null or not has_completed_romance(date.npc.npc_id):
+		return
+	for other_id: StringName in NPCManager.npc_states.keys():
+		if _is_other_partner(other_id, date.npc.npc_id):
+			change_jealousy(other_id, OTHER_PARTNER_DATE_JEALOUSY)
+			_start_other_romance_event(other_id)
+
+
+func _is_other_partner(other_id: StringName, npc_id: StringName) -> bool:
+	return other_id != npc_id \
+		and bool(NPCManager.npc_states[other_id].get("flags", {}).get(RECRUITED_FLAG, false)) \
+		and has_completed_romance(other_id)
+
+
+# Existing DateData already references the NPCData resource, which owns its
+# relationship-event definitions and dialogue. Reuse those instead of storing
+# a second registry or putting NPC-specific branches in this manager.
+func _start_other_romance_event(npc_id: StringName) -> void:
+	for date: DateData in DateManager.get_dates_for(npc_id):
+		if date.npc != null:
+			if NPCManager.get_relationship_event_definition(date.npc, OTHER_ROMANCE_EVENT) != null:
+				NPCManager.start_relationship_event(date.npc, OTHER_ROMANCE_EVENT)
+			return
 
 
 static func tone_amount(tone: String) -> int:
@@ -248,26 +270,15 @@ func clear_picked(npc_id: StringName) -> void:
 
 # --- Daily decay ---
 
-func _on_conversation_started(_npc: NPCData) -> void:
-	_negative_choice_in_conversation = false
-
-
 func _on_conversation_finished(npc: NPCData) -> void:
-	var had_negative_choice: bool = _negative_choice_in_conversation
-	_negative_choice_in_conversation = false
 	if npc == null:
 		return
-	var npc_id: StringName = npc.npc_id
-	var state: Dictionary = NPCManager.get_npc_state(npc_id)
+	var state: Dictionary = NPCManager.get_npc_state(npc.npc_id)
 	if not state.get("flags", {}).get(RECRUITED_FLAG, false):
 		return
-	var today: int = GameManager.get_day()
-	# One normal check-in per day. Hurtful exchanges cannot generate a bonus,
-	# and dates are rewarded once separately in DateManager.
-	if not had_negative_choice and not DateManager.is_active() \
-			and int(state.get(LAST_TALK_KEY, -1)) != today:
-		change_affection(npc_id, TALK_AFFECTION_RECOVERY)
-	state[LAST_TALK_KEY] = today
+	# Talking prevents next-day neglect but never grants affection by itself.
+	# Meaningful dialogue choices and successful dates own their own rewards.
+	state[LAST_TALK_KEY] = GameManager.get_day()
 
 
 func _on_day_started(day: int) -> void:
@@ -295,6 +306,12 @@ func leave(npc_id: StringName) -> void:
 	state.erase(LAST_DATE_KEY)
 	state.erase(RECRUITED_DAY_KEY)
 	state[JEALOUSY_KEY] = 0
+	# A new recruitment starts a new relationship: old unresolved incidents
+	# must not replay after an NPC has left the island.
+	state["relationship_events"] = {}
+	for flag: StringName in state["flags"].keys():
+		if String(flag).begins_with("relationship_event_"):
+			state["flags"].erase(flag)
 	state["flags"].erase(ROMANCE_KEY)
 	# A recaught NPC must complete the first-romance route again before dates.
 	for flag in [&"silas_route_complete", &"barracuda_route_complete",

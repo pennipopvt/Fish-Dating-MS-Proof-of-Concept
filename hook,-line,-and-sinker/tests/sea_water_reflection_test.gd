@@ -26,6 +26,10 @@ func _run() -> void:
 		and water.z_index > 6
 		and water.z_index < underwater_tint.z_index,
 		"Water screen-texture pass is above terrain and all world actors but below the camera tint")
+	var net: DivingNetProjectile = sea.get_node("NetProjectile") as DivingNetProjectile
+	_check(net.z_index < water.z_index
+		and net.get_node("NetSprite").z_as_relative,
+		"The net and cord remain under the water overlay during diving")
 	_check(water_mat != null and water_mat.shader != null
 		and water_mat.shader.code.contains("viewer_submersion")
 		and water_mat.shader.code.contains("mix(1.0, deep_water_alpha, viewer_submersion)"),

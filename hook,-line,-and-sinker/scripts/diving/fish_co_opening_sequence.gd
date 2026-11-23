@@ -5,6 +5,8 @@ class_name FishCoOpeningSequence
 # dock's Yes/No choice. Does not animate world movement or own the iris.
 signal dive_confirmed(dock: Node2D)
 signal first_dive_onboarding_finished
+# Sent by the developer skip path; normal arrival is sent by SeaDiveTransition.
+signal debug_island_arrived
 
 const FISH_CO_OPERATOR: NPCData = preload("res://resources/npcs/fish_co_operator.tres")
 const DOCK_CONFIRM: NPCData = preload("res://resources/npcs/dock_dive_prompt.tres")
@@ -23,6 +25,13 @@ var _first_dive_call_started: bool = false
 var _first_dive_call_finished: bool = false
 var _dock_confirmation_target: Node2D
 var _dock_confirmation_yes: bool = false
+var _boat_intro_active: bool = false
+var _contract_call_started: bool = false
+
+@export_group("Title Camera")
+# Title shot still contains Penni on the boat; Play pans to CameraFocus.
+@export var title_camera_offset: Vector2 = Vector2(-62.0, -16.0)
+@export_range(0.0, 4.0, 0.05, "suffix:s") var title_pan_seconds: float = 1.4
 
 
 func configure(world: Node2D, player: Player, shop: ShopMenu, transition: SeaDiveTransition) -> void:
@@ -33,6 +42,7 @@ func configure(world: Node2D, player: Player, shop: ShopMenu, transition: SeaDiv
 	_intro_layer = self
 	_ensure_intro_nodes()
 	hide()
+	set_process(false)
 	DialogueManager.conversation_finished.connect(_on_contract_conversation_finished)
 	DialogueManager.conversation_finished.connect(_on_first_dive_conversation_finished)
 	DialogueManager.choice_resolved.connect(_on_dock_choice_resolved)
@@ -44,6 +54,10 @@ func configure(world: Node2D, player: Player, shop: ShopMenu, transition: SeaDiv
 func start() -> void:
 	if _contract_call_finished:
 		return
+	# The title screen uses this same world/boat before dialogue starts.
+	_world_player.busy = true
+	_boat_intro_active = true
+	set_process(true)
 	# Stage the existing world-space boat before the phone call.
 	# Godot 4.7 silently omitted the authored nested scene instance inside
 	# world.tscn. The existing opening owner places its reusable boat scene
@@ -56,11 +70,45 @@ func start() -> void:
 		if spot != null:
 			_world_player.global_position = spot.global_position
 			_world_player.animator.play(&"idle_l")
-			_world_player.z_index = 12
+			# The existing Water shader samples pixels behind Water (z=10).
+			# Keep Penni above the boat visually, but below the water pass so
+			# her sprite is present in the reflected screen texture.
+			_world_player.z_index = 6
 		if camera != null and focus != null:
-			camera.snap_to(focus.global_position)
+			camera.snap_to(focus.global_position + title_camera_offset)
 	if camera == null:
 		push_error("Fish Co opening requires World/CameraController; reload world.tscn.")
+
+
+# Parent Penni visually to the moving boat marker without reparenting Player:
+# other world and interaction systems must still find World/Player.
+func _process(_delta: float) -> void:
+	if not _boat_intro_active:
+		return
+	var boat: Node2D = _world.get_node_or_null("IntroBoat") as Node2D
+	if boat == null:
+		return
+	var spot: Marker2D = boat.get_node_or_null("PlayerSpot") as Marker2D
+	if spot != null:
+		_world_player.global_position = spot.global_position
+		_world_player.animator.rotation = boat.rotation
+
+
+func begin_from_title() -> void:
+	if _contract_call_started or _contract_call_finished:
+		return
+	_contract_call_started = true
+	_world_player.busy = true
+	var boat: Node2D = _world.get_node_or_null("IntroBoat") as Node2D
+	var focus: Marker2D = boat.get_node_or_null("CameraFocus") as Marker2D if boat != null else null
+	var camera: WorldCameraController = _world.get_node_or_null("CameraController") as WorldCameraController
+	if focus != null and camera != null:
+		# Keep the real title-screen camera center's Y when Play is pressed.
+		# The boat rocks slightly and the title framing has an authored offset;
+		# using CameraFocus.y again would introduce an unwanted vertical pan.
+		var title_center_y: float = camera.camera.get_screen_center_position().y
+		var pan_target := Vector2(focus.global_position.x, title_center_y)
+		await camera.pan_to(pan_target, title_pan_seconds)
 	_start_contract_call()
 
 
@@ -76,6 +124,20 @@ func _ensure_intro_boat() -> Node2D:
 	boat.name = "IntroBoat"
 	_world.add_child(boat)
 	return boat
+
+
+# Only the opening's world actor is temporary. The same packed boat scene
+# can be instantiated separately later as Kuda's date venue.
+func release_intro_boat() -> void:
+	_boat_intro_active = false
+	set_process(false)
+	if is_instance_valid(_world_player):
+		_world_player.animator.rotation = 0.0
+	if _world == null:
+		return
+	var boat: Node2D = _world.get_node_or_null("IntroBoat") as Node2D
+	if is_instance_valid(boat):
+		boat.queue_free()
 
 
 # Existing authored FishCoIntro takes priority; restore that same PackedScene
@@ -187,6 +249,7 @@ func debug_skip_to_dive() -> bool:
 	if is_instance_valid(_intro):
 		_intro.end()
 	hide()
+	release_intro_boat()
 	var dock: Node2D = _world.get_node("Dock") as Node2D
 	_world_player.global_position = dock.global_position + Vector2(22.0, 11.0)
 	_world_player.z_index = 0
@@ -194,6 +257,7 @@ func debug_skip_to_dive() -> bool:
 	(_world.get_node("CameraController") as WorldCameraController).snap_to_player()
 	(_world.get_node("Shop") as ShopInteractable).set_intro_quota_notice(false)
 	_finish_first_dive_call()
+	debug_island_arrived.emit()
 	return true
 
 

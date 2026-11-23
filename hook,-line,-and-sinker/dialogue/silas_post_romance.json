@@ -4,7 +4,7 @@
     "greeting": {
       "lines": [
         "Oh! Penni, hi.",
-        "It's nice to see you again."
+        "I was looking out at the water. It feels different from up here."
       ],
       "choices": [
         {
@@ -20,7 +20,7 @@
           "text": "You seem a little distant. Is something wrong?",
           "next": "check_in",
           "when": {
-            "min_jealousy": 50
+            "min_jealousy": 25
           },
           "priority": 10,
           "grey_when_picked": false
@@ -95,7 +95,7 @@
         },
         {
           "when": {
-            "min_jealousy": 50
+            "min_jealousy": 25
           },
           "lines": [
             "Oh. Hi, Penni.",
@@ -232,7 +232,7 @@
         {
           "next": "check_in_jealous",
           "when": {
-            "min_jealousy": 50
+            "min_jealousy": 25
           }
         },
         {

@@ -15,6 +15,9 @@ class_name DivingFishSpawn
 # Assign the opening fish by Inspector data rather than a fragile node name.
 # Leave this false for ordinary fish. Only one spawn should be selected.
 @export var is_first_dive_fish: bool = false
+# Ordinary fish needed for the first companion catch must not exist before
+# Silas is rescued. The story's FirstFish stays visible and scripted.
+@export var spawn_after_silas_rescue: bool = false
 
 @export_group("Fish Approach and Flee")
 # A fish tries to stay this far from Penni. Zero permits close approaches.

@@ -21,7 +21,7 @@
           "text": "Something on your mind?",
           "next": "check_in",
           "when": {
-            "min_jealousy": 50
+            "min_jealousy": 25
           },
           "priority": 10,
           "grey_when_picked": false
@@ -85,7 +85,7 @@
         },
         {
           "when": {
-            "min_jealousy": 50
+            "min_jealousy": 25
           },
           "lines": [
             "Penni.",
@@ -105,9 +105,9 @@
     },
     "ship_when": {
       "lines": [
-        "A boat ride, huh?",
-        "Heh. Not a bad idea.",
-        "When?"
+        "You want to take the boat out together?",
+        "Yeah. I could go for that.",
+        "When were you thinking?"
       ],
       "choices": [
         {
@@ -211,7 +211,7 @@
         {
           "next": "check_in_jealous",
           "when": {
-            "min_jealousy": 50
+            "min_jealousy": 25
           }
         },
         {

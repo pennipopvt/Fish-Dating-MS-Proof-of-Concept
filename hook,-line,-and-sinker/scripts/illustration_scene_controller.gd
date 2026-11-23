@@ -164,9 +164,28 @@ func _finish_scene(completed: bool) -> void:
 	_transitioning = false
 
 
+# The same fade + sleep-text + Continue presentation as NPC overnights,
+# without the adult-scene warning or romance progression.
+# The room/clock owner runs its swap exactly once while the screen is black.
+func play_rest_transition(message: String, on_black: Callable) -> bool:
+	if _active_npc != null or _transitioning or not on_black.is_valid():
+		return false
+	_transitioning = true
+	await _fade_to(1.0)
+	await _show_sleep_interlude(message)
+	on_black.call()
+	await _fade_to(0.0)
+	_transitioning = false
+	return true
+
+
 func _show_overnight_interlude(npc: NPCData) -> void:
-	sleep_text.text = npc.overnight_transition_text if not npc.overnight_transition_text.is_empty() \
-		else "You drift off to sleep."
+	await _show_sleep_interlude(npc.overnight_transition_text if not npc.overnight_transition_text.is_empty()
+		else "You drift off to sleep.")
+
+
+func _show_sleep_interlude(message: String) -> void:
+	sleep_text.text = message if not message.is_empty() else "You drift off to sleep."
 	_interlude_active = true
 	overnight_interlude.show()
 	interlude_continue.grab_focus()

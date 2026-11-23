@@ -103,8 +103,15 @@ func _ready() -> void:
 	_check(water.position == Vector2(-2052, 140)
 		and water.size == Vector2(4852, 660),
 		"Restoring sea bounds restores the water coverage automatically")
-	_check(not population.has_generated() and pool.size() == 3,
-		"Tutorial begins with only two authored fish and hidden Silas target")
+	_check(not population.has_generated() and pool.size() == 2,
+		"Before rescuing Silas only the scripted first fish and hidden rescue target exist")
+	var flags: Dictionary = NPCManager.get_npc_state(story.silas_data.npc_id)["flags"]
+	flags[&"silas_freed"] = true
+	flags[&"silas_following"] = true
+	sea.call("_on_silas_following_started")
+	pool = sea.get("_wild_fish")
+	_check(pool.size() == 3,
+		"Silas's completed rescue now creates the authored catchable mullet")
 	var original_ids: Dictionary = {}
 	for fish in pool:
 		original_ids[fish.get_instance_id()] = true
@@ -116,17 +123,17 @@ func _ready() -> void:
 	var data: FishData
 	for candidate in pool:
 		var wild: DivingWildFish = candidate as DivingWildFish
-		if wild != null and not wild.trapped:
+		if wild != null and not wild.trapped \
+				and wild != (sea.get_node("EncounterSequence") as SeaEncounterSequence).tutorial_fish:
 			fish = wild
 			data = (sea.get("_fish_data") as Dictionary).get(wild) as FishData
 			break
-	_check(fish != null and data != null, "An existing normal fish can be used in tutorial")
+	_check(fish != null and data != null,
+		"The rescue-gated fish is available for Silas's first assisted catch")
 	if fish == null:
 		_finish(main)
 		return
 
-	var flags: Dictionary = NPCManager.get_npc_state(story.silas_data.npc_id)["flags"]
-	flags[&"silas_following"] = true
 	fish.companion_weakened = true
 	story.on_first_companion_catch(fish)
 	await get_tree().process_frame

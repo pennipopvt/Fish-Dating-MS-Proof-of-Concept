@@ -4,8 +4,9 @@ extends Node
 # each choice there is gated by the flag "date_ok_<date_id>" (refreshed here
 # whenever a conversation starts) and requests the scene "date:<date_id>".
 # Date plans are made with the NPC in dialogue. The terminal calendar only
-# displays booked dates. Meet the NPC at the FIRST action of the booked period
-# (or use the date location), otherwise the appointment is missed.
+# displays booked dates. Visit the NPC's townhouse room (or existing
+# DateLocation) at the FIRST action of the booked period. If several NPCs
+# are booked for the same period, the player chooses whose room to visit.
 # A date: fade out, move Penni and the NPC to the location's spots (or to a
 # venue spawned just for the date, like the ship out at sea), play the
 # date JSON, then fade back and put everyone where they were. A finished date
@@ -62,6 +63,9 @@ var _venue: Node2D = null
 var _restore: Array = []
 var _fade: ScreenFade
 var _date_player: Player = null
+# Some venues (the original opening boat) author their own camera focus.
+# DateManager borrows the existing World camera, never spawns another.
+var _date_camera: WorldCameraController = null
 
 
 func _ready() -> void:
@@ -161,10 +165,9 @@ func can_book_at(date: DateData, day: int, period: int) -> bool:
 	# Booking in the current period requires time-costing activities unused.
 	if chosen_slot == current_slot and GameManager.get_actions_left() != GameManager.ACTIONS_PER_PERIOD:
 		return false
-	for id in bookings:
-		var slot: Dictionary = bookings[id]
-		if int(slot["day"]) == day and int(slot["period"]) == period:
-			return false
+	# Different NPCs may agree to the same period. Only one can actually
+	# happen, because finishing a date consumes the remainder of the
+	# period and the other bookings correctly become missed.
 	return true
 
 # "Next morning/afternoon/night" means the next occurrence measured from when
@@ -322,11 +325,36 @@ func start_date(date: DateData) -> void:
 		_venue.global_position = date.venue_position
 		venue = _venue
 	_move(player, _spot(venue, &"PlayerSpot"))
+	# Match the original intro boat camera composition while we're there.
+	# Only venues with a CameraFocus marker override normal follow mode.
+	var camera_focus: Marker2D = venue.get_node_or_null("CameraFocus") as Marker2D
+	if camera_focus != null:
+		_date_camera = player.get_parent().get_node_or_null("CameraController") as WorldCameraController
+		if _date_camera != null:
+			_date_camera.snap_to(camera_focus.global_position)
+	# An authored date venue may specify a shared foreground layer for its
+	# characters. Keep them in World (no reparenting), and restore Penni's
+	# original draw order along with her position when the date ends.
+	var cast_layer: CanvasItem = venue.get_node_or_null("DateCastLayer") as CanvasItem
+	var date_z_index: int = -1
+	if cast_layer != null:
+		date_z_index = cast_layer.z_index
+	else:
+		# Older cached boat scenes may not carry the optional marker, but
+		# the actual animated hull still specifies its draw order.
+		var boat_art: IntroBoatSprite = venue.get_node_or_null("Sprite") as IntroBoatSprite
+		if boat_art != null:
+			date_z_index = boat_art.z_index + 1
+	if date_z_index >= 0:
+		player.z_index = date_z_index
 	# Recruited NPCs are data-only residents, not actors in the island world.
 	# Dates and dock cutscenes use the exact same noninteractive land actor.
-	_date_actor = NPCTemporaryActor.spawn(date.npc, player.get_parent(), _spot(venue, &"NpcSpot"))
+	_date_actor = NPCTemporaryActor.spawn(date.npc, player.get_parent(),
+		_spot(venue, &"NpcSpot") + date.npc_feet_offset)
 	if _date_actor != null:
 		_date_actor.name = "DateGuest_" + String(date.npc.npc_id)
+		if date_z_index >= 0:
+			_date_actor.z_index = date_z_index
 	await _fade_to(0.0)
 	_in_dialogue = true
 	DialogueManager.request_conversation(date.npc, date.dialogue_json)
@@ -397,7 +425,11 @@ func _finish(completed: bool) -> void:
 		var node: Node2D = entry[0]
 		if is_instance_valid(node):
 			node.global_position = entry[1]
+			node.z_index = entry[2]
 	_restore.clear()
+	if is_instance_valid(_date_camera):
+		_date_camera.snap_to_player()
+	_date_camera = null
 	if is_instance_valid(_date_actor):
 		_date_actor.queue_free()
 	_date_actor = null
@@ -443,7 +475,7 @@ func _spot(venue: Node2D, marker: StringName) -> Vector2:
 func _move(node: Node2D, spot: Vector2) -> void:
 	if node == null:
 		return
-	_restore.append([node, node.global_position])
+	_restore.append([node, node.global_position, node.z_index])
 	node.global_position = spot
 
 

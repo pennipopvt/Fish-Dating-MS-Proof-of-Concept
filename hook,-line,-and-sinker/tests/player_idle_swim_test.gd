@@ -13,8 +13,31 @@ func _ready() -> void:
 
 func _run() -> void:
 	var player: Player = PLAYER.instantiate() as Player
+	# Author different child settings before ready, exactly as the Inspector
+	# does. The fader must preserve them when swimming starts and stops.
+	var swim_sound: SwimSoundFader = player.get_node("SwimSound") as SwimSoundFader
+	swim_sound.volume_db = -1.5
+	swim_sound.pitch_scale = 0.55
 	add_child(player)
 	await get_tree().process_frame
+	# Regression: do not let the Player script undo settings in child nodes.
+	var step_timer: Timer = player.get_node("StepTimer") as Timer
+	step_timer.wait_time = 0.93
+	player._update_step_audio(true)
+	_check(is_equal_approx(step_timer.wait_time, 0.93) and not step_timer.is_stopped(),
+		"Walking uses the editor-authored StepTimer Wait Time without overwriting it")
+	player._stop_step_audio()
+	# The 2s WAV has a very short impact and a long silent tail. A new
+	# step must still trigger even if the preceding audio is still playing.
+	# Use the actual editor-timer timeout callback with an active walk.
+	player.velocity = Vector2(100.0, 0.0)
+	player._play_step()
+	_check((player.get_node("StepSound") as AudioStreamPlayer).playing,
+		"Footstep starts before the next timer tick")
+	player._on_step_timer_timeout()
+	_check((player.get_node("StepSound") as AudioStreamPlayer).playing,
+		"Another timer tick can retrigger a still-active footstep stream")
+	player._stop_step_audio()
 	var frames: SpriteFrames = player.animator.sprite_frames
 	for animation_name in [&"swim_l", &"swim_r", &"swim_idle_l", &"swim_idle_r"]:
 		_check(frames.has_animation(animation_name)
@@ -40,15 +63,36 @@ func _run() -> void:
 	player._swim_physics(1.0 / 60.0)
 	_check(player.animator.animation == &"swim_l",
 		"Movement left switches to the existing swimming animation")
+	var swim_audio: SwimSoundFader = player.get_node("SwimSound") as SwimSoundFader
+	_check(swim_audio.stream is AudioStreamWAV
+		and (swim_audio.stream as AudioStreamWAV).format != AudioStreamWAV.FORMAT_QOA
+		and (swim_audio.stream as AudioStreamWAV).loop_mode == AudioStreamWAV.LOOP_FORWARD,
+		"New swim WAV imports as looping PCM instead of QOA")
+	_check(swim_audio.playing and swim_audio.bus == &"UnderwaterSFX"
+		and swim_audio.is_swimming_active()
+		and is_equal_approx(swim_audio.pitch_scale, 0.55)
+		and is_equal_approx(swim_audio.get_authored_volume_db(), -1.5),
+		"Swimming preserves editor-authored pitch and volume as the fade target")
+	await get_tree().create_timer(swim_audio.fade_in_seconds + 0.1).timeout
+	_check(swim_audio.playing and is_equal_approx(swim_audio.volume_db, -1.5),
+		"Fade-in reaches the actual Inspector volume without changing pitch")
 	Input.action_release(&"Move Left")
 	player._swim_physics(1.0 / 60.0)
 	_check(player.animator.animation == &"swim_idle_l",
 		"Releasing left returns to floating while facing left")
+	_check(swim_audio.playing and not swim_audio.is_swimming_active()
+		and not (player.get_node("StepSound") as AudioStreamPlayer).playing,
+		"Idle swimming begins a fade-out instead of abruptly stopping")
+	await get_tree().create_timer(swim_audio.fade_out_seconds * 0.5).timeout
+	_check(swim_audio.playing and swim_audio.volume_db < -1.5,
+		"The swimming loop stays alive while volume falls toward silence")
 
 	Input.action_press(&"Move Right")
 	player._swim_physics(1.0 / 60.0)
 	_check(player.animator.animation == &"swim_r",
 		"Movement right switches to the existing swimming animation")
+	_check(swim_audio.playing and swim_audio.is_swimming_active(),
+		"Swimming again during fade-out revives the same loop seamlessly")
 	Input.action_release(&"Move Right")
 	player._swim_physics(1.0 / 60.0)
 	_check(player.animator.animation == &"swim_idle_r",
@@ -63,6 +107,13 @@ func _run() -> void:
 	player.set_swimming(false)
 	_check(not player.swimming and player.animator.animation == &"idle_r",
 		"Surfacing restores the original land idle animation")
+	_check(swim_audio.playing and not swim_audio.is_swimming_active(),
+		"Surfacing fades the remaining swim sound rather than hard-cutting it")
+	await get_tree().create_timer(swim_audio.fade_out_seconds + 0.1).timeout
+	_check(not swim_audio.playing, "The swim player stops only after fade-out completes")
+	_check(is_equal_approx(swim_audio.pitch_scale, 0.55)
+		and is_equal_approx(swim_audio.get_authored_volume_db(), -1.5),
+		"Fading does not override the Inspector pitch or authored volume")
 	player.last_direction = -1.0
 	player.set_swimming(true, Rect2(-200, -200, 400, 400))
 	player.set_swimming(false)

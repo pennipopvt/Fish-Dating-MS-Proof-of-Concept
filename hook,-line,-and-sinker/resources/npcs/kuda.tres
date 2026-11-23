@@ -21,13 +21,6 @@
 script = ExtResource("townhouse_door_info")
 door = ExtResource("townhouse_generic_door")
 
-[sub_resource type="Resource" id="Rule_invitation"]
-script = ExtResource("2_rule")
-json_path = "res://dialogue/kuda_invitation.json"
-required_flags = Array[StringName]([&"Recruited", &"barracuda_scarf_complete"])
-forbidden_flags = Array[StringName]([&"barracuda_invitation_accepted", &"barracuda_route_complete"])
-min_days_after_gift = 1
-
 [sub_resource type="Resource" id="Rule_post_romance"]
 script = ExtResource("2_rule")
 json_path = "res://dialogue/kuda_post_romance.json"
@@ -55,6 +48,12 @@ event_id = &"prelude_boundary"
 priority = 30
 blocks_actions = Array[StringName]([&"overnight"])
 
+[sub_resource type="Resource" id="OtherRomanceEvent"]
+script = ExtResource("relationship_event_script")
+event_id = &"other_romance"
+followup_dialogue_json = "res://dialogue/kuda_other_romance.json"
+priority = 40
+
 [sub_resource type="Resource" id="CompanionKnockoutEvent"]
 script = ExtResource("relationship_event_script")
 event_id = &"companion_knockout"
@@ -66,6 +65,7 @@ blocks_actions = Array[StringName]([&"dive", &"overnight"])
 script = ExtResource("1_npc")
 npc_id = &"barracuda"
 display_name = "Kuda"
+voice_pitch_scale = 0.8
 portrait = ExtResource("6_2m545")
 land_actor_scene_path = "res://prefabs/kuda.tscn"
 underwater_sprite = ExtResource("underwater_kuda")
@@ -87,8 +87,8 @@ morning_after_json = "res://dialogue/kuda_after_scene.json"
 overnight_transition_text = "You drift off to sleep beside Kuda."
 romance_complete_flag = &"barracuda_route_complete"
 romance_reward_id = &"barracuda"
-relationship_events = Array[ExtResource("relationship_event_script")]([SubResource("PreludeBoundaryEvent"), SubResource("CompanionKnockoutEvent")])
-encounter_rules = Array[ExtResource("2_rule")]([SubResource("Rule_invitation"), SubResource("Rule_post_romance"), SubResource("Rule_casual"), SubResource("Rule_retry"), SubResource("Rule_first")])
+relationship_events = Array[ExtResource("relationship_event_script")]([SubResource("PreludeBoundaryEvent"), SubResource("OtherRomanceEvent"), SubResource("CompanionKnockoutEvent")])
+encounter_rules = Array[ExtResource("2_rule")]([SubResource("Rule_post_romance"), SubResource("Rule_casual"), SubResource("Rule_retry"), SubResource("Rule_first")])
 desired_gift = ExtResource("5_gift")
 correct_gift_json = "res://dialogue/kuda_gift_correct.json"
 incorrect_gift_json_pool = Array[String](["res://dialogue/kuda_gift_wrong.json"])

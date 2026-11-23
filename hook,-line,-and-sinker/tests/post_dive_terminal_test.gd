@@ -36,21 +36,30 @@ func _ready() -> void:
 		and not menu.is_page_unlocked(ShopMenu.Page.SHOP),
 		"Before the first return, the terminal shows only Quota")
 	_check(not story.can_surface(), "First shore exit is locked before assisted catch")
+	var initial_normal_count: int = 0
+	for candidate in sea.get("_wild_fish"):
+		if candidate is DivingWildFish and not (candidate as DivingWildFish).trapped \
+				and candidate != (sea.get_node("EncounterSequence") as SeaEncounterSequence).tutorial_fish:
+			initial_normal_count += 1
+	_check(initial_normal_count == 0,
+		"Silas's catchable tutorial mullet must not spawn before his rescue")
+	var flags: Dictionary = NPCManager.get_npc_state(story.silas_data.npc_id)["flags"]
+	flags[&"silas_freed"] = true
+	flags[&"silas_following"] = true
+	sea.call("_on_silas_following_started")
 	var fish: DivingWildFish
 	for candidate in sea.get("_wild_fish"):
 		var wild: DivingWildFish = candidate as DivingWildFish
-		if wild != null and not wild.trapped:
+		if wild != null and not wild.trapped \
+				and wild != (sea.get_node("EncounterSequence") as SeaEncounterSequence).tutorial_fish:
 			fish = wild
 			break
-	_check(fish != null, "A normal fish is available for the companion catch test")
+	_check(fish != null, "Rescuing Silas spawns the normal fish for companion catch")
 	if fish == null:
 		_finish(main)
 		return
 	var lookup: Dictionary = sea.get("_fish_data")
 	var data: FishData = lookup.get(fish) as FishData
-	var flags: Dictionary = NPCManager.get_npc_state(story.silas_data.npc_id)["flags"]
-	flags[&"silas_freed"] = true
-	flags[&"silas_following"] = true
 	_check(not fish.companion_weakened and not story.can_surface(),
 		"Meeting and commanding Silas do not satisfy the catch requirement")
 	_check(battle.start(fish, data), "Silas begins ordinary shared battle")

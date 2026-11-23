@@ -1,0 +1,23 @@
+[gd_resource type="Resource" script_class="TradeData" format=3 uid="uid://cnatgqohmgshr"]
+
+[ext_resource type="Texture2D" uid="uid://cy6m4p32euy7d" path="res://sprites/ui/icon_challenges.png" id="preview_icon"]
+[ext_resource type="Resource" uid="uid://dh5u57inonklf" path="res://resources/items/mullet.tres" id="preview_mullet"]
+[ext_resource type="Script" uid="uid://dou1ei8c0alhj" path="res://resources/trade_requirement.gd" id="requirement_script"]
+[ext_resource type="Script" uid="uid://co23u2dkxgpsq" path="res://resources/trade_data.gd" id="trade_script"]
+
+[sub_resource type="Resource" id="PreviewCost"]
+script = ExtResource("requirement_script")
+item = ExtResource("preview_mullet")
+
+[resource]
+script = ExtResource("trade_script")
+trade_id = &"pressure_regulator"
+display_name = "Pressure Regulator"
+description = "Reduces extra oxygen drain from depth by 25%. Preview price; 1 day delivery."
+one_time_purchase = true
+icon = ExtResource("preview_icon")
+delivery_time = 1
+requirements = Array[ExtResource("requirement_script")]([SubResource("PreviewCost")])
+reward_method = &"shop_reward_pressure_regulator"
+reward_amount = 25
+delivery_sprite = ExtResource("preview_icon")

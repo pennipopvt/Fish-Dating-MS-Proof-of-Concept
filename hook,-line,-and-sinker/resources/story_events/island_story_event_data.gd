@@ -1,20 +1,32 @@
 class_name IslandStoryEventData
 extends Resource
 
-# Author a one-time island story beat in the Inspector. The director schedules
-# it, the existing DialogueManager plays it, and the system named by
-# completion_effect retains ownership of the actual gameplay state.
+# Inspector-authored island story beat. StoryManager owns when it runs;
+# NPCManager/DialogueManager retain flags and dialogue progression.
 @export var event_id: StringName = &""
 @export var speaker: NPCData
 @export_file("*.json") var dialogue_json: String = ""
 
 @export_group("Eligibility")
 @export_range(1, 999, 1) var earliest_day: int = 1
-## Optional: require a resident, and wait this many calendar days since move-in.
 @export var requires_resident: bool = false
 @export_range(0, 999, 1) var days_after_resident: int = 0
 @export var requires_first_dive_onboarding: bool = false
+@export var speaker_must_be_resident: bool = false
+@export var required_flags: Array[StringName] = []
+@export var forbidden_flags: Array[StringName] = []
+@export_range(0, 30, 1) var min_days_after_gift: int = 0
+@export var respect_overnight_boundaries: bool = false
+
+@export_group("Morning Presentation")
+## Morning-only events queue on day_started, not when a flag changes midday.
+@export var morning_only: bool = false
+## Display the NPC's existing land sprite beside Penni without walking.
+@export var stage_land_actor: bool = false
+@export var guest_offset: Vector2 = Vector2(-26.0, 0.0)
 
 @export_group("Completion")
-## An effect handled at a single boundary in the island director.
+## 0 = one-time. Positive = may be offered again after this many days
+## while prerequisites still match (e.g., when Penni declined an invitation).
+@export_range(0, 30, 1) var retry_after_days: int = 0
 @export var completion_effect: StringName = &""
