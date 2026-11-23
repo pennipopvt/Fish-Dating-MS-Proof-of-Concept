@@ -28,13 +28,24 @@ func _run() -> void:
 		"Fish Co intro belongs to the correctly layered CanvasLayer")
 	var terminal: ShopMenu = main.get_node("CanvasLayer/ShopMenu") as ShopMenu
 	var tabs: VBoxContainer = terminal.get_node("TerminalRoot/NavTabs") as VBoxContainer
-	_check(intro.visible and player.busy and not bool(main.get("_contract_call_finished")),
-		"New game opens on Fish Co boat backdrop before the player can move")
+	var boat: Node2D = world.get_node("IntroBoat") as Node2D
+	var controller: WorldCameraController = world.get_node("CameraController") as WorldCameraController
+	var camera: Camera2D = controller.get_node("Camera2D") as Camera2D
+	var dock_intro_position: Vector2 = (boat.get_node("PlayerSpot") as Marker2D).global_position
+	_check(not intro.visible and player.busy and not bool(main.get("_contract_call_finished"))
+		and player.global_position.distance_to(dock_intro_position) < 1.0,
+		"Opening Fish Co call uses the actual east-side boat and not the fake backdrop")
+	_check(camera.get_parent() == controller and not player.has_node("Camera2D")
+		and camera.get_screen_center_position().distance_to(
+			(boat.get_node("CameraFocus") as Marker2D).global_position) < 4.0,
+		"World camera frames the boat independently of Penni and her animation")
+	_check((boat.get_node("Sprite") as IntroBoatSprite).sprite_frames != null,
+		"Real world boat uses the imported animated sprite")
 	_check(DialogueManager.is_active and dialogue_ui.visible
 		and DialogueManager.current_npc.npc_id == &"fish_co_operator",
 		"Fish Co call plays through normal DialogueManager and DialogueUI")
 	_check(dialogue_ui.layer > (main.get_node("IntroLayer") as CanvasLayer).layer,
-		"Regular dialogue portraits appear in front of the boat backdrop")
+		"Regular dialogue portraits appear over the real world boat")
 	_check(not intro.has_node("DialoguePanel"),
 		"No separate custom phone-call dialogue box remains")
 	_check((dialogue_ui.get_node("NPCPortrait") as TextureRect).texture == FISH_CO_PORTRAIT,
@@ -178,7 +189,9 @@ func _run() -> void:
 		"Persistent tutorial dock prompt switches back to proximity-only after Yes")
 	await create_timer(1.7).timeout
 	_check(bool(main.get("_underwater")) and player.swimming,
-		"Dock descent enables swimming in the original World with its existing Player")
+		"One continuous dock jump enables swimming in the original World")
+	_check(bool((main.get_node("TransitionLayer") as SeaDiveTransition).get("_dive_has_splashed")),
+		"Depth crossing triggers a single splash on the continuous jump path")
 	_check(sea.get_parent() == world and sea.get_node("Solids") is TileMapLayer,
 		"Underwater level is an editable child of the same persistent World")
 	_check(GameManager.diving_session_active, "Catching fish underwater does not spend additional actions")

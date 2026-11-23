@@ -18,7 +18,7 @@ func _run() -> void:
 	var solids: TileMapLayer = sea.get_node("Solids") as TileMapLayer
 	var penni: Player = world.get_node("Player") as Player
 	var sprite: AnimatedSprite2D = penni.get_node("AnimatedSprite2D") as AnimatedSprite2D
-	var underwater_tint: ColorRect = penni.get_node("Camera2D/UnderwaterTint") as ColorRect
+	var underwater_tint: ColorRect = world.get_node("CameraController/Camera2D/UnderwaterTint") as ColorRect
 	var water_mat: ShaderMaterial = water.material as ShaderMaterial
 	var solids_mat: ShaderMaterial = solids.material as ShaderMaterial
 	_check(water.z_index > solids.z_index
@@ -38,7 +38,7 @@ func _run() -> void:
 		"Sea tiles clip at the same screen-space waterline used by the reflection, preserving physics")
 	_check(world.get_node("Sky") is Control
 		and absf(water.position.y - 140.0) < 0.01,
-		"Sky and sea still share the original world-space water surface")
+		"Screen-space sky still clips to the original world-space water surface")
 	world.free()
 	print("FAILED: %d" % failures if failures > 0 else "Sea surface rendering architecture passed")
 	quit(1 if failures > 0 else 0)

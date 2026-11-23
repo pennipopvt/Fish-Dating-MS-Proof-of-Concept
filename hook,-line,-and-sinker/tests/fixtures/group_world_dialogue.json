@@ -1,0 +1,30 @@
+{
+  "entry": "begin",
+  "free_greeting": true,
+  "nodes": {
+    "begin": {
+      "lines": [
+        {
+          "speaker": "test_npc",
+          "text": "Silas is here."
+        },
+        {
+          "speaker": "barracuda",
+          "text": "Kuda is here."
+        },
+        {
+          "speaker": "player",
+          "text": "Penni is here."
+        },
+        {
+          "speaker_id": "unavailable_companion",
+          "text": "This line must be skipped."
+        },
+        {
+          "speaker": "test_npc",
+          "text": "The end."
+        }
+      ]
+    }
+  }
+}

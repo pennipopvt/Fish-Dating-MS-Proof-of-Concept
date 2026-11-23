@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://tests/fish_co_morale_call_test.gd" id="1_test"]
+
+[node name="FishCoMoraleCallTest" type="Node"]
+script = ExtResource("1_test")

@@ -9,7 +9,9 @@ signal fish_remove_requested(fish: DivingWildFish)
 @export_group("First Fish: Focus")
 @export_range(0.0, 240.0, 1.0) var first_fish_focus_range: float = 110.0
 @export_range(0.0, 140.0, 1.0) var min_tutorial_swim_distance: float = 50.0
-@export_range(0.2, 6.0, 0.05) var fish_focus_hold_seconds: float = 1.15
+@export_range(0.05, 2.0, 0.05) var fish_focus_pan_seconds: float = 0.4
+@export_range(0.2, 6.0, 0.05) var fish_focus_hold_seconds: float = 0.55
+@export_range(0.05, 2.0, 0.05) var fish_focus_return_seconds: float = 0.4
 @export_group("First Fish: Reel and Escape")
 @export_range(50.0, 600.0, 1.0) var first_fish_escape_distance: float = 330.0
 @export_range(0.1, 3.0, 0.05) var first_fish_escape_seconds: float = 0.85
@@ -25,14 +27,13 @@ signal fish_remove_requested(fish: DivingWildFish)
 @export_group("Silas Surface Reveal")
 @export var silas_land_scene: PackedScene = preload("res://prefabs/silas.tscn")
 @export var silas_poof_texture: Texture2D = preload("res://sprites/characters/poof.png")
-@export_range(0.1, 2.0, 0.05) var silas_surface_swim_seconds: float = 0.75
-@export_range(0.1, 1.2, 0.05) var silas_surface_jump_seconds: float = 0.48
 @export_range(0.1, 1.0, 0.05) var townhouse_fade_seconds: float = 0.35
 var _silas_surface_scene_running: bool = false
 # Injected by SeaDiveTransition: the same presentation handles the school.
 var _surface_presentation: SeaPartyEntrance
 
 var _player: Player
+var _camera_controller: WorldCameraController
 var _story: SeaStoryDirector
 var _net: DivingNetProjectile
 var _silas: SeaNPC
@@ -43,6 +44,7 @@ var _silas_home: Vector2
 var _tutorial_swim_origin: Vector2
 var _fish_focus_locked: bool = false
 var _fish_focus_timer: float = 0.0
+var _fish_focus_return_started: bool = false
 var _first_fish_escape_finished: bool = false
 var _help_reveal_x: float = -INF
 var _scripted_reel_mode: StringName = &""
@@ -78,6 +80,8 @@ var reel_scrolls: int:
 func configure(player: Player, story: SeaStoryDirector, net: DivingNetProjectile,
 		silas: SeaNPC, cue: SeaTutorialCue) -> void:
 	_player = player
+	_camera_controller = player.get_parent().get_node_or_null(
+		"CameraController") as WorldCameraController
 	_story = story
 	_net = net
 	_silas = silas
@@ -180,6 +184,10 @@ func restore_silas_position() -> void:
 func _check_first_fish_focus(delta: float) -> void:
 	if _fish_focus_locked:
 		_fish_focus_timer -= delta
+		if not _fish_focus_return_started and _fish_focus_timer <= fish_focus_return_seconds:
+			_fish_focus_return_started = true
+			if is_instance_valid(_camera_controller):
+				_camera_controller.return_to_player(fish_focus_return_seconds)
 		if _fish_focus_timer <= 0.0:
 			_release_first_fish_focus()
 		return
@@ -197,8 +205,13 @@ func _check_first_fish_focus(delta: float) -> void:
 	if not _story.on_first_fish_seen():
 		return
 	_fish_focus_locked = true
-	_fish_focus_timer = fish_focus_hold_seconds
+	_fish_focus_return_started = false
+	_fish_focus_timer = fish_focus_pan_seconds + fish_focus_hold_seconds + fish_focus_return_seconds
 	_player.busy = true
+	# Reuse the world camera, and the same existing control lock that this
+	# underwater story beat already owns. No new cutscene or tutorial HUD.
+	if is_instance_valid(_camera_controller):
+		_camera_controller.pan_to(_tutorial_fish.global_position, fish_focus_pan_seconds)
 
 
 func _release_first_fish_focus() -> void:
@@ -206,6 +219,11 @@ func _release_first_fish_focus() -> void:
 		return
 	_fish_focus_locked = false
 	_fish_focus_timer = 0.0
+	_fish_focus_return_started = false
+	# A dive ending or an interrupted tutorial must never strand the camera
+	# on the fish. On normal completion the return tween has already ended.
+	if is_instance_valid(_camera_controller) and not _camera_controller.get("_following"):
+		_camera_controller.snap_to_player()
 	_player.busy = false
 
 
@@ -361,7 +379,7 @@ func _cancel_scripted_reel() -> void:
 # Called after SeaDiveTransition has restored walking and land portraits.
 # Silas swims to the same dock, leaps after Penni, then changes actor on poof.
 
-func play_silas_surface_reveal() -> void:
+func play_silas_surface_reveal(from_first_land_care: bool = false) -> void:
 	if _silas_surface_scene_running or not _story.begin_silas_surface_reveal():
 		return
 	_silas_surface_scene_running = true
@@ -387,11 +405,10 @@ func play_silas_surface_reveal() -> void:
 	var human_center: Vector2 = _surface_presentation.surface_visual_center(land_actor) \
 		if land_actor != null else dock_wait.global_position
 	await _surface_presentation.swim_and_jump_to_surface(
-		_silas, approach.global_position, human_center,
-		silas_surface_swim_seconds, silas_surface_jump_seconds
+		_silas, approach.global_position, human_center
 	)
 
-	_story.start_silas_surface_warning()
+	_story.start_silas_surface_warning(from_first_land_care)
 	await _story.silas_surface_warning_finished
 	if land_actor != null:
 		await _surface_presentation.transform_surface_fish(_silas, land_actor)
@@ -399,8 +416,23 @@ func play_silas_surface_reveal() -> void:
 		_silas.hide()
 	_story.on_silas_surface_transformed()
 	await _story.silas_surface_reveal_finished
-	# One short travel fade brings the two of them in front of the townhouse.
-	# The NPC is still a CUTSCENE-ONLY actor; housing only stores an NPC ID.
+	# Reuse the existing townhouse choreography for normal returns and
+	# blackouts; the latter leaves its actor for shared surface cleanup.
+	await _bring_silas_to_townhouse(land_actor, true)
+	_player.busy = false
+	_silas_surface_scene_running = false
+
+
+func play_silas_blackout_townhouse_arrival(land_actor: NPCInteractable) -> void:
+	if land_actor == null:
+		return
+	await _bring_silas_to_townhouse(land_actor, false)
+
+
+func _bring_silas_to_townhouse(land_actor: NPCInteractable,
+		cleanup_here: bool) -> void:
+	var world: Node2D = _player.get_parent() as Node2D
+	var dock_wait: Marker2D = get_parent().get_node("Points/SilasDockWait") as Marker2D
 	var travel := ScreenFade.new()
 	get_tree().root.add_child(travel)
 	await travel.fade_to(1.0, townhouse_fade_seconds)
@@ -408,27 +440,23 @@ func play_silas_surface_reveal() -> void:
 	var silas_spot: Marker2D = world.get_node("TownhouseArrival/SilasSpot") as Marker2D
 	_player.global_position = player_spot.global_position
 	_player.animator.play(&"idle_r")
-	var camera: Camera2D = _player.get_node("Camera2D") as Camera2D
-	camera.position = Vector2.ZERO
-	camera.reset_smoothing()
-	camera.force_update_scroll()
+	(world.get_node("CameraController") as WorldCameraController).snap_to_player()
 	if is_instance_valid(land_actor):
-		# Preserve the feet offset from the dock so the cutscene needs no walk.
 		land_actor.global_position = silas_spot.global_position + (
 			land_actor.global_position - dock_wait.global_position)
 	await travel.fade_to(0.0, townhouse_fade_seconds)
 	_story.start_silas_townhouse_arrival()
 	await _story.silas_townhouse_dialogue_finished
-	await travel.fade_to(1.0, townhouse_fade_seconds)
+	if cleanup_here:
+		await travel.fade_to(1.0, townhouse_fade_seconds)
 	var assigned: bool = RecruitmentHandler.assign_home(_story.silas_data)
 	if not assigned:
 		push_warning("Silas accepted the room, but no townhouse door was available.")
-	if is_instance_valid(land_actor):
-		land_actor.queue_free()
-	await travel.fade_to(0.0, townhouse_fade_seconds)
+	if cleanup_here:
+		if is_instance_valid(land_actor):
+			land_actor.queue_free()
+		await travel.fade_to(0.0, townhouse_fade_seconds)
 	travel.queue_free()
 	_story.complete_silas_townhouse_arrival()
-	_player.busy = false
-	_silas_surface_scene_running = false
 
 

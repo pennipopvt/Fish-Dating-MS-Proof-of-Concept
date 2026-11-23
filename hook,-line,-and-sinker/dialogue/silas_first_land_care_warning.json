@@ -1,0 +1,30 @@
+{
+  "entry": "shore_warning",
+  "free_greeting": true,
+  "nodes": {
+    "shore_warning": {
+      "lines": [
+        {
+          "speaker": "test_npc",
+          "text": "P-Penni! Wait!"
+        },
+        {
+          "speaker": "player",
+          "text": "Silas?! I told you to stay in the water! You're hurt!"
+        },
+        {
+          "speaker": "test_npc",
+          "text": "I know, but... I didn't want to be left alone."
+        },
+        {
+          "speaker": "player",
+          "text": "You can't just jump onto land. You're a fish!"
+        },
+        {
+          "speaker": "test_npc",
+          "text": "W-what?! What's happening?!"
+        }
+      ]
+    }
+  }
+}

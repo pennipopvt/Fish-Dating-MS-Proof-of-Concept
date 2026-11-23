@@ -8,6 +8,7 @@ const SHOP_MENU = preload("res://prefabs/shop_menu.tscn")
 const TERMINAL = preload("res://prefabs/shop.tscn")
 const QUOTA_ICON = preload("res://sprites/ui/icon_quota.png")
 const SCHEDULE_ICON = preload("res://sprites/ui/icon_schedule.png")
+const SHOP_ICON = preload("res://sprites/ui/icon_gift.png")
 const SCARF = preload("res://resources/trades/kuda_scarf.tres")
 const REEL = preload("res://resources/trades/stronger_reel.tres")
 const LINE = preload("res://resources/trades/reinforced_line.tres")
@@ -20,6 +21,8 @@ func _ready() -> void:
 	await get_tree().process_frame
 	var previous_states := NPCManager.npc_states.duplicate(true)
 	NPCManager.npc_states.clear()
+	var previous_gifts_unlocked: bool = ShopManager.gifts_unlocked
+	ShopManager.gifts_unlocked = false
 	ChallengeManager.reset_all()
 	FishingManager.reset_session_upgrades()
 	var prior_first_quota: bool = QuotaManager.first_quota_completed
@@ -36,6 +39,10 @@ func _ready() -> void:
 		"Quota tab uses the supplied 16x16 PNG")
 	_expect(schedule_icon.texture == SCHEDULE_ICON and SCHEDULE_ICON.get_size() == Vector2(16, 16),
 		"Schedule tab uses the supplied 16x16 PNG")
+	var shop_icon := shop.get_node("TerminalRoot/NavTabs/ShopTab/Icon") as TextureRect
+	var shop_label := shop.get_node("TerminalRoot/NavTabs/ShopTab/VerticalTitle") as Label
+	_expect(shop_icon.texture == SHOP_ICON and shop_label.text == "SHOP",
+		"Outer Shop tab uses the original gift icon and SHOP label")
 	_expect((shop.get("_nav_buttons") as Array).size() == 6,
 		"Six terminal tabs remain after merging gifts and upgrades")
 	var nav := shop.get_node("TerminalRoot/NavTabs") as VBoxContainer
@@ -45,14 +52,23 @@ func _ready() -> void:
 	_expect(not (shop.get("_shop_gifts") as Button).visible,
 		"Gifts are hidden before the first NPC is recruited")
 	_expect(not ShopManager.can_trade(SCARF),
-		"Shop purchase API also blocks gifts before first recruitment")
+		"Shop API blocks gifts before the Fish Co phone unlock")
 
 	var silas_flags: Dictionary = NPCManager.get_npc_state(&"test_npc")["flags"]
 	silas_flags[&"Recruited"] = true
 	shop.call("_refresh_page")
+	_expect(not (shop.get("_shop_gifts") as Button).visible,
+		"Recruiting a fish does not expose Gifts before Fish Co calls")
+	ShopManager.unlock_gifts()
 	_expect((shop.get("_shop_gifts") as Button).visible,
-		"Gifts subtab appears once an NPC is recruited")
+		"Fish Co unlock reveals the Gifts subtab")
+	var gifts_notice := shop.get_node("TerminalRoot/Panel/Margin/Layout/Body/Left/ShopCategories/ShopGifts/GiftsNoticeBubble") as PanelContainer
+	var parent_notice := shop.get_node("TerminalRoot/NavTabs/ShopTab/UpgradeNoticeBubble") as PanelContainer
+	_expect(gifts_notice.visible and parent_notice.visible,
+		"New gift category shows an ! on Gifts and the outer Shop tab")
 	shop.call("_select_shop_section", 1)
+	_expect(not gifts_notice.visible and not parent_notice.visible,
+		"Opening Gifts acknowledges both gift notifications")
 	for entry in shop.get("_entries"):
 		var trade := entry.get("ref") as TradeData
 		_expect(trade != null and trade.reward_item != null,
@@ -122,6 +138,7 @@ func _ready() -> void:
 	ChallengeManager.reset_all()
 	FishingManager.reset_session_upgrades()
 	NPCManager.npc_states = previous_states
+	ShopManager.gifts_unlocked = previous_gifts_unlocked
 	QuotaManager.first_quota_completed = prior_first_quota
 	shop.queue_free()
 	terminal.queue_free()

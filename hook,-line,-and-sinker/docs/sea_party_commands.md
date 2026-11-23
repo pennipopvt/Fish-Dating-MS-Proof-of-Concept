@@ -29,3 +29,17 @@ The available queue is deliberately **not displayed as a HUD**; the actual fish 
 - `resources/visuals/kuda_sea_visuals.tres`: existing fish-form size and portrait framing, unchanged.
 
 No new UI panels or shortcuts are needed.
+
+## Silas's wounded-fish dialogue
+
+Silas's combat safety threshold is unchanged: he stops on his own at 50%
+health without needing a player command. His first automatic disengagement
+can display the one-time tutorial speech bubble, but subsequent automatic
+retreats remain silent.
+
+A **deliberate right-click order** against an already-wounded fish always
+routes through his existing `silas_refuses_attack.json` conversation, even if
+the tutorial warning has appeared earlier. This lets Penni back off or keep
+pressuring him, including the `fish_hurt_pressure` relationship-event
+consequence. Rejected orders never hurt the fish or consume Silas's queue
+slot. An active dialogue is never interrupted by a second refusal.

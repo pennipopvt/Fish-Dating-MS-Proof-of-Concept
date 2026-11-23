@@ -3,10 +3,28 @@
   "nodes": {
     "greeting": {
       "lines": [
-        "Oh, hello again!",
-        "Did you need something?"
+        "Oh! Penni, hi.",
+        "It's nice to see you again."
       ],
       "choices": [
+        {
+          "text": "Can we talk about how things have been?",
+          "next": "check_in",
+          "when": {
+            "max_affection": 45
+          },
+          "priority": 15,
+          "grey_when_picked": false
+        },
+        {
+          "text": "You seem a little distant. Is something wrong?",
+          "next": "check_in",
+          "when": {
+            "min_jealousy": 50
+          },
+          "priority": 10,
+          "grey_when_picked": false
+        },
         {
           "text": "Want to go on a date?",
           "next": "beach_when",
@@ -15,9 +33,83 @@
           ]
         },
         {
+          "text": "Something else...",
+          "next": "topics",
+          "grey_when_picked": false
+        },
+        {
+          "text": "Do you still want to explore together someday?",
+          "next": "explore_followup",
+          "when": {
+            "active_events": [
+              "explore_together"
+            ]
+          },
+          "priority": 4,
+          "grey_when_picked": false
+        },
+        {
+          "text": "How's the spyglass?",
+          "next": "spyglass_chat",
+          "required_flags": [
+            "spyglass_complete"
+          ],
+          "grey_when_picked": false
+        },
+        {
           "text": "See you later!",
           "next": "goodbye",
-          "spends_action": false
+          "spends_action": false,
+          "grey_when_picked": false
+        }
+      ],
+      "line_variants": [
+        {
+          "when": {
+            "required_flags": [
+              "refuses_diving"
+            ]
+          },
+          "lines": [
+            "Oh. Penni.",
+            "I don't think I can go diving with you right now."
+          ]
+        },
+        {
+          "when": {
+            "max_affection": 25
+          },
+          "lines": [
+            "Oh, Penni.",
+            "I haven't been feeling great about things lately."
+          ]
+        },
+        {
+          "when": {
+            "max_affection": 45
+          },
+          "lines": [
+            "Oh... hi, Penni.",
+            "Do you have a minute to talk?"
+          ]
+        },
+        {
+          "when": {
+            "min_jealousy": 50
+          },
+          "lines": [
+            "Oh. Hi, Penni.",
+            "I wasn't sure you'd come by today."
+          ]
+        },
+        {
+          "when": {
+            "min_days_since_talk": 3
+          },
+          "lines": [
+            "Oh! Penni...",
+            "It's been a little while. I missed talking to you."
+          ]
         }
       ]
     },
@@ -66,7 +158,172 @@
     "goodbye": {
       "lines": [
         "Okay! See you soon!"
+      ],
+      "effects": {
+        "request_scene": "room_exit"
+      }
+    },
+    "topics": {
+      "lines": [
+        "Oh! Sure. What did you want to talk about?"
+      ],
+      "choices": [
+        {
+          "text": "How have you been?",
+          "next": "check_in"
+        },
+        {
+          "text": "Want to go on a date?",
+          "next": "beach_when",
+          "required_flags": [
+            "date_ok_silas_beach"
+          ]
+        },
+        {
+          "text": "Do you still want to explore together someday?",
+          "next": "explore_followup",
+          "when": {
+            "active_events": [
+              "explore_together"
+            ]
+          },
+          "priority": 4,
+          "grey_when_picked": false
+        },
+        {
+          "text": "How's the spyglass?",
+          "next": "spyglass_chat",
+          "required_flags": [
+            "spyglass_complete"
+          ],
+          "grey_when_picked": false
+        },
+        {
+          "text": "See you later!",
+          "next": "goodbye",
+          "spends_action": false,
+          "grey_when_picked": false
+        }
       ]
+    },
+    "check_in": {
+      "lines": [],
+      "conditional_next": [
+        {
+          "next": "check_in_refusing",
+          "when": {
+            "required_flags": [
+              "refuses_diving"
+            ]
+          }
+        },
+        {
+          "next": "check_in_hurt",
+          "when": {
+            "max_affection": 25
+          }
+        },
+        {
+          "next": "check_in_neglected",
+          "when": {
+            "max_affection": 45
+          }
+        },
+        {
+          "next": "check_in_jealous",
+          "when": {
+            "min_jealousy": 50
+          }
+        },
+        {
+          "next": "check_in_lonesome",
+          "when": {
+            "min_days_since_talk": 3
+          }
+        }
+      ],
+      "rotating_next": [
+        "check_in_home",
+        "check_in_birds",
+        "check_in_you"
+      ]
+    },
+    "check_in_home": {
+      "lines": [
+        "Honestly, I've been really happy lately.",
+        "I'm still getting used to everything, but... it's nice having you around."
+      ],
+      "next": "topics"
+    },
+    "check_in_birds": {
+      "lines": [
+        "I tried watching those things flying over the island again.",
+        "I think they might be birds?",
+        "I'm getting a little braver about looking outside."
+      ],
+      "next": "topics"
+    },
+    "check_in_you": {
+      "lines": [
+        "You know, I never really asked what you like doing when you're not fishing.",
+        "I want to know more about you, too."
+      ],
+      "next": "topics"
+    },
+    "check_in_jealous": {
+      "lines": [
+        "I've been trying not to think about it, but...",
+        "Seeing you with someone else has been harder than I expected.",
+        "Could we talk about that sometime?"
+      ],
+      "next": "topics"
+    },
+    "check_in_hurt": {
+      "lines": [
+        "I know you're busy, Penni.",
+        "But lately, I feel like we only talk when you need something.",
+        "I miss when we could just spend time together."
+      ],
+      "next": "topics"
+    },
+    "check_in_lonesome": {
+      "lines": [
+        "I've been doing okay on my own.",
+        "But... I missed seeing you around.",
+        "I'm glad you came by."
+      ],
+      "next": "topics"
+    },
+    "check_in_refusing": {
+      "lines": [
+        "I know the dives are important to you.",
+        "But I just don't feel comfortable going along like nothing's wrong.",
+        "Can we spend a little time together before you ask me again?"
+      ],
+      "next": "topics"
+    },
+    "check_in_neglected": {
+      "lines": [
+        "I've been watching the birds on my own lately.",
+        "I was hoping we'd find time to do something together."
+      ],
+      "next": "topics"
+    },
+    "explore_followup": {
+      "lines": [
+        "I haven't forgotten!",
+        "I'm getting less nervous about going places, especially if you're there.",
+        "One of these days, we'll do it. I'd like that."
+      ],
+      "next": "topics"
+    },
+    "spyglass_chat": {
+      "lines": [
+        "Oh, I've been taking it everywhere.",
+        "It's so nice being able to see things from a distance instead of hiding and guessing.",
+        "I'm really glad you gave it to me."
+      ],
+      "next": "topics"
     }
   },
   "free_greeting": true

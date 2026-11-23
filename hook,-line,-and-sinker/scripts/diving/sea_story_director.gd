@@ -13,9 +13,14 @@ signal dialogue_mode_requested(underwater_portraits: bool)
 signal kuda_hook_dialogue_finished
 signal kuda_recruited
 signal kuda_surface_reveal_finished
+signal kuda_townhouse_dialogue_finished
+signal kuda_townhouse_arrival_finished
 
 @export var silas_data: NPCData = preload("res://resources/npcs/silas.tres")
 @export var kuda_data: NPCData = preload("res://resources/npcs/kuda.tres")
+@export_file("*.json") var oxygen_recovery_dialogue: String = "res://dialogue/oxygen_blackout_recovery.json"
+@export_file("*.json") var first_land_rescue_dialogue: String = "res://dialogue/oxygen_first_land_rescue.json"
+@export_file("*.json") var silas_first_land_care_warning_dialogue: String = "res://dialogue/silas_first_land_care_warning.json"
 
 var _events: Dictionary = {}
 var _dialogue_stage: StringName = &""
@@ -90,7 +95,7 @@ func _cue() -> SeaTutorialCue:
 	# Direct node lookup in the SAME SubViewport as the Player and camera.
 	# No dependency on Main's CanvasLayer or cross-viewport group ordering.
 	return get_parent().get_parent().get_node_or_null(
-		"Player/Camera2D/SeaTutorialCue"
+		"CameraController/Camera2D/SeaTutorialCue"
 	) as SeaTutorialCue
 
 
@@ -178,13 +183,15 @@ func can_begin_kuda_surface_reveal() -> bool:
 
 # Kuda is already in the party. His first human-form surprise happens only
 # after the shared surface poof, and uses the normal dialogue UI/JSON.
-func start_kuda_surface_reveal() -> bool:
+func start_kuda_surface_reveal(present_cast: Array[NPCData] = []) -> bool:
 	if not can_begin_kuda_surface_reveal():
 		return false
 	_kuda_dialogue_stage = &"surface_reveal"
 	dialogue_mode_requested.emit(false)
+	# DialogueManager chooses per-line speakers from this actual returning
+	# party, while Kuda remains the owner of the entire introduction.
 	DialogueManager.request_conversation(kuda_data,
-		"res://dialogue/kuda_surface_reveal.json")
+		"res://dialogue/kuda_surface_reveal.json", null, present_cast)
 	if not DialogueManager.is_active:
 		DialogueManager.request_inline_conversation(kuda_data,
 			["Wait, I have LEGS?!", "What just happened to me?!"], "Kuda")
@@ -194,11 +201,114 @@ func start_kuda_surface_reveal() -> bool:
 	return true
 
 
+# Same existing dialogue UI and JSON authoring, with optional first-land
+# lines inserted into the ONE recovery conversation. Silas/Kuda each speak
+# only if they genuinely transformed for the first time on this blackout.
+# A transient context prevents affection or relationship-story side effects.
+func play_oxygen_blackout_recovery(present_cast: Array[NPCData],
+		first_land_ids: Array[StringName] = []) -> void:
+	if present_cast.is_empty():
+		return
+	if DialogueManager.is_active:
+		await DialogueManager.conversation_finished
+	var context := NPCData.new()
+	context.npc_id = &"oxygen_blackout_story"
+	context.display_name = "Penni's companions"
+	context.portrait = present_cast[0].portrait
+	var base_graph: Dictionary = DialogueJsonLoader.read_graph(oxygen_recovery_dialogue)
+	var base_node: Dictionary = base_graph.get("nodes", {}).get("shore", {})
+	var authored: Array = base_node.get("lines", [])
+	var lines: Array[Dictionary] = []
+	for entry in authored:
+		if entry is Dictionary:
+			lines.append(entry)
+		elif entry is String:
+			lines.append({"text": entry})
+		# Put the surprise directly after Penni wakes and her friends react.
+		if lines.size() == 3 and not first_land_ids.is_empty():
+			var first_graph: Dictionary = DialogueJsonLoader.read_graph(first_land_rescue_dialogue)
+			var nodes: Dictionary = first_graph.get("nodes", {})
+			for npc_id in first_land_ids:
+				var special_node: Dictionary = nodes.get(
+					"silas_first" if npc_id == silas_data.npc_id else
+					"kuda_first" if npc_id == kuda_data.npc_id else "", {})
+				for special_line in special_node.get("lines", []):
+					if special_line is Dictionary:
+						lines.append(special_line)
+	dialogue_mode_requested.emit(false)
+	DialogueManager.request_group_lines(context, lines, present_cast)
+	if DialogueManager.is_active and DialogueManager.current_npc == context:
+		await DialogueManager.conversation_finished
+
+
+func mark_kuda_surface_rescued() -> void:
+	# The human transformation was already seen at wake-up; the room scene
+	# is still separate and will assign residence after dialogue.
+	NPCManager.get_npc_state(kuda_data.npc_id)["flags"][&"kuda_surface_introduced"] = true
+	kuda_surface_reveal_finished.emit()
+
+
+func mark_silas_surface_rescued() -> void:
+	# Skip Silas's fish-jump warning/reveal, not his welcome or his room.
+	_events[&"silas_surface_scene_started"] = true
+	_set_silas_flag(&"silas_surface_transformed")
+	_set_silas_flag(&"silas_waiting_at_dock")
+	_npc_flags()[&"silas_following"] = false
+	silas_surface_reveal_finished.emit()
+
+
+# Penni returns with an injured fish who has never reached land. The
+# normal shore actor and townhouse hooks handle their first transformation
+# and housing; only the words describing WHO rescued whom are different.
+func play_first_land_care_dialogue(npc: NPCData,
+		present_cast: Array[NPCData]) -> void:
+	if npc == null or npc.sea_first_land_after_knockout_json.is_empty():
+		return
+	if DialogueManager.is_active:
+		await DialogueManager.conversation_finished
+	var context := NPCData.new()
+	context.npc_id = StringName("first_land_care_%s" % String(npc.npc_id))
+	context.display_name = npc.display_name
+	context.portrait = npc.portrait
+	dialogue_mode_requested.emit(false)
+	DialogueManager.request_conversation(context,
+		npc.sea_first_land_after_knockout_json, null, present_cast)
+	if DialogueManager.is_active and DialogueManager.current_npc == context:
+		await DialogueManager.conversation_finished
+
+
+# Shared dialogue system and persistent NPC flags; Kuda's physical presentation
+# remains in SeaKudaEncounter, just like Silas's in SeaEncounterSequence.
+func start_kuda_townhouse_arrival() -> void:
+	_kuda_dialogue_stage = &"townhouse_arrival"
+	dialogue_mode_requested.emit(false)
+	DialogueManager.request_conversation(kuda_data,
+		"res://dialogue/kuda_townhouse_arrival.json")
+	if not DialogueManager.is_active:
+		DialogueManager.request_inline_conversation(kuda_data,
+			["This is the townhouse?", "Fine. I'll take a room.", "Thanks, Penni."], "Kuda")
+
+
+func complete_kuda_townhouse_arrival() -> void:
+	var flags: Dictionary = NPCManager.get_npc_state(kuda_data.npc_id)["flags"]
+	flags[&"kuda_has_home"] = true
+	kuda_townhouse_arrival_finished.emit()
+
+
+# World discoveries can use a shared queue rather than opening DialogueUI
+# over a fight. The event identity and any persistent flags remain story-owned.
+func queue_world_conversation(event_id: StringName, context: NPCData,
+		dialogue_path: String, cast: Array[NPCData] = [], priority: int = 0) -> bool:
+	var sea: DivingWorld = get_parent() as DivingWorld
+	return sea.queue_world_dialogue(event_id, context, dialogue_path, cast, priority) \
+		if sea != null else false
+
+
 func on_dive_entered() -> void:
 	if not has_event(&"line_broken") and not has_event(&"help_called"):
 		var cue: SeaTutorialCue = _cue()
 		if cue == null:
-			push_warning("SeaTutorialCue is missing from the Player camera.")
+			push_warning("SeaTutorialCue is missing from the world camera.")
 			return
 		if has_event(&"tutorial_hooked"):
 			cue.show_action(&"reel")
@@ -364,6 +474,8 @@ func _on_conversation_finished(finished_npc: NPCData) -> void:
 		elif stage == &"surface_reveal":
 			NPCManager.get_npc_state(kuda_data.npc_id)["flags"][&"kuda_surface_introduced"] = true
 			kuda_surface_reveal_finished.emit()
+		elif stage == &"townhouse_arrival":
+			kuda_townhouse_dialogue_finished.emit()
 		return
 	if finished_npc != silas_data:
 		return
@@ -413,10 +525,10 @@ func on_companion_targeted() -> void:
 
 
 
-# Silas's nonlethal limit is a tutorial beat, not recurring feedback.
-# He always stops at the safety threshold in SilasCombatBehavior, but only
-# explains that behavior once per playthrough. Manual low-health refusals
-# share the same flag as automatic retreat, so they cannot repeat the lesson.
+# Silas stops fighting at his nonlethal threshold every time.
+# The automatic retreat warning is one-time to avoid interrupting combat.
+# An explicit player command to hurt an already-wounded fish is different:
+# it always opens his authored dialogue so Penni can respond to his boundary.
 func on_silas_spared_fish(_fish: DivingWildFish) -> void:
 	if has_event(&"silas_nonlethal_explained") or DialogueManager.is_active:
 		return
@@ -425,10 +537,10 @@ func on_silas_spared_fish(_fish: DivingWildFish) -> void:
 
 
 func on_silas_attack_refused(_fish: DivingWildFish) -> void:
-	if has_event(&"silas_nonlethal_explained") or DialogueManager.is_active:
+	if DialogueManager.is_active:
 		return
-	# If the player's very first command is against a weakened fish, teach
-	# the same rule through the existing dialogue instead of the retreat call.
+	# Direct player orders can trigger dialogue every time, even after the
+	# one-time automatic warning. Do not spam or overwrite active dialogue.
 	var ui: SeaSpeechBubble = _bubble()
 	if ui != null:
 		ui.hide_call()
@@ -481,11 +593,15 @@ func begin_silas_surface_reveal() -> bool:
 	return true
 
 
-func start_silas_surface_warning() -> void:
+func start_silas_surface_warning(from_first_land_care: bool = false) -> void:
 	_dialogue_stage = &"surface_warning"
-	# Silas is still a fish for the warning conversation.
+	# The injured Silas follows Penni up despite her telling him to wait.
+	# Only this warning changes; the transformation, introduction and
+	# townhouse dialogue are EXACTLY the normal first-land scene.
 	dialogue_mode_requested.emit(true)
-	DialogueManager.request_conversation(silas_data, "res://dialogue/silas_surface_warning.json")
+	var dialogue_path: String = silas_first_land_care_warning_dialogue \
+		if from_first_land_care else "res://dialogue/silas_surface_warning.json"
+	DialogueManager.request_conversation(silas_data, dialogue_path)
 	if not DialogueManager.is_active:
 		DialogueManager.request_inline_conversation(
 			silas_data,

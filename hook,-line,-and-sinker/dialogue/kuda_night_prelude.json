@@ -1,0 +1,90 @@
+{
+  "entry": "arrival",
+  "nodes": {
+    "arrival": {
+      "lines": [
+        "...Hey. You showed up.",
+        "I, uh... tidied up a little. That's all.",
+        "What are you smiling about?"
+      ],
+      "choices": [
+        {
+          "text": "Because I'm happy to see you.",
+          "next": "settle"
+        },
+        {
+          "text": "You were looking forward to this, weren't you?",
+          "next": "settle"
+        },
+        {
+          "text": "This better be worth the trouble.",
+          "next": "too_fast"
+        }
+      ]
+    },
+    "settle": {
+      "lines": [
+        "...Whatever. Maybe I was.",
+        "It's weird not knowing what to say for once.",
+        "Can we just hang out for a minute?"
+      ],
+      "choices": [
+        {
+          "text": "Sure. I'm not in a rush.",
+          "next": "close"
+        },
+        {
+          "text": "I like being here with you.",
+          "next": "close"
+        },
+        {
+          "text": "I don't have all night.",
+          "next": "too_fast"
+        }
+      ]
+    },
+    "close": {
+      "lines": [
+        "...",
+        "Okay. I think I can do this.",
+        "You sure you want to stay?"
+      ],
+      "choices": [
+        {
+          "text": "Yeah. If you want me to.",
+          "next": "ready"
+        },
+        {
+          "text": "Maybe another night.",
+          "next": "postpone"
+        }
+      ]
+    },
+    "ready": {
+      "lines": [
+        "...I do.",
+        "Come here, then."
+      ],
+      "effects": {
+        "request_scene": "room_overnight_ready"
+      }
+    },
+    "postpone": {
+      "lines": [
+        "That's fine.",
+        "...Come back when you're ready, okay?"
+      ]
+    },
+    "too_fast": {
+      "lines": [
+        "Tch. Not if you're gonna act like that.",
+        "Let's call it a night."
+      ],
+      "effects": {
+        "start_relationship_events": [
+          "prelude_boundary"
+        ]
+      }
+    }
+  }
+}

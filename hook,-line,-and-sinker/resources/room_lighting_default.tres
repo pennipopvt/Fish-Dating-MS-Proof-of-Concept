@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="RoomLightingProfile" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/room_lighting_profile.gd" id="1_lighting"]
+
+[resource]
+script = ExtResource("1_lighting")
+base_brightness = 0.82
+morning_tint = Color(1, 0.91, 0.72, 1)
+morning_brightness = 1.0
+afternoon_tint = Color(1, 1, 1, 1)
+afternoon_brightness = 1.0
+night_tint = Color(0.67, 0.76, 0.99, 1)
+night_brightness = 0.79

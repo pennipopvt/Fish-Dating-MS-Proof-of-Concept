@@ -102,8 +102,22 @@ func _run() -> void:
 	_check(speech != null and not speech.is_call_shown(),
 		"Later automatic retreats are silent")
 	_check(bool(sea.call("_try_companion_target", f1.position))
-		and not DialogueManager.is_active and commands.next_available_id() == SILAS.npc_id,
-		"Later manual refusals are silent and preserve the available queue")
+		and DialogueManager.is_active
+		and DialogueManager.current_npc == SILAS
+		and commands.next_available_id() == SILAS.npc_id,
+		"Manual refusal still opens Silas's dialogue after the automatic warning")
+	var reminder_line: DialogueLineData = DialogueManager.get_current_line()
+	_check(reminder_line != null and reminder_line.text == "Penni? N-no, not that one...",
+		"Repeated deliberate orders retain his existing boundary conversation")
+	if DialogueManager.is_active:
+		DialogueManager.end_conversation()
+	# An intentional order is different from a silent automatic retreat.
+	_check(bool(sea.call("_try_companion_target", f1.position))
+		and DialogueManager.is_active
+		and commands.next_available_id() == SILAS.npc_id,
+		"Another direct order can reopen his conversation without attacking")
+	if DialogueManager.is_active:
+		DialogueManager.end_conversation()
 	f1.health = MULLET.max_health
 	_check(bool(sea.call("_try_companion_target", f1.position)), "Silas can resume issuing orders")
 

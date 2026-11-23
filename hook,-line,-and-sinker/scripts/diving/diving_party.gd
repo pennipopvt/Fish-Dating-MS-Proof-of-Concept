@@ -27,6 +27,11 @@ func _welcome_silas() -> void:
 func invite(npc: NPCData) -> bool:
 	if npc == null or npc.npc_id == &"":
 		return false
+	# Refusal is temporary. Leave the existing roster membership intact so
+	# the companion automatically rejoins when their affection recovers.
+	if not AffectionManager.can_join_dive(npc.npc_id) \
+			or NPCManager.has_blocking_relationship_event(npc, &"dive"):
+		return false
 	for member in _members:
 		if member.npc_id == npc.npc_id:
 			return true
@@ -63,4 +68,24 @@ func has_companion(npc_id: StringName) -> bool:
 
 
 func members() -> Array[NPCData]:
+	# All existing callers use members() for the physical active dive (dock
+	# entrance, followers and surfacing). Keep unwilling NPCs in the roster.
+	var willing: Array[NPCData] = []
+	for member in _members:
+		if AffectionManager.can_join_dive(member.npc_id) \
+				and not NPCManager.has_blocking_relationship_event(member, &"dive"):
+			willing.append(member)
+	return willing
+
+
+func roster_members() -> Array[NPCData]:
 	return _members.duplicate()
+
+
+func unwilling_members() -> Array[NPCData]:
+	var unwilling: Array[NPCData] = []
+	for member in _members:
+		if not AffectionManager.can_join_dive(member.npc_id) \
+				or NPCManager.has_blocking_relationship_event(member, &"dive"):
+			unwilling.append(member)
+	return unwilling

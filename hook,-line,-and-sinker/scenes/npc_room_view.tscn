@@ -1,6 +1,7 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://scripts/npc_room_view.gd" id="room_script"]
+[ext_resource type="Resource" path="res://resources/room_lighting_default.tres" id="room_lighting"]
 
 [node name="NPCRoomView" type="Control"]
 visible = false
@@ -12,6 +13,7 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 1
 script = ExtResource("room_script")
+lighting_profile = ExtResource("room_lighting")
 
 [node name="Backdrop" type="ColorRect" parent="."]
 layout_mode = 1

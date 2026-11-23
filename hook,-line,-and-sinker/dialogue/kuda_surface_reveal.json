@@ -11,19 +11,36 @@
         "What the—",
         "WHY DO I HAVE LEGS?!",
         {
-          "speaker": "player",
-          "text": "The same thing happened to Silas when he came up here!"
+          "speaker": "test_npc",
+          "text": "O-oh! That happened to me too, when I first came out of the water."
         },
-        "You could've warned me!",
+        "You could've warned me this was going to happen!",
         {
           "speaker": "player",
-          "text": "I didn't know it'd happen again!"
+          "text": "I didn't know it would happen again!"
         },
-        "...Tch.",
+        {
+          "speaker": "test_npc",
+          "text": "Neither did I... But, um, you get used to walking. Mostly."
+        },
+        "Everything's so much taller from up here...",
+        {
+          "speaker": "test_npc",
+          "text": "It's okay if you're a little scared. I was too."
+        },
+        "I'm NOT scared. I just— need a second.",
+        {
+          "speaker": "player",
+          "text": "Take your time."
+        },
         "So what am I supposed to do now?",
         {
           "speaker": "player",
           "text": "You could stay at the townhouse! We can get you a room."
+        },
+        {
+          "speaker": "test_npc",
+          "text": "There's space for you! It's actually pretty nice."
         },
         "Hmph. Fine. Just until I figure this out.",
         {

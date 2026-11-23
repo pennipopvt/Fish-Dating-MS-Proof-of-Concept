@@ -3,16 +3,12 @@ class_name SeaDiveTransition
 
 signal surface_completed
 
-# Owns ONLY the physical one-world transitions: iris, dock jump,
-# sea descent and surfacing. FishCoOpeningSequence handles choices.
+# Owns ONLY physical one-world transitions: iris, a single continuous
+# dock-to-sea path, and surfacing. FishCoOpeningSequence handles choices.
 const RIPPLE: Texture2D = preload("res://sprites/environment/medium_ripple_a.png")
-const DIVE_DURATION: float = 0.43
 const IRIS_DURATION: float = 0.52
 const IRIS_OPEN_RADIUS: float = 2.6
-# Penni dives facing left: the leap carries her this far forward before the
-# splash, and she drifts a little further forward while sinking.
-const DIVE_FORWARD: float = 18.0
-const SINK_FORWARD: float = 10.0
+# Editable Sea/Points paths own dive/jump geometry and timing.
 
 @onready var _iris: ColorRect = $Iris
 @onready var _party: DivingParty = $DivingParty
@@ -20,12 +16,14 @@ const SINK_FORWARD: float = 10.0
 var _iris_material: ShaderMaterial
 var _world: Node2D
 var _world_player: Player
+var _camera_controller: WorldCameraController
 var _sea: DivingWorld
 var _dialogue_ui: DialogueUI
 var _shop_menu: ShopMenu
 var _opening: CanvasLayer
 var underwater: bool = false
 var transitioning: bool = false
+var _dive_has_splashed: bool = false
 var shore_return_position: Vector2 = Vector2(56.0, 112.0)
 
 
@@ -41,15 +39,17 @@ func configure(world: Node2D, player: Player, sea: DivingWorld,
 		dialogue_ui: DialogueUI, shop: ShopMenu, opening: CanvasLayer) -> void:
 	_world = world
 	_world_player = player
+	_camera_controller = world.get_node("CameraController") as WorldCameraController
 	_sea = sea
 	_dialogue_ui = dialogue_ui
 	_shop_menu = shop
 	_opening = opening
 	_party.configure(_sea.get_node("StoryDirector") as SeaStoryDirector)
-	_party_entrance.configure(_world, _world_player)
+	_party_entrance.configure(_world, _world_player, _sea)
 	(_sea.get_node("EncounterSequence") as SeaEncounterSequence).set_surface_presentation(_party_entrance)
 	_sea.surface_requested.connect(_on_surface_requested)
 	_sea.oxygen_return_requested.connect(_on_oxygen_return_requested)
+	_sea.companion_care_requested.connect(_on_companion_care_requested)
 	_sea.kuda_recruited.connect(_on_kuda_recruited)
 	surface_completed.connect(_sea.on_surface_completed)
 	# Story can request fish/human portraits for a conversation without
@@ -88,10 +88,9 @@ func _transition_contract_to_dock(intro: FishCoIntro) -> void:
 	# This is not a new scene or a duplicate starting environment.
 	var dock: Node2D = _world.get_node("Dock") as Node2D
 	_world_player.global_position = dock.global_position + Vector2(22.0, 11.0)
+	_world_player.z_index = 0
 	_world_player.animator.play(&"idle_l")
-	var island_camera: Camera2D = _world_player.get_node("Camera2D") as Camera2D
-	island_camera.reset_smoothing()
-	island_camera.force_update_scroll()
+	_camera_controller.snap_to_player()
 	var terminal: ShopInteractable = _world.get_node("Shop") as ShopInteractable
 	terminal.set_intro_quota_notice(true)
 
@@ -114,38 +113,22 @@ func start_confirmed_dive(dock: Node2D) -> void:
 
 
 func _begin_dive(dock: Node2D) -> void:
-	# Owns the entire party entrance; no NPCs are fetched from the townhouse.
+	# A single editable jump goes from the dock to deep water. The splash,
+	# swimming pose and water visuals transition at the real waterline, not
+	# after a separate descent animation.
 	var members: Array[NPCData] = _party.members()
 	await _party_entrance.call_party_to_dock(members, dock)
-	var jump_start: Vector2 = _world_player.global_position
-	# Splash a little ahead of where Penni stands (same waterline as before).
-	var landing := Vector2(jump_start.x - DIVE_FORWARD, dock.global_position.y + 46.0)
+	var jump_path: SeaMotionPath = _motion(&"PenniDiveJump")
+	_dive_has_splashed = false
 	_world_player.animator.play(&"walk_l")
-	var jump: Tween = create_tween()
-	jump.tween_method(
-		_update_dive_jump.bind(jump_start, landing),
-		0.0, 1.0, DIVE_DURATION
-	).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-	await jump.finished
-	_spawn_splash(landing)
-	_sea.play_sfx(&"dive")
-	await _party_entrance.jump_party_in(dock, _spawn_splash)
+	await jump_path.animate(_world_player, _world_player.global_position,
+		Vector2.INF, _update_dive_jump_visual)
+	if not _dive_has_splashed:
+		push_warning("PenniDiveJump does not cross the sea surface; check its Path2D endpoint.")
+		_on_dive_splash((_world.get_node("Water") as ColorRect).global_position.y)
+	if _party_entrance.entry_in_progress():
+		await _party_entrance.dive_entries_finished
 
-	# No second world, teleport or viewport switch. The camera follows
-	# Penni from the dock through the same surface into the ocean.
-	underwater = true
-	GameManager.diving_session_active = true
-	_dialogue_ui.set_underwater_mode(true)
-	var entry_marker: Marker2D = _sea.get_node_or_null("Points/Entry") as Marker2D
-	var entry: Vector2 = entry_marker.global_position if entry_marker != null else _sea.to_global(Vector2(55, 182))
-	entry = _dive_target_below(landing + Vector2(-SINK_FORWARD, 0.0), entry.y)
-	var island_camera: Camera2D = _world_player.get_node("Camera2D") as Camera2D
-	var descent: Tween = create_tween().set_parallel(true)
-	descent.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-	descent.tween_property(_world_player, "global_position", entry, 0.85)
-	descent.tween_property(island_camera, "position", Vector2.ZERO, 0.85)
-	_party_entrance.descend_with_player(entry, 0.85)
-	await descent.finished
 	_party_entrance.clear()
 	_world_player.animator.rotation = 0.0
 	_sea.enter_from_dock()
@@ -155,24 +138,40 @@ func _begin_dive(dock: Node2D) -> void:
 	transitioning = false
 
 
-# Where Penni sinks to after the splash: down from the given point, as
-# deep as the Entry marker's depth but stopping above any rock under her.
-func _dive_target_below(splash: Vector2, depth: float) -> Vector2:
-	var top: float = DivingWorld.SEA_TOP + DivingWildFish.EDGE_MARGIN
-	var y: float = maxf(depth, top)
-	while y > top and not _sea.call("_is_open_water", _sea.to_local(Vector2(splash.x, y))):
-		y -= 2.0
-	return Vector2(splash.x, y)
+func _motion(path_name: StringName) -> SeaMotionPath:
+	return _sea.get_node("Points/" + String(path_name)) as SeaMotionPath
 
 
-func _update_dive_jump(t: float, start: Vector2, landing: Vector2) -> void:
-	# A readable leap above the dock before splashing below its waterline.
-	_world_player.global_position = start.lerp(landing, t) + Vector2(0.0, -29.0 * sin(PI * t))
-	_world_player.animator.rotation = -0.25 * sin(PI * t)
+func _update_dive_jump_visual(_time: float, progress: float) -> void:
+	# One authored path controls Penni's position. The existing world
+	# shader already uses real water depth for its reflection/tint.
+	var surface_y: float = (_world.get_node("Water") as ColorRect).global_position.y
+	var visual_center_y: float = _world_player.global_position.y + _world_player.animator.position.y
+	if not _dive_has_splashed and visual_center_y >= surface_y:
+		_on_dive_splash(surface_y)
+	if not _dive_has_splashed:
+		_world_player.animator.rotation = -0.25 * sin(PI * progress)
+	else:
+		_world_player.animator.rotation = 0.0
+
+func _on_dive_splash(surface_y: float) -> void:
+	if _dive_has_splashed:
+		return
+	_dive_has_splashed = true
+	_world_player.animator.rotation = 0.0
+	_spawn_splash(Vector2(_world_player.global_position.x, surface_y))
+	_sea.play_sfx(&"dive")
+	underwater = true
+	GameManager.diving_session_active = true
+	_dialogue_ui.set_underwater_mode(true)
+	_world_player.set_swimming(true, _sea._sea_bounds())
+	_camera_controller.set_underwater_mode(true)
+	# Companions follow using their own single continuous dive path,
+	# starting just after Penni enters the water.
+	_party_entrance.jump_party_in(null, Callable(self, "_spawn_splash"))
 
 
 func _spawn_splash(at: Vector2) -> void:
-	_world_player.animator.rotation = 0.0
 	var splash := Sprite2D.new()
 	splash.texture = RIPPLE
 	splash.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
@@ -199,15 +198,14 @@ func _on_surface_requested() -> void:
 func _surface_from_dive() -> void:
 	# Return through the SAME water surface. Sky stays visible in the camera;
 	# there is no fade-to-black or replacement scene.
-	var island_camera: Camera2D = _world_player.get_node("Camera2D") as Camera2D
-	var ascent: Tween = create_tween().set_parallel(true)
-	ascent.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-	ascent.tween_property(_world_player, "global_position", shore_return_position, 0.85)
-	ascent.tween_property(island_camera, "position", Vector2(0.0, -22.0), 0.85)
-	await ascent.finished
+	var surface_path := _motion(&"PenniSurface")
+	await surface_path.animate(_world_player, _world_player.global_position,
+		shore_return_position)
+	_world_player.last_direction = 1.0 # Face inland when returning from the sea.
 	_world_player.set_swimming(false)
+	_camera_controller.set_underwater_mode(false)
 	_world_player.animator.rotation = 0.0
-	_world_player.animator.play(&"idle_l")
+	_world_player.animator.play(&"idle_r")
 	underwater = false
 	_sea.call("_set_camera_bounds", false)
 	_dialogue_ui.set_underwater_mode(false)
@@ -218,27 +216,15 @@ func _surface_from_dive() -> void:
 	GameManager.finish_dive_period()
 
 	var story := _sea.get_node("StoryDirector") as SeaStoryDirector
-	# The first Silas reveal already has authored dialogue and townhouse
-	# choreography. It uses the shared fish-to-human animation separately.
+	# First Silas shore reveal retains its authored jump/poof. Every other
+	# standard return uses the shared party entrance as before.
 	if not story.can_begin_silas_surface_reveal() and not _party.members().is_empty():
 		var approach := _sea.get_node("Points/SilasSurfaceApproach") as Marker2D
 		var dock_wait := _sea.get_node("Points/SilasDockWait") as Marker2D
-		# Keep the live fish actors until their individual poofs finish.
 		var humans: Array[Node2D] = await _party_entrance.surface_party(
-			_party.members(), _sea, approach.global_position, dock_wait.global_position
-		)
-		# Let the sea's encounter owner run any first-time shore scenes while
-		# the transformed human actors are still visible.
-		await _sea.on_party_surfaced(humans)
-		# A short exit fade covers the companions going back to their rooms.
-		# The party roster remains intact for later dives.
-		var fade := ScreenFade.new()
-		get_tree().root.add_child(fade)
-		await fade.fade_to(1.0, _party_entrance.fade_seconds)
-		_sea.end_diving_party()
-		_party_entrance.clear_surface_actors(humans)
-		await fade.fade_to(0.0, _party_entrance.fade_seconds)
-		fade.queue_free()
+			_party.members(), _sea, approach.global_position, dock_wait.global_position)
+		await _resolve_shore_stories(humans)
+		await _clear_returning_party(humans)
 	else:
 		_sea.end_diving_party()
 
@@ -255,29 +241,118 @@ func _on_oxygen_return_requested() -> void:
 	_blackout_from_oxygen()
 
 
-func _blackout_from_oxygen() -> void:
-	# The ScreenFade already used by beds/relationship scenes gives the
-	# failure a simple blackout. We do not perform the ordinary swim ascent.
+func _on_companion_care_requested(npc: NPCData) -> void:
+	if transitioning or not underwater or npc == null:
+		return
+	transitioning = true
+	_world_player.busy = true
+	_blackout_from_oxygen(npc)
+
+
+# An emergency care trip shares blackout's physical return, then supplies
+# its own first-land dialogue instead of saying Penni was unconscious.
+# The same on_party_surfaced hook still owns room assignment.
+func _resolve_shore_stories(humans: Array[Node2D],
+		recovered_from_blackout: bool = false,
+		first_land_ids: Array[StringName] = [],
+		cared_for: NPCData = null) -> void:
+	var story := _sea.get_node("StoryDirector") as SeaStoryDirector
+	var dock_cast: Array[NPCData] = []
+	for actor in humans:
+		var guest: NPCInteractable = actor as NPCInteractable
+		if is_instance_valid(guest) and guest.npc != null and guest.visible:
+			dock_cast.append(guest.npc)
+	if cared_for != null:
+		await story.play_first_land_care_dialogue(cared_for, dock_cast)
+	elif recovered_from_blackout:
+		await story.play_oxygen_blackout_recovery(dock_cast, first_land_ids)
+	await _sea.on_party_surfaced(humans, first_land_ids)
+
+
+# Normal shore returns already fade to send fish back to their rooms.
+# Reuse that same exit fade for blackout returns and Kuda's townhouse scene.
+func _clear_returning_party(humans: Array[Node2D]) -> void:
+	if humans.is_empty():
+		_sea.end_diving_party()
+		return
+	var fade := ScreenFade.new()
+	get_tree().root.add_child(fade)
+	await fade.fade_to(1.0, _party_entrance.fade_seconds)
+	_sea.end_diving_party()
+	_party_entrance.clear_surface_actors(humans)
+	await fade.fade_to(0.0, _party_entrance.fade_seconds)
+	fade.queue_free()
+
+
+func _blackout_from_oxygen(cared_for: NPCData = null) -> void:
+	# Shared fade for both failures: oxygen blackout or Penni carrying an
+	# injured first-time companion to shore. Both cost the dive's catch/time.
+	# The latter NEVER plays the "Penni woke up" rescue dialogue.
+	var returning: Array[NPCData] = _party.members()
+	var story := _sea.get_node("StoryDirector") as SeaStoryDirector
+	var silas_first_land_care: bool = cared_for == story.silas_data \
+		and story.can_begin_silas_surface_reveal()
+	if cared_for != null and not returning.has(cared_for):
+		returning.append(cared_for)
+	var first_land_ids: Array[StringName] = []
+	if story.can_begin_silas_surface_reveal():
+		first_land_ids.append(story.silas_data.npc_id)
+		if not returning.has(story.silas_data):
+			returning.push_front(story.silas_data)
+	for npc in returning:
+		if npc.npc_id == story.kuda_data.npc_id and story.can_begin_kuda_surface_reveal():
+			first_land_ids.append(npc.npc_id)
 	var fade := ScreenFade.new()
 	get_tree().root.add_child(fade)
 	await fade.fade_to(1.0, 0.45)
 	(_sea.get_node("SeaDiveInventory") as SeaDiveInventory).lose_catch()
 	(_sea.get_node("SeaOxygen") as SeaOxygen).end_dive()
 	_world_player.global_position = shore_return_position
+	_world_player.last_direction = 1.0 # Inland after being rescued, too.
 	_world_player.set_swimming(false)
-	_sea.end_diving_party()
 	_world_player.animator.rotation = 0.0
-	_world_player.animator.play(&"idle_l")
-	var island_camera: Camera2D = _world_player.get_node("Camera2D") as Camera2D
-	island_camera.position = Vector2(0.0, -22.0)
-	island_camera.reset_smoothing()
-	island_camera.force_update_scroll()
+	_world_player.animator.play(&"idle_r")
+	_camera_controller.set_underwater_mode(false)
+	_camera_controller.snap_to_player()
 	underwater = false
 	_sea.call("_set_camera_bounds", false)
 	_dialogue_ui.set_underwater_mode(false)
 	GameManager.finish_dive_period()
+
+	# Under the fade, returning fish reach land and transform. In the
+	# emergency-care version Penni brought the injured fish herself.
+	var humans: Array[Node2D] = []
+	var dock_wait := _sea.get_node("Points/SilasDockWait") as Marker2D
+	for i in range(returning.size()):
+		var npc: NPCData = returning[i]
+		if silas_first_land_care and npc == story.silas_data:
+			# Silas has NOT transformed yet. Keep his real fish actor on the
+			# sea side so the original shore jump and poof can happen.
+			continue
+		var actor: Node2D = _party_entrance.stage_surface_actor(
+			npc, _party_entrance.surface_dock_position(
+				dock_wait.global_position, i))
+		if actor != null:
+			actor.show()
+			humans.append(actor)
+	# Usual oxygen/Kuda rescues still stage everyone as human. The special
+	# Silas-care return must not hide his fish before the first-land jump.
+	if not silas_first_land_care:
+		_sea.end_diving_party()
 	await fade.fade_to(0.0, 0.55)
 	fade.queue_free()
+	if silas_first_land_care:
+		# Penni came up to find help, but Silas followed her. Reuse the
+		# entire original entrance-to-land choreography and its dialogue:
+		# approach, jump, warning, poof, introduction and townhouse.
+		await (_sea.get_node("EncounterSequence") as SeaEncounterSequence).play_silas_surface_reveal(true)
+		first_land_ids.erase(story.silas_data.npc_id)
+	if not humans.is_empty():
+		await _resolve_shore_stories(humans, cared_for == null, first_land_ids,
+			null if silas_first_land_care else cared_for)
+		await _clear_returning_party(humans)
+	elif silas_first_land_care:
+		_sea.end_diving_party()
 	transitioning = false
 	_world_player.busy = false
 	surface_completed.emit()

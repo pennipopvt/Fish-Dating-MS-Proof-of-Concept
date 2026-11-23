@@ -47,9 +47,11 @@ func _ready() -> void:
 	_transition.configure(_world, _world_player, _sea,
 		$CanvasLayer/DialogueUI, $CanvasLayer/ShopMenu, _opening)
 	_opening.configure(_world, _world_player, $CanvasLayer/ShopMenu, _transition)
+	($IslandStoryDirector as IslandStoryDirector).configure(_world_player, _transition, _opening)
 	_opening.dive_confirmed.connect(_transition.start_confirmed_dive)
 	_bubble_host.configure(self, _sea.get_node_or_null("StoryDirector") as SeaStoryDirector)
-	_room_view.configure($CanvasLayer/DialogueUI, _transition, _world_player)
+	_room_view.configure($CanvasLayer/DialogueUI, _transition, _world_player,
+		$IllustrationScene as IllustrationSceneController)
 	for node in _world.get_node("AvailableHomeList").get_children():
 		var door: TransferDoor = node as TransferDoor
 		if door != null:
@@ -75,9 +77,18 @@ func _ready() -> void:
 
 
 func _on_townhouse_room_requested(door: TransferDoor) -> void:
+	if _transition.transitioning or DateManager.is_active():
+		return
 	var resident: NPCData = RecruitmentHandler.get_resident(door.get_room_id())
-	if resident != null and not _transition.transitioning:
-		_room_view.open_room(resident)
+	if resident == null:
+		return
+	# Recruited NPCs live in their rooms, not as outdoor NPCInteractables.
+	# Their door is therefore the primary way to meet them for a booked date.
+	var due_date: DateData = DateManager.get_ready_booking_for_npc(resident.npc_id)
+	if due_date != null:
+		DateManager.start_date(due_date)
+		return
+	_room_view.open_room(resident)
 
 
 # A stable island Dock API. All confirmation belongs to the opening flow.

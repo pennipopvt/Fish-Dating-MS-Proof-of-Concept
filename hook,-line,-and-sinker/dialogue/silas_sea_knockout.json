@@ -1,0 +1,26 @@
+{
+  "entry": "injured",
+  "free_greeting": true,
+  "nodes": {
+    "injured": {
+      "lines": [
+        {
+          "speaker": "test_npc",
+          "text": "Ah—! Penni, I can't keep fighting..."
+        },
+        {
+          "speaker": "player",
+          "text": "Silas! Are you hurt?"
+        },
+        {
+          "speaker": "test_npc",
+          "text": "I-I'll be okay, but I need to rest."
+        },
+        {
+          "speaker": "test_npc",
+          "text": "I'm heading home. Please be careful, okay?"
+        }
+      ]
+    }
+  }
+}

@@ -7,6 +7,6 @@ extends Resource
 @export var next_dialogue: DialogueData
 
 @export_group("Effects")
-@export var attraction_change: int = 0
+@export var affection_change: int = 0
 @export var flags_to_set: Array[NPCFlagData] = []
 @export var flags_to_clear: Array[NPCFlagData] = []

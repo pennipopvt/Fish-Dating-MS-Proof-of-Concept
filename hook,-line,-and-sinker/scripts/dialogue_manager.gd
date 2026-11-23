@@ -15,6 +15,10 @@ signal choice_resolved(npc: NPCData, choice: Dictionary)
 var _requested_inline_graph: Dictionary = {}
 var _requested_inline_alias: String = ""
 var _current_speaker_alias: String = ""
+# Only presentation uses this cast. Choices, flags and affection still belong
+# to current_npc, so a guest speaker never changes the relationship owner.
+var _requested_cast: Array[NPCData] = []
+var _active_cast: Dictionary = {}
 
 func request_inline_conversation(
 	npc: NPCData, lines: Array[String],
@@ -67,19 +71,54 @@ func request_player_monologue(lines: Array[String]) -> void:
 	_requested_inline_alias = ""
 
 
+# The speaker can vary per line without replacing current_npc. An explicit
+# speaker ID outside the supplied cast is omitted by the graph parser.
+func get_speaker_npc(line: DialogueLineData) -> NPCData:
+	if line == null or line.speaker == DialogueLineData.Speaker.PLAYER:
+		return null
+	if line.speaker_id != &"":
+		return _active_cast.get(line.speaker_id) as NPCData
+	return current_npc
+
+
 func get_current_speaker_name() -> String:
+	var line: DialogueLineData = get_current_line()
+	if line != null and line.speaker_id != &"":
+		var speaker: NPCData = get_speaker_npc(line)
+		if speaker != null:
+			return speaker.display_name
 	if not _current_speaker_alias.is_empty():
 		return _current_speaker_alias
 	return current_npc.display_name if current_npc != null else ""
 
 
-func request_conversation(npc: NPCData, json_override: String = "", gift_player: Player = null) -> void:
+# An event can author a single graph for 0-3 companions. Lines with speaker_id
+# not in cast are skipped; player and default npc lines remain unchanged.
+func request_group_lines(context: NPCData, lines: Array[Dictionary],
+		cast: Array[NPCData]) -> void:
+	if context == null or lines.is_empty() or is_active:
+		return
+	_requested_inline_graph = {
+		"entry": "start", "free_greeting": true,
+		"nodes": {"start": {"lines": lines.duplicate(true)}}
+	}
+	_requested_cast = cast.duplicate()
+	_requested_inline_alias = ""
+	dialogue_requested.emit(context)
+	_requested_inline_graph = {}
+	_requested_cast.clear()
+
+
+func request_conversation(npc: NPCData, json_override: String = "",
+		gift_player: Player = null, cast: Array[NPCData] = []) -> void:
 	if npc != null and not is_active:
 		_requested_json_path = json_override
+		_requested_cast = cast.duplicate()
 		_gift_player = gift_player
 		_expected_gift_item_id = gift_player.held_item.item_id if gift_player != null and gift_player.held_item != null else &""
 		dialogue_requested.emit(npc)
 		_requested_json_path = ""
+		_requested_cast.clear()
 
 # API kept compatible with DialogueUI. JSON graphs are instantiated at runtime.
 var current_npc: NPCData = null
@@ -102,6 +141,8 @@ var _scene_after_conversation: String = ""
 # greyed (picked before). Used by AffectionManager / DialogueUI.
 var _current_path: String = ""
 var _choice_greyed: Array[bool] = []
+# A router's selected topic stays consistent if revisited in one conversation.
+var _conversation_rotations: Dictionary = {}
 # Compatibility field. Ordinary conversations are free in the world clock.
 # Dates use their own time cost through DateManager.
 var last_conversation_cost: int = 0
@@ -110,6 +151,12 @@ var _conversation_costs_action: bool = true
 func start_conversation(npc: NPCData, json_override: String = "") -> void:
 	if is_active or npc == null:
 		return
+	_conversation_rotations.clear()
+	_active_cast.clear()
+	_active_cast[npc.npc_id] = npc
+	for member in _requested_cast:
+		if member != null and member.npc_id != &"":
+			_active_cast[member.npc_id] = member
 	if not _requested_inline_graph.is_empty():
 		current_npc = npc
 		current_dialogue = null
@@ -243,7 +290,7 @@ func _complete_pending_choice() -> void:
 	choice_resolved.emit(current_npc, choice)
 	_enter_node(str(choice["next"]), reaction_tier)
 
-func _apply_json_effects(effects: Variant, include_attraction: bool = true) -> void:
+func _apply_json_effects(effects: Variant, include_affection: bool = true) -> void:
 	if not effects is Dictionary or current_npc == null:
 		return
 	if not effects.is_empty():
@@ -252,8 +299,9 @@ func _apply_json_effects(effects: Variant, include_attraction: bool = true) -> v
 		NPCManager.accept_gift(current_npc, _gift_player, _expected_gift_item_id)
 	if effects.has("request_scene"):
 		_scene_after_conversation = str(effects["request_scene"])
-	if include_attraction:
-		AffectionManager.change(current_npc.npc_id, int(effects.get("attraction", 0)))
+	if include_affection:
+		# The attraction key is accepted for older JSON; both affect the one affection score.
+		AffectionManager.change(current_npc.npc_id, int(effects.get("affection", effects.get("attraction", 0))))
 	var state: Dictionary = NPCManager.get_npc_state(current_npc.npc_id)
 	var flags: Dictionary = state.get("flags", {})
 	state["flags"] = flags
@@ -261,6 +309,12 @@ func _apply_json_effects(effects: Variant, include_attraction: bool = true) -> v
 		flags[StringName(str(flag))] = true
 	for flag in effects.get("clear_flags", []):
 		flags[StringName(str(flag))] = false
+	for event in effects.get("start_relationship_events", []):
+		NPCManager.start_relationship_event(current_npc, StringName(str(event)))
+	for event in effects.get("resolve_relationship_events", []):
+		NPCManager.resolve_relationship_event(current_npc, StringName(str(event)))
+	if effects.has("affection_delta"):
+		AffectionManager.change_affection(current_npc.npc_id, int(effects["affection_delta"]))
 
 
 # Conditions are evaluated when the menu becomes visible, using the NPC's current flags.
@@ -274,17 +328,67 @@ func _choice_available(choice: Dictionary) -> bool:
 	for flag in choice.get("forbidden_flags", []):
 		if flags.get(StringName(str(flag)), false):
 			return false
-	return true
+	return NPCManager.dialogue_conditions_match(current_npc.npc_id, choice.get("when", {}))
 
-func _enter_node(id: String, reaction_tier: int = -1) -> void:
+
+# Router selection and conditional text are presentation decisions only.
+# Conversation stages and underlying affection are owned by their managers.
+func _select_rotating_target(id: String, routes: Array) -> String:
+	var key: String = "%s#%s" % [_current_path, id]
+	if _conversation_rotations.has(key):
+		return str(_conversation_rotations[key])
+	var state: Dictionary = NPCManager.get_npc_state(current_npc.npc_id)
+	var cursors: Dictionary = state.get("dialogue_rotation_cursors", {})
+	state["dialogue_rotation_cursors"] = cursors
+	var cursor: int = int(cursors.get(key, 0))
+	for offset in range(routes.size()):
+		var index: int = (cursor + offset) % routes.size()
+		var route: Variant = routes[index]
+		if route is Dictionary and not NPCManager.dialogue_conditions_match(
+				current_npc.npc_id, route.get("when", {})):
+			continue
+		var target: String = str(route.get("next", "")) if route is Dictionary else str(route)
+		cursors[key] = (index + 1) % routes.size()
+		_conversation_rotations[key] = target
+		return target
+	return ""
+
+
+func _select_node_lines(node: Dictionary, reaction_tier: int) -> Array:
+	var tier: int = reaction_tier if reaction_tier >= 0 else AffectionManager.get_jealousy_tier(current_npc.npc_id)
+	for variant in node.get("line_variants", []):
+		if NPCManager.dialogue_conditions_match(current_npc.npc_id, variant.get("when", {}), tier):
+			return variant["lines"]
+	if node.has("jealousy_lines"):
+		return DialogueJsonLoader.lines_for_jealousy_tier(node, tier)
+	return node.get("lines", [])
+
+
+func _enter_node(id: String, reaction_tier: int = -1, redirects: int = 0) -> void:
 	var nodes: Dictionary = _graph["nodes"]
 	if not nodes.has(id):
 		push_error("Dialogue JSON missing node: " + id)
 		end_conversation()
 		return
+	if redirects >= 12:
+		push_error("Dialogue router cycle near: " + id)
+		end_conversation()
+		return
+	var node: Dictionary = nodes[id]
+	for route in node.get("conditional_next", []):
+		if NPCManager.dialogue_conditions_match(current_npc.npc_id, route.get("when", {}), reaction_tier):
+			_enter_node(str(route["next"]), reaction_tier, redirects + 1)
+			return
+	if node.has("rotating_next"):
+		var target: String = _select_rotating_target(id, node["rotating_next"])
+		if target.is_empty():
+			push_error("Dialogue topic router has no eligible destinations: " + id)
+			end_conversation()
+			return
+		_enter_node(target, reaction_tier, redirects + 1)
+		return
 	_node_id = id
 	_node_effects_applied = false
-	var node: Dictionary = nodes[id]
 	if node.has("cue"):
 		dialogue_cue.emit(current_npc, str(node["cue"]))
 	_lines.clear()
@@ -294,25 +398,44 @@ func _enter_node(id: String, reaction_tier: int = -1) -> void:
 	line_index = 0
 	# Variant responses change only the text, never the choice or graph path.
 	# Other dialogue nodes continue to use their ordinary lines unchanged.
-	var lines_to_show: Array = node.get("lines", [])
-	if node.has("jealousy_lines") and current_npc != null:
-		var tier := reaction_tier if reaction_tier >= 0 else AffectionManager.get_jealousy_tier(current_npc.npc_id)
-		lines_to_show = DialogueJsonLoader.lines_for_jealousy_tier(node, tier)
+	var lines_to_show: Array = _select_node_lines(node, reaction_tier)
 	for raw_line in lines_to_show:
 		var line := DialogueLineData.new()
 		if raw_line is String:
 			line.text = _format_date_placeholder(raw_line)
 		elif raw_line is Dictionary:
 			line.text = _format_date_placeholder(str(raw_line.get("text", "")))
-			line.speaker = DialogueLineData.Speaker.PLAYER if raw_line.get("speaker", "npc") == "player" else DialogueLineData.Speaker.NPC
+			var speaker_key: String = str(raw_line.get("speaker", "npc"))
+			line.speaker = (DialogueLineData.Speaker.PLAYER
+				if speaker_key == "player" else DialogueLineData.Speaker.NPC)
+			if line.speaker != DialogueLineData.Speaker.PLAYER:
+				var specific_id: String = str(raw_line.get("speaker_id",
+					"" if speaker_key == "npc" else speaker_key))
+				if not specific_id.is_empty():
+					line.speaker_id = StringName(specific_id)
+					# This same file can be used with different party sizes.
+					if not _active_cast.has(line.speaker_id):
+						continue
 			line.expression = StringName(str(raw_line.get("expression", "neutral")))
 		else:
 			continue
 		_lines.append(line)
+	# Higher-priority state-aware topics appear first; equal priorities retain
+	# the author's original JSON order (important for existing date choices).
+	var available_choices: Array[Dictionary] = []
+	var choice_index: int = 0
 	for raw_choice in node.get("choices", []):
 		var choice: Dictionary = raw_choice
-		if not _choice_available(choice):
-			continue
+		if _choice_available(choice):
+			available_choices.append({"choice": choice, "order": choice_index})
+		choice_index += 1
+	available_choices.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
+		var left_priority: int = int(a["choice"].get("priority", 0))
+		var right_priority: int = int(b["choice"].get("priority", 0))
+		return int(a["order"]) < int(b["order"]) if left_priority == right_priority else left_priority > right_priority
+	)
+	for record in available_choices:
+		var choice: Dictionary = record["choice"]
 		var display_choice := DialogueChoiceData.new()
 		display_choice.text = str(choice.get("text", ""))
 		choice["_key"] = AffectionManager.choice_key(_current_path, id, display_choice.text)
@@ -377,7 +500,9 @@ func end_conversation() -> void:
 	_scene_after_conversation = ""
 	_current_path = ""
 	_current_speaker_alias = ""
+	_active_cast.clear()
 	_choice_greyed.clear()
+	_conversation_rotations.clear()
 	conversation_finished.emit(finished_npc)
 	if not requested_scene.is_empty():
 		scene_requested.emit(finished_npc, requested_scene)

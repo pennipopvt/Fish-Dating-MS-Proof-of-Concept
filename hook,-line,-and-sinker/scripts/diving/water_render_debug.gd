@@ -42,7 +42,7 @@ func configure(world: Node2D, game_viewport: SubViewport, player: Player) -> voi
 	_sea = world.get_node_or_null("Sea") as Node2D
 	_ground = world.get_node_or_null("Ground") as CanvasItem
 	_ground_front = world.get_node_or_null("GroundFront") as CanvasItem
-	_camera = player.get_node_or_null("Camera2D") as Camera2D
+	_camera = world.get_node_or_null("CameraController/Camera2D") as Camera2D
 	_solids = world.get_node_or_null("Sea/Solids") as TileMapLayer
 	if _water == null or _sea == null or _camera == null:
 		push_warning("[WATER DEBUG] Missing water, sea, or camera reference")

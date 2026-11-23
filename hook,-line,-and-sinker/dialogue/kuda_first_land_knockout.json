@@ -1,0 +1,30 @@
+{
+  "entry": "injured",
+  "free_greeting": true,
+  "nodes": {
+    "injured": {
+      "lines": [
+        {
+          "speaker": "barracuda",
+          "text": "Tch—! I'm hurt worse than I thought. I can't keep swimming like this."
+        },
+        {
+          "speaker": "player",
+          "text": "Kuda, stop. I'm taking you out of here."
+        },
+        {
+          "speaker": "barracuda",
+          "text": "To the shore? I've never been out of the water..."
+        },
+        {
+          "speaker": "player",
+          "text": "I'll take care of you. Just let me help."
+        },
+        {
+          "speaker": "barracuda",
+          "text": "...Fine. Guess I'm counting on you, then."
+        }
+      ]
+    }
+  }
+}

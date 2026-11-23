@@ -7,6 +7,26 @@
       ],
       "choices": [
         {
+          "text": "Can we talk about what happened?",
+          "next": "prelude_argument",
+          "when": {
+            "active_events": [
+              "prelude_boundary"
+            ]
+          },
+          "priority": 30,
+          "grey_when_picked": false
+        },
+        {
+          "text": "You seem bothered. Want to talk?",
+          "next": "morale_check",
+          "when": {
+            "max_affection": 45
+          },
+          "priority": 15,
+          "grey_when_picked": false
+        },
+        {
           "text": "How are you liking it up here?",
           "next": "land"
         },
@@ -15,9 +35,60 @@
           "next": "caught"
         },
         {
+          "text": "You still wearing that scarf?",
+          "next": "scarf_chat",
+          "required_flags": [
+            "barracuda_scarf_complete"
+          ],
+          "grey_when_picked": false
+        },
+        {
           "text": "See you later!",
           "next": "goodbye",
-          "spends_action": false
+          "spends_action": false,
+          "grey_when_picked": false
+        }
+      ],
+      "line_variants": [
+        {
+          "when": {
+            "active_events": [
+              "prelude_boundary"
+            ]
+          },
+          "lines": [
+            "…Oh. You're back.",
+            "I wasn't expecting you to come by after earlier."
+          ]
+        },
+        {
+          "when": {
+            "required_flags": [
+              "refuses_diving"
+            ]
+          },
+          "lines": [
+            "Penni.",
+            "I'm not going diving until we sort some things out."
+          ]
+        },
+        {
+          "when": {
+            "max_affection": 25
+          },
+          "lines": [
+            "Hey.",
+            "We need to talk sometime."
+          ]
+        },
+        {
+          "when": {
+            "max_affection": 45
+          },
+          "lines": [
+            "Oh, there you are.",
+            "Been busy, huh?"
+          ]
         }
       ]
     },
@@ -73,6 +144,26 @@
       "lines": [],
       "choices": [
         {
+          "text": "Can we talk about what happened?",
+          "next": "prelude_argument",
+          "when": {
+            "active_events": [
+              "prelude_boundary"
+            ]
+          },
+          "priority": 30,
+          "grey_when_picked": false
+        },
+        {
+          "text": "You seem bothered. Want to talk?",
+          "next": "morale_check",
+          "when": {
+            "max_affection": 45
+          },
+          "priority": 15,
+          "grey_when_picked": false
+        },
+        {
           "text": "How are you liking it up here?",
           "next": "land"
         },
@@ -81,11 +172,121 @@
           "next": "caught"
         },
         {
+          "text": "You still wearing that scarf?",
+          "next": "scarf_chat",
+          "required_flags": [
+            "barracuda_scarf_complete"
+          ],
+          "grey_when_picked": false
+        },
+        {
           "text": "See you later!",
           "next": "goodbye",
-          "spends_action": false
+          "spends_action": false,
+          "grey_when_picked": false
         }
       ]
+    },
+    "morale_check": {
+      "lines": [],
+      "conditional_next": [
+        {
+          "next": "morale_refusing",
+          "when": {
+            "required_flags": [
+              "refuses_diving"
+            ]
+          }
+        },
+        {
+          "next": "morale_hurt",
+          "when": {
+            "max_affection": 25
+          }
+        },
+        {
+          "next": "morale_neglected",
+          "when": {
+            "max_affection": 45
+          }
+        }
+      ],
+      "rotating_next": [
+        "morale_fine"
+      ]
+    },
+    "morale_fine": {
+      "lines": [
+        "I'm alright, thanks for asking."
+      ],
+      "next": "topics"
+    },
+    "morale_refusing": {
+      "lines": [
+        "I'm not going to follow you into another fight while we barely talk.",
+        "Doesn't mean I don't care. That's the problem."
+      ],
+      "next": "topics"
+    },
+    "morale_hurt": {
+      "lines": [
+        "It's like I'm only useful when there's something to fight.",
+        "I'd rather you actually wanted to see me."
+      ],
+      "next": "topics"
+    },
+    "morale_neglected": {
+      "lines": [
+        "I'm fine. Just been quiet around here.",
+        "Could use some company that isn't a job."
+      ],
+      "next": "topics"
+    },
+    "prelude_argument": {
+      "lines": [
+        "Yeah. We should.",
+        "You made it sound like spending time with me was a chore.",
+        "I was actually looking forward to seeing you. So... yeah, that stung."
+      ],
+      "choices": [
+        {
+          "text": "I was being a jerk. I'm sorry.",
+          "next": "prelude_apology"
+        },
+        {
+          "text": "I didn't think you'd take it so seriously.",
+          "next": "prelude_defensive"
+        }
+      ]
+    },
+    "prelude_apology": {
+      "lines": [
+        "…Okay.",
+        "I just didn't want to feel stupid for wanting you here.",
+        "Thanks for saying it. We can take things slow, alright?"
+      ],
+      "effects": {
+        "resolve_relationship_events": [
+          "prelude_boundary"
+        ]
+      },
+      "next": "topics"
+    },
+    "prelude_defensive": {
+      "lines": [
+        "Well, I did.",
+        "If you're not in the mood, just say so. Don't make me feel like I'm wasting your time.",
+        "That's all I'm asking."
+      ],
+      "next": "topics"
+    },
+    "scarf_chat": {
+      "lines": [
+        "Yeah. So what?",
+        "...It's warm. And it actually looks pretty good.",
+        "Don't go making a big deal out of it, alright?"
+      ],
+      "next": "topics"
     }
   },
   "free_greeting": true

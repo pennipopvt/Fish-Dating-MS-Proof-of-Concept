@@ -187,6 +187,9 @@ func _ready() -> void:
 
 	silas_state["flags"][&"Recruited"] = true
 	kuda_state["flags"][&"Recruited"] = true
+	# The previous in-date reassurance intentionally leaves some jealousy
+	# behind. Reset it so this test isolates the new-romance jealousy spike.
+	AffectionManager.set_jealousy(SILAS.npc_id, 0)
 	silas_state["flags"][&"silas_route_complete"] = true
 	AffectionManager.on_romance_completed(SILAS.npc_id)
 	kuda_state["flags"][&"barracuda_route_complete"] = true
@@ -203,7 +206,8 @@ func _ready() -> void:
 	DateManager.set("_date_score", 0)
 	DateManager.set("_date_choice_count", 0)
 	DateManager.call("_on_date_choice", SILAS, {"date_style": "reassure"})
-	_expect(AffectionManager.get_jealousy(SILAS.npc_id) == 64,
+	_expect(AffectionManager.get_jealousy(SILAS.npc_id) ==
+		70 + DateManager.jealousy_for_choice("reassure", 2),
 		"Reassurance repairs jealousy during a date")
 	_expect(int(DateManager.get("_date_score")) == 5,
 		"Jealousy tier two uses Silas\u0027s reassuring score")
@@ -212,20 +216,24 @@ func _ready() -> void:
 	DateManager.set("_active", null)
 	DateManager.set("_in_dialogue", false)
 
-	# A completed date, not just conversation, prevents the next day's decay.
+	# Neglect, dates and missed plans all change the SAME affection value.
 	AffectionManager.set_jealousy(KUDA.npc_id, 75)
-	var before := AffectionManager.get_affection(KUDA.npc_id)
+	AffectionManager.set_affection(KUDA.npc_id, 80)
+	kuda_state.erase(AffectionManager.LAST_TALK_KEY)
+	var affection_before: int = AffectionManager.get_affection(KUDA.npc_id)
 	AffectionManager.call("_on_day_started", 2)
-	_expect(AffectionManager.get_affection(KUDA.npc_id) == before - 10,
-		"Tier three jealousy causes -10 daily decay without a date")
+	_expect(AffectionManager.get_affection(KUDA.npc_id) == affection_before - 8,
+		"Neglect reduces the same affection score used by dialogue and companions")
 	AffectionManager.mark_date_completed(KUDA.npc_id, 2)
-	before = AffectionManager.get_affection(KUDA.npc_id)
+	var after_decay: int = AffectionManager.get_affection(KUDA.npc_id)
 	AffectionManager.call("_on_day_started", 3)
-	_expect(AffectionManager.get_affection(KUDA.npc_id) == before,
-		"A completed date prevents an entire day's affection decay")
+	_expect(AffectionManager.get_affection(KUDA.npc_id) == after_decay,
+		"A recent date prevents next-day affection decay")
 	AffectionManager.call("_on_date_missed", DateManager.get_date(&"kuda_ship"))
+	_expect(AffectionManager.get_affection(KUDA.npc_id) == after_decay - 18,
+		"Missing a date directly hurts affection, not a separate morale score")
 	_expect(AffectionManager.get_jealousy(KUDA.npc_id) == 90,
-		"Missing Kuda's appointment raises jealousy")
+		"Missing Kuda's appointment also raises jealousy")
 	_expect(NPCManager.get_encounter_json_path(KUDA) == "res://dialogue/kuda_post_romance.json",
 		"Kuda can arrange future dates through his own post-romance conversation")
 

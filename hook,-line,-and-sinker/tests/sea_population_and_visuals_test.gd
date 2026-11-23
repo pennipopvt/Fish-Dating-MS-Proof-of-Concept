@@ -15,7 +15,7 @@ func _ready() -> void:
 	await get_tree().process_frame
 	var sea: DivingWorld = main.get_node("SubViewportContainer/SubViewport/World/Sea") as DivingWorld
 	var player: Player = sea.get_parent().get_node("Player") as Player
-	var camera: Camera2D = player.get_node("Camera2D") as Camera2D
+	var camera: Camera2D = sea.get_parent().get_node("CameraController/Camera2D") as Camera2D
 	var story: SeaStoryDirector = sea.get_node("StoryDirector") as SeaStoryDirector
 	var population: SeaPopulation = sea.get_node("SeaPopulation") as SeaPopulation
 	var regions: Node2D = sea.get_node("SpawnRegions") as Node2D

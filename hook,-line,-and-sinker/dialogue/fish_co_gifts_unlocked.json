@@ -1,0 +1,46 @@
+{
+  "entry": "call",
+  "free_greeting": true,
+  "nodes": {
+    "call": {
+      "lines": [
+        {
+          "speaker": "npc",
+          "text": "*ring ring*"
+        },
+        {
+          "speaker": "player",
+          "text": "Hello?"
+        },
+        {
+          "speaker": "npc",
+          "text": "We've noticed other inhabitants in your living arrangements."
+        },
+        {
+          "speaker": "player",
+          "text": "Oh— sorry, is that not allo—"
+        },
+        {
+          "speaker": "npc",
+          "text": "In accordance with our guidelines, we have given you the option to buy gifts at your Fish Co terminal."
+        },
+        {
+          "speaker": "player",
+          "text": "Oh. Thank you...?"
+        },
+        {
+          "speaker": "npc",
+          "text": "Be responsible with your fish. Happy fishing!"
+        },
+        {
+          "speaker": "npc",
+          "text": "*click*"
+        },
+        {
+          "speaker": "player",
+          "text": "Huh."
+        }
+      ]
+    }
+  }
+}
