@@ -19,7 +19,7 @@ extends Node2D
 @export var sink_at_surface: float = 55.0
 ## Pixels the strip rises above the screen bottom when the view reaches the
 ## bottom of the sea. The gap below it is filled with sand.
-@export var rise_at_floor: float = 16.0
+@export var rise_at_floor: float = 40.0
 ## Above 1, the reef stays low longer and rises mostly near the bottom.
 @export_range(0.3, 3.0) var rise_curve: float = 1.0
 ## Sand under the strip. Alpha 0 = use the strip's bottom-row color.

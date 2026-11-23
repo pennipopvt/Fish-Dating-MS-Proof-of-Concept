@@ -195,7 +195,7 @@ Debug builds only (not in exports):
   at z_index -3, in front of the shadow fish and behind the terrain. Its height follows
   the camera's depth: at the surface it sits `sink_at_surface` (55px) below the screen
   edge so only the coral tops peek in, and by the bottom of the sea it rises
-  `rise_at_floor` (16px) above it, with a band of the strip's own bottom sand filling
+  `rise_at_floor` (40px) above it, with a band of the strip's own bottom sand filling
   the space underneath. That gives a gentle vertical parallax (about 15% of the camera's
   travel) while swimming up or down; `rise_curve` changes how early it rises.
 - **Fishing rod (visual only):** `prefabs/fishing_rod.tscn` on the player. When you
