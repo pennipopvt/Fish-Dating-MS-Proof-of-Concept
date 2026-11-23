@@ -66,8 +66,9 @@ func _run() -> void:
 		and (ambience.get_node("Underwater") as AudioStreamPlayer).playing,
 		"Both ambience tracks continuously play on their shared ambience bus")
 	var rock: IntroBoatRock = boat as IntroBoatRock
-	_check(rock != null and rock.rocking_period_seconds > 0.0,
-		"Boat rocking is authored on the reusable boat root")
+	_check(rock != null and rock.rocking_period_seconds > 0.0
+		and is_zero_approx(boat.rotation) and boat.position.y > 124.0,
+		"Boat sits lower and its authored bob does not rotate it")
 	opening.title_pan_seconds = 0.05
 	title.call("_on_play")
 	await get_tree().create_timer(0.12).timeout

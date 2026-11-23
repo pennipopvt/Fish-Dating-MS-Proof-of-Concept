@@ -24,6 +24,8 @@ func _run() -> void:
 
 	_check(title.visible and not music.playing and not DialogueManager.is_active,
 		"Startup displays title without music or Fish Co dialogue")
+	_check(ocean.autoplay and below.autoplay,
+		"Ambience stream players start even if controller initialization fails")
 	_check(ocean.playing and below.playing and ocean.stream is AudioStreamWAV
 		and (ocean.stream as AudioStreamWAV).loop_mode == AudioStreamWAV.LOOP_FORWARD
 		and (below.stream as AudioStreamWAV).loop_mode == AudioStreamWAV.LOOP_FORWARD,
@@ -48,6 +50,19 @@ func _run() -> void:
 	_check(ui.get_node("%TextLabel") is RichTextLabel
 		and bool(ui.get("_typewriting")),
 		"Dialogue uses RichTextLabel with enabled typewriter animation")
+	var rich_label: RichTextLabel = ui.get_node("%TextLabel") as RichTextLabel
+	_check(rich_label.scroll_active and rich_label.scroll_following_visible_characters,
+		"Long dialogue scrolls with the revealed letters instead of clipping")
+	_check(ui.get_node_or_null("DialogueVoice") is AudioStreamPlayer
+		and is_equal_approx(ui.penni_pitch_scale, 1.0)
+		and is_equal_approx(ui.penni_pitch_variation, 0.08),
+		"One dialogue voice player and editor pitch controls are available")
+	var voice_config: NPCData = NPCData.new()
+	voice_config.voice_pitch_scale = 1.3
+	voice_config.voice_pitch_variation = 0.15
+	_check(is_equal_approx(voice_config.voice_pitch_scale, 1.3)
+		and is_equal_approx(voice_config.voice_pitch_variation, 0.15),
+		"NPC resources carry their own editable voice pitch and variation")
 	ui.call("_advance")
 	_check(DialogueManager.get_current_line() == line
 		and not bool(ui.get("_typewriting")),
