@@ -27,7 +27,8 @@ func _run() -> void:
 	_check(title.visible and not music.playing and not DialogueManager.is_active,
 		"Startup displays title without music or Fish Co dialogue")
 	_check(AudioServer.get_bus_index(&"Music") >= 0
-		and AudioServer.get_bus_index(&"Ambience") >= 0,
+		and AudioServer.get_bus_index(&"Ambience") >= 0
+		and AudioServer.get_bus_index(&"UnderwaterSFX") >= 0,
 		"Audio buses are ready before the title, even if editor loaded Master only")
 	_check(ocean.autoplay and below.autoplay,
 		"Ambience stream players start even if controller initialization fails")
@@ -35,10 +36,16 @@ func _run() -> void:
 		"Runtime ambience players route to Ambience instead of falling back to Master")
 	_check(ocean.stream == OCEAN_AUDIO and below.stream == UNDERWATER_AUDIO,
 		"Ambience controller leaves autoplay streams attached instead of interrupting them")
+	_check((ocean.stream as AudioStreamWAV).format != AudioStreamWAV.FORMAT_QOA
+		and (below.stream as AudioStreamWAV).format != AudioStreamWAV.FORMAT_QOA,
+		"Ambience WAVs import as PCM rather than QOA on Godot 4.7")
 	_check(ocean.playing and below.playing and ocean.stream is AudioStreamWAV
 		and (ocean.stream as AudioStreamWAV).loop_mode == AudioStreamWAV.LOOP_FORWARD
 		and (below.stream as AudioStreamWAV).loop_mode == AudioStreamWAV.LOOP_FORWARD,
 		"Both ambience WAVs loop while playback continues")
+	await get_tree().create_timer(1.1).timeout
+	_check(ocean.playing and below.playing,
+		"Title ambience remains playing after startup, not just for one frame")
 
 	# Reproduce the actual Remote Inspector screenshot: a stopped player on
 	# the Master bus even though Autoplay is enabled.

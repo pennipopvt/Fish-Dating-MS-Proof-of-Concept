@@ -40,10 +40,20 @@ func _run() -> void:
 	player._swim_physics(1.0 / 60.0)
 	_check(player.animator.animation == &"swim_l",
 		"Movement left switches to the existing swimming animation")
+	var swim_audio: AudioStreamPlayer = player.get_node("SwimSound") as AudioStreamPlayer
+	_check(swim_audio.stream is AudioStreamWAV
+		and (swim_audio.stream as AudioStreamWAV).format != AudioStreamWAV.FORMAT_QOA
+		and (swim_audio.stream as AudioStreamWAV).loop_mode == AudioStreamWAV.LOOP_FORWARD,
+		"New swim WAV imports as looping PCM instead of QOA")
+	_check(swim_audio.playing and swim_audio.bus == &"UnderwaterSFX"
+		and is_equal_approx(swim_audio.pitch_scale, 0.8),
+		"Active swimming plays pitched-down audio through filtered underwater bus")
 	Input.action_release(&"Move Left")
 	player._swim_physics(1.0 / 60.0)
 	_check(player.animator.animation == &"swim_idle_l",
 		"Releasing left returns to floating while facing left")
+	_check(not swim_audio.playing and not (player.get_node("StepSound") as AudioStreamPlayer).playing,
+		"Idling underwater stops swim strokes without starting footsteps")
 
 	Input.action_press(&"Move Right")
 	player._swim_physics(1.0 / 60.0)
@@ -63,6 +73,7 @@ func _run() -> void:
 	player.set_swimming(false)
 	_check(not player.swimming and player.animator.animation == &"idle_r",
 		"Surfacing restores the original land idle animation")
+	_check(not swim_audio.playing, "Surfacing stops swimming loop")
 	player.last_direction = -1.0
 	player.set_swimming(true, Rect2(-200, -200, 400, 400))
 	player.set_swimming(false)
