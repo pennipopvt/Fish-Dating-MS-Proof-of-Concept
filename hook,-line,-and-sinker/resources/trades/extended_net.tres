@@ -2,27 +2,22 @@
 
 [ext_resource type="Texture2D" uid="uid://dd18egqrlej6b" path="res://sprites/ui/icon_upgrade.png" id="preview_icon"]
 [ext_resource type="Resource" uid="uid://dh5u57inonklf" path="res://resources/items/mullet.tres" id="preview_mullet"]
-[ext_resource type="Resource" path="res://resources/items/porgy.tres" id="extra_porgy"]
 [ext_resource type="Script" uid="uid://dou1ei8c0alhj" path="res://resources/trade_requirement.gd" id="requirement_script"]
 [ext_resource type="Script" uid="uid://co23u2dkxgpsq" path="res://resources/trade_data.gd" id="trade_script"]
 
-[sub_resource type="Resource" id="MulletCost"]
+[sub_resource type="Resource" id="PreviewCost"]
 script = ExtResource("requirement_script")
 item = ExtResource("preview_mullet")
-
-[sub_resource type="Resource" id="PorgyCost"]
-script = ExtResource("requirement_script")
-item = ExtResource("extra_porgy")
 
 [resource]
 script = ExtResource("trade_script")
 trade_id = &"extended_net"
 display_name = "Extended Net"
-description = "Adds 20 pixels to maximum net range. 1 day delivery."
+description = "Adds 20 pixels to maximum net range. Preview price; 1 day delivery."
 one_time_purchase = true
 icon = ExtResource("preview_icon")
 delivery_time = 1
-requirements = Array[ExtResource("requirement_script")]([SubResource("MulletCost"), SubResource("PorgyCost")])
+requirements = Array[ExtResource("requirement_script")]([SubResource("PreviewCost")])
 reward_method = &"shop_reward_extended_net"
 reward_amount = 20
 delivery_sprite = ExtResource("preview_icon")
