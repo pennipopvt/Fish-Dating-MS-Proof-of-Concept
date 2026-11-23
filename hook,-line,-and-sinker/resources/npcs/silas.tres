@@ -28,23 +28,22 @@ script = ExtResource("3_w20er")
 json_path = "res://dialogue/silas_post_romance.json"
 required_flags = Array[StringName]([&"Recruited", &"silas_route_complete"])
 
-
 [sub_resource type="Resource" id="Resource_w20er"]
 script = ExtResource("3_w20er")
 json_path = "res://dialogue/silas_casual.json"
 required_flags = Array[StringName]([&"Recruited"])
-
-[sub_resource type="Resource" id="OtherRomanceEvent"]
-script = ExtResource("relationship_event_script")
-event_id = &"other_romance"
-followup_dialogue_json = "res://dialogue/silas_other_romance.json"
-priority = 40
 
 [sub_resource type="Resource" id="PreludeBoundaryEvent"]
 script = ExtResource("relationship_event_script")
 event_id = &"prelude_boundary"
 priority = 30
 blocks_actions = Array[StringName]([&"overnight"])
+
+[sub_resource type="Resource" id="OtherRomanceEvent"]
+script = ExtResource("relationship_event_script")
+event_id = &"other_romance"
+followup_dialogue_json = "res://dialogue/silas_other_romance.json"
+priority = 40
 
 [sub_resource type="Resource" id="ExploreTogetherEvent"]
 script = ExtResource("relationship_event_script")

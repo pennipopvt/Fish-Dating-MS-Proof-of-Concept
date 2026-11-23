@@ -1,14 +1,13 @@
-[gd_resource type="Resource" script_class="TradeData" format=3]
+[gd_resource type="Resource" script_class="TradeData" format=3 uid="uid://cf8fik4uau2i4"]
 
-[ext_resource type="Script" path="res://resources/trade_data.gd" id="trade_script"]
-[ext_resource type="Script" path="res://resources/trade_requirement.gd" id="requirement_script"]
-[ext_resource type="Resource" path="res://resources/items/mullet.tres" id="preview_mullet"]
-[ext_resource type="Texture2D" path="res://sprites/ui/icon_storage.png" id="preview_icon"]
+[ext_resource type="Texture2D" uid="uid://dyks2bu2dla76" path="res://sprites/ui/icon_storage.png" id="preview_icon"]
+[ext_resource type="Resource" uid="uid://dh5u57inonklf" path="res://resources/items/mullet.tres" id="preview_mullet"]
+[ext_resource type="Script" uid="uid://dou1ei8c0alhj" path="res://resources/trade_requirement.gd" id="requirement_script"]
+[ext_resource type="Script" uid="uid://co23u2dkxgpsq" path="res://resources/trade_data.gd" id="trade_script"]
 
 [sub_resource type="Resource" id="PreviewCost"]
 script = ExtResource("requirement_script")
 item = ExtResource("preview_mullet")
-amount = 1
 
 [resource]
 script = ExtResource("trade_script")

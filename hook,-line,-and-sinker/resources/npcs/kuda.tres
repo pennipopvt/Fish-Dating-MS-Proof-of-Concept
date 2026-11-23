@@ -21,7 +21,6 @@
 script = ExtResource("townhouse_door_info")
 door = ExtResource("townhouse_generic_door")
 
-
 [sub_resource type="Resource" id="Rule_post_romance"]
 script = ExtResource("2_rule")
 json_path = "res://dialogue/kuda_post_romance.json"
@@ -43,17 +42,17 @@ script = ExtResource("2_rule")
 json_path = "res://dialogue/kuda_first_catch.json"
 forbidden_flags = Array[StringName]([&"Recruited"])
 
-[sub_resource type="Resource" id="OtherRomanceEvent"]
-script = ExtResource("relationship_event_script")
-event_id = &"other_romance"
-followup_dialogue_json = "res://dialogue/kuda_other_romance.json"
-priority = 40
-
 [sub_resource type="Resource" id="PreludeBoundaryEvent"]
 script = ExtResource("relationship_event_script")
 event_id = &"prelude_boundary"
 priority = 30
 blocks_actions = Array[StringName]([&"overnight"])
+
+[sub_resource type="Resource" id="OtherRomanceEvent"]
+script = ExtResource("relationship_event_script")
+event_id = &"other_romance"
+followup_dialogue_json = "res://dialogue/kuda_other_romance.json"
+priority = 40
 
 [sub_resource type="Resource" id="CompanionKnockoutEvent"]
 script = ExtResource("relationship_event_script")
