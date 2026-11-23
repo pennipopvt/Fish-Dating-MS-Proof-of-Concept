@@ -26,6 +26,13 @@ func _run() -> void:
 
 	_check(title.visible and not music.playing and not DialogueManager.is_active,
 		"Startup displays title without music or Fish Co dialogue")
+	var title_art: TextureRect = title.get_node("Menu/Contents/Title") as TextureRect
+	_check(title_art != null
+		and title_art.texture == preload("res://sprites/ui/logo.png")
+		and title_art.expand_mode == TextureRect.EXPAND_IGNORE_SIZE
+		and title_art.stretch_mode == TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		and title_art.custom_minimum_size.y > 0.0,
+		"New logo replaces title text and fits inside the title menu without distortion")
 	_check(AudioServer.get_bus_index(&"Music") >= 0
 		and AudioServer.get_bus_index(&"Ambience") >= 0
 		and AudioServer.get_bus_index(&"UnderwaterSFX") >= 0,

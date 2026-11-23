@@ -1,6 +1,7 @@
 [gd_scene format=3]
 
 [ext_resource type="Script" path="res://scripts/ui/game_title_screen.gd" id="title_script"]
+[ext_resource type="Texture2D" path="res://sprites/ui/logo.png" id="game_logo"]
 
 [sub_resource type="StyleBoxFlat" id="MenuPanel"]
 bg_color = Color(0.035, 0.09, 0.13, 0.68)
@@ -31,11 +32,14 @@ layout_mode = 2
 theme_override_constants/separation = 15
 alignment = 1
 
-[node name="Title" type="Label" parent="Menu/Contents"]
+[node name="Title" type="TextureRect" parent="Menu/Contents"]
+custom_minimum_size = Vector2(0, 280)
 layout_mode = 2
-theme_override_font_sizes/font_size = 66
-text = "HOOK, LINE,\n& SINKER"
-autowrap_mode = 3
+size_flags_horizontal = 3
+texture = ExtResource("game_logo")
+expand_mode = 1
+stretch_mode = 5
+mouse_filter = 2
 
 [node name="Subtitle" type="Label" parent="Menu/Contents"]
 layout_mode = 2
