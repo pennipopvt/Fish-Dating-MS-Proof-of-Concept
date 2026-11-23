@@ -7,19 +7,20 @@ extends Node2D
 # screen. It sits behind everything in the sea (z_index -4 in the scene, behind
 # the shadow fish at -3 and the Background Terrain at -2).
 
-## Colors are calibrated so the MIDDLE of the screen renders as the team's
-## ocean color #40779a at daytime (afternoon clock), after the water and
-## underwater tints draw over this node: on screen, color = gain * backdrop +
-## offset per channel, gain (0.569, 0.588, 0.608), offset (0.063, 0.176, 0.255).
-## Top/bottom are that blue 18% lighter/darker on screen (75,139,178 / 53,100,129),
-## symmetric so the middle stays exact with curve 1.0. To pick a new on-screen
-## color S, use backdrop = (S - offset) / gain.
+## Colors are calibrated against the rendered screen at daytime (afternoon
+## clock), after the water and underwater tints draw over this node: on
+## screen, color = gain * backdrop + offset per channel, gain (0.569, 0.588,
+## 0.608), offset (0.063, 0.176, 0.255). Targets (Penni's request: a bright
+## blue near the top): top (80,150,195), bottom (45,105,140), so mid-screen is
+## about the original sea color with no backdrop (58,130,171). (#40779a at
+## mid-screen would be top (0.41,0.637,0.753), bottom (0.251,0.351,0.395).)
+## To pick a new on-screen color S, use backdrop = (S - offset) / gain.
 ## Color at the top of the screen.
-@export var top_color: Color = Color(0.41, 0.637, 0.753, 1.0)
+@export var top_color: Color = Color(0.441, 0.701, 0.838, 1.0)
 ## Color at the bottom of the screen.
-@export var bottom_color: Color = Color(0.251, 0.351, 0.395, 1.0)
+@export var bottom_color: Color = Color(0.199, 0.401, 0.484, 1.0)
 ## Above 1, the screen stays light longer and darkens near the bottom.
-## Below 1, it darkens quickly from the top. Keep 1.0 for #40779a mid-screen.
+## Below 1, it darkens quickly from the top. Keep 1.0 so mid-screen stays halfway.
 @export_range(0.3, 3.0) var curve: float = 1.0
 ## 0 = smooth. Otherwise the number of flat color bands (pixel-art look).
 @export_range(0, 32) var bands: int = 0
