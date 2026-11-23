@@ -22,14 +22,8 @@ var _playback_guard: Timer
 func _ready() -> void:
 	_ocean.volume_db = ocean_volume_db
 	_underwater.volume_db = silent_volume_db
-	# Defensive loop configuration: the OGG was previously imported with
-	# looping disabled, which silenced the coast after one playback.
-	var shore_stream: AudioStreamOggVorbis = _ocean.stream as AudioStreamOggVorbis
-	if shore_stream != null:
-		shore_stream.loop = true
-	var sea_stream: AudioStreamWAV = _underwater.stream as AudioStreamWAV
-	if sea_stream != null:
-		sea_stream.loop_mode = AudioStreamWAV.LOOP_FORWARD
+	# Both streams loop through their import settings. Do not edit stream
+	# resources after the child AudioStreamPlayers have already autoplayed.
 	_ensure_playing()
 	# Stream playback can unexpectedly stop after a device/import reset.
 	# Keep one lightweight guard instead of starting sounds every frame.
