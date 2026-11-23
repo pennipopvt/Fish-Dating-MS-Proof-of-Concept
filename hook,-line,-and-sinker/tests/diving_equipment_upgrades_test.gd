@@ -56,11 +56,11 @@ func _ready() -> void:
 	net.tip = Vector2(100.0, 50.0)
 	sprite.position = net.tip
 	net.direction = Vector2.RIGHT
-	sprite.flip_h = false
+	sprite.flip_h = true
 	_check(net._cord_endpoint().x > net.tip.x,
 		"Cord attaches on right edge of forward-facing net sprite")
 	net.direction = Vector2.LEFT
-	sprite.flip_h = true
+	sprite.flip_h = false
 	_check(net._cord_endpoint().x < net.tip.x,
 		"Cord attaches on mirrored left edge when thrown left")
 

@@ -103,7 +103,7 @@ func cast_net(origin: Node2D, aim_position: Vector2, fish_in_water: Array[Diving
 		_net_animation.stop()
 	if _net_sprite != null:
 		_net_sprite.frame = 0
-		_net_sprite.flip_h = direction.x < 0.0
+		_net_sprite.flip_h = direction.x > 0.0
 		_net_sprite.position = tip.round()
 	visible = true
 	set_process(true)
