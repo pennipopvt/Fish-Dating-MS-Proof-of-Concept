@@ -187,15 +187,14 @@ Debug builds only (not in exports):
   speeds and opacity are Inspector exports.
   **Reef background:** `prefabs/sea_reef_background.tscn` (node `ReefBackground` in
   `scenes/sea_area.tscn`, script `scripts/diving/sea_reef_background.gd`) draws Jerry's
-  640x100 reef strip (`sprites/environment/oceanJerry/OceanBackground/background.png`)
-  along the bottom of the screen, following the camera at every depth. It repeats
+  640x100 reef strip (`sprites/environment/oceanJerry/OceanBackground/backgroundDark.png`,
+  a pre-darkened version of `background.png`) along the bottom of the screen, following the camera at every depth. It repeats
   sideways and scrolls sideways at half the camera speed (`parallax` 0.5), so it reads
   as farther away. Anything above the water surface is cut off, so it never shows over
-  the sky or land. It's darkened with the node's `modulate` (0.45, 0.52, 0.62) and sits
-  at z_index -3, in front of the shadow fish and behind the terrain. Its height follows
+  the sky or land. It sits at z_index -3, in front of the shadow fish and behind the terrain. Its height follows
   the camera's depth: at the surface it sits `sink_at_surface` (55px) below the screen
   edge so only the coral tops peek in, and by the bottom of the sea it rises
-  `rise_at_floor` (40px) above it, with a band of the strip's own bottom sand filling
+  `rise_at_floor` (80px) above it, with a band of the strip's own bottom sand filling
   the space underneath. That gives a gentle vertical parallax (about 15% of the camera's
   travel) while swimming up or down; `rise_curve` changes how early it rises.
 - **Fishing rod (visual only):** `prefabs/fishing_rod.tscn` on the player. When you
