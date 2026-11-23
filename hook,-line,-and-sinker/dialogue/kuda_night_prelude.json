@@ -10,7 +10,7 @@
       "choices": [
         {
           "text": "Because I'm happy to see you.",
-          "next": "settle"
+          "next": "settle_happy"
         },
         {
           "text": "You were looking forward to this, weren't you?",
@@ -85,6 +85,29 @@
           "prelude_boundary"
         ]
       }
+    },
+    "settle_happy": {
+      "lines": [
+        "Well, isn't that sweet?",
+        "I... am happy you're here.",
+        "For the record.",
+        "It's weird not knowing what to say for once.",
+        "Can we just hang out for a minute?"
+      ],
+      "choices": [
+        {
+          "text": "Sure. I'm not in a rush.",
+          "next": "close"
+        },
+        {
+          "text": "I like being here with you.",
+          "next": "close"
+        },
+        {
+          "text": "I don't have all night.",
+          "next": "too_fast"
+        }
+      ]
     }
   }
 }

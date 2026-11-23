@@ -7,7 +7,7 @@
       ],
       "choices": [
         {
-          "text": "It's for you.",
+          "text": "It's for you!",
           "next": "accept",
           "effects": {
             "give_held_item": true,
@@ -17,20 +17,22 @@
           }
         },
         {
-          "text": "Never mind.",
+          "text": "Just something I'm holding.",
           "next": "decline"
         }
       ]
     },
     "accept": {
       "lines": [
-        "...Huh.",
-        "Didn't ask for it, but I guess I'll take it."
+        "Huh. For me?",
+        "Didn't ask for it, but... thanks, I guess.",
+        "Not exactly gonna help with the cold, though.",
+        "Whatever. I'll find a use for it."
       ]
     },
     "decline": {
       "lines": [
-        "Whatever."
+        "Oh. Whatever."
       ]
     }
   }

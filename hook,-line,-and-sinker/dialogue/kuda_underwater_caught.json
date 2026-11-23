@@ -4,15 +4,40 @@
   "nodes": {
     "caught": {
       "lines": [
-        "...damn. i can't believe i let you catch me.",
+        "Damn, I can't believe I let you catch me.",
         "Tch. Don't look so pleased with yourself.",
         {
           "speaker": "player",
-          "text": "You were going pretty fast back there."
+          "text": "Hehe. You were going pretty fast..."
         },
-        "Yeah, well. Doesn't mean I wasn't holding back.",
-        "Whatever. I'll follow you around for a while.",
-        "But don't get used to bossing me around."
+        {
+          "speaker": "player",
+          "text": "Not fast enough, I guess..."
+        },
+        "Shut up. What do you want from me?",
+        {
+          "speaker": "player",
+          "text": "Oh, I'm just trying to catch fish for my quota."
+        },
+        "Am I on your list?",
+        {
+          "speaker": "player",
+          "text": "No."
+        },
+        "Then why did you catch me??",
+        {
+          "speaker": "player",
+          "text": "Um. For fun?"
+        },
+        {
+          "speaker": "player",
+          "text": "Well, since you're here, could you help me out?"
+        },
+        {
+          "speaker": "player",
+          "text": "I did catch you and all..."
+        },
+        "Tch. Fine. Just tell me what to do."
       ],
       "effects": {
         "set_flags": [

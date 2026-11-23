@@ -19,14 +19,25 @@
           "speaker": "player",
           "text": "No! Just the one room."
         },
-        "Oh! That's a relief, hehe.",
-        "Still... a whole room to myself?",
-        "That's really nice.",
-        "Thank you, Penni.",
+        "Oh. That's better. I don't think I could deal with a big open space...",
         {
           "speaker": "player",
-          "text": "I'll come visit you later, okay?"
+          "text": "Yeah, no worries!"
         },
+        {
+          "speaker": "player",
+          "text": "Get yourself comfortable. It's yours now."
+        },
+        "Thank you!",
+        {
+          "speaker": "player",
+          "text": "Oh, but... it was nice diving with you."
+        },
+        {
+          "speaker": "player",
+          "text": "I'd like if you joined me from now on."
+        },
+        "Y-yeah! Of course!",
         "I'd like that."
       ]
     }

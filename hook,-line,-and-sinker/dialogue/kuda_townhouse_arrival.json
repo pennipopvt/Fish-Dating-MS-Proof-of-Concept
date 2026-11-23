@@ -6,29 +6,38 @@
       "lines": [
         {
           "speaker": "player",
-          "text": "Here it is! Fish Co. said we can use the townhouse for everyone we've brought back."
+          "text": "Here it is! Courtesy of Fish Co."
         },
-        "So this is where all your fish friends live?",
         {
           "speaker": "player",
-          "text": "Well, everyone's got their own room. You can have one too."
+          "text": "Kind of."
         },
-        "Seriously? Just... like that?",
+        "So this is where I'll be staying?",
         {
           "speaker": "player",
-          "text": "Yeah. You should have somewhere that's yours."
+          "text": "Yup! You can even have your own room. Ooooh."
         },
-        "Huh. Guess that's not so bad.",
+        "Huh. That actually doesn't sound like the worst thing ever.",
         {
           "speaker": "player",
-          "text": "I'll show you which room is yours. You can settle in whenever you're ready."
+          "text": "You're welcome!"
         },
-        "Don't go thinking I'll just sit around in there all day.",
+        "Thanks...",
         {
           "speaker": "player",
-          "text": "I was hoping you'd come diving with me again, actually."
+          "text": "Well, as thanks... I would reeeallly like it if you came diving with me again."
         },
-        "...Heh. Sure. And, uh... thanks, Penni."
+        "Okay...",
+        {
+          "speaker": "player",
+          "text": "Aww, are you softening up on me?"
+        },
+        "Don't push it.",
+        "I'm going inside!",
+        {
+          "speaker": "player",
+          "text": "Bye!"
+        }
       ]
     }
   }

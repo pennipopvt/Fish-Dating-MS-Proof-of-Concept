@@ -11,8 +11,18 @@
           "text": "I had a lot of fun~"
         },
         "Maybe getting caught wasn't so bad after all.",
-        "Here, I have something I thought you might like.",
-        "Don't get the wrong idea. I just thought I should pay you back."
+        "You know, I thought of something.",
+        "I think I can help out a little more on dives.",
+        "Next time you net a fish, I'll scare them a little so you can have a moment to reel 'em in.",
+        {
+          "speaker": "player",
+          "text": "That sounds great!"
+        },
+        {
+          "speaker": "player",
+          "text": "We can try that."
+        },
+        "Will do."
       ]
     }
   }

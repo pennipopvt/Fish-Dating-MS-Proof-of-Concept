@@ -3,21 +3,18 @@
   "nodes": {
     "offer": {
       "lines": [
-        {
-          "speaker": "player",
-          "text": "Well, it's getting a little cold, and I realized I had this extra scarf if you want it."
-        }
+        "What's that?"
       ],
       "choices": [
         {
-          "text": "Here, take it.",
+          "text": "It's for you!",
           "next": "accept",
           "effects": {
             "give_held_item": true
           }
         },
         {
-          "text": "Actually, never mind.",
+          "text": "Just something I'm holding.",
           "next": "decline"
         }
       ]
@@ -31,7 +28,22 @@
           "speaker": "player",
           "text": "Aww, you're welcome!"
         },
-        "Shut up."
+        "Shut up.",
+        "But... thank you. I do appreciate it.",
+        "It was getting a little hard to bear the cold all the time.",
+        {
+          "speaker": "player",
+          "text": "Wow, a genuine thank you?"
+        },
+        "I'll let that slide since you did something nice for me.",
+        {
+          "speaker": "player",
+          "text": "You're welcome!"
+        },
+        {
+          "speaker": "player",
+          "text": "I hope you're less cold up here now."
+        }
       ]
     },
     "decline": {

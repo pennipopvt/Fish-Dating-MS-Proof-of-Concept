@@ -6,48 +6,50 @@
       "lines": [
         {
           "speaker": "player",
-          "text": "Kuda?! You're a person too?!"
+          "text": "Kuda? You're a person too??"
         },
-        "What the—",
-        "WHY DO I HAVE LEGS?!",
+        "What the-",
+        "What. Happened. To. Me.",
         {
           "speaker": "test_npc",
           "text": "O-oh! That happened to me too, when I first came out of the water."
         },
-        "You could've warned me this was going to happen!",
+        "A heads up would've been nice.",
         {
           "speaker": "player",
-          "text": "I didn't know it would happen again!"
+          "text": "Why'd you jump out of the water??"
+        },
+        "I- Whatever. I was in the moment.",
+        {
+          "speaker": "test_npc",
+          "text": "It's okay, I get it. When Penni does it, it looks really fun."
+        },
+        {
+          "speaker": "player",
+          "text": "HAHA! You wanted to keep hanging out with me."
+        },
+        "Oh, shut up.",
+        "What do I do now??",
+        {
+          "speaker": "player",
+          "text": "What, are you scared?"
         },
         {
           "speaker": "test_npc",
-          "text": "Neither did I... But, um, you get used to walking. Mostly."
+          "text": "It's okay if you're scared... I was too!"
         },
-        "Everything's so much taller from up here...",
-        {
-          "speaker": "test_npc",
-          "text": "It's okay if you're a little scared. I was too."
-        },
-        "I'm NOT scared. I just— need a second.",
+        "I AM NOT SCARED.",
         {
           "speaker": "player",
-          "text": "Take your time."
+          "text": "Oh, okay, Mr. Not Scared. Well, you could stay in the townhouse."
         },
-        "So what am I supposed to do now?",
+        "Townhouse...?",
+        "Hmph. Fine. Just until we figure this out.",
         {
           "speaker": "player",
-          "text": "You could stay at the townhouse! We can get you a room."
+          "text": "It's nice, I promiseee."
         },
-        {
-          "speaker": "test_npc",
-          "text": "There's space for you! It's actually pretty nice."
-        },
-        "Hmph. Fine. Just until I figure this out.",
-        {
-          "speaker": "player",
-          "text": "Come on, I'll show you!"
-        },
-        "I can find a room by myself, you know."
+        "We'll see about that."
       ]
     }
   }

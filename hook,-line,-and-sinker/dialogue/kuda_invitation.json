@@ -9,7 +9,12 @@
           "text": "Why? You wanna spend time with me?"
         },
         "Tch. Don't make it weird.",
-        "I just figured you might wanna come over."
+        "I just figured you might wanna come over.",
+        {
+          "speaker": "player",
+          "text": "What'll we be doing, hmm~?"
+        },
+        "Just. Come later."
       ],
       "choices": [
         {

@@ -129,7 +129,7 @@
     "land": {
       "lines": [
         "It's alright.",
-        "I don't know how you can stand being out here all day."
+        "It's colder than I would've thought."
       ],
       "next": "wind_question"
     },
@@ -137,10 +137,18 @@
       "lines": [
         {
           "speaker": "player",
-          "text": "What do you mean?"
+          "text": "Well, you aren't really wearing the warmest outfit."
         },
-        "You're just sitting around with the wind blowing on you.",
-        "Doesn't seem very comfortable."
+        "Well, I don't really have other clothes, do I?",
+        {
+          "speaker": "player",
+          "text": "Haha... You're right, sorry."
+        },
+        {
+          "speaker": "player",
+          "text": "We'll figure it out."
+        },
+        "Go back in the water soon!"
       ],
       "effects": {
         "set_flags": [
@@ -150,7 +158,8 @@
     },
     "caught": {
       "lines": [
-        "Tch. Guess I was just off that day."
+        "I didn't get myself caught.",
+        "I was busy chasing something else. You got lucky."
       ],
       "next": "caught_tease"
     },
@@ -158,10 +167,15 @@
       "lines": [
         {
           "speaker": "player",
-          "text": "Can't believe you got caught by ME! HAHA!"
+          "text": "Hehe. Sure you were."
         },
-        "Yeah, yeah. Laugh it up.",
-        "It's not happening again."
+        "Tch. Whatever.",
+        "And now I'm stuck up here freezing because of you.",
+        {
+          "speaker": "player",
+          "text": "Aww, you poor thing."
+        },
+        "Don't start."
       ]
     },
     "scarf_chat": {

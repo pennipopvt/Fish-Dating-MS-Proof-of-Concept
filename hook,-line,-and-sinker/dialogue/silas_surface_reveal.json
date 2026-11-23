@@ -20,14 +20,12 @@
           "speaker": "player",
           "text": "Oh. Um, like mine."
         },
-        "Oh... these?",
-        "I-is that normal?",
+        "Oh. Is that... normal?",
         {
           "speaker": "player",
           "text": "I have absolutely no idea."
         },
         "I didn't think coming up here would be quite so different.",
-        "But... there are so many things I want to see.",
         "Um... what am I supposed to do now?",
         {
           "speaker": "player",
@@ -37,10 +35,10 @@
           "speaker": "player",
           "text": "Maybe we can get you a room in the townhouse."
         },
-        "A room? Somewhere I can hide?",
+        "A room? Like a burrow?",
         {
           "speaker": "player",
-          "text": "Yeah! Come on, I'll show you."
+          "text": "Yeah, something like that..."
         }
       ]
     }

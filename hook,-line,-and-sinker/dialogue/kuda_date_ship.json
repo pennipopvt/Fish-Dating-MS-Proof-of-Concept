@@ -3,9 +3,23 @@
   "nodes": {
     "start": {
       "lines": [
-        "Seriously?",
-        "You know I can swim, right?",
-        "What's the point of going out on a boat?"
+        "I appreciate you taking me out here...",
+        "But you know I can swim, right?",
+        {
+          "speaker": "player",
+          "text": "I know!"
+        },
+        {
+          "speaker": "player",
+          "text": "I can swim too!"
+        },
+        "Not sure I'd call that swimming...",
+        {
+          "speaker": "player",
+          "text": "Hey! I was able to catch you!"
+        },
+        "And I'll never live it down.",
+        "Why'd you wanna go on a boat, though?"
       ],
       "next": "choice_1"
     },
