@@ -63,13 +63,15 @@
           "text": "How are you liking it here?",
           "next": "curiosity",
           "daily_topic": true,
-          "grey_when_picked": true
+          "grey_when_picked": true,
+          "repeat_next": "daily_topic_repeat"
         },
         {
           "text": "Have you gone exploring at all?",
           "next": "exploring",
           "daily_topic": true,
-          "grey_when_picked": true
+          "grey_when_picked": true,
+          "repeat_next": "daily_topic_repeat"
         },
         {
           "text": "Can you remind me about something?",
@@ -78,7 +80,8 @@
           "grey_when_picked": true,
           "required_flags": [
             "gift_attempted"
-          ]
+          ],
+          "repeat_next": "daily_topic_repeat"
         },
         {
           "text": "How's the spyglass working out?",
@@ -87,7 +90,8 @@
           "grey_when_picked": true,
           "required_flags": [
             "spyglass_complete"
-          ]
+          ],
+          "repeat_next": "daily_topic_repeat"
         },
         {
           "text": "How have you been feeling at home?",
@@ -96,7 +100,8 @@
           "grey_when_picked": true,
           "required_flags": [
             "silas_route_complete"
-          ]
+          ],
+          "repeat_next": "daily_topic_repeat"
         },
         {
           "text": "Have you been watching those birds?",
@@ -105,7 +110,8 @@
           "grey_when_picked": true,
           "required_flags": [
             "silas_route_complete"
-          ]
+          ],
+          "repeat_next": "daily_topic_repeat"
         },
         {
           "text": "What do you want to know about me?",
@@ -114,7 +120,8 @@
           "grey_when_picked": true,
           "required_flags": [
             "silas_route_complete"
-          ]
+          ],
+          "repeat_next": "daily_topic_repeat"
         },
         {
           "text": "How's your room been treating you?",
@@ -123,7 +130,8 @@
           "grey_when_picked": true,
           "required_flags": [
             "silas_route_complete"
-          ]
+          ],
+          "repeat_next": "daily_topic_repeat"
         },
         {
           "text": "You said we could explore together someday...",
@@ -134,14 +142,15 @@
             "active_events": [
               "explore_together"
             ]
-          }
+          },
+          "repeat_next": "daily_topic_repeat"
         }
       ],
       "daily_boundary": "daily_boundary"
     },
     "daily_boundary": {
       "lines": [
-        "Oh, um... didn't we already talk about everything?",
+        "Oh, um... I don't have much else to talk about today.",
         "You don't have to keep talking to me, you know, hehe.",
         "I'll see you later!"
       ]
@@ -342,6 +351,12 @@
       "lines": [
         "I've been popping my head out of my room every now and then.",
         "It kind of reminds me of the burrow down there, hehe."
+      ]
+    },
+    "daily_topic_repeat": {
+      "lines": [
+        "Oh! Didn't we already talk about that?",
+        "Hehe, nothing new to report!"
       ]
     }
   }

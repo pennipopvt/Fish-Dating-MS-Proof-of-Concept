@@ -281,6 +281,10 @@ func _show_player_choice(choice: Dictionary) -> void:
 func _complete_pending_choice() -> void:
 	var choice := _pending_choice
 	_pending_choice = {}
+	# A familiar daily topic is a brief acknowledgement, not a replay of its
+	# entire original conversation. Greyed-out choices remain selectable.
+	var repeated_daily_topic: bool = bool(choice.get("daily_topic", false)) \
+		and AffectionManager.was_picked(current_npc.npc_id, str(choice.get("_key", "")))
 	# Preserve the jealousy tier from when Penni chose her answer. DateManager
 	# may change jealousy in choice_resolved, before the response node appears.
 	var reaction_tier := -1
@@ -295,7 +299,9 @@ func _complete_pending_choice() -> void:
 	if bool(choice.get("daily_topic", false)):
 		NPCManager.mark_daily_topic_discussed(current_npc.npc_id, str(choice.get("next", "")))
 	choice_resolved.emit(current_npc, choice)
-	_enter_node(str(choice["next"]), reaction_tier)
+	var target: String = str(choice.get("repeat_next", choice["next"])) \
+		if repeated_daily_topic else str(choice["next"])
+	_enter_node(target, reaction_tier)
 
 func _apply_json_effects(effects: Variant, include_affection: bool = true) -> void:
 	if not effects is Dictionary or current_npc == null:

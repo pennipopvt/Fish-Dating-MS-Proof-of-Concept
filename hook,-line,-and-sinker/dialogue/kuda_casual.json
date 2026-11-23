@@ -49,13 +49,15 @@
           "text": "How are you liking it up here?",
           "next": "land",
           "daily_topic": true,
-          "grey_when_picked": true
+          "grey_when_picked": true,
+          "repeat_next": "daily_topic_repeat"
         },
         {
           "text": "So why'd you get yourself caught?",
           "next": "caught",
           "daily_topic": true,
-          "grey_when_picked": true
+          "grey_when_picked": true,
+          "repeat_next": "daily_topic_repeat"
         },
         {
           "text": "You still wearing that scarf?",
@@ -64,7 +66,8 @@
           "grey_when_picked": true,
           "required_flags": [
             "barracuda_scarf_complete"
-          ]
+          ],
+          "repeat_next": "daily_topic_repeat"
         },
         {
           "text": "How's living here been?",
@@ -73,7 +76,8 @@
           "grey_when_picked": true,
           "required_flags": [
             "barracuda_route_complete"
-          ]
+          ],
+          "repeat_next": "daily_topic_repeat"
         },
         {
           "text": "What have you been doing today?",
@@ -82,7 +86,8 @@
           "grey_when_picked": true,
           "required_flags": [
             "barracuda_route_complete"
-          ]
+          ],
+          "repeat_next": "daily_topic_repeat"
         },
         {
           "text": "Been enjoying the company?",
@@ -91,15 +96,16 @@
           "grey_when_picked": true,
           "required_flags": [
             "barracuda_route_complete"
-          ]
+          ],
+          "repeat_next": "daily_topic_repeat"
         }
       ],
       "daily_boundary": "daily_boundary"
     },
     "daily_boundary": {
       "lines": [
-        "Didn't we already talk about everything?",
-        "I like seeing you, Penni, but you don't have to keep coming up with things to ask.",
+        "That's about all I've got for today.",
+        "You don't have to keep finding things to ask me, Penni.",
         "See you around."
       ]
     },
@@ -215,6 +221,12 @@
     "confirmed": {
       "lines": [
         "Alright. Don't be late."
+      ]
+    },
+    "daily_topic_repeat": {
+      "lines": [
+        "Didn't we talk about that already?",
+        "Nothing's changed since then."
       ]
     }
   }
