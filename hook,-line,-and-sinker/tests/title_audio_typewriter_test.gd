@@ -3,6 +3,8 @@ extends Node
 # Run: godot --headless --path . res://tests/title_audio_typewriter_test.tscn
 # Verifies the title/ambient audio and native typewriter presentation.
 const MAIN: PackedScene = preload("res://scenes/main.tscn")
+const OCEAN_AUDIO: AudioStream = preload("res://sounds/sfx/207553__bone666138__ocean-ambience-costal-with-foghorn.wav")
+const UNDERWATER_AUDIO: AudioStream = preload("res://sounds/sfx/504641__fission9__underwater-ambience.wav")
 var failures: int = 0
 
 
@@ -26,6 +28,8 @@ func _run() -> void:
 		"Startup displays title without music or Fish Co dialogue")
 	_check(ocean.autoplay and below.autoplay,
 		"Ambience stream players start even if controller initialization fails")
+	_check(ocean.stream == OCEAN_AUDIO and below.stream == UNDERWATER_AUDIO,
+		"Ambience controller leaves autoplay streams attached instead of interrupting them")
 	_check(ocean.playing and below.playing and ocean.stream is AudioStreamWAV
 		and (ocean.stream as AudioStreamWAV).loop_mode == AudioStreamWAV.LOOP_FORWARD
 		and (below.stream as AudioStreamWAV).loop_mode == AudioStreamWAV.LOOP_FORWARD,
