@@ -5,7 +5,7 @@
 [ext_resource type="Script" uid="uid://dou1ei8c0alhj" path="res://resources/trade_requirement.gd" id="requirement_script"]
 [ext_resource type="Script" uid="uid://co23u2dkxgpsq" path="res://resources/trade_data.gd" id="trade_script"]
 
-[sub_resource type="Resource" id="PreviewCost"]
+[sub_resource type="Resource" id="MulletCost"]
 script = ExtResource("requirement_script")
 item = ExtResource("preview_mullet")
 amount = 2
@@ -18,7 +18,7 @@ description = "Adds 30 seconds of oxygen per dive. 1 day delivery."
 one_time_purchase = true
 icon = ExtResource("preview_icon")
 delivery_time = 1
-requirements = Array[ExtResource("requirement_script")]([SubResource("PreviewCost")])
+requirements = Array[ExtResource("requirement_script")]([SubResource("MulletCost")])
 reward_method = &"shop_reward_larger_tank"
 reward_amount = 30
 delivery_sprite = ExtResource("preview_icon")
