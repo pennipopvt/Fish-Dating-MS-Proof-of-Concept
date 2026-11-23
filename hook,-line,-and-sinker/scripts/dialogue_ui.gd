@@ -387,7 +387,10 @@ func _play_letter_sound(index: int) -> void:
 		variance = _current_voice_npc.voice_pitch_variation
 	if sound == null:
 		return
-	_voice.stream = sound
+	# Don't reassign the same AudioStream on every letter; changing the
+	# stream would interrupt the previous chirp before polyphony can work.
+	if _voice.stream != sound:
+		_voice.stream = sound
 	_voice.volume_db = voice_volume_db
 	_voice.pitch_scale = maxf(0.1, base_pitch + randf_range(-variance, variance))
 	_voice.play()
