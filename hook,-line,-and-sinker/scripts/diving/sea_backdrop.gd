@@ -7,13 +7,14 @@ extends Node2D
 # screen. It sits behind everything in the sea (z_index -4 in the scene, behind
 # the shadow fish at -3 and the Background Terrain at -2).
 
-## Color at the top of the screen.
-@export var top_color: Color = Color(0.22, 0.47, 0.62, 1.0)
+## Color at the top of the screen. The default matches the original
+## underwater color once the existing blue tints are drawn over it.
+@export var top_color: Color = Color(0.37, 0.40, 0.42, 1.0)
 ## Color at the bottom of the screen.
-@export var bottom_color: Color = Color(0.05, 0.14, 0.28, 1.0)
+@export var bottom_color: Color = Color(0.12, 0.21, 0.31, 1.0)
 ## Above 1, the screen stays light longer and darkens near the bottom.
 ## Below 1, it darkens quickly from the top.
-@export_range(0.3, 3.0) var curve: float = 1.0
+@export_range(0.3, 3.0) var curve: float = 1.3
 ## 0 = smooth. Otherwise the number of flat color bands (pixel-art look).
 @export_range(0, 32) var bands: int = 0
 ## Visible water surface y in the parent's space, used only when the World's
