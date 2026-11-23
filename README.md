@@ -174,9 +174,10 @@ Debug builds only (not in exports):
   the screen, darker at the bottom, the same at every depth. It never draws above the
   sea surface, and it replaces the plain grey that used to show behind deep water. It
   sits at z_index -4, behind the shadow fish. `top_color`, `bottom_color`, `curve` and
-  `bands` (flat color steps) are Inspector exports. The default colors are about 20 brightness
-  levels lighter than the original underwater color (top 0.52, 0.56, 0.59; bottom
-  0.24, 0.35, 0.47); top 0.37, 0.40, 0.42 would match the original exactly.
+  `bands` (flat color steps) are Inspector exports. The default colors are calibrated so the middle
+  of the screen renders as the team's ocean color `#40779a` at daytime, with the top 18%
+  lighter and the bottom 18% darker in the same blue (`curve` 1.0). The script's comments
+  give the formula for picking a different on-screen color.
   **Bubbles:** `prefabs/sea_bubbles.tscn` (node `Bubbles` in `scenes/sea_area.tscn`,
   z_index 5) with Jerry's art in `sprites/environment/oceanJerry/` (small 2px, mid
   4px, big 5px with a 3-frame pop). Visual only. Sources, all around the camera view:
