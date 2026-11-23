@@ -45,6 +45,7 @@ const FISH_COMBAT_VISUAL_SCENE: PackedScene = preload("res://prefabs/sea_fish_co
 @onready var _battle: DivingCompanionBattle = $NPCs/Silas/CompanionBattle
 @onready var _silas_behavior: SilasCombatBehavior = $NPCs/Silas/CombatBehavior
 @onready var _commands: SeaPartyCommands = $PartyCommands
+@onready var _passives: SeaCompanionPassives = $CompanionPassives
 @onready var _encounter: SeaEncounterSequence = $EncounterSequence
 @onready var _kuda: SeaKudaEncounter = $KudaEncounter
 
@@ -97,6 +98,7 @@ func _ready() -> void:
 		_camera = get_parent().get_node_or_null("CameraController/Camera2D") as Camera2D
 	_cache_terrain_colliders()
 	_hooked_mover.is_open = _is_open_water
+	_passives.configure(_fish_data, _dive_inventory)
 	_sfx = SEA_SFX_SCENE.instantiate()
 	add_child(_sfx)
 	_install_tutorial_cue()
@@ -226,6 +228,7 @@ func _spawn_wild_fish(data: FishData, where: Vector2, random_seed: int,
 	fish.flee_speed = flee
 	_wild_fish.append(fish)
 	_fish_data[fish] = data
+	_passives.refresh_labels()
 	return fish
 
 
@@ -369,6 +372,7 @@ func add_diving_party_member(npc: NPCData, index: int) -> void:
 		_silas.follow_trail = _follow_trail
 		_silas.following = true
 		_commands.register_member(npc, _silas, _battle, _silas_behavior)
+		_passives.add_member(npc)
 		return
 	var node_name: String = "PartyFish_" + String(npc.npc_id)
 	if $NPCs.get_node_or_null(node_name) != null:
@@ -379,6 +383,7 @@ func add_diving_party_member(npc: NPCData, index: int) -> void:
 	follower.setup(npc, _player, index, _follow_trail)
 	follower.global_position = _player.global_position + Vector2(-24.0 - index * 16.0, 8.0)
 	_party_fish.append(follower)
+	_passives.add_member(npc)
 	if follower.battle != null and follower.behavior != null:
 		_commands.register_member(npc, follower, follower.battle, follower.behavior)
 		follower.battle.started.connect(_on_extra_battle_started.bind(npc.npc_id))
@@ -393,6 +398,7 @@ func end_diving_party() -> void:
 	_world_dialogue_queue.clear_pending()
 	_pending_ko_outcomes.clear()
 	_commands.clear()
+	_passives.clear_party()
 	if not _party_dive_active:
 		return
 	_party_dive_active = false
@@ -621,6 +627,8 @@ func _begin_fish_combat(fish: DivingWildFish) -> void:
 	_combat.record_lost_fish = fish != _encounter.silas_trap and fish != _kuda.kuda
 	if _combat.begin(fish, data, _player.position.distance_to(fish.position),
 			_net.effective_max_range(), fish.health_ratio()):
+		fish.netted = true
+		_passives.on_initial_net(_combat)
 		# Presentation belongs to the fish actor; it reads existing combat
 		# phases and doesn't introduce new timers into DivingCombat.
 		var visuals: SeaFishCombatVisual = fish.get_node_or_null("CombatVisual") as SeaFishCombatVisual
@@ -653,6 +661,7 @@ func _on_combat_finished(won: bool, fish: DivingWildFish) -> void:
 	_net.reset_net()
 	if not is_instance_valid(fish):
 		return
+	fish.netted = false
 	if fish == _kuda.kuda:
 		if won:
 			_kuda.on_caught()
@@ -756,6 +765,7 @@ func _handle_companion_knockout(npc: NPCData, actor: Node2D) -> void:
 	# Battle.stop() already fired when its health reached zero. Remove the KO
 	# from the command queue before another click could reuse its slot.
 	_commands.unregister_member(npc.npc_id)
+	_passives.remove_member(npc.npc_id)
 	_combat_debug_status = npc.display_name + " knocked out; cannot fight"
 	var first_land: bool = not RecruitmentHandler.is_resident(npc.npc_id)
 	if first_land:

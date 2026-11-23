@@ -53,8 +53,14 @@ func _run() -> void:
 	_expect(BAIT_TRADE.one_time_purchase and BAIT_TRADE.requirements[0].amount == 2, "hard bait costs two easy fish")
 	_expect(YELLOW_TRADE.one_time_purchase and YELLOW_TRADE.requirements[0].amount == 2 and YELLOW_TRADE.requirements[0].item.item_id == EASY_FISH.item_data.item_id, "yellow bait costs two easy fish only once")
 	_expect(fish.has_method(YELLOW_TRADE.reward_method), "yellow bait delivery calls a valid reward method")
-	_expect(REEL_TRADE.one_time_purchase and REEL_TRADE.requirements[0].amount == 1, "stronger reel is one-time and costs one easy fish")
-	_expect(LINE_TRADE.one_time_purchase and LINE_TRADE.requirements[0].item.item_id == HARD_FISH.item_data.item_id, "reinforced line is one-time and costs one hard fish")
+	_expect(REEL_TRADE.one_time_purchase and REEL_TRADE.requirements.size() == 1
+		and REEL_TRADE.requirements[0].item.item_id == &"porgy"
+		and REEL_TRADE.requirements[0].amount == 2,
+		"stronger reel is one-time and costs two porgy")
+	_expect(LINE_TRADE.one_time_purchase and LINE_TRADE.requirements.size() == 2
+		and LINE_TRADE.requirements[0].item.item_id == HARD_FISH.item_data.item_id
+		and LINE_TRADE.requirements[1].item.item_id == &"needlefish",
+		"reinforced line is one-time and costs tuna and needlefish")
 	_expect(PARRY_CHALLENGE.unlocks_trade(REEL_TRADE), "perfect parry challenge unlocks stronger reel")
 	_expect(CATCH_CHALLENGE.unlocks_trade(LINE_TRADE), "three-catch challenge unlocks reinforced line")
 
@@ -97,8 +103,8 @@ func _run() -> void:
 
 	for trade in [TANK_TRADE, NET_TRADE, PRESSURE_TRADE]:
 		_expect(trade.one_time_purchase and trade.icon != null
-			and trade.requirements.size() == 1 and trade.requirements[0].amount == 1,
-			"New equipment has an editable one-time, one-fish preview order")
+			and not trade.requirements.is_empty(),
+			"Equipment has editable one-time barter requirements")
 		_expect(fish.has_method(trade.reward_method),
 			"New equipment reward is a valid FishingManager method")
 	fish.shop_reward_larger_tank(TANK_TRADE.reward_amount)

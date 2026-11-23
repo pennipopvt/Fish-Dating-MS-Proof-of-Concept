@@ -38,6 +38,11 @@ extends Resource
 ## First dock conversation when Penni brings the injured fish to care for them.
 @export_file("*.json") var sea_first_land_after_knockout_json: String = ""
 
+@export_group("Romance Companion Passive")
+## Activated only after the morning-after romance completes, and only while
+## this NPC accompanies Penni on a dive.
+@export var sea_passive: SeaCompanionPassive
+
 @export_group("Appearance")
 @export var house: Texture2D
 ## Room doorway data. Does not control the diving party.
