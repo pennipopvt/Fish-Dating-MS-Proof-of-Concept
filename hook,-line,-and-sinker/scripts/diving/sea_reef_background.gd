@@ -33,6 +33,9 @@ extends Node2D
 
 
 var _sand: Color = Color(1.0, 0.94, 0.75)
+# Screen-pixel offsets currently drawn (see _draw); NAN until the first frame.
+var _shown_y: float = NAN
+var _shown_scroll: float = NAN
 
 
 func _ready() -> void:
@@ -70,22 +73,30 @@ func _draw() -> void:
 	var travel: float = maxf(sea_bottom_y - surface - view_size.y, 1.0)
 	var depth: float = clampf((view_pos.y - surface) / travel, 0.0, 1.0)
 	var lift: float = lerpf(-sink_at_surface, rise_at_floor, pow(depth, rise_curve))
-	# Whole pixels, so the strip doesn't shimmer while the camera moves.
-	var top: float = roundf(view_bottom - h - lift)
-	var visible_top: float = maxf(top, ceilf(surface))
+	# Work in whole SCREEN pixels (offsets from the view's top-left), so the
+	# strip sits on the screen's pixel grid even while the camera is between
+	# pixels. Each offset only moves once its target is a full pixel away,
+	# so a camera still settling after input stops can't make it twitch.
+	var target_y: float = view_size.y - h - lift
+	if is_nan(_shown_y) or absf(target_y - _shown_y) >= 1.0:
+		_shown_y = roundf(target_y)
+	var target_scroll: float = view_pos.x * parallax
+	if is_nan(_shown_scroll) or absf(target_scroll - _shown_scroll) >= 1.0:
+		_shown_scroll = roundf(target_scroll)
+	var top: float = _shown_y
+	var visible_top: float = maxf(top, ceilf(surface - view_pos.y))
 	# Sand fills everything between the strip's bottom and the screen bottom.
 	var sand_top: float = maxf(top + h, visible_top)
-	if sand_top < view_bottom:
-		draw_rect(Rect2(view_pos.x - 2.0, sand_top, view_size.x + 4.0,
-				view_bottom - sand_top + 2.0), _sand)
+	if sand_top < view_size.y:
+		draw_rect(Rect2(view_pos + Vector2(-2.0, sand_top),
+				Vector2(view_size.x + 4.0, view_size.y - sand_top + 2.0)), _sand)
 	if visible_top >= top + h:
 		return
 	var cut: float = visible_top - top
 	# Screen x where a tile starts, moving at `parallax` of the camera speed.
-	var start: float = fposmod(-view_pos.x * parallax, w) - w
-	var x: float = start
+	var x: float = fposmod(-_shown_scroll, w) - w
 	while x < view_size.x:
-		var at := Vector2(roundf(view_pos.x + x), visible_top)
+		var at := view_pos + Vector2(x, visible_top)
 		draw_texture_rect_region(texture, Rect2(at, Vector2(w, h - cut)),
 				Rect2(0.0, cut, w, h - cut))
 		x += w
