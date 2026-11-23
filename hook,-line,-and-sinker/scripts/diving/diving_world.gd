@@ -778,7 +778,6 @@ func _handle_companion_knockout(npc: NPCData, actor: Node2D) -> void:
 			_combat.release()
 		_net.reset_net()
 	else:
-		AffectionManager.change_affection(npc.npc_id, -knockout_affection_loss)
 		NPCManager.start_relationship_event(npc, &"companion_knockout")
 	# World dialogue remains authored per NPC. A temporary conversation
 	# context avoids giving a routine +12 affection for a KO conversation.

@@ -33,9 +33,15 @@
     },
     "prelude_unresolved": {
       "lines": [
-        "I understand if you don't see it the same way.",
-        "But I was uncomfortable. That should matter too."
-      ]
+        "I-I understand if you don't see it the same way.",
+        "But I was uncomfortable...",
+        "Th-that should matter too."
+      ],
+      "effects": {
+        "defer_relationship_events": [
+          "prelude_boundary"
+        ]
+      }
     }
   }
 }

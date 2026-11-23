@@ -43,12 +43,22 @@
         "I know. But I don't want to hurt it more just because it's taking a while.",
         "I can help you catch fish without doing that.",
         "Please... just hear me out."
-      ]
+      ],
+      "effects": {
+        "defer_relationship_events": [
+          "fish_hurt_pressure"
+        ]
+      }
     },
     "later": {
       "lines": [
         "Okay. I just... wanted you to know why I stopped."
-      ]
+      ],
+      "effects": {
+        "defer_relationship_events": [
+          "fish_hurt_pressure"
+        ]
+      }
     }
   }
 }

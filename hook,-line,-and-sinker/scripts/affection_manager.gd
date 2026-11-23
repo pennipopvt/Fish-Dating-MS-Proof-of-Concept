@@ -63,8 +63,8 @@ func _connect_sources() -> void:
 
 # --- Single shared affection score ---
 
-func get_affection(npc_id: StringName) -> int:
-	return int(NPCManager.get_npc_state(npc_id).get("affection", NPCManager.START_AFFECTION))
+func get_affection(_npc_id: StringName) -> int:
+	return NPCManager.START_AFFECTION
 
 
 func change(npc_id: StringName, delta: int) -> void:
@@ -72,82 +72,45 @@ func change(npc_id: StringName, delta: int) -> void:
 	change_affection(npc_id, delta)
 
 
-func change_affection(npc_id: StringName, delta: int) -> void:
-	if npc_id == &"" or delta == 0:
-		return
-	var state: Dictionary = NPCManager.get_npc_state(npc_id)
-	var previous: int = get_affection(npc_id)
-	var updated: int = clampi(previous + delta, 0, MAX_AFFECTION)
-	if previous == updated:
-		return
-	state["affection"] = updated
-	var flags: Dictionary = state.get("flags", {})
-	if updated <= AFFECTION_REFUSING_AT:
-		flags[REFUSAL_FLAG] = true
-	elif updated >= AFFECTION_REJOIN_AT:
-		flags.erase(REFUSAL_FLAG)
-		state.erase(REFUSAL_NOTICE_KEY)
-	affection_changed.emit(npc_id, updated, updated - previous)
+func change_affection(_npc_id: StringName, _delta: int) -> void:
+	# Retained as a compatibility shim. Choices cannot change relationship scores.
+	pass
 
 
-func set_affection(npc_id: StringName, value: int) -> void:
-	change_affection(npc_id, clampi(value, 0, MAX_AFFECTION) - get_affection(npc_id))
+func set_affection(_npc_id: StringName, _value: int) -> void:
+	pass
 
 
-func is_decay_active(npc_id: StringName) -> bool:
-	var state: Dictionary = NPCManager.get_npc_state(npc_id)
-	if not state.get("flags", {}).get(RECRUITED_FLAG, false):
-		return false
-	if has_completed_romance(npc_id):
-		return true
-	if not state.has(RECRUITED_DAY_KEY):
-		return false
-	return GameManager.get_day() - int(state[RECRUITED_DAY_KEY]) >= AFFECTION_GRACE_DAYS
+func is_decay_active(_npc_id: StringName) -> bool:
+	return false
 
 
-func get_affection_stage(npc_id: StringName) -> AffectionStage:
-	# Direct choices can upset a companion immediately, even during the
-	# five-day grace against passive neglect.
-	var score: int = get_affection(npc_id)
-	if NPCManager.get_npc_state(npc_id).get("flags", {}).get(REFUSAL_FLAG, false) \
-			or score <= AFFECTION_REFUSING_AT:
-		return AffectionStage.REFUSING
-	if score <= AFFECTION_HURT_AT:
-		return AffectionStage.HURT
-	if score <= AFFECTION_NEGLECTED_AT:
-		return AffectionStage.NEGLECTED
+func get_affection_stage(_npc_id: StringName) -> AffectionStage:
 	return AffectionStage.HAPPY
 
 
-func can_join_dive(npc_id: StringName) -> bool:
-	return get_affection_stage(npc_id) != AffectionStage.REFUSING
+func can_join_dive(_npc_id: StringName) -> bool:
+	return true # DivingParty checks active authored incidents.
 
 
-func attack_speed_multiplier(npc_id: StringName) -> float:
-	return float(ATTACK_SPEED_BY_STAGE[int(get_affection_stage(npc_id))])
+func attack_speed_multiplier(_npc_id: StringName) -> float:
+	return 1.0
 
 
-func get_jealousy(npc_id: StringName) -> int:
-	return int(NPCManager.get_npc_state(npc_id).get(JEALOUSY_KEY, 0))
+func get_jealousy(_npc_id: StringName) -> int:
+	return 0
 
 
 func get_jealousy_tier(npc_id: StringName) -> int:
 	return mini(floori(float(get_jealousy(npc_id)) / 25.0), 3)
 
 
-func change_jealousy(npc_id: StringName, delta: int) -> void:
-	if npc_id == &"" or delta == 0:
-		return
-	var state: Dictionary = NPCManager.get_npc_state(npc_id)
-	var prior := get_jealousy(npc_id)
-	var next := clampi(prior + delta, 0, MAX_JEALOUSY)
-	state[JEALOUSY_KEY] = next
-	if next != prior:
-		jealousy_changed.emit(npc_id, next, next - prior)
+func change_jealousy(_npc_id: StringName, _delta: int) -> void:
+	pass
 
 
-func set_jealousy(npc_id: StringName, value: int) -> void:
-	change_jealousy(npc_id, clampi(value, 0, MAX_JEALOUSY) - get_jealousy(npc_id))
+func set_jealousy(_npc_id: StringName, _value: int) -> void:
+	pass
 
 
 func has_completed_romance(npc_id: StringName) -> bool:
@@ -163,11 +126,11 @@ func on_romance_completed(npc_id: StringName) -> void:
 	var flags: Dictionary = state["flags"]
 	if flags.get(ROMANCE_KEY, false):
 		return
-	# Existing romantic partners become jealous, not the new partner.
+	# Only spending the night with somebody else can create this conflict.
+	# Telling an existing partner about THIS invitation beforehand prevents it.
 	for other_id: StringName in NPCManager.npc_states.keys():
-		if _is_other_partner(other_id, npc_id):
-			change_jealousy(other_id, OTHER_ROMANCE_JEALOUSY)
-			change_affection(other_id, -OTHER_ROMANCE_AFFECTION_LOSS)
+		if _is_other_partner(other_id, npc_id) \
+				and not NPCManager.was_invitation_disclosed(other_id, npc_id):
 			_start_other_romance_event(other_id)
 	flags[ROMANCE_KEY] = true
 	# Starting a romance counts as meaningful time together today.
@@ -185,21 +148,14 @@ func mark_date_completed(npc_id: StringName, day: int) -> void:
 	NPCManager.get_npc_state(npc_id)[LAST_DATE_KEY] = day
 
 
-func _on_date_missed(date: DateData) -> void:
-	if date != null and date.npc != null and has_completed_romance(date.npc.npc_id):
-		# Missing an appointment is hurtful, but not evidence of jealousy.
-		change_affection(date.npc.npc_id, -MISSED_DATE_AFFECTION_LOSS)
+func _on_date_missed(_date: DateData) -> void:
+	pass
 
 
 # A date with one romantic partner may unsettle OTHER existing partners.
 # The date's affection reward still belongs only to the partner who attended.
-func _on_date_finished(date: DateData) -> void:
-	if date == null or date.npc == null or not has_completed_romance(date.npc.npc_id):
-		return
-	for other_id: StringName in NPCManager.npc_states.keys():
-		if _is_other_partner(other_id, date.npc.npc_id):
-			change_jealousy(other_id, OTHER_PARTNER_DATE_JEALOUSY)
-			_start_other_romance_event(other_id)
+func _on_date_finished(_date: DateData) -> void:
+	pass # Dates are not a betrayal; only an undisclosed overnight triggers it.
 
 
 func _is_other_partner(other_id: StringName, npc_id: StringName) -> bool:
@@ -258,10 +214,8 @@ func on_choice_picked(npc: NPCData, key: String, choice: Dictionary) -> void:
 	var state: Dictionary = NPCManager.get_npc_state(npc.npc_id)
 	var picked: Dictionary = state.get(PICKED_KEY, {})
 	state[PICKED_KEY] = picked
-	var first_time := not picked.has(key)
 	picked[key] = true
-	if first_time:
-		change(npc.npc_id, choice_amount(choice))
+	# Choices are only remembered for greyed-out/repeat dialogue, never scored.
 
 
 func clear_picked(npc_id: StringName) -> void:
@@ -281,16 +235,8 @@ func _on_conversation_finished(npc: NPCData) -> void:
 	state[LAST_TALK_KEY] = GameManager.get_day()
 
 
-func _on_day_started(day: int) -> void:
-	for npc_id: StringName in NPCManager.npc_states.keys():
-		var state: Dictionary = NPCManager.npc_states[npc_id]
-		if not is_decay_active(npc_id):
-			continue
-		# Check-ins and dates prevent the following day's idle decay.
-		if int(state.get(LAST_TALK_KEY, -1)) == day - 1 \
-				or int(state.get(LAST_DATE_KEY, -1)) == day - 1:
-			continue
-		change_affection(npc_id, -DAILY_AFFECTION_DECAY)
+func _on_day_started(_day: int) -> void:
+	pass # No passive neglect/affection decay.
 
 
 # --- Leaving ---
@@ -299,7 +245,6 @@ func _on_day_started(day: int) -> void:
 func leave(npc_id: StringName) -> void:
 	var state: Dictionary = NPCManager.get_npc_state(npc_id)
 	state["flags"][RECRUITED_FLAG] = false
-	state["affection"] = NPCManager.START_AFFECTION
 	state.erase(REFUSAL_NOTICE_KEY)
 	state["flags"].erase(REFUSAL_FLAG)
 	state.erase(LAST_TALK_KEY)

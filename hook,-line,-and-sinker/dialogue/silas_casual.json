@@ -49,6 +49,15 @@
           "grey_when_picked": false
         },
         {
+          "text": "I'm seeing another person...",
+          "next": "disclosure",
+          "when": {
+            "pending_other_invitation": true
+          },
+          "spends_action": false,
+          "grey_when_picked": false
+        },
+        {
           "text": "Goodbye!",
           "next": "goodbye",
           "spends_action": false,
@@ -358,6 +367,31 @@
         "Oh! Didn't we already talk about that?",
         "Hehe, nothing new to report!"
       ]
+    },
+    "disclosure": {
+      "lines": [
+        {
+          "speaker": "player",
+          "text": "There's something I should tell you..."
+        },
+        "Oh? What is it?",
+        {
+          "speaker": "player",
+          "text": "{{invited_npc_name}} invited me to spend the night with him."
+        },
+        {
+          "speaker": "player",
+          "text": "And... I said yes."
+        },
+        "Oh.",
+        "Um... okay.",
+        "I guess I hadn't really thought about that happening...",
+        "But... thank you for telling me first.",
+        "I really appreciate that, Penni."
+      ],
+      "effects": {
+        "disclose_invitation": true
+      }
     }
   }
 }

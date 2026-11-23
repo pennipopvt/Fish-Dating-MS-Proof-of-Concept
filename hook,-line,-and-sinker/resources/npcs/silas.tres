@@ -39,7 +39,7 @@ script = ExtResource("relationship_event_script")
 event_id = &"prelude_boundary"
 followup_dialogue_json = "res://dialogue/silas_prelude_boundary_followup.json"
 priority = 30
-blocks_actions = Array[StringName]([&"overnight"])
+blocks_actions = Array[StringName]([&"dive", &"overnight", &"date"])
 
 [sub_resource type="Resource" id="OtherRomanceEvent"]
 script = ExtResource("relationship_event_script")
@@ -47,6 +47,7 @@ event_id = &"other_romance"
 followup_dialogue_json = "res://dialogue/silas_other_romance.json"
 priority = 40
 
+blocks_actions = Array[StringName]([&"dive", &"overnight", &"date"])
 [sub_resource type="Resource" id="ExploreTogetherEvent"]
 script = ExtResource("relationship_event_script")
 event_id = &"explore_together"
@@ -58,12 +59,13 @@ event_id = &"fish_hurt_pressure"
 followup_dialogue_json = "res://dialogue/silas_fish_boundary_followup.json"
 priority = 45
 
+blocks_actions = Array[StringName]([&"dive", &"overnight", &"date"])
 [sub_resource type="Resource" id="CompanionKnockoutEvent"]
 script = ExtResource("relationship_event_script")
 event_id = &"companion_knockout"
 followup_dialogue_json = "res://dialogue/silas_companion_knockout_followup.json"
 priority = 65
-blocks_actions = Array[StringName]([&"dive", &"overnight"])
+blocks_actions = Array[StringName]([&"dive", &"overnight", &"date"])
 
 [resource]
 script = ExtResource("1_bmq75")
@@ -76,7 +78,6 @@ underwater_sprite = ExtResource("underwater_eel")
 sea_passive = ExtResource("sea_passive")
 sea_knockout_dialogue_json = "res://dialogue/silas_sea_knockout.json"
 sea_first_land_knockout_dialogue_json = "res://dialogue/silas_first_land_knockout.json"
-sea_first_land_after_knockout_json = "res://dialogue/silas_early_first_land.json"
 house = ExtResource("5_816r6")
 door = SubResource("TownhouseSilasDoor")
 room_background = ExtResource("10_ku7b7")

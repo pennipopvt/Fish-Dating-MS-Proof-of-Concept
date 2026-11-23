@@ -45,13 +45,23 @@
       "lines": [
         "I wasn't asking you to stop seeing anyone.",
         "I just wanted to be honest about how I felt."
-      ]
+      ],
+      "effects": {
+        "defer_relationship_events": [
+          "other_romance"
+        ]
+      }
     },
     "later": {
       "lines": [
         "Oh... okay.",
         "We can talk when you're ready. I'd rather not pretend nothing happened."
-      ]
+      ],
+      "effects": {
+        "defer_relationship_events": [
+          "other_romance"
+        ]
+      }
     }
   }
 }

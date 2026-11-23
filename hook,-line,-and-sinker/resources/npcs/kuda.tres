@@ -48,7 +48,7 @@ script = ExtResource("relationship_event_script")
 event_id = &"prelude_boundary"
 followup_dialogue_json = "res://dialogue/kuda_prelude_boundary_followup.json"
 priority = 30
-blocks_actions = Array[StringName]([&"overnight"])
+blocks_actions = Array[StringName]([&"dive", &"overnight", &"date"])
 
 [sub_resource type="Resource" id="OtherRomanceEvent"]
 script = ExtResource("relationship_event_script")
@@ -56,12 +56,13 @@ event_id = &"other_romance"
 followup_dialogue_json = "res://dialogue/kuda_other_romance.json"
 priority = 40
 
+blocks_actions = Array[StringName]([&"dive", &"overnight", &"date"])
 [sub_resource type="Resource" id="CompanionKnockoutEvent"]
 script = ExtResource("relationship_event_script")
 event_id = &"companion_knockout"
 followup_dialogue_json = "res://dialogue/kuda_companion_knockout_followup.json"
 priority = 65
-blocks_actions = Array[StringName]([&"dive", &"overnight"])
+blocks_actions = Array[StringName]([&"dive", &"overnight", &"date"])
 
 [resource]
 script = ExtResource("1_npc")

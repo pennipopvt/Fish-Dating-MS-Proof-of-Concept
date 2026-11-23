@@ -312,25 +312,24 @@ func _apply_json_effects(effects: Variant, include_affection: bool = true) -> vo
 		NPCManager.accept_gift(current_npc, _gift_player, _expected_gift_item_id)
 	if effects.has("request_scene"):
 		_scene_after_conversation = str(effects["request_scene"])
-	if include_affection:
-		# The attraction key is accepted for older JSON; both affect the one affection score.
-		AffectionManager.change(current_npc.npc_id, int(effects.get("affection", effects.get("attraction", 0))))
 	var state: Dictionary = NPCManager.get_npc_state(current_npc.npc_id)
 	var flags: Dictionary = state.get("flags", {})
 	state["flags"] = flags
 	for flag in effects.get("set_flags", []):
-		flags[StringName(str(flag))] = true
+		var id: StringName = StringName(str(flag))
+		if id == current_npc.invitation_accepted_flag and not flags.get(id, false):
+			NPCManager.register_invitation_accepted(current_npc)
+		flags[id] = true
 	for flag in effects.get("clear_flags", []):
 		flags[StringName(str(flag))] = false
 	for event in effects.get("start_relationship_events", []):
 		NPCManager.start_relationship_event(current_npc, StringName(str(event)))
 	for event in effects.get("resolve_relationship_events", []):
 		NPCManager.resolve_relationship_event(current_npc, StringName(str(event)))
-	if effects.has("affection_delta"):
-		AffectionManager.change_affection(current_npc.npc_id, int(effects["affection_delta"]))
-	if effects.has("jealousy_delta"):
-		# Incident conversations use the same shared jealousy state as dates.
-		AffectionManager.change_jealousy(current_npc.npc_id, int(effects["jealousy_delta"]))
+	for event in effects.get("defer_relationship_events", []):
+		NPCManager.defer_relationship_event(current_npc, StringName(str(event)))
+	if effects.get("disclose_invitation", false):
+		NPCManager.disclose_pending_invitation(current_npc)
 
 
 # Conditions are evaluated when the menu becomes visible, using the NPC's current flags.
@@ -471,6 +470,9 @@ func _enter_node(id: String, reaction_tier: int = -1, redirects: int = 0) -> voi
 # Date authors can replace these with real branches later without changing
 # the scoring API or the three response styles.
 func _format_date_placeholder(raw: String) -> String:
+	if raw.contains("{{invited_npc_name}}") and current_npc != null:
+		var invited: NPCData = NPCManager.get_disclosure_subject(current_npc)
+		return raw.replace("{{invited_npc_name}}", invited.display_name if invited != null else "someone")
 	if raw == "{{date_reaction}}":
 		return DateManager.get_placeholder_reaction()
 	if raw == "{{date_outcome}}":

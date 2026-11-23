@@ -291,6 +291,8 @@ func _expire_bookings() -> void:
 func start_date(date: DateData) -> void:
 	if _active != null or date == null or date.npc == null:
 		return
+	if NPCManager.has_blocking_relationship_event(date.npc, &"date"):
+		return
 	# Enforce the first-action rule even when a scene calls this directly.
 	if is_booked(date) and not is_booking_ready(date):
 		return
@@ -393,21 +395,18 @@ func _on_date_choice(npc: NPCData, choice: Dictionary) -> void:
 	var style := str(choice.get("date_style", ""))
 	if not (style in ["bold", "playful", "reassure"]):
 		return
-	var tier := AffectionManager.get_jealousy_tier(npc.npc_id)
-	var points := score_for_choice(style, tier, npc)
-	_date_score += points
+	# Dates present authored choices without hidden affection/jealousy scores.
 	_date_choice_count += 1
-	AffectionManager.change_jealousy(npc.npc_id, jealousy_for_choice(style, tier))
-	_last_reaction = "[Placeholder: %s / jealousy tier %d / score %d]" % [style, tier, points]
+	_last_reaction = ""
 
 
 func get_placeholder_reaction() -> String:
-	return _last_reaction if not _last_reaction.is_empty() else "[Placeholder: date reaction]"
+	return _last_reaction
 
 
 func get_placeholder_outcome() -> String:
 	var outcome := outcome_for_score(_date_score)
-	return "[Placeholder: %s date / affection %d]" % [outcome, int(OUTCOME_AFFECTION[outcome])]
+	return outcome
 
 
 # Rests period by period until the date's period (at most a day).
@@ -451,8 +450,6 @@ func _finish(completed: bool) -> void:
 		# Repeating a date always scores again, but never farms individual
 		# dialogue-choice affection. Successful completion prevents daily decay.
 		AffectionManager.mark_date_completed(date.npc.npc_id, _date_day)
-		var gain: int = int(OUTCOME_AFFECTION[outcome]) if not outcome.is_empty() else date.affection_change
-		AffectionManager.change(date.npc.npc_id, gain)
 		_use_up_period()
 	_active = null
 	await _fade_to(0.0)

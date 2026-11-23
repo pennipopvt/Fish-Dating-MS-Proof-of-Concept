@@ -37,7 +37,12 @@
       "lines": [
         "I know I'm safe now. That's not really what I was trying to tell you.",
         "I think I need some more time before I can go back out with you."
-      ]
+      ],
+      "effects": {
+        "defer_relationship_events": [
+          "companion_knockout"
+        ]
+      }
     }
   }
 }

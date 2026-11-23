@@ -67,6 +67,11 @@ func configure(dialogue: DialogueUI, transition: SeaDiveTransition, player: Play
 func open_room(npc: NPCData) -> void:
 	if npc == null or _inside or _closing or _transition.transitioning or DialogueManager.is_active:
 		return
+	# A failed reconciliation or repeat offense means nobody answers today.
+	# Do not show the room or let a pending date bypass the boundary.
+	if NPCManager.is_room_awaiting_reconciliation(npc):
+		DialogueManager.request_player_monologue(["...No answer."])
+		return
 	_resident = npc
 	_player_rest_active = false
 	_player_rest_target = -1
@@ -329,7 +334,7 @@ func _complete_romance_route(npc: NPCData) -> void:
 	if flags.get(npc.romance_complete_flag, false):
 		return
 	flags[npc.romance_complete_flag] = true
-	# The shared affection system updates jealousy for existing partners.
+	# Only undisclosed overnights upset existing partners.
 	AffectionManager.on_romance_completed(npc.npc_id)
 	# The completed night was recorded before the new day began.
 	if npc.romance_reward_id != &"":

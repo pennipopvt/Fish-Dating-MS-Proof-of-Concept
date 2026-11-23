@@ -1,8 +1,8 @@
 
 extends Node
 
-# One score for romance, conversations and teamwork.
-const START_AFFECTION := 65
+# Persistent NPC flags, topics and relationship incidents. No numeric affection.
+const START_AFFECTION := 65 # Legacy read-only compatibility for old callers.
 
 var npc_states: Dictionary = {}
 
@@ -14,8 +14,6 @@ signal relationship_event_resolved(npc_id: StringName, event_id: StringName)
 func get_npc_state(npc_id: StringName) -> Dictionary:
 	if not npc_states.has(npc_id):
 		npc_states[npc_id] = {
-			"affection": START_AFFECTION,
-			"jealousy": 0,
 			"flags": {},
 			"relationship_events": {}
 		}
@@ -130,8 +128,6 @@ func apply_choice(
 	var state := get_npc_state(npc.npc_id)
 	var flags: Dictionary = state["flags"]
 
-	AffectionManager.change_affection(npc.npc_id, choice.affection_change)
-
 	for flag in choice.flags_to_set:
 		if flag != null:
 			flags[flag.flag_id] = true
@@ -170,12 +166,15 @@ func start_relationship_event(npc: NPCData, event_id: StringName) -> bool:
 	if get_relationship_event_definition(npc, event_id) == null:
 		push_warning("Unknown relationship event '%s'" % String(event_id))
 		return false
-	if has_active_relationship_event(npc, event_id):
-		return true
 	var state: Dictionary = get_npc_state(npc.npc_id)
 	var events: Dictionary = state.get("relationship_events", {})
 	state["relationship_events"] = events
-	events[event_id] = {"active": true, "started_day": GameManager.get_day()}
+	var record: Dictionary = events.get(event_id, {})
+	var count: int = int(record.get("incident_count", 0)) + 1
+	# The first incident can be discussed on the next visit. Each repeat
+	# adds one full day before the NPC will open their door again.
+	events[event_id] = {"active": true, "started_day": GameManager.get_day(),
+		"incident_count": count, "ready_day": GameManager.get_day() + count - 1}
 	var flags: Dictionary = state.get("flags", {})
 	flags[StringName("relationship_event_%s_active" % String(event_id))] = true
 	flags[StringName("relationship_event_%s_resolved" % String(event_id))] = false
@@ -198,6 +197,68 @@ func resolve_relationship_event(npc: NPCData, event_id: StringName) -> bool:
 	return true
 
 
+# A dismissive answer leaves the event unresolved and closes the door until
+# the next day; it does NOT count as a new offense.
+func defer_relationship_event(npc: NPCData, event_id: StringName) -> void:
+	if not has_active_relationship_event(npc, event_id):
+		return
+	var record: Dictionary = get_relationship_event_state(npc, event_id)
+	record["ready_day"] = maxi(int(record.get("ready_day", 0)), GameManager.get_day() + 1)
+
+
+func is_room_awaiting_reconciliation(npc: NPCData) -> bool:
+	if npc == null:
+		return false
+	for event in npc.relationship_events:
+		if event == null or not has_active_relationship_event(npc, event.event_id):
+			continue
+		if GameManager.get_day() < int(get_relationship_event_state(npc, event.event_id).get("ready_day", 0)):
+			return true
+	return false
+
+
+# Track disclosures against the specific invitation, not against a permanent
+# "okay with other partners" flag. Re-invitations can be recorded separately.
+func register_invitation_accepted(npc: NPCData) -> void:
+	if npc == null:
+		return
+	var state: Dictionary = get_npc_state(npc.npc_id)
+	state["invitation_serial"] = int(state.get("invitation_serial", 0)) + 1
+
+
+func was_invitation_disclosed(to_id: StringName, invited_id: StringName) -> bool:
+	var to_state: Dictionary = get_npc_state(to_id)
+	var serial: int = int(get_npc_state(invited_id).get("invitation_serial", 1))
+	return int(to_state.get("disclosed_invitations", {}).get(invited_id, -1)) == serial
+
+
+func get_disclosure_subject(recipient: NPCData) -> NPCData:
+	if recipient == null or not AffectionManager.has_completed_romance(recipient.npc_id):
+		return null
+	for raw_date in DateManager.dates.values():
+		var date: DateData = raw_date as DateData
+		if date == null or date.npc == null or date.npc.npc_id == recipient.npc_id:
+			continue
+		var invited: NPCData = date.npc
+		if invited.invitation_accepted_flag == &"" or AffectionManager.has_completed_romance(invited.npc_id):
+			continue
+		if not get_npc_state(invited.npc_id).get("flags", {}).get(invited.invitation_accepted_flag, false):
+			continue
+		if not was_invitation_disclosed(recipient.npc_id, invited.npc_id):
+			return invited
+	return null
+
+
+func disclose_pending_invitation(recipient: NPCData) -> void:
+	var invited: NPCData = get_disclosure_subject(recipient)
+	if invited == null:
+		return
+	var state: Dictionary = get_npc_state(recipient.npc_id)
+	var disclosed: Dictionary = state.get("disclosed_invitations", {})
+	disclosed[invited.npc_id] = int(get_npc_state(invited.npc_id).get("invitation_serial", 1))
+	state["disclosed_invitations"] = disclosed
+
+
 func has_blocking_relationship_event(npc: NPCData, action_id: StringName) -> bool:
 	if npc == null or action_id == &"":
 		return false
@@ -215,12 +276,22 @@ func get_relationship_followup_json(npc: NPCData) -> String:
 	var best_json: String = ""
 	for event in npc.relationship_events:
 		if event == null or event.followup_dialogue_json.is_empty() \
-				or not has_active_relationship_event(npc, event.event_id):
+				or not has_active_relationship_event(npc, event.event_id) \
+				or is_room_awaiting_reconciliation(npc):
 			continue
 		if best_json.is_empty() or event.priority > best_priority:
 			best_priority = event.priority
 			best_json = event.followup_dialogue_json
 	return best_json
+
+
+# Resolve authored NPCData without keeping a second global NPC registry.
+func _find_npc_data(npc_id: StringName) -> NPCData:
+	for raw_date in DateManager.dates.values():
+		var date: DateData = raw_date as DateData
+		if date != null and date.npc != null and date.npc.npc_id == npc_id:
+			return date.npc
+	return null
 
 
 # Read-only predicates shared by choice visibility, optional line variants,
@@ -245,21 +316,10 @@ func dialogue_conditions_match(npc_id: StringName, conditions: Dictionary, jealo
 		var record: Dictionary = event_states.get(StringName(str(event)), {})
 		if record.get("active", false) or not record.has("resolved_day"):
 			return false
-	var affection: int = AffectionManager.get_affection(npc_id)
-	var jealousy: int = int(state.get("jealousy", 0))
-	var tier: int = jealousy_tier if jealousy_tier >= 0 else mini(floori(float(jealousy) / 25.0), 3)
-	if conditions.has("min_affection") and affection < int(conditions["min_affection"]):
-		return false
-	if conditions.has("max_affection") and affection > int(conditions["max_affection"]):
-		return false
-	if conditions.has("min_jealousy") and jealousy < int(conditions["min_jealousy"]):
-		return false
-	if conditions.has("max_jealousy") and jealousy > int(conditions["max_jealousy"]):
-		return false
-	if conditions.has("min_jealousy_tier") and tier < int(conditions["min_jealousy_tier"]):
-		return false
-	if conditions.has("max_jealousy_tier") and tier > int(conditions["max_jealousy_tier"]):
-		return false
+	# The old min/max affection and jealousy conditions no longer determine dialogue.
+	if conditions.has("pending_other_invitation"):
+		if bool(conditions["pending_other_invitation"]) != (get_disclosure_subject(_find_npc_data(npc_id)) != null):
+			return false
 	if conditions.has("min_days_since_talk") or conditions.has("max_days_since_talk"):
 		# Unknown last-talk day is not the same as neglect; first visits
 		# should fall through to the usual conversation.
@@ -285,8 +345,6 @@ func get_encounter_json_path(npc: NPCData) -> String:
 	var flags: Dictionary = state.get("flags", {})
 	for rule in npc.encounter_rules:
 		if rule == null or (rule.json_path.is_empty() and rule.json_pool.is_empty()):
-			continue
-		if rule.use_min_affection and AffectionManager.get_affection(npc.npc_id) < rule.min_affection:
 			continue
 		if rule.min_days_after_gift > 0:
 			if not state.has("gift_received_day") \
