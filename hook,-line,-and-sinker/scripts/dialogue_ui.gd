@@ -14,12 +14,20 @@ const PLAYER_NAME_COLOR := Color(0.6, 0.85, 1.0)
 const SPEAKING_MODULATE := Color.WHITE
 const LISTENING_MODULATE := Color(0.5, 0.5, 0.55)
 const ADVANCE_ACTION := &"Interact"
+const LETTER_POP_EFFECT = preload("res://scripts/ui/dialogue_letter_pop.gd")
 # Choices picked before (no more affection from them): grey, still pickable.
 const PICKED_CHOICE_COLOR := Color(0.55, 0.55, 0.6)
 
 # Shown when an NPC has no portrait assigned yet.
 @export var placeholder_portrait: Texture2D
 @export var player_portrait: Texture2D
+
+@export_group("Dialogue Typing")
+@export var typewriter_enabled: bool = true
+@export_range(8.0, 120.0, 1.0, "suffix:chars/s") var characters_per_second: float = 36.0
+@export_range(0.0, 0.6, 0.01, "suffix:s") var letter_bounce_seconds: float = 0.18
+@export_range(0.0, 0.6, 0.01) var letter_scale_boost: float = 0.16
+@export_range(0.0, 8.0, 0.25, "suffix:px") var letter_jitter_pixels: float = 2.0
 
 # At scale 1, this reproduces the existing 1040x1600 room layout.
 # Keep the portrait rectangle's proportions fixed; TextureRect's
@@ -37,7 +45,7 @@ const ROOM_PORTRAIT_BASE_SIZE := Vector2(1040.0, 1600.0)
 @onready var _player_portrait: TextureRect = %PlayerPortrait
 @onready var _npc_portrait: TextureRect = %NPCPortrait
 @onready var _name_label: Label = %NameLabel
-@onready var _text_label: Label = %TextLabel
+@onready var _text_label: RichTextLabel = %TextLabel
 @onready var _choice_list: VBoxContainer = %ChoiceList
 @onready var _continue_hint: Label = %ContinueHint
 
@@ -51,6 +59,10 @@ var _land_layer: int = 10
 var _npc_land_offsets: Vector4
 var _npc_land_anchors: Vector4
 var _player_land_offsets: Vector4
+var _displayed_line: DialogueLineData
+var _typewriting: bool = false
+var _type_elapsed: float = 0.0
+var _type_total: int = 0
 
 # The exact same dialogue box, choice buttons, and conversation manager are
 # used on land and underwater. Only the art and portrait framing change.
@@ -153,6 +165,8 @@ func set_illustration_mode(enabled: bool) -> void:
 
 
 func _ready() -> void:
+	_text_label.bbcode_enabled = true
+	_text_label.install_effect(LETTER_POP_EFFECT.new())
 	_land_layer = layer
 	_player_land_offsets = Vector4(
 		_player_portrait.offset_left, _player_portrait.offset_top,
@@ -180,10 +194,18 @@ func _on_manager_conversation_finished(npc: NPCData) -> void:
 		_close()
 
 
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
 	# Close if the conversation was ended from somewhere else.
 	if visible and not DialogueManager.is_active:
 		_close()
+		return
+	if visible and _typewriting:
+		_type_elapsed += delta
+		_text_label.visible_characters = mini(
+			int(_type_elapsed * maxf(characters_per_second, 1.0)), _type_total
+		)
+		if _text_label.visible_characters >= _type_total:
+			_finish_typing()
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -211,6 +233,8 @@ func start(npc: NPCData) -> bool:
 
 	_npc = npc
 	_portrait_npc = npc
+	_displayed_line = null
+	_typewriting = false
 	_opened_frame = Engine.get_process_frames()
 	show()
 	# Keep the world running while dialogue captures gameplay input.
@@ -221,6 +245,12 @@ func start(npc: NPCData) -> bool:
 func _advance() -> void:
 	# Ignore the same key press that opened the dialogue.
 	if Engine.get_process_frames() == _opened_frame:
+		return
+
+	if _typewriting:
+		# A press during typing reveals the whole line; the next press
+		# advances DialogueManager, preserving one action per dialogue beat.
+		_finish_typing()
 		return
 
 	if DialogueManager.is_awaiting_choice():
@@ -251,8 +281,10 @@ func _refresh() -> void:
 	_clear_choices()
 
 	var awaiting_choice = DialogueManager.is_awaiting_choice()
+	if awaiting_choice:
+		_finish_typing()
 	_choice_list.visible = awaiting_choice
-	_continue_hint.visible = not awaiting_choice
+	_continue_hint.visible = not awaiting_choice and not _typewriting
 
 	if awaiting_choice:
 		_show_choices()
@@ -291,7 +323,29 @@ func _show_line(line: DialogueLineData) -> void:
 	_npc_portrait.modulate = (
 		LISTENING_MODULATE if is_player else SPEAKING_MODULATE
 	)
-	_text_label.text = line.text
+	if line != _displayed_line:
+		_displayed_line = line
+		_begin_typing(line.text)
+
+
+# Keep the complete line in a RichTextLabel, then reveal its shaped
+# characters without reflowing or replacing text every frame.
+func _begin_typing(value: String) -> void:
+	_type_elapsed = 0.0
+	var safe_text: String = value.replace("[", "[lb]")
+	_text_label.text = ("[letterpop speed=%.2f duration=%.2f scale=%.2f jitter=%.2f]%s[/letterpop]" % [
+		characters_per_second, letter_bounce_seconds, letter_scale_boost,
+		letter_jitter_pixels, safe_text
+	]) if typewriter_enabled else value
+	_type_total = _text_label.get_total_character_count()
+	_typewriting = typewriter_enabled and _type_total > 0
+	_text_label.visible_characters = 0 if _typewriting else -1
+
+
+func _finish_typing() -> void:
+	_typewriting = false
+	_text_label.visible_characters = -1
+	_continue_hint.visible = not DialogueManager.is_awaiting_choice()
 
 
 func _show_choices() -> void:
@@ -346,6 +400,9 @@ func _close() -> void:
 
 	hide()
 	_clear_choices()
+	_typewriting = false
+	_displayed_line = null
+	_text_label.visible_characters = -1
 	# Gameplay input resumes automatically once the dialogue closes.
 
 	var npc := _npc
