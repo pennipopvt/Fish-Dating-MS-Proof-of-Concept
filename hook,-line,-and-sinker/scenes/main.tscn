@@ -1,12 +1,12 @@
 [gd_scene format=3 uid="uid://c3426ih2exaq8"]
 
 [ext_resource type="PackedScene" uid="uid://bjt7lp2qss3qh" path="res://prefabs/world.tscn" id="1_sugp2"]
-[ext_resource type="AudioStream" uid="uid://b4567j3srpp18" path="res://sounds/FROM THE SEA 2026-10-30 03_02_51.mp3" id="4_jyhfs"]
 [ext_resource type="Texture2D" uid="uid://vu47883rgrp5" path="res://sprites/characters/penni/penni_portrait.png" id="4_tbgi4"]
 [ext_resource type="PackedScene" uid="uid://dua3yfus0j5uq" path="res://prefabs/shop_menu.tscn" id="5_choun"]
 [ext_resource type="PackedScene" uid="uid://dgsl8ux5hh1tt" path="res://prefabs/dialogue_ui.tscn" id="8_trceg"]
 [ext_resource type="PackedScene" uid="uid://bt2iu4iois2sb" path="res://prefabs/illustration_scene.tscn" id="10_illustration"]
 [ext_resource type="Script" uid="uid://cpd0iodpkxy8s" path="res://resources/story_events/island_story_event_data.gd" id="13_yq6so"]
+[ext_resource type="AudioStream" uid="uid://1a4hwj6851kp" path="res://sounds/FROM THE SEA 2026-11-23 02_07_53.wav" id="22_2f3dj"]
 [ext_resource type="AudioStream" uid="uid://2pva56bfy4v1" path="res://sounds/sfx/753223__pblzr__ambience-exterior-night-mindelo-beach-waves-medium-ms-4824.ogg" id="25_yq6so"]
 [ext_resource type="AudioStream" uid="uid://de7qest1un0cj" path="res://sounds/sfx/504641__fission9__underwater-ambience.ogg" id="26_yq6so"]
 [ext_resource type="Script" uid="uid://sw20trtxk6am" path="res://scripts/diving/sea_speech_bubble_host.gd" id="bubble_host"]
@@ -125,7 +125,7 @@ grow_vertical = 2
 mouse_filter = 2
 
 [node name="AudioStreamPlayer2D" type="AudioStreamPlayer2D" parent="." unique_id=1332507421]
-stream = ExtResource("4_jyhfs")
+stream = ExtResource("22_2f3dj")
 volume_db = 6.0
 bus = &"Music"
 script = ExtResource("underwater_music_player")
