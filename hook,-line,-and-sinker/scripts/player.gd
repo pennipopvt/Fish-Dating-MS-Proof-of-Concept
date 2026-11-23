@@ -49,7 +49,7 @@ var _pickup_time_left := 0.0
 @onready var fishing_controller: Node = $FishingController
 @onready var animator : AnimatedSprite2D = $AnimatedSprite2D
 @onready var _step_sound: AudioStreamPlayer = $StepSound
-@onready var _swim_sound: AudioStreamPlayer = $SwimSound
+@onready var _swim_sound: SwimSoundFader = $SwimSound
 @onready var _step_timer: Timer = $StepTimer
 
 func _ready() -> void:
@@ -278,18 +278,12 @@ func _stop_step_audio() -> void:
 
 
 func _update_swim_audio(moving: bool) -> void:
-	if not swimming or not (moving or play_swim_sound_while_idle):
-		_stop_swim_audio()
-		return
-	# The SwimSound node owns its pitch, volume, and audio bus.
-	# PCM swim.wav loops via import settings; don't restart every frame.
-	if not _swim_sound.playing:
-		_swim_sound.play()
+	# The SwimSound node owns its fade envelope, level, pitch and low-pass bus.
+	_swim_sound.set_swimming_active(swimming and (moving or play_swim_sound_while_idle))
 
 
 func _stop_swim_audio() -> void:
-	if _swim_sound.playing:
-		_swim_sound.stop()
+	_swim_sound.set_swimming_active(false)
 
 
 # Reads the drawn ground (World/Ground tiles) once at start: the walk border
