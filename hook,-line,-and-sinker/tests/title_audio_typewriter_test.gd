@@ -80,6 +80,15 @@ func _run() -> void:
 		and is_equal_approx(ui.penni_pitch_scale, 1.0)
 		and is_equal_approx(ui.penni_pitch_variation, 0.08),
 		"One dialogue voice player and editor pitch controls are available")
+	# Simulate the exact user-facing setting: changing the DialogueVoice
+	# AudioStreamPlayer volume should survive a letter playback.
+	var voice_node: AudioStreamPlayer = ui.get_node("DialogueVoice") as AudioStreamPlayer
+	voice_node.volume_db = -2.0
+	ui.set("_spoken_text", "A")
+	ui.set("_current_line_player", true)
+	ui.call("_play_letter_sound", 0)
+	_check(is_equal_approx(voice_node.volume_db, -2.0),
+		"Typing cannot overwrite DialogueVoice Volume dB from its Inspector")
 	var voice_config: NPCData = NPCData.new()
 	voice_config.voice_pitch_scale = 1.3
 	voice_config.voice_pitch_variation = 0.15

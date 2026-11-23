@@ -15,6 +15,16 @@ func _run() -> void:
 	var player: Player = PLAYER.instantiate() as Player
 	add_child(player)
 	await get_tree().process_frame
+	# Regression: do not let the Player script undo settings in child nodes.
+	var step_timer: Timer = player.get_node("StepTimer") as Timer
+	var swim_sound: AudioStreamPlayer = player.get_node("SwimSound") as AudioStreamPlayer
+	step_timer.wait_time = 0.93
+	swim_sound.volume_db = -1.5
+	swim_sound.pitch_scale = 0.65
+	player._update_step_audio(true)
+	_check(is_equal_approx(step_timer.wait_time, 0.93) and not step_timer.is_stopped(),
+		"Walking uses the editor-authored StepTimer Wait Time without overwriting it")
+	player._stop_step_audio()
 	var frames: SpriteFrames = player.animator.sprite_frames
 	for animation_name in [&"swim_l", &"swim_r", &"swim_idle_l", &"swim_idle_r"]:
 		_check(frames.has_animation(animation_name)
@@ -46,8 +56,9 @@ func _run() -> void:
 		and (swim_audio.stream as AudioStreamWAV).loop_mode == AudioStreamWAV.LOOP_FORWARD,
 		"New swim WAV imports as looping PCM instead of QOA")
 	_check(swim_audio.playing and swim_audio.bus == &"UnderwaterSFX"
-		and is_equal_approx(swim_audio.pitch_scale, 0.8),
-		"Active swimming plays pitched-down audio through filtered underwater bus")
+		and is_equal_approx(swim_audio.pitch_scale, 0.65)
+		and is_equal_approx(swim_audio.volume_db, -1.5),
+		"Active swimming respects editor-authored pitch and volume on SwimSound")
 	Input.action_release(&"Move Left")
 	player._swim_physics(1.0 / 60.0)
 	_check(player.animator.animation == &"swim_idle_l",

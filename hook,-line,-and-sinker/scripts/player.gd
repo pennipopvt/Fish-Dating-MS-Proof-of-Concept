@@ -15,10 +15,9 @@ const SWIM_IDLE_RIGHT_SHEET: Texture2D = preload("res://sprites/characters/penni
 @export_range(1.0, 24.0, 0.5) var swim_idle_frames_per_second: float = 5.0
 
 @export_group("Movement Sounds")
-# Footsteps are spaced while walking; swimming uses its own looping sound.
-@export_range(0.2, 1.5, 0.05, "suffix:s") var walk_step_interval: float = 0.48
-@export_range(0.5, 1.5, 0.05) var swim_sound_pitch_scale: float = 0.8
-@export_range(-40.0, 6.0, 0.5, "suffix:dB") var swim_sound_volume_db: float = -8.0
+# Configure walk cadence on the StepTimer node's Wait Time.
+# Configure swim volume and speed on the SwimSound AudioStreamPlayer node.
+# The script owns playback state only; scene-owned audio settings take priority.
 @export var play_swim_sound_while_idle: bool = false
 
 signal held_item_changed(item: ItemData)
@@ -55,8 +54,6 @@ var _pickup_time_left := 0.0
 
 func _ready() -> void:
 	_step_timer.timeout.connect(_on_step_timer_timeout)
-	_swim_sound.pitch_scale = swim_sound_pitch_scale
-	_swim_sound.volume_db = swim_sound_volume_db
 	_install_swim_animations()
 	_land_collision_mask = collision_mask
 	_read_walk_limits.call_deferred()
@@ -246,17 +243,15 @@ func _physics_process(delta: float) -> void:
 	_update_step_audio(absf(global_position.x - previous_x) > 0.05)
 
 
-# Spaced walking footsteps only; the separate swim loop is below.
+# The StepTimer node is the sole source for the walking rhythm.
+# Timer.start() without an argument respects Wait Time from the editor.
 func _update_step_audio(moving: bool) -> void:
 	if not moving:
 		_stop_step_audio()
 		return
-	var interval: float = walk_step_interval
 	if _step_timer.is_stopped():
 		_play_step()
-		_step_timer.start(interval)
-	elif not is_equal_approx(_step_timer.wait_time, interval):
-		_step_timer.start(interval)
+		_step_timer.start()
 
 
 func _on_step_timer_timeout() -> void:
@@ -282,10 +277,9 @@ func _update_swim_audio(moving: bool) -> void:
 	if not swimming or not (moving or play_swim_sound_while_idle):
 		_stop_swim_audio()
 		return
-	# PCM swim.wav loops via its import settings. Don't restart it each frame.
+	# The SwimSound node owns its pitch, volume, and audio bus.
+	# PCM swim.wav loops via import settings; don't restart every frame.
 	if not _swim_sound.playing:
-		_swim_sound.pitch_scale = swim_sound_pitch_scale
-		_swim_sound.volume_db = swim_sound_volume_db
 		_swim_sound.play()
 
 

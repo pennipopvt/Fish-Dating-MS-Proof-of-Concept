@@ -36,7 +36,6 @@ const PICKED_CHOICE_COLOR := Color(0.55, 0.55, 0.6)
 @export var default_voice_sound: AudioStream
 @export_range(0.5, 2.0, 0.01) var penni_pitch_scale: float = 1.0
 @export_range(0.0, 0.5, 0.01) var penni_pitch_variation: float = 0.08
-@export_range(-30.0, 6.0, 0.5, "suffix:dB") var voice_volume_db: float = -12.0
 
 # At scale 1, this reproduces the existing 1040x1600 room layout.
 # Keep the portrait rectangle's proportions fixed; TextureRect's
@@ -179,7 +178,8 @@ func set_illustration_mode(enabled: bool) -> void:
 
 func _ready() -> void:
 	_find_default_voice()
-	_voice.volume_db = voice_volume_db
+	# The DialogueVoice AudioStreamPlayer owns its editor-authored volume.
+	# This script sets only the speaker's per-letter pitch.
 	_text_label.bbcode_enabled = true
 	_text_label.install_effect(LETTER_POP_EFFECT.new())
 	_land_layer = layer
@@ -391,7 +391,6 @@ func _play_letter_sound(index: int) -> void:
 	# stream would interrupt the previous chirp before polyphony can work.
 	if _voice.stream != sound:
 		_voice.stream = sound
-	_voice.volume_db = voice_volume_db
 	_voice.pitch_scale = maxf(0.1, base_pitch + randf_range(-variance, variance))
 	_voice.play()
 
