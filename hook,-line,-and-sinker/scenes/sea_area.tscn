@@ -5,6 +5,7 @@
 [ext_resource type="PackedScene" path="res://scenes/sea_sunbeam.tscn" id="27_7yqkl"]
 [ext_resource type="Texture2D" uid="uid://c66alkv40oe70" path="res://sprites/environment/terrain/sand_back_edge.png" id="27_binbi"]
 [ext_resource type="PackedScene" path="res://scenes/sea_terrain.tscn" id="27_qp5f5"]
+[ext_resource type="PackedScene" path="res://prefabs/sea_backdrop.tscn" id="backdrop"]
 [ext_resource type="PackedScene" path="res://prefabs/sea_shadow_fish.tscn" id="shadow_fish"]
 [ext_resource type="Script" uid="uid://cuo1eyo7ijqpj" path="res://scripts/diving/companion_battle.gd" id="battle"]
 [ext_resource type="Script" uid="uid://cctrjxxlon5uu" path="res://scripts/diving/diving_combat.gd" id="combat"]
@@ -802,3 +803,5 @@ edge_texture = ExtResource("27_binbi")
 collision_enabled = false
 
 [node name="ShadowFish" parent="." instance=ExtResource("shadow_fish")]
+
+[node name="Backdrop" parent="." instance=ExtResource("backdrop")]

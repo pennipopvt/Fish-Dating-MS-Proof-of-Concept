@@ -167,7 +167,14 @@ Debug builds only (not in exports):
   collision, can't be caught). Farther shadows are smaller, fainter, slower and follow
   the camera more (parallax); they wrap around the view, fade near the surface and
   sea floor, and sit at z_index -3, behind the Background Terrain (-2). Count, size,
-  opacity, speed, parallax and color are Inspector exports.
+  opacity, speed, parallax and color are Inspector exports. `tilt_by_fish` rotates a
+  fish's shadow (the goby's sprite is drawn tilted, so it gets 45° clockwise).
+  **Underwater backdrop:** `prefabs/sea_backdrop.tscn` (node `Backdrop` in
+  `scenes/sea_area.tscn`) is a gradient that follows the camera: lighter at the top of
+  the screen, darker at the bottom, the same at every depth. It never draws above the
+  sea surface, and it replaces the plain grey that used to show behind deep water. It
+  sits at z_index -4, behind the shadow fish. `top_color`, `bottom_color`, `curve` and
+  `bands` (flat color steps) are Inspector exports.
 - **Fishing rod (visual only):** `prefabs/fishing_rod.tscn` on the player. When you
   start fishing, the player faces the water and pulls out the rod. Every cast swings
   the rod back and flicks it forward, and the equipped bait's icon flies out on the
