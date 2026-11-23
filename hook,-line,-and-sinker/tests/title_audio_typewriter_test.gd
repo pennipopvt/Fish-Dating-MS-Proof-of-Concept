@@ -3,7 +3,7 @@ extends Node
 # Run: godot --headless --path . res://tests/title_audio_typewriter_test.tscn
 # Verifies the title/ambient audio and native typewriter presentation.
 const MAIN: PackedScene = preload("res://scenes/main.tscn")
-const OCEAN_AUDIO: AudioStream = preload("res://sounds/sfx/207553__bone666138__ocean-ambience-costal-with-foghorn.wav")
+const OCEAN_AUDIO: AudioStream = preload("res://sounds/sfx/753223__pblzr__ambience-exterior-night-mindelo-beach-waves-medium-ms-4824.ogg")
 const UNDERWATER_AUDIO: AudioStream = preload("res://sounds/sfx/504641__fission9__underwater-ambience.wav")
 var failures: int = 0
 
@@ -65,13 +65,15 @@ func _run() -> void:
 		"Runtime ambience players route to Ambience instead of falling back to Master")
 	_check(ocean.stream == OCEAN_AUDIO and below.stream == UNDERWATER_AUDIO,
 		"Ambience controller leaves autoplay streams attached instead of interrupting them")
-	_check((ocean.stream as AudioStreamWAV).format != AudioStreamWAV.FORMAT_QOA
-		and (below.stream as AudioStreamWAV).format != AudioStreamWAV.FORMAT_QOA,
-		"Ambience WAVs import as PCM rather than QOA on Godot 4.7")
-	_check(ocean.playing and below.playing and ocean.stream is AudioStreamWAV
-		and (ocean.stream as AudioStreamWAV).loop_mode == AudioStreamWAV.LOOP_FORWARD
-		and (below.stream as AudioStreamWAV).loop_mode == AudioStreamWAV.LOOP_FORWARD,
-		"Both ambience WAVs loop while playback continues")
+	var shore_stream: AudioStreamOggVorbis = ocean.stream as AudioStreamOggVorbis
+	var sea_stream: AudioStreamWAV = below.stream as AudioStreamWAV
+	_check(shore_stream != null and sea_stream != null
+		and sea_stream.format != AudioStreamWAV.FORMAT_QOA,
+		"Shore OGG and underwater PCM WAV use their expected import formats")
+	_check(ocean.playing and below.playing and shore_stream != null
+		and shore_stream.loop and sea_stream != null
+		and sea_stream.loop_mode == AudioStreamWAV.LOOP_FORWARD,
+		"Both ambience streams are looped and playing")
 	await get_tree().create_timer(1.1).timeout
 	_check(ocean.playing and below.playing,
 		"Title ambience remains playing after startup, not just for one frame")
@@ -84,10 +86,16 @@ func _run() -> void:
 	_check(ocean.playing and ocean.bus == &"Ambience",
 		"Ambience controller revives stopped playback and fixes its bus")
 	ambience.crossfade_seconds = 0.0
+	below.stop()
 	ambience.set_underwater(true)
+	_check(below.playing,
+		"Dive transition restarts the underwater ambience if it stopped")
 	_check(is_equal_approx(ocean.volume_db, ambience.silent_volume_db)
 		and is_equal_approx(below.volume_db, ambience.underwater_volume_db),
 		"Underwater mix enables only the underwater ambience")
+	below.stop()
+	await get_tree().create_timer(1.2).timeout
+	_check(below.playing, "Playback guard recovers underwater ambience without a transition")
 	ambience.set_underwater(false)
 	_check(is_equal_approx(ocean.volume_db, ambience.ocean_volume_db)
 		and is_equal_approx(below.volume_db, ambience.silent_volume_db),
@@ -103,8 +111,8 @@ func _run() -> void:
 		and bool(ui.get("_typewriting")),
 		"Dialogue uses RichTextLabel with enabled typewriter animation")
 	var rich_label: RichTextLabel = ui.get_node("%TextLabel") as RichTextLabel
-	_check(rich_label.scroll_active and rich_label.scroll_following_visible_characters,
-		"Long dialogue scrolls with the revealed letters instead of clipping")
+	_check(not rich_label.scroll_active and not rich_label.scroll_following_visible_characters,
+		"Dialogue hides its scrollbars, matching the fixed choice layout")
 	_check(ui.get_node_or_null("DialogueVoice") is AudioStreamPlayer
 		and ui.get_node_or_null("VoicePlayback") is AudioStreamPlayer
 		and is_equal_approx(ui.penni_pitch_variation, 0.08),

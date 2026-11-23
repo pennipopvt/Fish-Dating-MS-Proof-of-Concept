@@ -37,7 +37,16 @@
           "speaker": "player",
           "text": "I did catch you and all..."
         },
-        "Tch. Fine. Just tell me what to do."
+        "Tch. Fine. Just tell me what to do.",
+        {
+          "speaker": "player",
+          "text": "Soooo, what's your name?"
+        },
+        "It's Kuda.",
+        {
+          "speaker": "player",
+          "text": "Nice to meet you! I'm Penni!"
+        }
       ],
       "effects": {
         "set_flags": [

@@ -1,8 +1,11 @@
 class_name SeaAmbienceController
 extends Node
 
-# Both looped WAV streams play continuously. Only their volumes change,
-# so there is no restart/pop when switching between shore and the sea.
+# The shore OGG and underwater WAV normally loop continuously; only their
+# volumes change during a dive. Restart a stream only if playback stopped.
+@export_group("Playback Recovery")
+@export_range(0.25, 5.0, 0.25, "suffix:s") var playback_check_seconds: float = 1.0
+
 @export_group("Ambient Crossfade")
 @export_range(0.0, 3.0, 0.05, "suffix:s") var crossfade_seconds: float = 0.7
 @export_range(-40.0, 12.0, 1.0, "suffix:dB") var ocean_volume_db: float = -2.0
@@ -13,14 +16,29 @@ extends Node
 @onready var _underwater: AudioStreamPlayer = $Underwater
 var _fade: Tween
 var _warned_missing_bus: bool = false
+var _playback_guard: Timer
 
 
 func _ready() -> void:
 	_ocean.volume_db = ocean_volume_db
 	_underwater.volume_db = silent_volume_db
-	# WAV import settings own the loop and PCM encoding. Never replace a
-	# stream or change its format after scene autoplay has begun.
+	# Defensive loop configuration: the OGG was previously imported with
+	# looping disabled, which silenced the coast after one playback.
+	var shore_stream: AudioStreamOggVorbis = _ocean.stream as AudioStreamOggVorbis
+	if shore_stream != null:
+		shore_stream.loop = true
+	var sea_stream: AudioStreamWAV = _underwater.stream as AudioStreamWAV
+	if sea_stream != null:
+		sea_stream.loop_mode = AudioStreamWAV.LOOP_FORWARD
 	_ensure_playing()
+	# Stream playback can unexpectedly stop after a device/import reset.
+	# Keep one lightweight guard instead of starting sounds every frame.
+	_playback_guard = Timer.new()
+	_playback_guard.name = "AmbiencePlaybackGuard"
+	_playback_guard.wait_time = playback_check_seconds
+	_playback_guard.timeout.connect(_ensure_playing)
+	add_child(_playback_guard)
+	_playback_guard.start()
 	_check_startup_audio.call_deferred()
 
 
@@ -50,6 +68,8 @@ func _check_startup_audio() -> void:
 
 
 func set_underwater(enabled: bool) -> void:
+	# A dive/surface transition must never crossfade into a stopped stream.
+	_ensure_playing()
 	if _fade != null and _fade.is_running():
 		_fade.kill()
 	var ocean_target: float = silent_volume_db if enabled else ocean_volume_db

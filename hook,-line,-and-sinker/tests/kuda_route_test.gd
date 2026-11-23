@@ -64,13 +64,21 @@ func _run() -> void:
     var shop := SHOP_SCENE.instantiate()
     var trades: Array = shop.get("trades")
     _expect(trades.has(TRADE), "Scarf appear in the existing gift shop")
-    _expect(TRADE.reward_item == GIFT and TRADE.icon == GIFT.sprite, "Scarf are an item with an icon")
+    _expect(TRADE.reward_item == GIFT and TRADE.icon == GIFT.sprite, "Scarf is an item with an icon")
+    _expect(GIFT.item_id == &"warm_scarf" and TRADE.display_name == "Warm Scarf",
+        "Scarf displays as Warm Scarf, not Barracuda Scarf")
     _expect(NPC.desired_gift == GIFT, "Barracuda's configured correct gift is scarf")
     shop.free()
 
     for path in GRAPHS:
         _expect(not DialogueJsonLoader.read_graph(path).is_empty(), "Valid dialogue graph: " + path)
 
+    var underwater_intro: Dictionary = DialogueJsonLoader.read_graph("res://dialogue/kuda_underwater_caught.json")
+    var intro_lines: Array = underwater_intro.get("nodes", {}).get("caught", {}).get("lines", [])
+    _expect(intro_lines.size() >= 3 and intro_lines[-2] == "It's Kuda."
+        and intro_lines[-3] is Dictionary and intro_lines[-3].get("text", "") == "Soooo, what's your name?"
+        and intro_lines[-1] is Dictionary and intro_lines[-1].get("text", "") == "Nice to meet you! I'm Penni!",
+        "Kuda introduces himself after agreeing to help Penni")
     var first_graph: Dictionary = DialogueJsonLoader.read_graph("res://dialogue/kuda_first_catch.json")
     _expect(first_graph["nodes"]["decision"]["choices"].size() == 3, "Three first-catch choices")
     _expect(first_graph["nodes"]["flirt_reply"].has("lines"), "Flirting path is present")

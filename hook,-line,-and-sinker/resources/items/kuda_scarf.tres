@@ -5,5 +5,5 @@
 
 [resource]
 script = ExtResource("1_item")
-item_id = &"barracuda_scarf"
+item_id = &"warm_scarf"
 sprite = ExtResource("2_sprite")
