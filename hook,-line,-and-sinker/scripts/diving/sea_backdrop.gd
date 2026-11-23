@@ -7,14 +7,21 @@ extends Node2D
 # screen. It sits behind everything in the sea (z_index -4 in the scene, behind
 # the shadow fish at -3 and the Background Terrain at -2).
 
-## Color at the top of the screen. The default matches the original
-## underwater color once the existing blue tints are drawn over it.
-@export var top_color: Color = Color(0.37, 0.40, 0.42, 1.0)
+## Colors are calibrated against the rendered screen at daytime (afternoon
+## clock), after the water and underwater tints draw over this node: on
+## screen, color = gain * backdrop + offset per channel, gain (0.569, 0.588,
+## 0.608), offset (0.063, 0.176, 0.255). Targets (Penni's request: a bright
+## blue near the top): top (80,150,195), bottom (45,105,140), so mid-screen is
+## about the original sea color with no backdrop (58,130,171). (#40779a at
+## mid-screen would be top (0.41,0.637,0.753), bottom (0.251,0.351,0.395).)
+## To pick a new on-screen color S, use backdrop = (S - offset) / gain.
+## Color at the top of the screen.
+@export var top_color: Color = Color(0.441, 0.701, 0.838, 1.0)
 ## Color at the bottom of the screen.
-@export var bottom_color: Color = Color(0.12, 0.21, 0.31, 1.0)
+@export var bottom_color: Color = Color(0.199, 0.401, 0.484, 1.0)
 ## Above 1, the screen stays light longer and darkens near the bottom.
-## Below 1, it darkens quickly from the top.
-@export_range(0.3, 3.0) var curve: float = 1.3
+## Below 1, it darkens quickly from the top. Keep 1.0 so mid-screen stays halfway.
+@export_range(0.3, 3.0) var curve: float = 1.0
 ## 0 = smooth. Otherwise the number of flat color bands (pixel-art look).
 @export_range(0, 32) var bands: int = 0
 ## Visible water surface y in the parent's space, used only when the World's
