@@ -174,7 +174,17 @@ Debug builds only (not in exports):
   the screen, darker at the bottom, the same at every depth. It never draws above the
   sea surface, and it replaces the plain grey that used to show behind deep water. It
   sits at z_index -4, behind the shadow fish. `top_color`, `bottom_color`, `curve` and
-  `bands` (flat color steps) are Inspector exports.
+  `bands` (flat color steps) are Inspector exports. The default top color matches the
+  original underwater color once the water and underwater tints draw over it.
+  **Bubbles:** `prefabs/sea_bubbles.tscn` (node `Bubbles` in `scenes/sea_area.tscn`,
+  z_index 5) with Jerry's art in `sprites/environment/oceanJerry/` (small 2px, mid
+  4px, big 5px with a 3-frame pop). Visual only. Sources, all around the camera view:
+  short streams from the sea floor and rocks (a downward ray against terrain
+  collision, so background walls never vent), loose bubbles drifting up across the
+  view, breath clusters from Penni's head while she swims (more often while moving),
+  and a burst when she goes under the surface. Big bubbles pop at the surface, and
+  some pop early mid-water; small and mid ones fade out at the surface. Rates, sizes,
+  speeds and opacity are Inspector exports.
 - **Fishing rod (visual only):** `prefabs/fishing_rod.tscn` on the player. When you
   start fishing, the player faces the water and pulls out the rod. Every cast swings
   the rod back and flicks it forward, and the equipped bait's icon flies out on the
