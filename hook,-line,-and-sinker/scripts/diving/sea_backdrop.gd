@@ -16,9 +16,10 @@ extends Node2D
 @export_range(0.3, 3.0) var curve: float = 1.0
 ## 0 = smooth. Otherwise the number of flat color bands (pixel-art look).
 @export_range(0, 32) var bands: int = 0
-## Sea surface y in the parent's space (DivingWorld.SEA_TOP). Nothing is
-## drawn above it.
-@export var surface_y: float = 154.0
+## Visible water surface y in the parent's space, used only when the World's
+## `Water` node isn't found. Nothing is drawn above it. (Not SEA_TOP 154:
+## that's how high Penni can swim; the water's drawn top is 140.)
+@export var surface_y: float = 140.0
 
 const STRIPS: int = 45
 
@@ -37,8 +38,7 @@ func _draw() -> void:
 	# Draw in this node's local space; pad a few pixels so edges never show.
 	var top_left: Vector2 = to_local(view_top_left) - Vector2(4.0, 4.0)
 	var size: Vector2 = view_size + Vector2(8.0, 8.0)
-	var surface: float = to_local(get_parent().to_global(Vector2(0.0, surface_y))).y \
-			if get_parent() is Node2D else surface_y
+	var surface: float = _surface_local_y()
 	var steps: int = bands if bands > 0 else STRIPS
 	for i in steps:
 		var y0: float = top_left.y + size.y * float(i) / steps
@@ -51,3 +51,16 @@ func _draw() -> void:
 				else float(i) / maxf(float(steps - 1), 1.0)
 		var color: Color = top_color.lerp(bottom_color, pow(t, curve))
 		draw_rect(Rect2(top_left.x, y0, size.x, y1 - y0 + 0.5), color)
+
+
+# Start exactly at the water's drawn top (World/Water), so no strip of the
+# old background shows between the surface and the backdrop.
+func _surface_local_y() -> float:
+	var sea: Node = get_parent()
+	var world: Node = sea.get_parent() if sea != null else null
+	var water: CanvasItem = world.get_node_or_null("Water") as CanvasItem if world != null else null
+	if water != null:
+		return to_local(water.get_global_transform().origin).y
+	if sea is Node2D:
+		return to_local((sea as Node2D).to_global(Vector2(0.0, surface_y))).y
+	return surface_y
