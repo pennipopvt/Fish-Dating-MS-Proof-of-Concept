@@ -174,8 +174,11 @@ Debug builds only (not in exports):
   the screen, darker at the bottom, the same at every depth. It never draws above the
   sea surface, and it replaces the plain grey that used to show behind deep water. It
   sits at z_index -4, behind the shadow fish. `top_color`, `bottom_color`, `curve` and
-  `bands` (flat color steps) are Inspector exports. The default top color matches the
-  original underwater color once the water and underwater tints draw over it.
+  `bands` (flat color steps) are Inspector exports. The default colors are calibrated at daytime so the top of
+  the screen is a bright blue (80,150,195), the middle is about the original sea color
+  without a backdrop (58,130,171), and the bottom is a little darker (45,105,140)
+  (`curve` 1.0). The script's comments
+  give the formula for picking a different on-screen color.
   **Bubbles:** `prefabs/sea_bubbles.tscn` (node `Bubbles` in `scenes/sea_area.tscn`,
   z_index 5) with Jerry's art in `sprites/environment/oceanJerry/` (small 2px, mid
   4px, big 5px with a 3-frame pop). Visual only. Sources, all around the camera view:
@@ -185,6 +188,18 @@ Debug builds only (not in exports):
   and a burst when she goes under the surface (7–10 bubbles). Big bubbles pop at the surface, and
   some pop early mid-water; small and mid ones fade out at the surface. Rates, sizes,
   speeds and opacity are Inspector exports.
+  **Reef background:** `prefabs/sea_reef_background.tscn` (node `ReefBackground` in
+  `scenes/sea_area.tscn`, script `scripts/diving/sea_reef_background.gd`) draws Jerry's
+  640x100 reef strip (`sprites/environment/oceanJerry/OceanBackground/backgroundDark.png`,
+  a pre-darkened version of `background.png`) along the bottom of the screen, following the camera at every depth. It repeats
+  sideways and scrolls sideways at half the camera speed (`parallax` 0.5), so it reads
+  as farther away. Anything above the water surface is cut off, so it never shows over
+  the sky or land. It sits at z_index -3, in front of the shadow fish and behind the terrain. Its height follows
+  the camera's depth: at the surface it sits `sink_at_surface` (55px) below the screen
+  edge so only the coral tops peek in, and by the bottom of the sea it rises
+  `rise_at_floor` (80px) above it, with a band of the strip's own bottom sand filling
+  the space underneath. That gives a gentle vertical parallax (about 15% of the camera's
+  travel) while swimming up or down; `rise_curve` changes how early it rises.
 - **Fishing rod (visual only):** `prefabs/fishing_rod.tscn` on the player. When you
   start fishing, the player faces the water and pulls out the rod. Every cast swings
   the rod back and flicks it forward, and the equipped bait's icon flies out on the

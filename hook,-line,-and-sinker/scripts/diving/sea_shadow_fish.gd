@@ -105,7 +105,10 @@ func _process(delta: float) -> void:
 			var sprite: Sprite2D = member.sprite
 			var bob: float = sin(group.time * member.bob_speed + member.phase) * 1.5
 			var pos: Vector2 = world_pos + member.offset + Vector2(0.0, bob)
-			sprite.position = (pos - position).round()
+			# Round the offset from the screen center, not the world position,
+			# so shadows sit on the screen's pixel grid while the camera is
+			# between pixels (no 1px flicker while it settles).
+			sprite.position = cam + (pos - cam).round() - position
 			sprite.flip_h = heading < 0.0
 			# Mirror the tilt too, so a flipped fish leans the same way.
 			sprite.rotation = deg_to_rad(member.tilt) * (-1.0 if sprite.flip_h else 1.0)
