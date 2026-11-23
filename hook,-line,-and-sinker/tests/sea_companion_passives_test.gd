@@ -30,7 +30,8 @@ func _run() -> void:
 	kuda_flags.erase(&"romance_complete")
 	silas_flags.erase(SILAS.romance_complete_flag)
 	kuda_flags.erase(KUDA.romance_complete_flag)
-	sea.activate_diving_party([SILAS, KUDA])
+	var both: Array[NPCData] = [SILAS, KUDA]
+	sea.activate_diving_party(both)
 	_check(not perks.has_passive(SILAS.npc_id) and not perks.has_passive(KUDA.npc_id),
 		"Recruitment and joining the dive cannot grant overnight romance passives")
 	_check(species.get_node_or_null("Identification") == null,
@@ -43,7 +44,8 @@ func _run() -> void:
 	combat.target = null
 
 	silas_flags[&"romance_complete"] = true
-	sea.activate_diving_party([SILAS])
+	var only_silas: Array[NPCData] = [SILAS]
+	sea.activate_diving_party(only_silas)
 	_check(perks.has_passive(SILAS.npc_id) and not perks.has_passive(KUDA.npc_id),
 		"Only a romanced, accompanying companion provides a passive")
 	var label: Label = species.get_node("Identification") as Label
@@ -61,7 +63,8 @@ func _run() -> void:
 		"Silas's identification turns off when he leaves the active party")
 
 	kuda_flags[&"romance_complete"] = true
-	sea.activate_diving_party([KUDA])
+	var only_kuda: Array[NPCData] = [KUDA]
+	sea.activate_diving_party(only_kuda)
 	_check(perks.has_passive(KUDA.npc_id) and not perks.has_passive(SILAS.npc_id),
 		"Kuda's passive works independently from Silas's")
 	_check(combat.begin(species, MULLET, 40.0, 110.0, 0.5),
