@@ -30,6 +30,10 @@ extends Resource
 ## Must extend CompanionCombatBehavior. Defaults to lethal base behavior;
 ## Silas continues using his editor-authored specialized actor.
 @export var sea_combat_behavior_script: Script
+@export_group("Romance Companion Passive")
+## Activated only after the morning-after romance completes, and only while
+## this NPC accompanies Penni on a dive.
+@export var sea_passive: SeaCompanionPassive
 ## Shown in the existing underwater conversation UI after a companion KO.
 @export_file("*.json") var sea_knockout_dialogue_json: String = ""
 ## When a companion has never reached shore, Penni takes them back to

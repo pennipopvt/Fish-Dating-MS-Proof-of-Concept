@@ -19,6 +19,7 @@
 [ext_resource type="Script" uid="uid://cwfjqeua3rqvh" path="res://scripts/diving/net_projectile.gd" id="net"]
 [ext_resource type="Texture2D" uid="uid://cxb06idq2ldj1" path="res://sprites/ui/net.png" id="net_sheet"]
 [ext_resource type="Script" uid="uid://cev6m8id2o2sk" path="res://scripts/diving/sea_party_commands.gd" id="party_commands"]
+[ext_resource type="Script" path="res://scripts/diving/sea_companion_passives.gd" id="companion_passives"]
 [ext_resource type="Resource" uid="uid://cu4aljcpk40a0" path="res://resources/fish/porgy.tres" id="porgy"]
 [ext_resource type="Script" uid="uid://byp4fou8kyseq" path="res://scripts/diving/diving_world.gd" id="sea"]
 [ext_resource type="Script" uid="uid://cdph5nai8ag8d" path="res://scripts/diving/sea_dive_inventory.gd" id="sea_dive_inventory"]
@@ -367,6 +368,9 @@ script = ExtResource("sea_dive_inventory")
 
 [node name="PartyCommands" type="Node" parent="." unique_id=1759970793]
 script = ExtResource("party_commands")
+
+[node name="CompanionPassives" type="Node" parent="."]
+script = ExtResource("companion_passives")
 
 [node name="NPCs" type="Node2D" parent="." unique_id=1390915783]
 

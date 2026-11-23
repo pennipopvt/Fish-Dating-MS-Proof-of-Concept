@@ -26,7 +26,15 @@ var companion_weakened: bool = false
 var battling: bool = false:
 	set(value):
 		battling = value
+		_update_identification_visibility()
 		queue_redraw()
+# The net fight is distinct from an attacking companion.
+var netted: bool = false:
+	set(value):
+		netted = value
+		_update_identification_visibility()
+		queue_redraw()
+var _identification_label: Label
 var _hit_flash: float = 0.0
 var region: Rect2 = Rect2(24, 35, 860, 430)
 # Optional (set by DivingWorld): true where the fish's center is open water.
@@ -126,9 +134,36 @@ func _avoid_solids(from: Vector2, to: Vector2) -> Vector2:
 	return from
 
 
+# Keep the label attached to the fish and aligned above its existing HP bar.
+# Position and font size are authored on Sea/CompanionPassives in the editor.
+func set_identification(text: String, at: Vector2 = Vector2(-42.0, -33.0),
+		font_size: int = 8) -> void:
+	if text.is_empty() and not is_instance_valid(_identification_label):
+		return
+	if not is_instance_valid(_identification_label):
+		_identification_label = Label.new()
+		_identification_label.name = "Identification"
+		_identification_label.size = Vector2(84.0, 14.0)
+		_identification_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		_identification_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		_identification_label.z_index = 7
+		add_child(_identification_label)
+	_identification_label.text = text
+	_identification_label.position = at
+	_identification_label.add_theme_font_size_override("font_size", font_size)
+	_update_identification_visibility()
+
+
+func _update_identification_visibility() -> void:
+	if is_instance_valid(_identification_label):
+		_identification_label.visible = not _identification_label.text.is_empty() \
+			and (netted or battling or health < max_health)
+
+
 func set_max_health(value: float) -> void:
 	max_health = maxf(value, 1.0)
 	health = max_health
+	_update_identification_visibility()
 	queue_redraw()
 
 
@@ -139,12 +174,13 @@ func health_ratio() -> float:
 func take_damage(amount: float) -> void:
 	health = maxf(0.0, health - amount)
 	_hit_flash = 0.12
+	_update_identification_visibility()
 	queue_redraw()
 
 
 func _draw() -> void:
-	# Health bar only once the fish has been hurt or is being fought.
-	if battling or health < max_health:
+	# Health bar appears if damaged, under companion attack, or on the net.
+	if battling or netted or health < max_health:
 		DivingCompanionBattle.draw_health_bar(self, Vector2(0.0, -13.0), health_ratio())
 
 
