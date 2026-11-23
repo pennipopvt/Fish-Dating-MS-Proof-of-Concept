@@ -12,6 +12,8 @@ extends Control
 @onready var _water_debug: WaterRenderDebug = $WaterDebugLayer
 @onready var _room_view: NPCRoomView = $NPCRoomView
 @onready var _music: UnderwaterMusicPlayer = $AudioStreamPlayer2D
+@onready var _ambience: SeaAmbienceController = $SeaAmbience
+@onready var _title: GameTitleScreen = $TitleScreen
 @onready var _penni_room_door: TransferDoor = $SubViewportContainer/SubViewport/World/AvailableHomeList/PenniRoomDoor
 var _opening: FishCoOpeningSequence
 
@@ -49,6 +51,10 @@ func _ready() -> void:
 	_transition.configure(_world, _world_player, _sea,
 		$CanvasLayer/DialogueUI, $CanvasLayer/ShopMenu, _opening)
 	_transition.underwater_state_changed.connect(_music.set_underwater_filter)
+	_transition.waterline_crossed.connect(_ambience.set_underwater)
+	_transition.intro_dock_reached.connect(_on_island_reached)
+	_opening.debug_island_arrived.connect(_on_island_reached)
+	_title.play_requested.connect(_opening.begin_from_title)
 	_opening.configure(_world, _world_player, $CanvasLayer/ShopMenu, _transition)
 	($IslandStoryDirector as IslandStoryDirector).configure(_world_player, _transition, _opening)
 	_opening.dive_confirmed.connect(_transition.start_confirmed_dive)
@@ -81,6 +87,12 @@ func _ready() -> void:
 	_debug.configure(self, _world_player, _sea, _bubble_host)
 	_water_debug.configure(_world, $SubViewportContainer/SubViewport, _world_player)
 	_opening.start.call_deferred()
+
+
+# Music begins only once Penni reaches the island, never on the title/boat.
+func _on_island_reached() -> void:
+	if not _music.playing:
+		_music.play()
 
 
 func _on_first_dive_surface_completed() -> void:

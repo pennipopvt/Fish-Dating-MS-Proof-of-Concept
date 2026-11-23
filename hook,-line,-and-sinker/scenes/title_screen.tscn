@@ -1,0 +1,114 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/game_title_screen.gd" id="title_script"]
+
+[sub_resource type="StyleBoxFlat" id="MenuPanel"]
+bg_color = Color(0.035, 0.09, 0.13, 0.68)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_left = 12
+corner_radius_bottom_right = 12
+content_margin_left = 30.0
+content_margin_top = 24.0
+content_margin_right = 30.0
+content_margin_bottom = 24.0
+
+[node name="TitleScreen" type="CanvasLayer"]
+layer = 70
+process_mode = 3
+script = ExtResource("title_script")
+
+[node name="Menu" type="PanelContainer" parent="."]
+anchors_preset = 15
+anchor_left = 0.04
+anchor_top = 0.12
+anchor_right = 0.45
+anchor_bottom = 0.88
+theme_override_styles/panel = SubResource("MenuPanel")
+
+[node name="Contents" type="VBoxContainer" parent="Menu"]
+layout_mode = 2
+theme_override_constants/separation = 15
+alignment = 1
+
+[node name="Title" type="Label" parent="Menu/Contents"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 66
+text = "HOOK, LINE,\n& SINKER"
+autowrap_mode = 3
+
+[node name="Subtitle" type="Label" parent="Menu/Contents"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "A Fish Co. Story"
+
+[node name="Spacer" type="Control" parent="Menu/Contents"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 35)
+
+[node name="Play" type="Button" parent="Menu/Contents"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 64)
+theme_override_font_sizes/font_size = 32
+text = "PLAY"
+
+[node name="Options" type="Button" parent="Menu/Contents"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 60)
+theme_override_font_sizes/font_size = 28
+text = "OPTIONS"
+
+[node name="Quit" type="Button" parent="Menu/Contents"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 60)
+theme_override_font_sizes/font_size = 28
+text = "QUIT"
+
+[node name="Options" type="PanelContainer" parent="."]
+visible = false
+anchors_preset = 15
+anchor_left = 0.05
+anchor_top = 0.19
+anchor_right = 0.5
+anchor_bottom = 0.81
+theme_override_styles/panel = SubResource("MenuPanel")
+
+[node name="Contents" type="VBoxContainer" parent="Options"]
+layout_mode = 2
+theme_override_constants/separation = 14
+alignment = 1
+
+[node name="Heading" type="Label" parent="Options/Contents"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 42
+text = "SOUND"
+
+[node name="MusicLabel" type="Label" parent="Options/Contents"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "Music"
+
+[node name="MusicVolume" type="HSlider" parent="Options/Contents"]
+custom_minimum_size = Vector2(0, 30)
+layout_mode = 2
+max_value = 1.0
+step = 0.01
+value = 1.0
+
+[node name="AmbienceLabel" type="Label" parent="Options/Contents"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "Ambience"
+
+[node name="AmbienceVolume" type="HSlider" parent="Options/Contents"]
+custom_minimum_size = Vector2(0, 30)
+layout_mode = 2
+max_value = 1.0
+step = 0.01
+value = 1.0
+
+[node name="Back" type="Button" parent="Options/Contents"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 60)
+theme_override_font_sizes/font_size = 28
+text = "BACK"

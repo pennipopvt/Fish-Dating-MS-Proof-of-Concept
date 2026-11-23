@@ -3,6 +3,9 @@ class_name SeaDiveTransition
 
 signal surface_completed
 signal underwater_state_changed(is_underwater: bool)
+# Music filters at jump start; ambience switches at the actual splash.
+signal waterline_crossed(is_underwater: bool)
+signal intro_dock_reached
 
 # Owns ONLY physical one-world transitions: iris, a single continuous
 # dock-to-sea path, and surfacing. FishCoOpeningSequence handles choices.
@@ -102,6 +105,7 @@ func _transition_contract_to_dock(intro: FishCoIntro) -> void:
 	await _open_iris(_normalized_screen_position(_world_player))
 	transitioning = false
 	_world_player.busy = false
+	intro_dock_reached.emit()
 
 
 
@@ -170,6 +174,7 @@ func _on_dive_splash(surface_y: float) -> void:
 	_world_player.animator.rotation = 0.0
 	_spawn_splash(Vector2(_world_player.global_position.x, surface_y))
 	_sea.play_sfx(&"dive")
+	waterline_crossed.emit(true)
 	underwater = true
 	GameManager.diving_session_active = true
 	_dialogue_ui.set_underwater_mode(true)
@@ -217,6 +222,7 @@ func _surface_from_dive() -> void:
 	_world_player.animator.play(&"idle_r")
 	underwater = false
 	underwater_state_changed.emit(false)
+	waterline_crossed.emit(false)
 	_sea.call("_set_camera_bounds", false)
 	_dialogue_ui.set_underwater_mode(false)
 	# Catch safety is settled BEFORE the terminal and story process the return.
@@ -326,6 +332,7 @@ func _blackout_from_oxygen(cared_for: NPCData = null) -> void:
 	_camera_controller.snap_to_player()
 	underwater = false
 	underwater_state_changed.emit(false)
+	waterline_crossed.emit(false)
 	_sea.call("_set_camera_bounds", false)
 	_dialogue_ui.set_underwater_mode(false)
 	GameManager.finish_dive_period()
