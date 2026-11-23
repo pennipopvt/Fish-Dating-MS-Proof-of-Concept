@@ -75,9 +75,14 @@ func _run() -> void:
 		"Boat and Penni are drawn behind the existing water reflection pass")
 	_check(opening.title_camera_offset.y < -6.0,
 		"Intro camera framing is raised from its previous position")
+	var title_camera_center_y: float = camera.get_screen_center_position().y
 	opening.title_pan_seconds = 0.05
 	title.call("_on_play")
 	await get_tree().create_timer(0.12).timeout
+	_check(absf(camera.get_screen_center_position().y - title_camera_center_y) < 1.0,
+		"Play pans horizontally while keeping exactly the title camera's starting Y")
+	_check(absf(camera.get_screen_center_position().x - focus.global_position.x) < 5.0,
+		"Intro pan still reaches the authored boat focus X")
 	_check(not title.visible and DialogueManager.is_active and player.busy
 		and not (opening.get_node("FishCoIntro") as FishCoIntro).visible,
 		"Play pans to the boat before starting the original Fish Co dialogue")

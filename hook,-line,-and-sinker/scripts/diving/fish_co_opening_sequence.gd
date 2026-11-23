@@ -103,7 +103,12 @@ func begin_from_title() -> void:
 	var focus: Marker2D = boat.get_node_or_null("CameraFocus") as Marker2D if boat != null else null
 	var camera: WorldCameraController = _world.get_node_or_null("CameraController") as WorldCameraController
 	if focus != null and camera != null:
-		await camera.pan_to(focus.global_position, title_pan_seconds)
+		# Keep the real title-screen camera center's Y when Play is pressed.
+		# The boat rocks slightly and the title framing has an authored offset;
+		# using CameraFocus.y again would introduce an unwanted vertical pan.
+		var title_center_y: float = camera.camera.get_screen_center_position().y
+		var pan_target := Vector2(focus.global_position.x, title_center_y)
+		await camera.pan_to(pan_target, title_pan_seconds)
 	_start_contract_call()
 
 
