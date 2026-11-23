@@ -364,6 +364,17 @@ func stagger_resistance() -> float:
 	return maxf(fish_data.stagger_resistance * maxf(strength, 1.0), 1.0)
 
 
+# A newly netted fish can receive a single short stun from a companion
+# passive. Reuse the established STUN state without counting a perfect parry.
+func apply_opening_stun(fraction: float) -> void:
+	if not is_active() or phase != Phase.WARNING or attack == null or fraction <= 0.0:
+		return
+	_start_stagger_break()
+	phase_time = maxf(attack.stun_duration, 0.2) * clampf(fraction, 0.0, 1.0)
+	feedback = "SCARED! REEL!"
+	feedback_time = 0.9
+
+
 func _start_stagger_break() -> void:
 	# Only a full meter earns the true stun: clear tension and reel freely.
 	phase = Phase.STUN
