@@ -810,5 +810,6 @@ collision_enabled = false
 [node name="ShadowFish" parent="." instance=ExtResource("shadow_fish")]
 
 [node name="Backdrop" parent="." instance=ExtResource("backdrop")]
+visible = false
 
 [node name="Bubbles" parent="." instance=ExtResource("bubbles")]
