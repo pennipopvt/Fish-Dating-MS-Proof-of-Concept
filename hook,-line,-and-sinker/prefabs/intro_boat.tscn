@@ -1,6 +1,7 @@
 [gd_scene format=3 uid="uid://bse8bg1ojq0vr"]
 
 [ext_resource type="Script" uid="uid://3ef3eejeyb0e" path="res://scripts/intro/intro_boat_sprite.gd" id="boat_script"]
+[ext_resource type="Script" path="res://scripts/intro/intro_boat_rock.gd" id="boat_rock_script"]
 [ext_resource type="Texture2D" uid="uid://dmyisdjohnnfg" path="res://sprites/environment/boat.png" id="boat_texture"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_rrvsc"]
@@ -46,6 +47,7 @@ animations = [{
 
 [node name="IntroBoat" type="Node2D" unique_id=1549051682]
 position = Vector2(2250, 124)
+script = ExtResource("boat_rock_script")
 
 [node name="Sprite" type="AnimatedSprite2D" parent="." unique_id=1070137628]
 z_index = 11
