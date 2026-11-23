@@ -344,6 +344,9 @@ func open() -> void:
 	_last_order_message = ""
 	_delivery_status.text = "NO DELIVERIES"
 	show()
+	# This is the one real open event, not a tab change or a frame update.
+	# Reuse the existing TerminalBeep player and its editor-authored volume.
+	_beep_sound.play()
 	ShopManager.set_shop_open(true)
 	_refresh_page()
 	_update_nav_tabs(false)

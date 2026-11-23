@@ -136,6 +136,14 @@ func _ready() -> void:
 	_expect(not world_notice.visible and not tab_notice.visible and challenge_tab_icon.visible,
 		"Claim badges disappear and the standard tab icon returns after collection")
 
+	# Opening the terminal should beep before its boot frame expands.
+	var opening_beep: AudioStreamPlayer = shop.get_node("TerminalBeep") as AudioStreamPlayer
+	opening_beep.stop()
+	shop.open()
+	_expect(shop.visible and opening_beep.playing,
+		"Opening the terminal plays the existing beep, not only its tab clicks")
+	shop.close()
+
 	ChallengeManager.reset_all()
 	FishingManager.reset_session_upgrades()
 	NPCManager.npc_states = previous_states

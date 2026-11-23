@@ -33,6 +33,28 @@ func _run() -> void:
 		and title_art.stretch_mode == TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 		and title_art.custom_minimum_size.y > 0.0,
 		"New logo replaces title text and fits inside the title menu without distortion")
+	_check((title.get_node("Menu") as PanelContainer).get_theme_stylebox("panel") is StyleBoxEmpty
+		and (title.get_node("Options") as PanelContainer).get_theme_stylebox("panel") is StyleBoxEmpty,
+		"Title menu and sound options panels have no colored backgrounds")
+	for button_name in ["Play", "Options", "Quit"]:
+		var graphic_button: TitleImageButton = title.get_node("Menu/Contents/" + button_name) as TitleImageButton
+		var expected_image: Texture2D = load("res://sprites/ui/button_%s.png" % button_name.to_lower())
+		_check(graphic_button != null and graphic_button.texture_normal == expected_image
+			and graphic_button.hover_scale > 1.0 and graphic_button.pressed_brightness < 1.0,
+			"%s uses its editable image and hover/pressed feedback" % button_name)
+	var play_image_button: TitleImageButton = title.get_node("Menu/Contents/Play") as TitleImageButton
+	play_image_button.feedback_seconds = 0.0
+	play_image_button.emit_signal("mouse_entered")
+	_check(play_image_button.scale.x > 1.0,
+		"Title sprite grows when the cursor hovers over it")
+	play_image_button.emit_signal("button_down")
+	_check(play_image_button.self_modulate.r < 1.0,
+		"Title sprite darkens while clicked")
+	play_image_button.emit_signal("button_up")
+	play_image_button.emit_signal("mouse_exited")
+	_check(is_equal_approx(play_image_button.scale.x, 1.0)
+		and is_equal_approx(play_image_button.self_modulate.r, 1.0),
+		"Title sprite returns to its original scale and brightness")
 	_check(AudioServer.get_bus_index(&"Music") >= 0
 		and AudioServer.get_bus_index(&"Ambience") >= 0
 		and AudioServer.get_bus_index(&"UnderwaterSFX") >= 0,

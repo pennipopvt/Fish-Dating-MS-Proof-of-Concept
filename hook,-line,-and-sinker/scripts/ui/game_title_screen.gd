@@ -5,9 +5,9 @@ signal play_requested
 
 @onready var _menu: Control = $Menu
 @onready var _options: Control = $Options
-@onready var _play: Button = $Menu/Contents/Play
-@onready var _settings: Button = $Menu/Contents/Options
-@onready var _quit: Button = $Menu/Contents/Quit
+@onready var _play: TitleImageButton = $Menu/Contents/Play
+@onready var _settings: TitleImageButton = $Menu/Contents/Options
+@onready var _quit: TitleImageButton = $Menu/Contents/Quit
 @onready var _back: Button = $Options/Contents/Back
 @onready var _music_slider: HSlider = $Options/Contents/MusicVolume
 @onready var _ambience_slider: HSlider = $Options/Contents/AmbienceVolume

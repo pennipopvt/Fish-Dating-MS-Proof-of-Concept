@@ -2,13 +2,12 @@
 
 [ext_resource type="Script" path="res://scripts/ui/game_title_screen.gd" id="title_script"]
 [ext_resource type="Texture2D" path="res://sprites/ui/logo.png" id="game_logo"]
+[ext_resource type="Script" path="res://scripts/ui/title_image_button.gd" id="image_button_script"]
+[ext_resource type="Texture2D" path="res://sprites/ui/button_play.png" id="play_image"]
+[ext_resource type="Texture2D" path="res://sprites/ui/button_options.png" id="options_image"]
+[ext_resource type="Texture2D" path="res://sprites/ui/button_quit.png" id="quit_image"]
 
-[sub_resource type="StyleBoxFlat" id="MenuPanel"]
-bg_color = Color(0.035, 0.09, 0.13, 0.68)
-corner_radius_top_left = 12
-corner_radius_top_right = 12
-corner_radius_bottom_left = 12
-corner_radius_bottom_right = 12
+[sub_resource type="StyleBoxEmpty" id="MenuPanel"]
 content_margin_left = 30.0
 content_margin_top = 24.0
 content_margin_right = 30.0
@@ -50,23 +49,32 @@ text = "A Fish Co. Story"
 layout_mode = 2
 custom_minimum_size = Vector2(0, 35)
 
-[node name="Play" type="Button" parent="Menu/Contents"]
+[node name="Play" type="TextureButton" parent="Menu/Contents"]
+custom_minimum_size = Vector2(300, 104)
 layout_mode = 2
-custom_minimum_size = Vector2(0, 64)
-theme_override_font_sizes/font_size = 32
-text = "PLAY"
+size_flags_horizontal = 4
+texture_normal = ExtResource("play_image")
+ignore_texture_size = true
+stretch_mode = 5
+script = ExtResource("image_button_script")
 
-[node name="Options" type="Button" parent="Menu/Contents"]
+[node name="Options" type="TextureButton" parent="Menu/Contents"]
+custom_minimum_size = Vector2(300, 104)
 layout_mode = 2
-custom_minimum_size = Vector2(0, 60)
-theme_override_font_sizes/font_size = 28
-text = "OPTIONS"
+size_flags_horizontal = 4
+texture_normal = ExtResource("options_image")
+ignore_texture_size = true
+stretch_mode = 5
+script = ExtResource("image_button_script")
 
-[node name="Quit" type="Button" parent="Menu/Contents"]
+[node name="Quit" type="TextureButton" parent="Menu/Contents"]
+custom_minimum_size = Vector2(300, 104)
 layout_mode = 2
-custom_minimum_size = Vector2(0, 60)
-theme_override_font_sizes/font_size = 28
-text = "QUIT"
+size_flags_horizontal = 4
+texture_normal = ExtResource("quit_image")
+ignore_texture_size = true
+stretch_mode = 5
+script = ExtResource("image_button_script")
 
 [node name="Options" type="PanelContainer" parent="."]
 visible = false
