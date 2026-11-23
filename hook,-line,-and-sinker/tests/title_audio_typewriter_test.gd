@@ -143,6 +143,20 @@ func _run() -> void:
 	ui.call("_play_letter_sound", 0)
 	_check(is_equal_approx(playback.pitch_scale, 1.4),
 		"Penni returns to her own Inspector pitch after an NPC speaks")
+	# Numbers should use the exact same sound pipeline as letters, while
+	# punctuation and whitespace should remain silent.
+	for character in ["0", "5", "9"]:
+		playback.stop()
+		ui.set("_spoken_text", character)
+		ui.call("_play_letter_sound", 0)
+		_check(playback.playing and is_equal_approx(playback.pitch_scale, 1.4),
+			"Numeral %s triggers Penni's inspector-controlled dialogue voice" % character)
+	for character in [" ", ".", "!", "?"]:
+		playback.stop()
+		ui.set("_spoken_text", character)
+		ui.call("_play_letter_sound", 0)
+		_check(not playback.playing,
+			"Whitespace or punctuation %s remains silent" % character)
 	ui.call("_advance")
 	_check(DialogueManager.get_current_line() == line
 		and not bool(ui.get("_typewriting")),

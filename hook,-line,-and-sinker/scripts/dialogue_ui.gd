@@ -376,12 +376,12 @@ func _finish_typing() -> void:
 	_continue_hint.visible = not DialogueManager.is_awaiting_choice()
 
 
-# Each letter gets one voice cue; punctuation, spaces and newlines are silent.
+# Letters and digits get voice cues; punctuation, spaces and newlines stay silent.
 func _play_letter_sound(index: int) -> void:
 	if index >= _spoken_text.length():
 		return
 	var letter: String = _spoken_text.substr(index, 1)
-	if letter.to_lower() == letter.to_upper():
+	if letter.to_lower() == letter.to_upper() and not letter.is_valid_int():
 		return
 	var sound: AudioStream = default_voice_sound
 	# Read Penni's actual Pitch Scale from the scene's DialogueVoice node
