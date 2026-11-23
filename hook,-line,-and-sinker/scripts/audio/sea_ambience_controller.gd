@@ -5,8 +5,8 @@ extends Node
 # so there is no restart/pop when switching between shore and the sea.
 @export_group("Ambient Crossfade")
 @export_range(0.0, 3.0, 0.05, "suffix:s") var crossfade_seconds: float = 0.7
-@export_range(-40.0, 12.0, 1.0, "suffix:dB") var ocean_volume_db: float = -8.0
-@export_range(-40.0, 12.0, 1.0, "suffix:dB") var underwater_volume_db: float = -10.0
+@export_range(-40.0, 12.0, 1.0, "suffix:dB") var ocean_volume_db: float = -2.0
+@export_range(-40.0, 12.0, 1.0, "suffix:dB") var underwater_volume_db: float = -3.0
 @export_range(-80.0, -40.0, 1.0, "suffix:dB") var silent_volume_db: float = -80.0
 
 @onready var _ocean: AudioStreamPlayer = $Ocean
@@ -15,15 +15,34 @@ var _fade: Tween
 
 
 func _ready() -> void:
+	# Keep both players looping even if an older .wav.import is cached.
+	# Author the initial mix before starting playback; scene autoplay is a
+	# fallback if the controller is ever disconnected.
+	_ocean.volume_db = ocean_volume_db
+	_underwater.volume_db = silent_volume_db
+	if AudioServer.get_bus_index(&"Ambience") < 0:
+		push_warning("No Ambience bus in default_bus_layout.tres; using Master.")
+		_ocean.bus = &"Master"
+		_underwater.bus = &"Master"
 	for player in [_ocean, _underwater]:
+		if player.stream == null:
+			push_warning("Missing ambience stream on " + String(player.name))
+			continue
 		if player.stream is AudioStreamWAV:
-			# Duplicate the imported stream rather than modifying shared source.
 			var looping: AudioStreamWAV = (player.stream as AudioStreamWAV).duplicate() as AudioStreamWAV
 			looping.loop_mode = AudioStreamWAV.LOOP_FORWARD
 			player.stream = looping
-		player.play()
-	_ocean.volume_db = ocean_volume_db
-	_underwater.volume_db = silent_volume_db
+		if not player.playing:
+			player.play()
+	# Retry on the first ready frame: some imports initialize their stream
+	# only after the containing scene has finished entering the tree.
+	_ensure_playing.call_deferred()
+
+
+func _ensure_playing() -> void:
+	for player in [_ocean, _underwater]:
+		if player.stream != null and not player.playing:
+			player.play()
 
 
 func set_underwater(enabled: bool) -> void:

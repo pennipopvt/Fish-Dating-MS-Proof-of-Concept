@@ -135,10 +135,14 @@ script = ExtResource("sea_ambience")
 
 [node name="Ocean" type="AudioStreamPlayer" parent="SeaAmbience"]
 stream = ExtResource("ocean_ambience")
+volume_db = -2.0
+autoplay = true
 bus = &"Ambience"
 
 [node name="Underwater" type="AudioStreamPlayer" parent="SeaAmbience"]
 stream = ExtResource("underwater_ambience")
+volume_db = -80.0
+autoplay = true
 bus = &"Ambience"
 
 [node name="SeaSpeechBubbleHost" type="Node" parent="." unique_id=1976587968]

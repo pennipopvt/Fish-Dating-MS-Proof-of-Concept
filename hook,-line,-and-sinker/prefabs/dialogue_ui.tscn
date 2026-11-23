@@ -146,6 +146,7 @@ size_flags_vertical = 3
 bbcode_enabled = true
 scroll_active = true
 scroll_following = true
+scroll_following_visible_characters = true
 autowrap_mode = 3
 
 [node name="ContinueHint" type="Label" parent="Box/Margin/Content" unique_id=1620925180]
@@ -170,3 +171,7 @@ grow_vertical = 0
 theme = SubResource("Theme_dlg")
 theme_override_constants/separation = 12
 alignment = 2
+
+[node name="DialogueVoice" type="AudioStreamPlayer" parent="."]
+volume_db = -12.0
+max_polyphony = 4
