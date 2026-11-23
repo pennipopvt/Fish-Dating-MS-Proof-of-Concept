@@ -4,7 +4,7 @@ extends Node
 # Verifies the title/ambient audio and native typewriter presentation.
 const MAIN: PackedScene = preload("res://scenes/main.tscn")
 const OCEAN_AUDIO: AudioStream = preload("res://sounds/sfx/753223__pblzr__ambience-exterior-night-mindelo-beach-waves-medium-ms-4824.ogg")
-const UNDERWATER_AUDIO: AudioStream = preload("res://sounds/sfx/504641__fission9__underwater-ambience.wav")
+const UNDERWATER_AUDIO: AudioStream = preload("res://sounds/sfx/504641__fission9__underwater-ambience.ogg")
 var failures: int = 0
 
 
@@ -66,13 +66,11 @@ func _run() -> void:
 	_check(ocean.stream == OCEAN_AUDIO and below.stream == UNDERWATER_AUDIO,
 		"Ambience controller leaves autoplay streams attached instead of interrupting them")
 	var shore_stream: AudioStreamOggVorbis = ocean.stream as AudioStreamOggVorbis
-	var sea_stream: AudioStreamWAV = below.stream as AudioStreamWAV
-	_check(shore_stream != null and sea_stream != null
-		and sea_stream.format != AudioStreamWAV.FORMAT_QOA,
-		"Shore OGG and underwater PCM WAV use their expected import formats")
+	var sea_stream: AudioStreamOggVorbis = below.stream as AudioStreamOggVorbis
+	_check(shore_stream != null and sea_stream != null,
+		"Shore and underwater ambience both use OGG streams")
 	_check(ocean.playing and below.playing and shore_stream != null
-		and shore_stream.loop and sea_stream != null
-		and sea_stream.loop_mode == AudioStreamWAV.LOOP_FORWARD,
+		and shore_stream.loop and sea_stream != null and sea_stream.loop,
 		"Both ambience streams are looped and playing")
 	await get_tree().create_timer(1.1).timeout
 	_check(ocean.playing and below.playing,

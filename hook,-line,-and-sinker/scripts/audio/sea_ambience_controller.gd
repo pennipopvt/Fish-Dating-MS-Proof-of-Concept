@@ -1,7 +1,7 @@
 class_name SeaAmbienceController
 extends Node
 
-# The shore OGG and underwater WAV normally loop continuously; only their
+# Both ambient OGG streams loop continuously; only their
 # volumes change during a dive. Restart a stream only if playback stopped.
 @export_group("Playback Recovery")
 @export_range(0.25, 5.0, 0.25, "suffix:s") var playback_check_seconds: float = 1.0
@@ -56,7 +56,7 @@ func _check_startup_audio() -> void:
 		return
 	for player in [_ocean, _underwater]:
 		if player.stream != null and not player.playing:
-			push_error("Ambience %s stopped after starting (length %.2fs). Reimport WAV as PCM." % [
+			push_error("Ambience %s stopped after starting (length %.2fs). Check stream looping/import settings." % [
 				String(player.name), player.stream.get_length()
 			])
 
