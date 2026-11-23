@@ -123,6 +123,9 @@ static func _valid_conditions(value: Variant) -> bool:
 				"min_jealousy_tier", "max_jealousy_tier", "min_days_since_talk", "max_days_since_talk"]:
 			if not _json_number(value[key]):
 				return false
+		elif key == "pending_other_invitation":
+			if not value[key] is bool:
+				return false
 		else:
 			return false
 	return true
@@ -156,7 +159,7 @@ static func _valid_effects(value: Variant) -> bool:
 		return false
 	if not _string_array(value.get("set_flags", [])) or not _string_array(value.get("clear_flags", [])):
 		return false
-	for field in ["start_relationship_events", "resolve_relationship_events"]:
+	for field in ["start_relationship_events", "resolve_relationship_events", "defer_relationship_events"]:
 		if not _string_array(value.get(field, [])):
 			return false
 	if value.has("affection_delta") and not _json_number(value["affection_delta"]):
@@ -166,6 +169,8 @@ static func _valid_effects(value: Variant) -> bool:
 	if value.has("give_held_item") and not value["give_held_item"] is bool:
 		return false
 	if value.has("request_scene") and (not value["request_scene"] is String or value["request_scene"].is_empty()):
+		return false
+	if value.has("disclose_invitation") and not value["disclose_invitation"] is bool:
 		return false
 	return true
 
