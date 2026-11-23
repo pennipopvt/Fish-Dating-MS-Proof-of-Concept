@@ -91,6 +91,10 @@ func _ready() -> void:
 
 # Music begins only once Penni reaches the island, never on the title/boat.
 func _on_island_reached() -> void:
+	# Debug F3 can skip straight from the title; never leave that menu
+	# visible over the island when the opening is bypassed.
+	if _title.visible:
+		_title.hide()
 	if not _music.playing:
 		_music.play()
 
