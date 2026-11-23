@@ -4,8 +4,8 @@
 [ext_resource type="Texture2D" uid="uid://b4koaria87fbv" path="res://sprites/placeholders/portrait.svg" id="2_portrait"]
 [ext_resource type="Texture2D" uid="uid://ca1xd1qpk4ajr" path="res://sprites/placeholders/portrait_player.svg" id="3_player"]
 [ext_resource type="Texture2D" uid="uid://vu47883rgrp5" path="res://sprites/characters/penni/penni_portrait.png" id="4_ln1m7"]
-[ext_resource type="Texture2D" uid="uid://j2t1f35vluti" path="res://sprites/characters/kuda_portrait.png" id="5_ln1m7"]
-[ext_resource type="AudioStream" path="res://sounds/sfx/penni-speak.wav" id="penni_speak"]
+[ext_resource type="Texture2D" uid="uid://j2t1f35vluti" path="res://sprites/characters/kuda/kuda_portrait.png" id="5_ln1m7"]
+[ext_resource type="AudioStream" uid="uid://c8daimeqwy41i" path="res://sounds/sfx/penni-speak.wav" id="penni_speak"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_choice_focus"]
 draw_center = false
@@ -146,10 +146,8 @@ unique_name_in_owner = true
 layout_mode = 2
 size_flags_vertical = 3
 bbcode_enabled = true
-scroll_active = true
 scroll_following = true
 scroll_following_visible_characters = true
-autowrap_mode = 3
 
 [node name="ContinueHint" type="Label" parent="Box/Margin/Content" unique_id=1620925180]
 unique_name_in_owner = true
@@ -174,6 +172,6 @@ theme = SubResource("Theme_dlg")
 theme_override_constants/separation = 12
 alignment = 2
 
-[node name="DialogueVoice" type="AudioStreamPlayer" parent="."]
-volume_db = -12.0
+[node name="DialogueVoice" type="AudioStreamPlayer" parent="." unique_id=300917380]
+pitch_scale = 1.2
 max_polyphony = 4

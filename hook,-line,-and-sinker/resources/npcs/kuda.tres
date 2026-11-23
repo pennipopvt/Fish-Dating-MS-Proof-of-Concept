@@ -65,6 +65,7 @@ blocks_actions = Array[StringName]([&"dive", &"overnight"])
 script = ExtResource("1_npc")
 npc_id = &"barracuda"
 display_name = "Kuda"
+voice_pitch_scale = 0.8
 portrait = ExtResource("6_2m545")
 land_actor_scene_path = "res://prefabs/kuda.tscn"
 underwater_sprite = ExtResource("underwater_kuda")

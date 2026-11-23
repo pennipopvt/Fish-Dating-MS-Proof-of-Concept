@@ -67,6 +67,7 @@ blocks_actions = Array[StringName]([&"dive", &"overnight"])
 script = ExtResource("1_bmq75")
 npc_id = &"test_npc"
 display_name = "Silas"
+voice_pitch_scale = 0.9
 portrait = ExtResource("4_a4wu8")
 land_actor_scene_path = "res://prefabs/silas.tscn"
 underwater_sprite = ExtResource("underwater_eel")
