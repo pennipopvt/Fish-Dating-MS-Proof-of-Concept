@@ -29,7 +29,7 @@ func _run() -> void:
 
 	# Stop the container from overriding our explicit test dimensions.
 	container.stretch = false
-	for target: Vector2i in [
+	for target in [
 		Vector2i(320, 180), Vector2i(480, 270),
 		Vector2i(480, 180), Vector2i(240, 240), Vector2i(320, 180)
 	]:
