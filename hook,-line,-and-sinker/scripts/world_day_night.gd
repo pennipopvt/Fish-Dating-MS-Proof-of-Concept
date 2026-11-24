@@ -20,11 +20,10 @@ extends Node2D
 const AFTERNOON_START: float = 1.0 / 3.0
 const SUNSET_START: float = 5.0 / 9.0
 const NIGHT_START: float = 2.0 / 3.0
-# 320x180 native sky pixels. Bodies travel BELOW the visible frame rather
-# than becoming transparent while still up in the sky.
+# Native 320x180 positions are expanded to match the actual SubViewport.
+# Bodies travel BELOW the visible frame rather than fading out in midair.
 const MOON_RISE_START: float = SUNSET_START
 const SKY_LEFT_X: float = 28.0
-const SKY_RIGHT_X: float = 292.0
 const SUN_BELOW_SCREEN_Y: float = 215.0
 const SUN_ARC_HEIGHT: float = 205.0
 const MOON_BELOW_SCREEN_Y: float = 240.0
@@ -65,6 +64,7 @@ var _target_progress: float = -1.0
 # this value, so the discs travel along their arcs instead of cutting a
 # straight line between two points on them.
 var _shown_progress: float = 0.0
+var _viewport_dimensions: Vector2 = Vector2.ZERO
 
 
 func _ready() -> void:
@@ -78,7 +78,7 @@ func _ready() -> void:
 	add_child(underwater_layer)
 	_underwater_background = ColorRect.new()
 	_underwater_background.name = "UnderwaterBackground"
-	_underwater_background.size = Vector2(320.0, 180.0)
+	_underwater_background.size = get_viewport_rect().size
 	_underwater_background.color = water_afternoon_color
 	_underwater_background.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	underwater_layer.add_child(_underwater_background)
@@ -93,7 +93,10 @@ func _ready() -> void:
 	add_child(sky_layer)
 	_sky_region.reparent(sky_layer, false)
 	_sky_region.position = Vector2.ZERO
-	_sky_region.size = Vector2(320.0, VIEWPORT_SKY_HEIGHT)
+	# The game SubViewport grows on larger/wider displays. Cover the whole
+	# game view, not just the original 320x180 rectangle.
+	_sky.custom_minimum_size = Vector2.ZERO
+	_sync_viewport_geometry()
 	# Scene shader subresources may be shared by instances; do not animate the
 	# source assets or affect other World instances / editor previews.
 	_sky_mat = _local_material(_sky)
@@ -126,11 +129,34 @@ func _ready() -> void:
 	GameManager.time_changed.connect(_on_time_changed)
 
 
+# Both sky layers fill the entire game view even if SubViewportContainer
+# changes its dimensions at runtime. Sky itself clips to the real waterline.
+# The full-height gradient/stars remain independent of that clip height.
+func _sync_viewport_geometry() -> void:
+	var next_size: Vector2 = get_viewport_rect().size
+	if next_size.x <= 0.0 or next_size.y <= 0.0:
+		return
+	if next_size == _viewport_dimensions:
+		return
+	_viewport_dimensions = next_size
+	_underwater_background.size = next_size
+	_sky.size = next_size
+	_stars.size = next_size
+	_sky_region.size = next_size
+	if _underwater_tint != null:
+		_underwater_tint.size = next_size
+	if _target_progress >= 0.0:
+		# Reposition the sky bodies on their current arcs when the aspect
+		# ratio changes. Time of day and fade progression are not reset.
+		_show_discs_at(_shown_progress, true)
+
+
 func _process(_delta: float) -> void:
+	_sync_viewport_geometry()
 	# Camera limits can separate the actual screen center from the
 	# Camera2D node's world position. The tint is a child of the world camera,
-	# so compensate for that difference to keep its entire 320x180
-	# rectangle attached to the visible game screen at sea boundaries.
+	# so compensate for that difference to cover the entire game
+	# viewport (including its extra area on wider screens).
 	var visible_center: Vector2 = _camera.get_screen_center_position()
 	if _underwater_tint != null:
 		_underwater_tint.position = (
@@ -148,7 +174,7 @@ func _process(_delta: float) -> void:
 	var surface_screen_y: float = _water.get_global_transform_with_canvas().origin.y
 	# The sky stays absolutely still in viewport pixels while the camera
 	# smooths or pans. Only the clip bottom follows the true sea surface.
-	_sky_region.size.y = clampf(ceilf(surface_screen_y), 0.0, VIEWPORT_SKY_HEIGHT)
+	_sky_region.size.y = clampf(ceilf(surface_screen_y), 0.0, _viewport_dimensions.y)
 	_water_mat.set_shader_parameter("waterline_y", surface_screen_y)
 	_water_mat.set_shader_parameter("viewer_submersion", submerged)
 	# The sea's above-surface visual clip and the reflection must use
@@ -157,7 +183,7 @@ func _process(_delta: float) -> void:
 		_sea_clip_mat.set_shader_parameter("surface_screen_y", surface_screen_y)
 	if _tint_mat != null:
 		_tint_mat.set_shader_parameter("submersion", submerged)
-		_tint_mat.set_shader_parameter("surface_y_uv", surface_screen_y / 180.0)
+		_tint_mat.set_shader_parameter("surface_y_uv", surface_screen_y / maxf(_viewport_dimensions.y, 1.0))
 	_update_sunbeams()
 
 
@@ -245,7 +271,9 @@ func _refresh_target() -> void:
 	if day_rollover:
 		# Finish the moon's western descent, even if the player went to bed
 		# before using every night action; never make it fade out in place.
-		var moon_exit := Vector2(SKY_RIGHT_X, MOON_BELOW_SCREEN_Y)
+		var moon_exit := Vector2(
+			_viewport_dimensions.x - SKY_LEFT_X,
+			MOON_BELOW_SCREEN_Y * _viewport_dimensions.y / VIEWPORT_SKY_HEIGHT)
 		_transition.tween_property(_moon, "position", moon_exit - _moon.size * 0.5, transition_seconds)
 		_transition.tween_property(_moon_glow, "position", moon_exit - _moon_glow.size * 0.5, transition_seconds)
 	_transition.tween_property(_moon_glow_mat, "shader_parameter/intensity", state["moon_glow"], transition_seconds)
@@ -310,21 +338,23 @@ func _visual_state(progress: float) -> Dictionary:
 		Color("#f1b98b"), Color("#d9e4e5"), Color("#b9e6fb"),
 		Color("#b2dbf1"), Color("#ffd0a2"), Color("#6489b7"))
 
-	# The sun starts low at dawn, climbs high at midday, and physically
-	# drops BELOW the 180px screen by the start of night.
+	# The sun and moon keep their authored arcs, scaled to the current
+	# game view. On ultrawide displays they traverse the wider sky.
+	var sky_height_scale: float = _viewport_dimensions.y / VIEWPORT_SKY_HEIGHT
+	var sky_right_x: float = maxf(SKY_LEFT_X, _viewport_dimensions.x - SKY_LEFT_X)
 	var daylight := clampf(progress / NIGHT_START, 0.0, 1.0)
 	var sun_arc := lerpf(0.16, 1.0, daylight)
 	var sun_position := Vector2(
-		lerpf(SKY_LEFT_X, SKY_RIGHT_X, daylight),
-		SUN_BELOW_SCREEN_Y - SUN_ARC_HEIGHT * sin(sun_arc * PI)
+		lerpf(SKY_LEFT_X, sky_right_x, daylight),
+		(SUN_BELOW_SCREEN_Y - SUN_ARC_HEIGHT * sin(sun_arc * PI)) * sky_height_scale
 	)
 
 	# The moon begins rising as sunset finishes. Its disc is below the
 	# viewport during daylight; it rises in the east and sets to the west.
 	var night_fraction := clampf((progress - MOON_RISE_START) / (1.0 - MOON_RISE_START), 0.0, 1.0)
 	var moon_center := Vector2(
-		lerpf(SKY_LEFT_X, SKY_RIGHT_X, night_fraction),
-		MOON_BELOW_SCREEN_Y - MOON_ARC_HEIGHT * sin(night_fraction * PI)
+		lerpf(SKY_LEFT_X, sky_right_x, night_fraction),
+		(MOON_BELOW_SCREEN_Y - MOON_ARC_HEIGHT * sin(night_fraction * PI)) * sky_height_scale
 	)
 
 	# Ambient glows and stars may soften with twilight, but the actual

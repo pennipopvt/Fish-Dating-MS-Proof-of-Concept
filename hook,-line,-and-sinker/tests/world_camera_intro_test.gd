@@ -52,7 +52,8 @@ func _run() -> void:
 		"Clouds preserve the same day/night coloring as the world")
 	world.call("_process", 0.0)
 	var surface_screen: float = water.get_global_transform_with_canvas().origin.y
-	_check(is_equal_approx(sky.size.y, clampf(ceilf(surface_screen), 0.0, 180.0)),
+	_check(is_equal_approx(sky.size.y, clampf(ceilf(surface_screen), 0.0, world.get_viewport_rect().size.y))
+		and is_equal_approx(sky.size.x, world.get_viewport_rect().size.x),
 		"Sky only exposes pixels above the real waterline")
 	_check(player.global_position.distance_to(
 		(boat.get_node("PlayerSpot") as Marker2D).global_position) < 1.0

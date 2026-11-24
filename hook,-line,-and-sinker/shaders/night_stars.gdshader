@@ -1,7 +1,7 @@
 shader_type canvas_item;
 render_mode unshaded, blend_mix;
 
-// 1-pixel stars on the 320x180 in-game pixel grid. No external sprite needed.
+// 1-pixel stars on the actual game SubViewport grid, at any resolution.
 uniform float visibility : hint_range(0.0, 1.0) = 0.0;
 
 float hash21(vec2 p) {
@@ -9,7 +9,7 @@ float hash21(vec2 p) {
 }
 
 void fragment() {
-    vec2 pixel = floor(UV * vec2(320.0, 180.0));
+    vec2 pixel = floor(SCREEN_UV / SCREEN_PIXEL_SIZE);
     vec2 cell = floor(pixel / 10.0);
     vec2 local = mod(pixel, 10.0);
     float chance = hash21(cell);
