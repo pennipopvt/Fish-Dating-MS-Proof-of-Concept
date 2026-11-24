@@ -16,6 +16,9 @@ var _cutoff_tween: Tween
 
 
 func _ready() -> void:
+	# A correctly looped WAV should never finish. This also recovers from a
+	# backend unexpectedly finishing a long music stream (including on web).
+	finished.connect(_on_unexpected_music_end)
 	var bus_index: int = AudioServer.get_bus_index(bus)
 	if bus_index < 0:
 		push_warning("Underwater music needs the authored Music audio bus.")
@@ -45,3 +48,10 @@ func set_underwater_filter(is_underwater: bool) -> void:
 	_cutoff_tween.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 	_cutoff_tween.tween_property(_low_pass, "cutoff_hz", target_hz,
 		filter_transition_seconds)
+
+
+func _on_unexpected_music_end() -> void:
+	# Only natural track endings emit finished; stop() does not.
+	# This is a fallback, not the primary seamless loop mechanism.
+	if is_inside_tree() and not playing:
+		play()

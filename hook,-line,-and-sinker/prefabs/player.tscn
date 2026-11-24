@@ -367,8 +367,10 @@ volume_db = -6.0
 
 [node name="SwimSound" type="AudioStreamPlayer" parent="." unique_id=206134632]
 stream = ExtResource("swim_sound")
+playback_type = 1
 volume_db = -8.0
 pitch_scale = 0.7
+bus = &"UnderwaterSFX"
 script = ExtResource("swim_fader")
 
 [node name="StepTimer" type="Timer" parent="." unique_id=1138794996]
