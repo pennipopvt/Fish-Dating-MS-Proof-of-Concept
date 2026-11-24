@@ -40,6 +40,9 @@ func _run() -> void:
 	var swimmer: SwimSoundFader = main.get_node(
 		"SubViewportContainer/SubViewport/World/Player/SwimSound") as SwimSoundFader
 	var sfx_bus: int = AudioServer.get_bus_index(&"UnderwaterSFX")
+	var swim_loop: AudioStreamWAV = swimmer.stream as AudioStreamWAV
+	_check(swim_loop != null and swim_loop.loop_mode == AudioStreamWAV.LOOP_FORWARD,
+		"Swimming sound WAV also loops continuously during sustained movement")
 	_check(swimmer.playback_type == AudioServer.PLAYBACK_TYPE_STREAM
 		and swimmer.bus == &"UnderwaterSFX",
 		"Swim loop also streams through the underwater low-pass bus")
