@@ -52,6 +52,12 @@ jobs:
           set -o pipefail
           timeout 90s godot --headless --path "hook,-line,-and-sinker" res://tests/relationship_incident_disclosure_test.tscn 2>&1 | tee relationship-incident-disclosure-test.log
           ! (grep -E 'SCRIPT ERROR:|Parse Error:|Parser Error:|ERROR:|FAIL ' relationship-incident-disclosure-test.log | grep -Ev 'resources still in use at exit|RID allocations.*leaked' | grep -q .)
+      - name: Test variable viewport sizes and responsive world visuals
+        shell: bash
+        run: |
+          set -o pipefail
+          timeout 120s godot --headless --path "hook,-line,-and-sinker" res://tests/viewport_layout_test.tscn 2>&1 | tee viewport-layout-test.log
+          ! (grep -E 'SCRIPT ERROR:|Parse Error:|Parser Error:|ERROR:|FAIL ' viewport-layout-test.log | grep -Ev 'resources still in use at exit|RID allocations.*leaked' | grep -q .)
       - name: Test world-owned camera, real boat intro, and story pan
         shell: bash
         run: |
